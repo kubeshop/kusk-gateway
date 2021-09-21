@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+
+  front-envoy:
+    container_name: front-envoy
+    image: envoyproxy/envoy-dev:latest
+    networks:
+      kusk-ingress:
+        ipv4_address: "172.21.0.2"
+    volumes:
+    - ./envoy-proxy.yaml:/etc/envoy/envoy.yaml
+    ports:
+    - "8080:8080"
+
+  petstore:
+    container_name: petstore
+    image: swaggerapi/petstore3:unstable
+    networks:
+      kusk-ingress:
+        ipv4_address: "172.21.0.3"
+
+
+networks:
+  kusk-ingress:
+    name: "kusk-ingress"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.21.0.0/24
