@@ -5,10 +5,10 @@ services:
     container_name: front-envoy
     image: envoyproxy/envoy-dev:latest
     networks:
-      kusk-ingress:
+      kusk-gateway:
         ipv4_address: "172.21.0.2"
     volumes:
-    - ./envoy-proxy.yaml:/etc/envoy/envoy.yaml
+    - ./envoy.yaml:/etc/envoy/envoy.yaml
     ports:
     - "8080:8080"
 
@@ -16,13 +16,13 @@ services:
     container_name: petstore
     image: swaggerapi/petstore3:unstable
     networks:
-      kusk-ingress:
+      kusk-gateway:
         ipv4_address: "172.21.0.3"
 
 
 networks:
-  kusk-ingress:
-    name: "kusk-ingress"
+  kusk-gateway:
+    name: "kusk-gateway"
     ipam:
       driver: default
       config:

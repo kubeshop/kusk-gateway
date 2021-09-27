@@ -1,8 +1,8 @@
 # Testing Envoy as Ingress
 
-This directory provides local testing configuration with Envoy as frontend proxy and petshop application as a backend.
+This directory provides local testing configuration with Envoy as frontend proxy and petstore  application as a backend.
 
-Envoy configuration is done accordingly to cut-off Petshop OpenAPI file with *x-kusk* extension configuration.
+Envoy configuration is done accordingly to cut-off Petstore OpenAPI file with *x-kusk* extension configuration.
 
 To run:
 
