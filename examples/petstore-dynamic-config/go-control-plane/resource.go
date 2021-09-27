@@ -11,7 +11,7 @@
 //   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
-package example
+package main
 
 import (
 	"time"
@@ -34,9 +34,9 @@ const (
 	ClusterName  = "example_proxy_cluster"
 	RouteName    = "local_route"
 	ListenerName = "listener_0"
-	ListenerPort = 10000
-	UpstreamHost = "www.envoyproxy.io"
-	UpstreamPort = 80
+	ListenerPort = 8080
+	UpstreamHost = "petstore"
+	UpstreamPort = 8080
 )
 
 func makeCluster(clusterName string) *cluster.Cluster {

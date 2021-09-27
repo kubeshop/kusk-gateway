@@ -25,7 +25,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-control-plane
-    command: bin/example -debug
     healthcheck:
       test: nc -zv localhost 18000
     networks:
