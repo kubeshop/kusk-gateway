@@ -20,12 +20,20 @@ docker-compose up
 
 Envoy frontends will be available on *http://172.21.0.5:8080* (Cluster1) and *http://172.21.0.6:8080* (Cluster2) while backend could be reached on http://172.21.0.3:8080 .
 
-Envoy management interface is available on http://172.21.0.5:19000,  http://172.21.0.6:19000, there one can verify what configuration it has in config_dump.
+On MacOS, the frontends are available on *http://localhost:8080* (Cluster1) and *http://localhost:8081* (Cluster2)
+
+Envoy management interface is available on *http://172.21.0.5:19000*,  *http://172.21.0.6:19000*, there one can verify what configuration it has in config_dump.
+
+On MacOS, the Envoy management interface is available on *http://localhost:19000* and *http://localhost:19001*  
 
 To test:
 
 ```shell
+# Linux
 curl -v -X GET 'http://172.21.0.5:8080/api/v3/pet/1' -H 'accept: application/json'
+
+# MacOS
+curl -v -X GET 'http://localhost:8080/api/v3/pet/1' -H 'accept: application/json'
 ```
 
 
