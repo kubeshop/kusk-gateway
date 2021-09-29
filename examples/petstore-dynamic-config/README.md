@@ -20,7 +20,7 @@ docker-compose up
 
 Envoy frontends will be available on *http://172.21.0.5:8080* (Cluster1) and *http://172.21.0.6:8080* (Cluster2) while backend could be reached on http://172.21.0.3:8080 .
 
-Envoy management interface is available on http://172.23.0.5:19000,  http://172.23.0.6:19000, there one can verify what configuration it has in config_dump.
+Envoy management interface is available on http://172.21.0.5:19000,  http://172.21.0.6:19000, there one can verify what configuration it has in config_dump.
 
 To test:
 
