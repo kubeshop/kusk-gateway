@@ -1,7 +1,7 @@
 domain: kusk.io
 layout:
 - go.kubebuilder.io/v3
-projectName: temp
+projectName: kusk-gateway
 repo: github.com/kubeshop/kusk-gateway
 resources:
 - api:
