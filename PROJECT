@@ -1,0 +1,16 @@
+domain: kusk.io
+layout:
+- go.kubebuilder.io/v3
+projectName: temp
+repo: github.com/kubeshop/kusk-gateway
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kusk.io
+  group: gateway
+  kind: EnvoyFleet
+  path: github.com/kubeshop/kusk-gateway/api/v1
+  version: v1
+version: "3"

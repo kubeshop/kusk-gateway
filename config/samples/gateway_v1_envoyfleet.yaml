@@ -1,0 +1,7 @@
+apiVersion: gateway.kusk.io/v1
+kind: EnvoyFleet
+metadata:
+  name: envoyfleet-sample
+spec:
+  # Add fields here
+  foo: bar
