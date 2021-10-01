@@ -33,6 +33,7 @@ import (
 
 	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
 	"github.com/kubeshop/kusk-gateway/controllers"
+	"github.com/kubeshop/kusk-gateway/envoy"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -79,8 +80,9 @@ func main() {
 	}
 
 	if err = (&controllers.EnvoyFleetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		EnvoyManager: envoy.NewManager(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
 		os.Exit(1)
