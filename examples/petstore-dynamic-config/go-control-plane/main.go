@@ -18,7 +18,6 @@ import (
 	"flag"
 	"os"
 
-	// "github.com/envoyproxy/go-control-plane/internal/
 	cache "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	server "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 )

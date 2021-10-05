@@ -1,0 +1,237 @@
+// package config provides structures to create and update routing configuration for Envoy Fleet
+// it is not used for Fleet creation, only for configuration snapshot creation.
+
+package config
+
+import (
+	"time"
+
+	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+
+	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	uuid "github.com/gofrs/uuid"
+	"github.com/golang/protobuf/ptypes"
+)
+
+// TODO: move to params
+const (
+	ListenerName string = "listener_0"
+	ListenerPort uint32 = 8080
+	RouteName    string = "local_route"
+)
+
+// Simplified objects hierarchy configuration as for the static Envoy config
+// Top level objects are "listeners" and "clusters"
+//
+// listeners:
+//   - address: (address:port)
+// .........
+//     VirtualHost:
+//      Routes (RoutesConfiguration):
+//       route:
+//        - match:
+//            path: /bla
+//            headers (method)
+//          route:
+//            cluster: clusterRef-cluster1
+//        - match:
+//            path: /blabla
+//            headers (method)
+//          route:
+//            cluster: clusterRef-cluster1
+// clusters:
+// - name: cluster1
+//     load_assignment:
+//       cluster_name: cluster1
+//       endpoints:
+//        - lb_endpoints:
+//          - endpoint:
+//              address:
+//                address: backendsvc1-dns-name
+//                port_value: backendsvc1-port
+//
+
+// Backend service endpoint
+type UpstreamService struct {
+	Name string
+	Port uint32
+}
+
+type envoyConfiguration struct {
+	vhosts   []string
+	routes   []*route.Route
+	clusters map[string]*cluster.Cluster
+	listener *listener.Listener
+}
+
+func New(vhosts []string) *envoyConfiguration {
+	return &envoyConfiguration{
+		clusters: make(map[string]*cluster.Cluster),
+		vhosts:   vhosts,
+	}
+}
+
+// AddRoute appends new route to the list of routes by path and method
+func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string, upstreamServiceName string) {
+	rt := &route.Route{
+		Name: name,
+		Match: &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_Path{
+				Path: path,
+			},
+			Headers: []*route.HeaderMatcher{
+				{
+					Name:                 ":method",
+					HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{ExactMatch: method},
+				},
+			},
+		},
+		Action: &route.Route_Route{
+			Route: &route.RouteAction{
+				ClusterSpecifier: &route.RouteAction_Cluster{
+					Cluster: clusterName,
+				},
+				HostRewriteSpecifier: &route.RouteAction_HostRewriteLiteral{
+					HostRewriteLiteral: upstreamServiceName,
+				},
+			},
+		},
+	}
+	e.routes = append(e.routes, rt)
+}
+
+// MakeCluster creates Envoy cluster which is the representation of backend service
+// For the simplicity right now we don't support endpoints assignments separately, i.e. one cluster - one endpoint, not multiple load balanced
+func (e *envoyConfiguration) AddCluster(clusterName string, upstreamService UpstreamService) {
+	upstreamEndpoint := &endpoint.ClusterLoadAssignment{
+		ClusterName: clusterName,
+		Endpoints: []*endpoint.LocalityLbEndpoints{{
+			LbEndpoints: []*endpoint.LbEndpoint{{
+				HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+					Endpoint: &endpoint.Endpoint{
+						Address: &core.Address{
+							Address: &core.Address_SocketAddress{
+								SocketAddress: &core.SocketAddress{
+									Protocol: core.SocketAddress_TCP,
+									Address:  upstreamService.Name,
+									PortSpecifier: &core.SocketAddress_PortValue{
+										PortValue: upstreamService.Port,
+									},
+								},
+							},
+						},
+					},
+				},
+			}},
+		}},
+	}
+
+	e.clusters[clusterName] = &cluster.Cluster{
+		Name:                 clusterName,
+		ConnectTimeout:       ptypes.DurationProto(5 * time.Second),
+		ClusterDiscoveryType: &cluster.Cluster_Type{Type: cluster.Cluster_LOGICAL_DNS},
+		LbPolicy:             cluster.Cluster_ROUND_ROBIN,
+		LoadAssignment:       upstreamEndpoint,
+		DnsLookupFamily:      cluster.Cluster_V4_ONLY,
+	}
+}
+
+func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {
+	return &route.RouteConfiguration{
+		Name: routeConfigName,
+		VirtualHosts: []*route.VirtualHost{{
+			Name:    "local_service",
+			Domains: e.vhosts,
+			Routes:  e.routes,
+		}},
+	}
+}
+func makeHTTPListener(listenerName string, routeConfigName string) *listener.Listener {
+	// HTTP filter configuration
+	manager := &hcm.HttpConnectionManager{
+		CodecType:  hcm.HttpConnectionManager_AUTO,
+		StatPrefix: "http",
+		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
+			Rds: &hcm.Rds{
+				ConfigSource:    makeConfigSource(),
+				RouteConfigName: routeConfigName,
+			},
+		},
+		HttpFilters: []*hcm.HttpFilter{{
+			Name: wellknown.Router,
+		}},
+	}
+	pbst, err := ptypes.MarshalAny(manager)
+	if err != nil {
+		panic(err)
+	}
+
+	return &listener.Listener{
+		Name: listenerName,
+		Address: &core.Address{
+			Address: &core.Address_SocketAddress{
+				SocketAddress: &core.SocketAddress{
+					Protocol: core.SocketAddress_TCP,
+					Address:  "0.0.0.0",
+					PortSpecifier: &core.SocketAddress_PortValue{
+						PortValue: ListenerPort,
+					},
+				},
+			},
+		},
+		FilterChains: []*listener.FilterChain{{
+			Filters: []*listener.Filter{{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: pbst,
+				},
+			}},
+		}},
+	}
+}
+
+func makeConfigSource() *core.ConfigSource {
+	source := &core.ConfigSource{}
+	source.ResourceApiVersion = resource.DefaultAPIVersion
+	source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
+		ApiConfigSource: &core.ApiConfigSource{
+			TransportApiVersion:       resource.DefaultAPIVersion,
+			ApiType:                   core.ApiConfigSource_GRPC,
+			SetNodeOnFirstMessageOnly: true,
+			GrpcServices: []*core.GrpcService{{
+				TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+					EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
+				},
+			}},
+		},
+	}
+	return source
+}
+
+func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
+	var clusters []types.Resource
+	for _, cluster := range e.clusters {
+		clusters = append(clusters, cluster)
+	}
+	// We're using uuid V1 to provide time sortable snapshot version
+	snapshot_version, _ := uuid.NewV1()
+	snap, err := cache.NewSnapshot(snapshot_version.String(),
+		map[resource.Type][]types.Resource{
+			resource.ClusterType:  clusters,
+			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
+			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &snap, nil
+}
