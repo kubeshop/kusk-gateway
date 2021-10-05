@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - gateway.kusk.io
   resources:
+  - apis
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - apis/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - apis/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
   - envoyfleet
   verbs:
   - create

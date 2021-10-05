@@ -1,0 +1,20 @@
+# permissions for end users to view apis.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: api-viewer-role
+rules:
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - apis
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - apis/status
+  verbs:
+  - get
