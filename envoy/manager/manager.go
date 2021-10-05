@@ -17,18 +17,18 @@ import (
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
-	cache "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	server "github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
 
-func New(ctx context.Context, serverPort uint, log Logger) *envoyConfigManager {
+func New(ctx context.Context, serverPort uint, log Logger) *EnvoyConfigManager {
 	snapshotCache := cache.NewSnapshotCache(true, cache.IDHash{}, log)
 	cacheManager := cacheManager{snapshotCache, make(map[string]*cache.Snapshot), sync.RWMutex{}}
 	callbacks := Callbacks{cacheMgr: &cacheManager, log: log}
 	server := server.NewServer(ctx, &cacheManager, &callbacks)
-	return &envoyConfigManager{
+	return &EnvoyConfigManager{
 		XDSServer:    &server,
 		cacheManager: &cacheManager,
 		log:          log,
@@ -36,21 +36,21 @@ func New(ctx context.Context, serverPort uint, log Logger) *envoyConfigManager {
 	}
 }
 
-// envoyConfigManager holds cacheManager and XDS service
+// EnvoyConfigManager holds cacheManager and XDS service
 // Only its methods must be called to update Envoy configuration
-type envoyConfigManager struct {
+type EnvoyConfigManager struct {
 	XDSServer    *server.Server
 	cacheManager *cacheManager
 	port         uint
 	log          Logger
 }
 
-func (em *envoyConfigManager) Start() error {
+func (em *EnvoyConfigManager) Start() error {
 	// Starts GRPC service
 	grpcServer := newGRPCServer()
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", em.port))
 	if err != nil {
-		em.log.Fatal(err)
+		return err
 	}
 
 	registerServer(grpcServer, *em.XDSServer)
@@ -59,7 +59,7 @@ func (em *envoyConfigManager) Start() error {
 	return grpcServer.Serve(listener)
 }
 
-func (em *envoyConfigManager) ApplyNewFleetSnapshot(fleet string, snapshot *cache.Snapshot) error {
+func (em *EnvoyConfigManager) ApplyNewFleetSnapshot(fleet string, snapshot *cache.Snapshot) error {
 	return em.cacheManager.applyNewFleetSnapshot(fleet, snapshot)
 }
 

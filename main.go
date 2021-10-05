@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -33,8 +34,8 @@ import (
 
 	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
 	"github.com/kubeshop/kusk-gateway/controllers"
-	"github.com/kubeshop/kusk-gateway/envoy"
-	//+kubebuilder:scaffold:imports
+	"github.com/kubeshop/kusk-gateway/envoy/manager"
+	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -79,12 +80,31 @@ func main() {
 		os.Exit(1)
 	}
 
+	envoyManager := manager.New(context.Background(), 9999, nil)
+
+	// TODO: initialize envoyManager with static envoy deployment configuration
+
+	go func() {
+		if err := envoyManager.Start(); err != nil {
+			setupLog.Error(err, "unable to start Envoy xDS API Server")
+			os.Exit(1)
+		}
+	}()
+
 	if err = (&controllers.EnvoyFleetReconciler{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
-		EnvoyManager: envoy.NewManager(),
+		EnvoyManager: envoyManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
+		os.Exit(1)
+	}
+	if err = (&controllers.APIReconciler{
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		EnvoyManager: envoyManager,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "API")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

@@ -25,14 +25,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
-	"github.com/kubeshop/kusk-gateway/envoy"
+	"github.com/kubeshop/kusk-gateway/envoy/manager"
 )
 
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
 type EnvoyFleetReconciler struct {
 	client.Client
 	Scheme       *runtime.Scheme
-	EnvoyManager *envoy.Manager
+	EnvoyManager *manager.EnvoyConfigManager
 }
 
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet,verbs=get;list;watch;create;update;patch;delete

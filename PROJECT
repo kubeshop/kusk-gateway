@@ -13,4 +13,13 @@ resources:
   kind: EnvoyFleet
   path: github.com/kubeshop/kusk-gateway/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kusk.io
+  group: gateway
+  kind: API
+  path: github.com/kubeshop/kusk-gateway/api/v1
+  version: v1
 version: "3"
