@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "envoy.fullname" . }}-admin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "envoy.labels" . | nindent 4 }}
+    admin: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http-admin
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "envoy.selectorLabels" . | nindent 4 }}
