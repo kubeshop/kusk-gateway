@@ -1,0 +1,9 @@
+.git
+.gitignore
+bin/
+docs/
+examples/
+deploy/
+*.md
+.idea
+.vscode
