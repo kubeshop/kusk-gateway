@@ -7,6 +7,3 @@ version: 0.0.10
 appVersion: "v1.18.2"
 home: https://github.com/slamdev/helm-charts/tree/master/charts/envoy
 icon: https://www.envoyproxy.io/docs/envoy/latest/_static/envoy-logo.png
-maintainers:
-  - name: slamdev
-    email: valentin.fedoskin@gmail.com

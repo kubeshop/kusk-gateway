@@ -6,12 +6,6 @@ Helm chart to deploy [envoy](https://www.envoyproxy.io/).
 
 **Homepage:** <https://github.com/slamdev/helm-charts/tree/master/charts/envoy>
 
-## Maintainers
-
-| Name | Email | Url |
-| ---- | ------ | --- |
-| slamdev | valentin.fedoskin@gmail.com |  |
-
 ## Values
 
 | Key | Type | Default | Description |
@@ -27,10 +21,6 @@ Helm chart to deploy [envoy](https://www.envoyproxy.io/).
 | image.repository | string | `"envoyproxy/envoy"` | image repository |
 | image.tag | string | `""` | image tag (chart's appVersion value will be used if not set) |
 | imagePullSecrets | list | `[]` | image pull secret for private images |
-| ingress.annotations | object | `{}` | ingress annotations |
-| ingress.enabled | bool | `false` | enables Ingress for envoy |
-| ingress.hosts | list | `[]` | ingress accepted hostnames |
-| ingress.tls | list | `[]` | ingress TLS configuration |
 | livenessProbe.httpGet.path | string | `"/"` | path for liveness probe |
 | livenessProbe.httpGet.port | string | `"http"` | port for liveness probe |
 | nameOverride | string | `""` | override name of the chart |

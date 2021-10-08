@@ -24,23 +24,6 @@ spec:
       serviceAccountName: {{ include "envoy.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: preprocess-config
-          image: alpine:3.12.4
-          args:
-            - sh
-            - -c
-            - apk add perl && cp /opt/envoy.yaml.tpl /config/envoy.yaml && perl -pi -e 's/ENV_([_A-Z0-9]+)_ENV/$ENV{$1}/g' /config/envoy.yaml
-        {{- with .Values.env }}
-          env:
-            {{- toYaml . | nindent 12 }}
-        {{- end }}
-          volumeMounts:
-            - name: config
-              mountPath: /config
-            - name: config-tpl
-              mountPath: /opt/envoy.yaml.tpl
-              subPath: envoy.yaml
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ include "envoy.tag" . }}"
