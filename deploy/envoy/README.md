@@ -4,8 +4,6 @@
 
 Helm chart to deploy [envoy](https://www.envoyproxy.io/).
 
-**Homepage:** <https://github.com/slamdev/helm-charts/tree/master/charts/envoy>
-
 ## Values
 
 | Key | Type | Default | Description |

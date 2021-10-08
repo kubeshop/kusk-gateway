@@ -59,8 +59,6 @@ spec:
         {{- end }}
       volumes:
         - name: config
-          emptyDir: {}
-        - name: config-tpl
           configMap:
             name: {{ include "envoy.fullname" . }}
     {{- with .Values.volumes }}

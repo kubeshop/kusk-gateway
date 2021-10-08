@@ -6,5 +6,4 @@ metadata:
   labels:
     {{- include "envoy.labels" . | nindent 4 }}
 data:
-  envoy.yaml:
-    {{- include "envoy.config" . | quote | nindent 4 }}
+  envoy.yaml: |- {{ include "envoy.config" . | nindent 4 }}

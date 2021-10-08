@@ -105,5 +105,5 @@ node:
   id: test-id
 
 xds_cluster:
-  address: go-control-plane
-  port: 18000
+  address: 192.168.65.2
+  port: 9999
