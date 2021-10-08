@@ -12,6 +12,7 @@ import (
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -59,12 +60,6 @@ const (
 //                port_value: backendsvc1-port
 //
 
-// Backend service endpoint
-type UpstreamService struct {
-	Name string
-	Port uint32
-}
-
 type envoyConfiguration struct {
 	vhosts   []string
 	routes   []*route.Route
@@ -72,15 +67,16 @@ type envoyConfiguration struct {
 	listener *listener.Listener
 }
 
-func New(vhosts []string) *envoyConfiguration {
+func New() *envoyConfiguration {
 	return &envoyConfiguration{
 		clusters: make(map[string]*cluster.Cluster),
-		vhosts:   vhosts,
 	}
 }
 
 // AddRoute appends new route to the list of routes by path and method
-func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string, upstreamServiceName string) {
+
+func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string) {
+	// TODO: add parser for path parameters, regex
 	rt := &route.Route{
 		Name: name,
 		Match: &route.RouteMatch{
@@ -89,8 +85,13 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 			},
 			Headers: []*route.HeaderMatcher{
 				{
-					Name:                 ":method",
-					HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{ExactMatch: method},
+					Name: ":method",
+					HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+						StringMatch: &envoy_type_matcher_v3.StringMatcher{
+							MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{Exact: method},
+							IgnoreCase:   false,
+						},
+					},
 				},
 			},
 		},
@@ -99,18 +100,25 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 				ClusterSpecifier: &route.RouteAction_Cluster{
 					Cluster: clusterName,
 				},
-				HostRewriteSpecifier: &route.RouteAction_HostRewriteLiteral{
-					HostRewriteLiteral: upstreamServiceName,
-				},
+				// TODO: clarify if we need to rewrite Host to service hostname at all
+				// HostRewriteSpecifier: &route.RouteAction_HostRewriteLiteral{
+				// 	HostRewriteLiteral: upstreamServiceHost,
+				// },
 			},
 		},
 	}
 	e.routes = append(e.routes, rt)
 }
 
+func (e *envoyConfiguration) IsClusterExist(name string) bool {
+	_, exist := e.clusters[name]
+	return exist
+}
+
 // MakeCluster creates Envoy cluster which is the representation of backend service
 // For the simplicity right now we don't support endpoints assignments separately, i.e. one cluster - one endpoint, not multiple load balanced
-func (e *envoyConfiguration) AddCluster(clusterName string, upstreamService UpstreamService) {
+// Cluster with the same name will be overwritten
+func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost string, upstreamServicePort uint32) {
 	upstreamEndpoint := &endpoint.ClusterLoadAssignment{
 		ClusterName: clusterName,
 		Endpoints: []*endpoint.LocalityLbEndpoints{{
@@ -121,9 +129,9 @@ func (e *envoyConfiguration) AddCluster(clusterName string, upstreamService Upst
 							Address: &core.Address_SocketAddress{
 								SocketAddress: &core.SocketAddress{
 									Protocol: core.SocketAddress_TCP,
-									Address:  upstreamService.Name,
+									Address:  upstreamServiceHost,
 									PortSpecifier: &core.SocketAddress_PortValue{
-										PortValue: upstreamService.Port,
+										PortValue: upstreamServicePort,
 									},
 								},
 							},
@@ -233,5 +241,5 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &snap, nil
+	return &snap, snap.Consistent()
 }

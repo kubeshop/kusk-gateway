@@ -15,5 +15,9 @@ bin
 # Dependency directories (remove the comment below to include it)
 # vendor/
 /.idea/
-
 .vscode/
+
+.env
+
+# Binary file if built to the root
+kusk-gateway
