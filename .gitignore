@@ -21,3 +21,5 @@ bin
 
 # Binary file if built to the root
 kusk-gateway
+.vscode/
+testbin/
