@@ -4,6 +4,7 @@
 package config
 
 import (
+	"regexp"
 	"time"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -20,6 +21,11 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	uuid "github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
+)
+
+var (
+	// compiles e.g. /pets/{petID}/legs/{leg1}
+	rePathParams = regexp.MustCompile(`/{[A-z0-9]+}`)
 )
 
 // TODO: move to params
@@ -75,25 +81,48 @@ func New() *envoyConfiguration {
 
 // AddRoute appends new route to the list of routes by path and method
 func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string) {
-	// TODO: add parser for path parameters, regex
-	rt := &route.Route{
-		Name: name,
-		Match: &route.RouteMatch{
-			PathSpecifier: &route.RouteMatch_Path{
-				Path: path,
-			},
-			Headers: []*route.HeaderMatcher{
-				{
-					Name: ":method",
-					HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
-						StringMatch: &envoytypematcherv3.StringMatcher{
-							MatchPattern: &envoytypematcherv3.StringMatcher_Exact{Exact: method},
-							IgnoreCase:   false,
-						},
-					},
+	// match by this header
+	headerMatcher := []*route.HeaderMatcher{
+		{
+			Name: ":method",
+			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+				StringMatch: &envoytypematcherv3.StringMatcher{
+					MatchPattern: &envoytypematcherv3.StringMatcher_Exact{Exact: method},
+					IgnoreCase:   false,
 				},
 			},
 		},
+	}
+
+	var routeMatcher *route.RouteMatch
+
+	// if regex - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
+	// if simple path - RouteMatch_Path with path
+	if rePathParams.MatchString(path) {
+		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
+		routeMatcher = &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_SafeRegex{
+				SafeRegex: &envoytypematcherv3.RegexMatcher{
+					EngineType: &envoytypematcherv3.RegexMatcher_GoogleRe2{
+						GoogleRe2: &envoytypematcherv3.RegexMatcher_GoogleRE2{},
+					},
+					Regex: replacementRegex,
+				},
+			},
+			Headers: headerMatcher,
+		}
+	} else {
+		routeMatcher = &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_Path{
+				Path: path,
+			},
+			Headers: headerMatcher,
+		}
+	}
+	// finally create the route and append it to the list
+	rt := &route.Route{
+		Name:  name,
+		Match: routeMatcher,
 		Action: &route.Route_Route{
 			Route: &route.RouteAction{
 				ClusterSpecifier: &route.RouteAction_Cluster{
