@@ -22,4 +22,8 @@ resources:
   kind: API
   path: github.com/kubeshop/kusk-gateway/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

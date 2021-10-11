@@ -119,6 +119,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "API")
 		os.Exit(1)
 	}
+	if err = (&gatewayv1.API{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "API")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
