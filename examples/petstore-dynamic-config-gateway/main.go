@@ -14,31 +14,31 @@ import (
 )
 
 var (
-	l    Logger
-	port uint
+	l       Logger
+	address string
 )
 
 func init() {
 	l = Logger{}
 
 	// The port that this xDS server listens on
-	flag.UintVar(&port, "port", 18000, "xDS management server port")
+	flag.StringVar(&address, "bindAddress", ":18000", "xDS management server bind address")
 }
 
 func main() {
 	flag.Parse()
-	mgr := manager.New(context.Background(), port, l)
+	mgr := manager.New(context.Background(), address, l)
 	// TODO: signal support
 	go mgr.Start()
 	// Create envoy configuration and apply it
 	fleetName := "fleet1"
-	vhosts := []string{"example.org", "example.com"}
-	envoyConfig := config.New(vhosts)
-	upstreamService := config.UpstreamService{Name: "petstore", Port: 8080}
+	envoyConfig := config.New()
+	upstreamServiceHost := "petstore"
+	var upstreamServicePort uint32 = 8080
 	clusterName := "petstore"
 	// Backend cluster
-	envoyConfig.AddCluster(clusterName, upstreamService)
-	envoyConfig.AddRoute("findByStatus", "/api/v3/pet/findByStatus", "GET", clusterName, upstreamService.Name)
+	envoyConfig.AddCluster(clusterName, upstreamServiceHost, upstreamServicePort)
+	envoyConfig.AddRoute("findByStatus", "/api/v3/pet/findByStatus", "GET", clusterName)
 	snap, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
 		l.Fatal(err)

@@ -35,6 +35,7 @@ import (
 	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
 	"github.com/kubeshop/kusk-gateway/controllers"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
+	"github.com/kubeshop/kusk-gateway/local"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -54,8 +55,12 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var envoyControlPlaneAddr string
+	var openAPIspec string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&envoyControlPlaneAddr, "envoy-control-plane-bind-address", ":18000", "The address Envoy control plane XDS server binds to.")
+	flag.StringVar(&openAPIspec, "in", "", "OpenAPI file with x-kusk extension to start gateway locally, without Kubernetes")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -66,6 +71,13 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// If -in is specified, use its parameter as OpenAPI file and switch to local startup
+	// This will never return
+	if openAPIspec != "" {
+		setupLog.Info("Specified ", openAPIspec, "file will be consumed locally, skipping K8s initialisation")
+		local.RunLocalService(openAPIspec, envoyControlPlaneAddr)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -79,8 +91,8 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
-	envoyManager := manager.New(context.Background(), 9999, nil)
+	// TODO: setup logger correctly
+	envoyManager := manager.New(context.Background(), envoyControlPlaneAddr, nil)
 
 	// TODO: initialize envoyManager with static envoy deployment configuration
 

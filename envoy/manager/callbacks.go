@@ -13,11 +13,11 @@ type Callbacks struct {
 }
 
 func (cb *Callbacks) OnStreamOpen(_ context.Context, id int64, typ string) error {
-	cb.log.Debug("stream", id, "open for", typ)
+	// cb.log.Debug("stream", id, "open for", typ)
 	return nil
 }
 func (cb *Callbacks) OnStreamClosed(id int64) {
-	cb.log.Debug("stream", id, "closed")
+	// cb.log.Debug("stream", id, "closed")
 }
 
 func (cb *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) error {
@@ -25,7 +25,7 @@ func (cb *Callbacks) OnDeltaStreamOpen(_ context.Context, id int64, typ string) 
 }
 
 func (cb *Callbacks) OnDeltaStreamClosed(id int64) {
-	cb.log.Debug("delta stream", id, "closed")
+	// cb.log.Debug("delta stream", id, "closed")
 }
 
 func (cb *Callbacks) OnStreamRequest(id int64, r *discovery.DiscoveryRequest) error {
@@ -33,7 +33,7 @@ func (cb *Callbacks) OnStreamRequest(id int64, r *discovery.DiscoveryRequest) er
 		return nil
 	}
 	if err := cb.cacheMgr.setNodeSnapshot(r.Node.Id, r.Node.Cluster); err != nil {
-		cb.log.Error(err)
+		// cb.log.Error(err)
 		return err
 	}
 	return nil

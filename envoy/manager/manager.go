@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-func New(ctx context.Context, serverPort uint, log Logger) *EnvoyConfigManager {
+func New(ctx context.Context, address string, log Logger) *EnvoyConfigManager {
 	snapshotCache := cache.NewSnapshotCache(true, cache.IDHash{}, log)
 	cacheManager := cacheManager{snapshotCache, make(map[string]*cache.Snapshot), sync.RWMutex{}}
 	callbacks := Callbacks{cacheMgr: &cacheManager, log: log}
@@ -32,7 +32,7 @@ func New(ctx context.Context, serverPort uint, log Logger) *EnvoyConfigManager {
 		XDSServer:    &server,
 		cacheManager: &cacheManager,
 		log:          log,
-		port:         serverPort,
+		address:      address,
 	}
 }
 
@@ -41,21 +41,21 @@ func New(ctx context.Context, serverPort uint, log Logger) *EnvoyConfigManager {
 type EnvoyConfigManager struct {
 	XDSServer    *server.Server
 	cacheManager *cacheManager
-	port         uint
+	address      string
 	log          Logger
 }
 
 func (em *EnvoyConfigManager) Start() error {
 	// Starts GRPC service
 	grpcServer := newGRPCServer()
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", em.port))
+	listener, err := net.Listen("tcp", em.address)
 	if err != nil {
 		return err
 	}
 
 	registerServer(grpcServer, *em.XDSServer)
 
-	log.Printf("control plane server listening on %d\n", em.port)
+	log.Printf("control plane server listening on %s\n", em.address)
 	return grpcServer.Serve(listener)
 }
 
