@@ -11,14 +11,14 @@ Preliminary steps:
 cp development/.env.example ./.env
 ```
 
-For the development change PROJECT_ROOT/.env file to point GO_CONTROL_PLANE_ADDRESS and GO_CONTROL_PLANE_PORT variables to ip address and port your kusk-gateway is started.
+For the development change PROJECT_ROOT/.env file to point GO_CONTROL_PLANE_ADDRESS and GO_CONTROL_PLANE_PORT variables to ip address and port your kusk-gateway is listening on.
 This will allow Envoy instance to connect to your application in IDE.
 
 Front-envoy will generate configuration from envoy.yaml.tmpl with "default" Envoy cluster name and Node ID based on ENVOY_CLUSTER + HOSTNAME.
 
 Kusk-gateway will consume OpenAPI file, passed with "--in" parameter and will switch to "local" mode that will skip Kubernetes connection.
 
-Once Front Envoy starts, it will connect with GRPC to kusk-gateway with its NodeID and Cluster ("default") in request and Kusk-gateway will provide those.
+Once Front Envoy starts, it will connect to kusk-gateway with GRPC with its NodeID and Cluster ("default") fields specified and kusk-gateway will provide generated configuration.
 
 To run:
 

@@ -10,6 +10,8 @@ import (
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
+const httpPathSeparator string = "/"
+
 // GenerateConfigSnapshotFromOpts creates Snapshot from OpenAPI spec and x-kusk options
 func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Options, spec *openapi3.T) (*cache.Snapshot, error) {
 	e.vhosts = opts.Hosts
@@ -55,11 +57,12 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				continue
 			}
 			clusterName := generateClusterName(finalOpts.Service)
-			if !e.IsClusterExist(clusterName) {
+			if !e.ClusterExist(clusterName) {
 				e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
 			}
 			routePath := generateRoutePath(finalOpts.Path.Base, path)
-			e.AddRoute(generateRouteName(routePath, method), routePath, method, generateClusterName(finalOpts.Service))
+			routeName := generateRouteName(routePath, method)
+			e.AddRoute(routeName, routePath, method, clusterName)
 		}
 	}
 	return e.GenerateSnapshot()
@@ -77,7 +80,6 @@ func generateRoutePath(base string, path string) string {
 	if base == "" {
 		return path
 	}
-	const httpPathSeparator string = "/"
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
 }

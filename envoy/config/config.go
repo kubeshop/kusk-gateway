@@ -12,7 +12,7 @@ import (
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoytypematcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -74,7 +74,6 @@ func New() *envoyConfiguration {
 }
 
 // AddRoute appends new route to the list of routes by path and method
-
 func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string) {
 	// TODO: add parser for path parameters, regex
 	rt := &route.Route{
@@ -87,8 +86,8 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 				{
 					Name: ":method",
 					HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
-						StringMatch: &envoy_type_matcher_v3.StringMatcher{
-							MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{Exact: method},
+						StringMatch: &envoytypematcherv3.StringMatcher{
+							MatchPattern: &envoytypematcherv3.StringMatcher_Exact{Exact: method},
 							IgnoreCase:   false,
 						},
 					},
@@ -110,12 +109,12 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 	e.routes = append(e.routes, rt)
 }
 
-func (e *envoyConfiguration) IsClusterExist(name string) bool {
+func (e *envoyConfiguration) ClusterExist(name string) bool {
 	_, exist := e.clusters[name]
 	return exist
 }
 
-// MakeCluster creates Envoy cluster which is the representation of backend service
+// AddCluster creates Envoy cluster which is the representation of backend service
 // For the simplicity right now we don't support endpoints assignments separately, i.e. one cluster - one endpoint, not multiple load balanced
 // Cluster with the same name will be overwritten
 func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost string, upstreamServicePort uint32) {
