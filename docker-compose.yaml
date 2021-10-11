@@ -1,0 +1,65 @@
+version: "3.7"
+services:
+  petstore:
+    container_name: petstore
+    image: swaggerapi/petstore3:unstable
+    networks:
+      kusk-gateway:
+        ipv4_address: "172.21.0.3"
+  # # Uncomment if you want to run it as container, change .env before that.
+  # kusk-gateway:
+  #   container_name: kusk-gateway
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   networks:
+  #     kusk-gateway:
+  #       ipv4_address: "172.21.0.4"
+  front-envoy-cluster1-1:
+    container_name: front-envoy-cluster1-1
+    build:
+      context: ./development/envoy
+    environment:
+      GO_CONTROL_PLANE_ADDRESS: ${GO_CONTROL_PLANE_ADDRESS}
+      GO_CONTROL_PLANE_PORT: ${GO_CONTROL_PLANE_PORT}
+      ENVOY_CLUSTER_ID: "default"
+    ports:
+      - 8080:8080
+      - 19000:19000
+    networks:
+      kusk-gateway:
+        ipv4_address: "172.21.0.5"
+    volumes:
+      - ./development/envoy/envoy.yaml.tmpl:/etc/envoy/envoy.yaml.tmpl
+    depends_on:
+      - petstore
+    # Another Envoy in case one wants to test different clusters
+    # - kusk-gateway
+    # front-envoy-cluster1-2:
+    #   container_name: front-envoy-cluster2-1
+    #   build:
+    #     context: ./development/envoy
+    #   environment:
+    #     GO_CONTROL_PLANE_ADDRESS: ${GO_CONTROL_PLANE_ADDRESS}
+    #     GO_CONTROL_PLANE_PORT: ${GO_CONTROL_PLANE_PORT}
+    #     ENVOY_CLUSTER_ID: "envoy_cluster2"
+    #   ports:
+    #     - 8081:8080
+    #     - 19001:19000
+    #   networks:
+    #     kusk-gateway:
+    #       ipv4_address: "172.21.0.6"
+    #   volumes:
+    #     - ./development/envoy/envoy.yaml.tmpl:/etc/envoy/envoy.yaml.tmpl
+    #   depends_on:
+    #     - petstore
+    #     - kusk-gateway
+
+networks:
+  kusk-gateway:
+    name: "kusk-gateway"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/24
+
