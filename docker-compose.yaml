@@ -6,15 +6,21 @@ services:
     networks:
       kusk-gateway:
         ipv4_address: "172.21.0.3"
-  # # Uncomment if you want to run it as container, change .env before that.
-  # kusk-gateway:
-  #   container_name: kusk-gateway
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   networks:
-  #     kusk-gateway:
-  #       ipv4_address: "172.21.0.4"
+  # kusk-gateway as a container will start only with: docker-compose up --profile "all"
+  kusk-gateway:
+    profiles: [ "gateway", "all" ]
+    container_name: kusk-gateway
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - "--in"
+      - "/petshop-openapi-short-with-kusk-and-mock.yaml"
+    volumes:
+      - ./development/petshop-openapi-short-with-kusk-and-mock.yaml:/petshop-openapi-short-with-kusk-and-mock.yaml
+    networks:
+      kusk-gateway:
+        ipv4_address: "172.21.0.4"
   front-envoy-cluster1-1:
     container_name: front-envoy-cluster1-1
     build:
@@ -54,6 +60,24 @@ services:
     #   depends_on:
     #     - petstore
     #     - kusk-gateway
+
+    # This container is used during mocking testing
+  "openapi-mock":
+    container_name: "openapi-mock"
+    image: muonsoft/openapi-mock
+    # entrypoint: [ "tail", "-f", "/dev/null" ]
+    profiles: [ "mock", "all" ]
+    command:
+      - "serve"
+    volumes:
+      - ./development/petshop-openapi-short-with-kusk-and-mock.yaml:/openapi.yaml
+    environment:
+      OPENAPI_MOCK_SPECIFICATION_URL: '/openapi.yaml'
+    ports:
+      - "8082:8080"
+    networks:
+      kusk-gateway:
+        ipv4_address: "172.21.0.10"
 
 networks:
   kusk-gateway:

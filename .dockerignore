@@ -7,3 +7,4 @@ deploy/
 *.md
 .idea
 .vscode
+docker-compose.yaml
