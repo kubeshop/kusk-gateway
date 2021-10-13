@@ -72,10 +72,10 @@ To test (depends on configured variables in your OpenAPI file):
 
 ```shell
 # Linux
-curl -v -X GET 'http://172.21.0.5:8080/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
+curl -v -X GET 'http://172.21.0.5:8080/petstore/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
 
 # MacOS
-curl -v -X GET 'http://localhost:8080/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
+curl -v -X GET 'http://localhost:8080/petstore/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
 ```
 
 For the convenience you can use provided petshop-openapi-short-with-kusk.yaml or petshop-openapi-short-with-kusk-and-mock.yaml files in ./development.
