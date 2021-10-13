@@ -34,12 +34,26 @@ tags:
       url: 'http://swagger.io'
 x-kusk:
   disabled: false
+  cors:
+    origins:
+    - "*"
+    methods:
+    - POST
+    - GET
+    - OPTIONS
+    headers:
+    - Content-Type
+    credentials: true
+    expose_headers:
+    - X-Custom-Header1
+    - X-Custom-Header2
+    max_age: 86200
   service:
     name: petstore
     port: 8080
   path:
-    base: /api/v3
-    #trim_prefix: /petstore
+    base: /petstore/api/v3
+    trim_prefix: /petstore
 paths:
   /pet:
     x-kusk:
@@ -169,7 +183,7 @@ paths:
         disabled: false
         cors:
           origins:
-          - "*"
+          - "http://example.com"
           methods:
             - POST
             - GET
@@ -178,8 +192,8 @@ paths:
             - Content-Type
           credentials: true
           expose_headers:
-            - X-Custom-Header
-          max_age: 86400
+            - X-Custom-Header3
+          max_age: 86300
         timeouts:
           request_timeout: 10
           idle_timeout: 40
@@ -255,7 +269,6 @@ externalDocs:
 components:
   schemas:
     Category:
-      x-swagger-router-model: io.swagger.petstore.model.Category
       properties:
         id:
           type: integer
@@ -268,7 +281,6 @@ components:
         name: category
       type: object
     Tag:
-      x-swagger-router-model: io.swagger.petstore.model.Tag
       properties:
         id:
           type: integer
@@ -279,7 +291,6 @@ components:
         name: tag
       type: object
     Pet:
-      x-swagger-router-model: io.swagger.petstore.model.Pet
       required:
         - name
         - photoUrls
