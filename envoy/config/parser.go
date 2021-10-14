@@ -7,6 +7,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
+
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
@@ -25,46 +26,54 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 		// This var is reused during following methods merges,
 		// we do this merge once per path since it is expensive to do it for every method
 		var pathOpts options.SubOptions
+
 		if err := copier.CopyWithOption(&pathOpts, &opts.SubOptions, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
 			return nil, err
 		}
+
 		pathSubOpts, _ := opts.PathSubOptions[path]
 		if err := copier.CopyWithOption(&pathOpts, &pathSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
 			return nil, err
 		}
+
 		// x-kusk options per operation (http method)
 		for method := range pathItem.Operations() {
-
 			opSubOpts, ok := opts.OperationSubOptions[method+path]
 			if ok {
 				// Exit early if disabled per method, don't do further copies
-				if *opSubOpts.Disabled {
+				if opSubOpts.Disabled != nil && *opSubOpts.Disabled {
 					continue
 				}
 			}
 
 			var finalOpts options.SubOptions
+
 			// copy into new var already merged path opts
 			if err := copier.CopyWithOption(&finalOpts, &pathOpts, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
 				return nil, err
 			}
+
 			// finally override with opSubOpts
 			if err := copier.CopyWithOption(&finalOpts, &opSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
 				return nil, err
 			}
+
 			// Once we have final merged Options, skip if disabled either on top, path or method level.
-			if *finalOpts.Disabled {
+			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
+
 			clusterName := generateClusterName(finalOpts.Service)
 			if !e.ClusterExist(clusterName) {
 				e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
 			}
+
 			routePath := generateRoutePath(finalOpts.Path.Base, path)
 			routeName := generateRouteName(routePath, method)
 			e.AddRoute(routeName, routePath, method, clusterName)
 		}
 	}
+
 	return e.GenerateSnapshot()
 }
 

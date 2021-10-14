@@ -14,12 +14,11 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytypematcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	uuid "github.com/gofrs/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -258,8 +257,8 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		clusters = append(clusters, cluster)
 	}
 	// We're using uuid V1 to provide time sortable snapshot version
-	snapshot_version, _ := uuid.NewV1()
-	snap, err := cache.NewSnapshot(snapshot_version.String(),
+	snapshotVersion, _ := uuid.NewV1()
+	snap, err := cache.NewSnapshot(snapshotVersion.String(),
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},

@@ -23,18 +23,10 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type Service struct {
-	Namespace string `json:"namespace"`
-	Name      string `json:"name"`
-}
-
 // APISpec defines the desired state of API
 type APISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Service references the target Kubernetes Service that should receive traffic
-	Service Service `json:"service"`
 
 	// Spec represents OpenAPI spec
 	Spec string `json:"spec"`

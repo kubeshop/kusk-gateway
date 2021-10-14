@@ -39,7 +39,6 @@ x-kusk:
     port: 8080
   path:
     base: /api/v3
-    #trim_prefix: /petstore
 paths:
   /pet:
     x-kusk:

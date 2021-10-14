@@ -23,6 +23,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+const DefaultFleetName string = "default"
+
 func New(ctx context.Context, address string, log Logger) *EnvoyConfigManager {
 	snapshotCache := cache.NewSnapshotCache(true, cache.IDHash{}, log)
 	cacheManager := cacheManager{snapshotCache, make(map[string]*cache.Snapshot), sync.RWMutex{}}

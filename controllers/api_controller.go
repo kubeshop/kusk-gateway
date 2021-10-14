@@ -18,15 +18,16 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1"
+	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
@@ -54,8 +55,6 @@ type APIReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	parser := spec.NewParser(nil)
 
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
@@ -70,19 +69,37 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{Requeue: true}, err
 	}
 
+	envoyConfig := config.New()
+
 	for _, api := range apis.Items {
-		res, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("failed to parse OpenAPI spec: %w", err)
 		}
 
-		logger.Info("loaded API",
-			"targetServiceNamespace", api.Spec.Service.Namespace,
-			"targetServiceName", api.Spec.Service.Name,
-			"paths", len(res.Paths),
-		)
+		opts, err := spec.GetOptions(apiSpec)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to parse options: %w", err)
+		}
 
-		// TODO: load these API into EnvoyManager
+		err = opts.FillDefaultsAndValidate()
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to validate options: %w", err)
+		}
+
+		_, err = envoyConfig.GenerateConfigSnapshotFromOpts(opts, apiSpec)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to generate config: %w", err)
+		}
+	}
+
+	snapshot, err := envoyConfig.GenerateSnapshot()
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to generate snapshot: %w", err)
+	}
+
+	if err := r.EnvoyManager.ApplyNewFleetSnapshot(manager.DefaultFleetName, snapshot); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to apply snapshot: %w", err)
 	}
 
 	return ctrl.Result{}, nil

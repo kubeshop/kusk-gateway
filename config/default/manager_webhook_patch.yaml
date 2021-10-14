@@ -9,6 +9,9 @@ spec:
       containers:
       - name: manager
         ports:
+        - containerPort: 18000
+          name: xds
+          protocol: TCP
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
