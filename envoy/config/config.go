@@ -13,12 +13,14 @@ import (
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoytypematcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/gofrs/uuid"
+	uuid "github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -79,14 +81,23 @@ func New() *envoyConfiguration {
 }
 
 // AddRoute appends new route to the list of routes by path and method
-func (e *envoyConfiguration) AddRoute(name string, path string, method string, clusterName string) {
+func (e *envoyConfiguration) AddRoute(
+	name string,
+	path string,
+	method string,
+	clusterName string,
+	trimPrefixRegex string,
+	corsPolicy *route.CorsPolicy,
+	timeout int64,
+	idleTimeout int64,
+) {
 	// match by this header
 	headerMatcher := []*route.HeaderMatcher{
 		{
 			Name: ":method",
 			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
-				StringMatch: &envoytypematcherv3.StringMatcher{
-					MatchPattern: &envoytypematcherv3.StringMatcher_Exact{Exact: method},
+				StringMatch: &envoytypematcher.StringMatcher{
+					MatchPattern: &envoytypematcher.StringMatcher_Exact{Exact: method},
 					IgnoreCase:   false,
 				},
 			},
@@ -101,9 +112,9 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
-				SafeRegex: &envoytypematcherv3.RegexMatcher{
-					EngineType: &envoytypematcherv3.RegexMatcher_GoogleRe2{
-						GoogleRe2: &envoytypematcherv3.RegexMatcher_GoogleRE2{},
+				SafeRegex: &envoytypematcher.RegexMatcher{
+					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+						GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
 					},
 					Regex: replacementRegex,
 				},
@@ -118,21 +129,45 @@ func (e *envoyConfiguration) AddRoute(name string, path string, method string, c
 			Headers: headerMatcher,
 		}
 	}
+	// Trim prefix block rewrites path by regex in the route to cluster
+	var pathRewriteAction *envoytypematcher.RegexMatchAndSubstitute
+	if trimPrefixRegex != "" {
+		pathRewriteAction = &envoytypematcher.RegexMatchAndSubstitute{
+			Pattern: &envoytypematcher.RegexMatcher{
+				EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+					GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
+				},
+				Regex: trimPrefixRegex,
+			},
+			Substitution: "/"}
+	}
+
+	var routeTimeout *durationpb.Duration
+	var routeIdleTimeout *durationpb.Duration
+	if timeout != 0 {
+		routeTimeout = &durationpb.Duration{Seconds: timeout}
+	}
+	if idleTimeout != 0 {
+		routeIdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
+	}
+	routeAction := &route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: clusterName,
+			},
+			RegexRewrite: pathRewriteAction,
+			Timeout:      routeTimeout,
+			IdleTimeout:  routeIdleTimeout,
+		},
+	}
+	if corsPolicy != nil {
+		routeAction.Route.Cors = corsPolicy
+	}
 	// finally create the route and append it to the list
 	rt := &route.Route{
-		Name:  name,
-		Match: routeMatcher,
-		Action: &route.Route_Route{
-			Route: &route.RouteAction{
-				ClusterSpecifier: &route.RouteAction_Cluster{
-					Cluster: clusterName,
-				},
-				// TODO: clarify if we need to rewrite Host to service hostname at all
-				// HostRewriteSpecifier: &route.RouteAction_HostRewriteLiteral{
-				// 	HostRewriteLiteral: upstreamServiceHost,
-				// },
-			},
-		},
+		Name:   name,
+		Match:  routeMatcher,
+		Action: routeAction,
 	}
 	e.routes = append(e.routes, rt)
 }
@@ -200,9 +235,13 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 				RouteConfigName: routeConfigName,
 			},
 		},
-		HttpFilters: []*hcm.HttpFilter{{
-			Name: wellknown.Router,
-		}},
+		HttpFilters: []*hcm.HttpFilter{
+			{
+				Name: wellknown.CORS,
+			},
+			{
+				Name: wellknown.Router,
+			}},
 	}
 	pbst, err := ptypes.MarshalAny(manager)
 	if err != nil {
@@ -257,8 +296,8 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		clusters = append(clusters, cluster)
 	}
 	// We're using uuid V1 to provide time sortable snapshot version
-	snapshotVersion, _ := uuid.NewV1()
-	snap, err := cache.NewSnapshot(snapshotVersion.String(),
+	snapshot_version, _ := uuid.NewV1()
+	snap, err := cache.NewSnapshot(snapshot_version.String(),
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
