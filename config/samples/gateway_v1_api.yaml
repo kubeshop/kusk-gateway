@@ -56,8 +56,8 @@ spec:
         - X-Custom-Header2
         max_age: 86200
       service:
-        name: petstore
-        port: 8080
+        name: petstore.default.svc.cluster.local
+        port: 80
       path:
         base: /petstore/api/v3
         trim_prefix: /petstore
