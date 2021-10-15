@@ -10,12 +10,11 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/getkin/kin-openapi/openapi3"
+
 	envoyConfig "github.com/kubeshop/kusk-gateway/envoy/config"
 	envoyConfigManager "github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
-
-const DefaultFleetName string = "default"
 
 func RunLocalService(apiSpecPath string, envoyControlPlaneAddr string) {
 
@@ -94,7 +93,7 @@ func parseAndApply(apiSpecPath string, envoyMgr *envoyConfigManager.EnvoyConfigM
 	if err != nil {
 		return err
 	}
-	if err = envoyMgr.ApplyNewFleetSnapshot(DefaultFleetName, snapshot); err != nil {
+	if err = envoyMgr.ApplyNewFleetSnapshot(envoyConfigManager.DefaultFleetName, snapshot); err != nil {
 		return err
 	}
 	return nil

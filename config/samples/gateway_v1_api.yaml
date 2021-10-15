@@ -3,9 +3,7 @@ kind: API
 metadata:
   name: api-sample
 spec:
-  service:
-    name: petstore
-    namespace: default
+  # service name and port should be specified inside x-kusk annotation
   spec: |
     openapi: 3.0.2
     servers:
@@ -43,15 +41,39 @@ spec:
           url: 'http://swagger.io'
     x-kusk:
       disabled: false
+      cors:
+        origins:
+        - "*"
+        methods:
+        - POST
+        - GET
+        - OPTIONS
+        headers:
+        - Content-Type
+        credentials: true
+        expose_headers:
+        - X-Custom-Header1
+        - X-Custom-Header2
+        max_age: 86200
       service:
         name: petstore
         port: 8080
       path:
         base: /petstore/api/v3
         trim_prefix: /petstore
+      # timeouts:
+      #   request_timeout: 5
+      #   idle_timeout: 40
     paths:
       /pet:
+        x-kusk:
+          disabled: true
         post:
+          x-kusk:
+            disabled: false
+            service:
+              name: petstore1
+              port: 8080
           tags:
             - pet
           summary: Add a new pet to the store
@@ -166,12 +188,21 @@ spec:
                 - 'write:pets'
                 - 'read:pets'
       '/pet/{petId}':
+        # This paths is mocked!
         get:
           x-kusk:
             disabled: false
+            # Routing to mocking here
+            service:
+              name: openapi-mock
+              port: 8080
+            # Test CORS with: curl -v -H "Accept: application/json" -H "Origin: http://example.com" http://localhost:8080/petstore/api/v3/pet/2
+            # The result must be available access-control-allow-origin header.
+            # Any other domain in Origin header will result in the absense of all CORS headers
+            # Note that OPTIONS usage is not directly supported, i.e. if you use "curl -XOPTIONS" this won't be routed unless you add options method to OpenAPI.
             cors:
               origins:
-              - "*"
+              - "http://example.com"
               methods:
                 - POST
                 - GET
@@ -180,8 +211,8 @@ spec:
                 - Content-Type
               credentials: true
               expose_headers:
-                - X-Custom-Header
-              max_age: 86400
+                - X-Custom-Header3
+              max_age: 86300
             timeouts:
               request_timeout: 10
               idle_timeout: 40
@@ -257,7 +288,6 @@ spec:
     components:
       schemas:
         Category:
-          x-swagger-router-model: io.swagger.petstore.model.Category
           properties:
             id:
               type: integer
@@ -270,7 +300,6 @@ spec:
             name: category
           type: object
         Tag:
-          x-swagger-router-model: io.swagger.petstore.model.Tag
           properties:
             id:
               type: integer
@@ -281,7 +310,6 @@ spec:
             name: tag
           type: object
         Pet:
-          x-swagger-router-model: io.swagger.petstore.model.Pet
           required:
             - name
             - photoUrls
@@ -356,5 +384,3 @@ spec:
           type: apiKey
           name: api_key
           in: header
-
-

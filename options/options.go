@@ -41,7 +41,6 @@ func (o *Options) fillDefaults() {
 }
 
 func (o *Options) Validate() error {
-	// TODO: add more validation
 	return nil
 }
 

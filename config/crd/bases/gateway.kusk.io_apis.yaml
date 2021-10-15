@@ -36,23 +36,10 @@ spec:
           spec:
             description: APISpec defines the desired state of API
             properties:
-              service:
-                description: Service references the target Kubernetes Service that
-                  should receive traffic
-                properties:
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               spec:
                 description: Spec represents OpenAPI spec
                 type: string
             required:
-            - service
             - spec
             type: object
           status:

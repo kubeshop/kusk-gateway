@@ -18,6 +18,8 @@ services:
       - "/petshop-openapi-short-with-kusk-and-mock.yaml"
     volumes:
       - ./development/petshop-openapi-short-with-kusk-and-mock.yaml:/petshop-openapi-short-with-kusk-and-mock.yaml
+    ports:
+      - 18000:18000
     networks:
       kusk-gateway:
         ipv4_address: "172.21.0.4"

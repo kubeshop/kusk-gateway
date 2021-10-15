@@ -57,32 +57,39 @@ var _ webhook.Validator = &API{}
 func (r *API) ValidateCreate() error {
 	apilog.Info("validate create", "name", r.Name)
 
-	parser := spec.NewParser(nil)
-
-	_, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))
-	if err != nil {
-		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
-	}
-
-	return nil
+	return r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *API) ValidateUpdate(old runtime.Object) error {
 	apilog.Info("validate update", "name", r.Name)
 
-	parser := spec.NewParser(nil)
-
-	_, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))
-	if err != nil {
-		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
-	}
-
-	return nil
+	return r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *API) ValidateDelete() error {
 	apilog.Info("validate delete", "name", r.Name)
+	return nil
+}
+
+func (r *API) validate() error {
+	parser := spec.NewParser(nil)
+
+	apiSpec, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))
+	if err != nil {
+		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
+	}
+
+	opts, err := spec.GetOptions(apiSpec)
+	if err != nil {
+		return fmt.Errorf("spec: x-kusk should be a valid set of options: %w", err)
+	}
+
+	err = opts.FillDefaultsAndValidate()
+	if err != nil {
+		return fmt.Errorf("spec: x-kusk should be a valid set of options: %w", err)
+	}
+
 	return nil
 }
