@@ -1,0 +1,11 @@
+resources:
+- envoy.yaml
+- service.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- files:
+  - envoy-config.yaml
+  name: envoy-config
