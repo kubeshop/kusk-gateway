@@ -13,6 +13,7 @@ type PathOptions struct {
 	// path that would be generated is "/petstore/api/v3/pets", URL that the upstream service would receive
 	// is "/api/v3/pets".
 	TrimPrefix string `yaml:"trim_prefix,omitempty" json:"trim_prefix,omitempty"`
+	NumRetries uint32 `yaml:"num_retries,omitempty" json:"num_retries,omitempty"`
 }
 
 func (o *PathOptions) Validate() error {

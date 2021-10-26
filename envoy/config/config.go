@@ -15,13 +15,14 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	uuid "github.com/gofrs/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -91,6 +92,7 @@ func (e *envoyConfiguration) AddRoute(
 	corsPolicy *route.CorsPolicy,
 	timeout int64,
 	idleTimeout int64,
+	numRetries uint32,
 ) {
 
 	// routeAction defines route parameters whose fields will be filled out further down
@@ -173,6 +175,12 @@ func (e *envoyConfiguration) AddRoute(
 	if idleTimeout != 0 {
 		routeAction.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
 	}
+
+	if numRetries > 0 {
+		routeAction.Route.RetryPolicy.RetryOn = "5xx"
+		routeAction.Route.RetryPolicy.NumRetries = &wrappers.UInt32Value{Value: numRetries}
+	}
+
 	// finally create the route and append it to the list
 	rt := &route.Route{
 		Name:   name,
