@@ -91,7 +91,7 @@ func (e *envoyConfiguration) AddRoute(
 	corsPolicy *route.CorsPolicy,
 	timeout int64,
 	idleTimeout int64,
-	numRetries uint32,
+	retries uint32,
 ) {
 
 	// routeAction defines route parameters whose fields will be filled out further down
@@ -175,9 +175,9 @@ func (e *envoyConfiguration) AddRoute(
 		routeAction.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
 	}
 
-	if numRetries > 0 {
+	if retries > 0 {
 		routeAction.Route.RetryPolicy.RetryOn = "5xx"
-		routeAction.Route.RetryPolicy.NumRetries = &wrappers.UInt32Value{Value: numRetries}
+		routeAction.Route.RetryPolicy.NumRetries = &wrappers.UInt32Value{Value: retries}
 	}
 
 	// finally create the route and append it to the list

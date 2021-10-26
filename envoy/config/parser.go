@@ -82,7 +82,7 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				corsPolicy,
 				int64(finalOpts.Timeouts.RequestTimeout),
 				int64(finalOpts.Timeouts.IdleTimeout),
-				finalOpts.Path.NumRetries,
+				finalOpts.Path.Retries,
 			)
 		}
 	}

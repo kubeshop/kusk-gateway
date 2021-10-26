@@ -142,7 +142,7 @@ paths:
               $ref: '#/components/schemas/Pet'
   /pet/findByStatus:
     x-kusk:
-      num_retries: 3
+      retries: 3
     get:
       tags:
         - pet
