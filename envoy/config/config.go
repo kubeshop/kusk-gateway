@@ -4,6 +4,7 @@
 package config
 
 import (
+	"fmt"
 	"regexp"
 	"time"
 
@@ -91,22 +92,47 @@ func (e *envoyConfiguration) AddRoute(
 	timeout int64,
 	idleTimeout int64,
 ) {
-	// match by this header
-	headerMatcher := []*route.HeaderMatcher{
-		{
-			Name: ":method",
-			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
-				StringMatch: &envoytypematcher.StringMatcher{
-					MatchPattern: &envoytypematcher.StringMatcher_Exact{Exact: method},
-					IgnoreCase:   false,
-				},
+
+	// routeAction defines route parameters whose fields will be filled out further down
+	routeAction := &route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: clusterName,
 			},
 		},
 	}
-
+	// headerMatcher allows as to match route by method (:method header)
+	var headerMatcher []*route.HeaderMatcher
+	// If CORS specified, we add OPTIONS method to the route and enable CORS in the route
+	if corsPolicy != nil {
+		routeAction.Route.Cors = corsPolicy
+		// header matcher with OPTIONS or main method
+		headerMatcher = []*route.HeaderMatcher{
+			{
+				Name: ":method",
+				HeaderMatchSpecifier: &route.HeaderMatcher_SafeRegexMatch{
+					SafeRegexMatch: &envoytypematcher.RegexMatcher{
+						EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{},
+						Regex:      fmt.Sprintf("^OPTIONS|%s$", method),
+					},
+				},
+			},
+		}
+	} else {
+		// otherwise simple exact match by method
+		headerMatcher = []*route.HeaderMatcher{
+			{
+				Name: ":method",
+				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{StringMatch: &envoytypematcher.StringMatcher{
+					MatchPattern: &envoytypematcher.StringMatcher_Exact{
+						Exact: method,
+					},
+				}},
+			},
+		}
+	}
 	var routeMatcher *route.RouteMatch
-
-	// if regex - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
+	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
 	// if simple path - RouteMatch_Path with path
 	if rePathParams.MatchString(path) {
 		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
@@ -130,9 +156,8 @@ func (e *envoyConfiguration) AddRoute(
 		}
 	}
 	// Trim prefix block rewrites path by regex in the route to cluster
-	var pathRewriteAction *envoytypematcher.RegexMatchAndSubstitute
 	if trimPrefixRegex != "" {
-		pathRewriteAction = &envoytypematcher.RegexMatchAndSubstitute{
+		routeAction.Route.RegexRewrite = &envoytypematcher.RegexMatchAndSubstitute{
 			Pattern: &envoytypematcher.RegexMatcher{
 				EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
@@ -142,26 +167,11 @@ func (e *envoyConfiguration) AddRoute(
 			Substitution: "/"}
 	}
 
-	var routeTimeout *durationpb.Duration
-	var routeIdleTimeout *durationpb.Duration
 	if timeout != 0 {
-		routeTimeout = &durationpb.Duration{Seconds: timeout}
+		routeAction.Route.Timeout = &durationpb.Duration{Seconds: timeout}
 	}
 	if idleTimeout != 0 {
-		routeIdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
-	}
-	routeAction := &route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: clusterName,
-			},
-			RegexRewrite: pathRewriteAction,
-			Timeout:      routeTimeout,
-			IdleTimeout:  routeIdleTimeout,
-		},
-	}
-	if corsPolicy != nil {
-		routeAction.Route.Cors = corsPolicy
+		routeAction.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
 	}
 	// finally create the route and append it to the list
 	rt := &route.Route{
