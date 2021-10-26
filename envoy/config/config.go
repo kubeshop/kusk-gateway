@@ -93,7 +93,7 @@ func (e *envoyConfiguration) AddRoute(
 	idleTimeout int64,
 ) {
 
-	// routeAction defines route parameters, it will be enriched with those going further
+	// routeAction defines route parameters whose fields will be filled out further down
 	routeAction := &route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_Cluster{
