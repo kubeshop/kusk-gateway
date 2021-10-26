@@ -11,8 +11,9 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
-	"github.com/kubeshop/kusk-gateway/options"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/kubeshop/kusk-gateway/options"
 )
 
 const httpPathSeparator string = "/"
@@ -81,6 +82,7 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				corsPolicy,
 				int64(finalOpts.Timeouts.RequestTimeout),
 				int64(finalOpts.Timeouts.IdleTimeout),
+				finalOpts.Path.Retries,
 			)
 		}
 	}
