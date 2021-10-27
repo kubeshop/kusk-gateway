@@ -206,7 +206,7 @@ paths:
   '/pet/old/{petId}':
     x-kusk:
       redirect:
-        # /pet/1 -> /pet/old/1
+        # /pet/old/1 -> /pet/1
         # Test it with curl -v --location -XGET 'http://localhost:8080/petstore/api/v3/pet/old/1' -H 'accept: application/json'
         # must return redirect to http://localhost:8080/petstore/api/v3/pet/1 and get the record
         rewrite_regex:
