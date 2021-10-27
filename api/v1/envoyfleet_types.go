@@ -28,8 +28,11 @@ type EnvoyFleetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of EnvoyFleet. Edit envoyfleet_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Replicas field specifies the number of Envoy Pods being deployed. Optional, default value is 1.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default:=1
+	// +optional
+	Replicas *int32 `json:"replicas"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet

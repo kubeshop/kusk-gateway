@@ -36,10 +36,13 @@ spec:
           spec:
             description: EnvoyFleetSpec defines the desired state of EnvoyFleet
             properties:
-              foo:
-                description: Foo is an example field of EnvoyFleet. Edit envoyfleet_types.go
-                  to remove/update
-                type: string
+              replicas:
+                default: 1
+                description: Replicas field specifies the number of Envoy Pods being
+                  deployed. Optional, default value is 1.
+                format: int32
+                minimum: 1
+                type: integer
             type: object
           status:
             description: EnvoyFleetStatus defines the observed state of EnvoyFleet
