@@ -59,7 +59,7 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				return nil, err
 			}
 			// Once we have final merged Options, skip if disabled either on top, path or method level.
-			if *finalOpts.Disabled {
+			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
 			clusterName := generateClusterName(finalOpts.Service)
