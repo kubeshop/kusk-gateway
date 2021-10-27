@@ -81,7 +81,7 @@ func New() *envoyConfiguration {
 	}
 }
 
-// AddRoute appends new route to the list of routes by path and method
+// AddRoute appends new route with proxying to the backend to the list of routes by path and method
 func (e *envoyConfiguration) AddRoute(
 	name string,
 	path string,
@@ -178,6 +178,59 @@ func (e *envoyConfiguration) AddRoute(
 		Name:   name,
 		Match:  routeMatcher,
 		Action: routeAction,
+	}
+	e.routes = append(e.routes, rt)
+}
+
+// AddRouteRedirect appends new route with the redirect to the list of routes by path and method
+func (e *envoyConfiguration) AddRouteRedirect(
+	name string,
+	path string,
+	method string,
+	redirectAction *route.RedirectAction,
+) {
+
+	headerMatcher := []*route.HeaderMatcher{
+		{
+			Name: ":method",
+			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{StringMatch: &envoytypematcher.StringMatcher{
+				MatchPattern: &envoytypematcher.StringMatcher_Exact{
+					Exact: method,
+				},
+			}},
+		},
+	}
+	var routeMatcher *route.RouteMatch
+	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
+	// if simple path - RouteMatch_Path with path
+	if rePathParams.MatchString(path) {
+		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
+		routeMatcher = &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_SafeRegex{
+				SafeRegex: &envoytypematcher.RegexMatcher{
+					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+						GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
+					},
+					Regex: replacementRegex,
+				},
+			},
+			Headers: headerMatcher,
+		}
+	} else {
+		routeMatcher = &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_Path{
+				Path: path,
+			},
+			Headers: headerMatcher,
+		}
+	}
+	// finally create the route and append it to the list
+	rt := &route.Route{
+		Name:  name,
+		Match: routeMatcher,
+		Action: &route.Route_Redirect{
+			Redirect: redirectAction,
+		},
 	}
 	e.routes = append(e.routes, rt)
 }
