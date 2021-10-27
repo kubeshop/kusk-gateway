@@ -176,8 +176,10 @@ func (e *envoyConfiguration) AddRoute(
 	}
 
 	if retries > 0 {
-		routeAction.Route.RetryPolicy.RetryOn = "5xx"
-		routeAction.Route.RetryPolicy.NumRetries = &wrappers.UInt32Value{Value: retries}
+		routeAction.Route.RetryPolicy = &route.RetryPolicy{
+			RetryOn:    "5xx",
+			NumRetries: &wrappers.UInt32Value{Value: retries},
+		}
 	}
 
 	// finally create the route and append it to the list
