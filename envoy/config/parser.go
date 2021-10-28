@@ -2,16 +2,11 @@ package config
 
 import (
 	"fmt"
-	"reflect"
-	"strconv"
 	"strings"
 
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/kubeshop/kusk-gateway/options"
 )
@@ -62,12 +57,26 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
+
+			routePath := generateRoutePath(finalOpts.Path.Base, path)
+			routeName := generateRouteName(routePath, method)
+
+			// This block creates redirect route
+			redirectAction, err := generateRedirectAction(&finalOpts.Redirect)
+			if err != nil {
+				return nil, err
+			}
+			if redirectAction != nil {
+				e.AddRouteRedirect(routeName, routePath, method, redirectAction)
+				// skip the rest of setup
+				continue
+			}
+
+			// This block create usual route with backend service
 			clusterName := generateClusterName(finalOpts.Service)
 			if !e.ClusterExist(clusterName) {
 				e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
 			}
-			routePath := generateRoutePath(finalOpts.Path.Base, path)
-			routeName := generateRouteName(routePath, method)
 			trimPrefixRegex := generateTrimPrefixRegex(finalOpts.Path.TrimPrefix)
 			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
 			if err != nil {
@@ -92,39 +101,6 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 func generateClusterName(service options.ServiceOptions) string {
 	return fmt.Sprintf("%s-%d", service.Name, service.Port)
-}
-
-func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error) {
-	if reflect.DeepEqual(&options.CORSOptions{}, corsOpts) {
-		return nil, nil
-	}
-	allowOriginsMatcher := []*envoytypematcher.StringMatcher{}
-	for _, origin := range corsOpts.Origins {
-		entry := &envoytypematcher.StringMatcher{
-			// TODO: We support only exact strings, no regexp - fix this if applicable
-			MatchPattern: &envoytypematcher.StringMatcher_Exact{
-				Exact: origin,
-			},
-			IgnoreCase: false,
-		}
-		allowOriginsMatcher = append(allowOriginsMatcher, entry)
-	}
-	corsPolicy := &route.CorsPolicy{
-		AllowOriginStringMatch: allowOriginsMatcher,
-		AllowMethods:           strings.Join(corsOpts.Methods, ","),
-		AllowHeaders:           strings.Join(corsOpts.Headers, ","),
-		ExposeHeaders:          strings.Join(corsOpts.ExposeHeaders, ","),
-		MaxAge:                 strconv.Itoa(corsOpts.MaxAge),
-	}
-	if corsOpts.Credentials != nil {
-		corsPolicy.AllowCredentials = &wrapperspb.BoolValue{
-			Value: *corsOpts.Credentials,
-		}
-	}
-	if err := corsPolicy.Validate(); err != nil {
-		return nil, err
-	}
-	return corsPolicy, nil
 }
 
 // Can be moved to operationID, but generally we just need unique string

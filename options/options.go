@@ -11,6 +11,7 @@ type SubOptions struct {
 	Service ServiceOptions `yaml:"service,omitempty" json:"service,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
 	Path       PathOptions      `yaml:"path,omitempty" json:"path,omitempty"`
+	Redirect   RedirectOptions  `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	CORS       CORSOptions      `yaml:"cors,omitempty" json:"cors,omitempty"`
 	RateLimits RateLimitOptions `yaml:"rate_limits,omitempty" json:"rate_limits,omitempty"`
 	Timeouts   TimeoutOptions   `yaml:"timeouts,omitempty" json:"timeouts,omitempty"`
@@ -51,6 +52,7 @@ func (o *Options) FillDefaultsAndValidate() error {
 		o,
 		&o.Service,
 		&o.Path,
+		&o.Redirect,
 		&o.CORS,
 		&o.RateLimits,
 		&o.Timeouts,

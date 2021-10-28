@@ -177,6 +177,55 @@ paths:
         - petstore_auth:
             - 'write:pets'
             - 'read:pets'
+  # Start of redirection test - simple path redirection and stripped query
+  /pet/findByStatusOld:
+    # 308 must be returned with "curl -v -XGET 'http://localhost:8080/petstore/api/v3/pet/findByStatusOld?status=available' -H 'accept: application/json'"
+    # redirects to (not existing obviously): https://example.org:8081/pet/findByStatus
+    # change params to get other codes, etc.
+    x-kusk:
+      redirect:
+        host_redirect: example.org
+        # scheme_redirect: http|https
+        scheme_redirect: https
+        # To the port
+        port_redirect: 8081
+        # Set it to full redirect
+        path_redirect: /pet/findByStatus
+        # Permanent redirect
+        response_code: 308
+        # Strips query after URL
+        strip_query: true
+    get:
+      description: Old findByStatus, must redirect to new
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Invalid status value
+    # Test of old pets redirection with rewrite regex
+  '/pet/old/{petId}':
+    x-kusk:
+      redirect:
+        # /pet/old/1 -> /pet/1
+        # Test it with curl -v --location -XGET 'http://localhost:8080/petstore/api/v3/pet/old/1' -H 'accept: application/json'
+        # must return redirect to http://localhost:8080/petstore/api/v3/pet/1 and get the record
+        rewrite_regex:
+          pattern: '/(.*)/pet/old/(.*)'
+          substitution: '/\1/pet/\2'
+    get:
+      description: Test of old pets redirection with IDs
+      parameters:
+        - name: petId
+          in: path
+          description: ID of pet to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+   # End of redirection test
   '/pet/{petId}':
     get:
       x-kusk:
