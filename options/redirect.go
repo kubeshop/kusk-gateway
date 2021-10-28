@@ -39,7 +39,6 @@ type RewriteRegex struct {
 
 func (o *RedirectOptions) Validate() error {
 	// TODO: add more validations
-	// FIXME: currently this isn't called for suboptions!!!
 	if o.PathRedirect != "" && o.RewriteRegex.Pattern != "" {
 		return fmt.Errorf("path redirect and rewrite regex are defined but are mutually exclusive")
 	}
