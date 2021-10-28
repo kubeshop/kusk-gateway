@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 		}
 	}
 	if err := corsPolicy.Validate(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("incorrect CORS configuration: %w", err)
 	}
 	return corsPolicy, nil
 }

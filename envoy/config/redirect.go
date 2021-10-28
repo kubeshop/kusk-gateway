@@ -65,7 +65,7 @@ func generateRedirectAction(redirectOpts *options.RedirectOptions) (*route.Redir
 		redirectAction.StripQuery = *redirectOpts.StripQuery
 	}
 	if err := redirectAction.Validate(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("incorrect Redirect Action: %w", err)
 	}
 	return redirectAction, nil
 }
