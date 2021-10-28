@@ -26,11 +26,6 @@ type RedirectOptions struct {
 	StripQuery   *bool  `yaml:"strip_query,omitempty" json:"strip_query,omitempty"`
 }
 
-type RewriteRegex struct {
-	Pattern      string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
-	Substitution string `yaml:"substitution,omitempty" json:"substitution,omitempty"`
-}
-
 func (o *RedirectOptions) Validate() error {
 	// TODO: add more validations
 	if o.PathRedirect != "" && o.RewriteRegex.Pattern != "" {

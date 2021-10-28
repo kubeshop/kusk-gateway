@@ -17,6 +17,12 @@ type SubOptions struct {
 	Timeouts   TimeoutOptions   `yaml:"timeouts,omitempty" json:"timeouts,omitempty"`
 }
 
+// RewriteRegex is used during the redirects and paths mangling
+type RewriteRegex struct {
+	Pattern      string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
+	Substitution string `yaml:"substitution,omitempty" json:"substitution,omitempty"`
+}
+
 type Options struct {
 	// Top root of the configuration (top x-kusk settings) provides configuration for all paths/methods, overridable
 	SubOptions

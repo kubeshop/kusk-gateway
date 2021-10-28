@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 
 	"github.com/kubeshop/kusk-gateway/options"
 )
@@ -33,15 +32,7 @@ func generateRedirectAction(redirectOpts *options.RedirectOptions) (*route.Redir
 	// Path rewrite with regex
 	if redirectOpts.RewriteRegex.Pattern != "" {
 		redirectAction.PathRewriteSpecifier = &route.RedirectAction_RegexRewrite{
-			RegexRewrite: &envoytypematcher.RegexMatchAndSubstitute{
-				Pattern: &envoytypematcher.RegexMatcher{
-					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
-						GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
-					},
-					Regex: redirectOpts.RewriteRegex.Pattern,
-				},
-				Substitution: redirectOpts.RewriteRegex.Substitution,
-			},
+			RegexRewrite: generateRewriteRegex(redirectOpts.RewriteRegex.Pattern, redirectOpts.RewriteRegex.Substitution),
 		}
 	}
 	// Or path rewrite with path redirect

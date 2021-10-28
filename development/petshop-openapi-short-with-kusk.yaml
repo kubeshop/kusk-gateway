@@ -53,7 +53,9 @@ x-kusk:
     port: 8080
   path:
     base: /petstore/api/v3
-    trim_prefix: /petstore
+    rewrite:
+      pattern: "^/petstore"
+      substitution: ""
 paths:
   /pet:
     x-kusk:
@@ -138,6 +140,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Pet'
   /pet/findByStatus:
+    x-kusk:
+      retries: 3
     get:
       tags:
         - pet

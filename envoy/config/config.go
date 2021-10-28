@@ -81,32 +81,35 @@ func New() *envoyConfiguration {
 	}
 }
 
-// AddRoute appends new route with proxying to the backend to the list of routes by path and method
-func (e *envoyConfiguration) AddRoute(
-	name string,
-	path string,
-	method string,
-	clusterName string,
-	trimPrefixRegex string,
-	corsPolicy *route.CorsPolicy,
-	timeout int64,
-	idleTimeout int64,
-	retries uint32,
-) {
+// RouteConfiguration is a convenient configuration object used for route creation
+type RouteConfiguration struct {
+	name             string
+	path             string
+	method           string
+	clusterName      string
+	corsPolicy       *route.CorsPolicy
+	rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
+	timeout          int64
+	idleTimeout      int64
+	retries          uint32
+	redirectAction   *route.RedirectAction
+}
 
+// AddRoute appends new route with proxying to the backend to the list of routes by path and method
+func (e *envoyConfiguration) AddRoute(config *RouteConfiguration) {
 	// routeAction defines route parameters whose fields will be filled out further down
 	routeAction := &route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: clusterName,
+				Cluster: config.clusterName,
 			},
 		},
 	}
 	// headerMatcher allows as to match route by method (:method header)
 	var headerMatcher []*route.HeaderMatcher
 	// If CORS specified, we add OPTIONS method to the route and enable CORS in the route
-	if corsPolicy != nil {
-		routeAction.Route.Cors = corsPolicy
+	if config.corsPolicy != nil {
+		routeAction.Route.Cors = config.corsPolicy
 		// header matcher with OPTIONS or main method
 		headerMatcher = []*route.HeaderMatcher{
 			{
@@ -114,7 +117,7 @@ func (e *envoyConfiguration) AddRoute(
 				HeaderMatchSpecifier: &route.HeaderMatcher_SafeRegexMatch{
 					SafeRegexMatch: &envoytypematcher.RegexMatcher{
 						EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{},
-						Regex:      fmt.Sprintf("^OPTIONS|%s$", method),
+						Regex:      fmt.Sprintf("^OPTIONS|%s$", config.method),
 					},
 				},
 			},
@@ -126,7 +129,7 @@ func (e *envoyConfiguration) AddRoute(
 				Name: ":method",
 				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{StringMatch: &envoytypematcher.StringMatcher{
 					MatchPattern: &envoytypematcher.StringMatcher_Exact{
-						Exact: method,
+						Exact: config.method,
 					},
 				}},
 			},
@@ -135,8 +138,8 @@ func (e *envoyConfiguration) AddRoute(
 	var routeMatcher *route.RouteMatch
 	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
 	// if simple path - RouteMatch_Path with path
-	if rePathParams.MatchString(path) {
-		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
+	if rePathParams.MatchString(config.path) {
+		replacementRegex := string(rePathParams.ReplaceAll([]byte(config.path), []byte("/([A-z0-9]+)")))
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
@@ -151,40 +154,33 @@ func (e *envoyConfiguration) AddRoute(
 	} else {
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Path{
-				Path: path,
+				Path: config.path,
 			},
 			Headers: headerMatcher,
 		}
 	}
-	// Trim prefix block rewrites path by regex in the route to cluster
-	if trimPrefixRegex != "" {
-		routeAction.Route.RegexRewrite = &envoytypematcher.RegexMatchAndSubstitute{
-			Pattern: &envoytypematcher.RegexMatcher{
-				EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
-				},
-				Regex: trimPrefixRegex,
-			},
-			Substitution: "/"}
+
+	if config.rewritePathRegex != nil {
+		routeAction.Route.RegexRewrite = config.rewritePathRegex
 	}
 
-	if timeout != 0 {
-		routeAction.Route.Timeout = &durationpb.Duration{Seconds: timeout}
+	if config.timeout != 0 {
+		routeAction.Route.Timeout = &durationpb.Duration{Seconds: config.timeout}
 	}
-	if idleTimeout != 0 {
-		routeAction.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
+	if config.idleTimeout != 0 {
+		routeAction.Route.IdleTimeout = &durationpb.Duration{Seconds: config.idleTimeout}
 	}
 
-	if retries > 0 {
+	if config.retries > 0 {
 		routeAction.Route.RetryPolicy = &route.RetryPolicy{
 			RetryOn:    "5xx",
-			NumRetries: &wrappers.UInt32Value{Value: retries},
+			NumRetries: &wrappers.UInt32Value{Value: config.retries},
 		}
 	}
 
 	// finally create the route and append it to the list
 	rt := &route.Route{
-		Name:   name,
+		Name:   config.name,
 		Match:  routeMatcher,
 		Action: routeAction,
 	}
@@ -192,19 +188,14 @@ func (e *envoyConfiguration) AddRoute(
 }
 
 // AddRouteRedirect appends new route with the redirect to the list of routes by path and method
-func (e *envoyConfiguration) AddRouteRedirect(
-	name string,
-	path string,
-	method string,
-	redirectAction *route.RedirectAction,
-) {
+func (e *envoyConfiguration) AddRouteRedirect(config *RouteConfiguration) {
 
 	headerMatcher := []*route.HeaderMatcher{
 		{
 			Name: ":method",
 			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{StringMatch: &envoytypematcher.StringMatcher{
 				MatchPattern: &envoytypematcher.StringMatcher_Exact{
-					Exact: method,
+					Exact: config.method,
 				},
 			}},
 		},
@@ -212,8 +203,8 @@ func (e *envoyConfiguration) AddRouteRedirect(
 	var routeMatcher *route.RouteMatch
 	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
 	// if simple path - RouteMatch_Path with path
-	if rePathParams.MatchString(path) {
-		replacementRegex := string(rePathParams.ReplaceAll([]byte(path), []byte("/([A-z0-9]+)")))
+	if rePathParams.MatchString(config.path) {
+		replacementRegex := string(rePathParams.ReplaceAll([]byte(config.path), []byte("/([A-z0-9]+)")))
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
@@ -228,17 +219,17 @@ func (e *envoyConfiguration) AddRouteRedirect(
 	} else {
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Path{
-				Path: path,
+				Path: config.path,
 			},
 			Headers: headerMatcher,
 		}
 	}
 	// finally create the route and append it to the list
 	rt := &route.Route{
-		Name:  name,
+		Name:  config.name,
 		Match: routeMatcher,
 		Action: &route.Route_Redirect{
-			Redirect: redirectAction,
+			Redirect: config.redirectAction,
 		},
 	}
 	e.routes = append(e.routes, rt)
