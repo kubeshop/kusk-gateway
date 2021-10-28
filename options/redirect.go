@@ -3,16 +3,10 @@ package options
 import (
 	"fmt"
 
+	"net/http"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-)
-
-const (
-	HTTP_REDIRECT_MOVED_PERMANENTLY  uint32 = 301
-	HTTP_REDIRECT_FOUND              uint32 = 302
-	HTTP_REDIRECT_SEE_OTHER          uint32 = 303
-	HTTP_REDIRECT_TEMPORARY_REDIRECT uint32 = 307
-	HTTP_REDIRECT_PERMANENT_REDIRECT uint32 = 308
 )
 
 // RedirectOptions provide http redirects
@@ -45,11 +39,11 @@ func (o *RedirectOptions) Validate() error {
 	return v.ValidateStruct(o,
 		v.Field(&o.SchemeRedirect, v.In("http", "https")),
 		v.Field(&o.ResponseCode, v.In(
-			HTTP_REDIRECT_FOUND,
-			HTTP_REDIRECT_MOVED_PERMANENTLY,
-			HTTP_REDIRECT_PERMANENT_REDIRECT,
-			HTTP_REDIRECT_SEE_OTHER,
-			HTTP_REDIRECT_TEMPORARY_REDIRECT,
+			http.StatusFound,
+			http.StatusMovedPermanently,
+			http.StatusPermanentRedirect,
+			http.StatusSeeOther,
+			http.StatusTemporaryRedirect,
 		)),
 		v.Field(&o.HostRedirect, is.Host),
 		v.Field(&o.PortRedirect, is.Port),
