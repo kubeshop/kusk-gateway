@@ -101,29 +101,6 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 
 				e.AddRoute(routeConfig)
 			}
-			// This block create usual route with backend service
-			clusterName := generateClusterName(finalOpts.Service)
-			if !e.ClusterExist(clusterName) {
-				e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
-			}
-
-			trimPrefixRegex := generateTrimPrefixRegex(finalOpts.Path.TrimPrefix)
-			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
-			if err != nil {
-				return nil, err
-			}
-
-			e.AddRoute(
-				routeName,
-				routePath,
-				method,
-				clusterName,
-				trimPrefixRegex,
-				corsPolicy,
-				int64(finalOpts.Timeouts.RequestTimeout),
-				int64(finalOpts.Timeouts.IdleTimeout),
-				finalOpts.Path.Retries,
-			)
 		}
 	}
 
