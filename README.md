@@ -1,12 +1,39 @@
 # kusk-gateway
 Kusk-gateway is the API Gateway, based on Envoy and using OpenAPI specification as the source of configuration
 
-# Steps to setup local development cluster and deploy kusk-gateway operator
+## Steps to setup local development cluster and deploy kusk-gateway operator
+#### Create a k3d registry to host the control-plane image
 - `k3d registry create reg -p 5000`
-- `k3d cluster create --registry-use reg cl1`
-- add `127.0.0.1 k3d-reg` to /etc/hosts (note the k3d- prefix)
-- `kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml`
-- `make docker-build docker-push deploy`
+
+#### Add registry entry to /etc/hosts
+```
+# /etc/hosts (note the k3d- prefix)
+127.0.0.1 k3d-reg
+
+127.0.0.1	localhost
+255.255.255.255	broadcasthost
+::1             localhost
+...
+```
+
+#### Create local cluster
+The local cluster setup depends on having a k3d registry named reg available
+- `make create-env`
+
+#### Delete local cluster
+- `make delete-env`
+
+#### Deploy an example API
+`kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin`
+This will create a deployment and load balancer service for httpbin.
+The openapi / swagger document describing the API will be applied in the form of a kusk API CRD.
+This will cause the reconcile loop in the kusk-gateway control plane to kick in and update the envoy config to allow you 
+to curl the service.
+
+Envoy is listening on port 8080
+
+The httpbin service in this example is available at the basepath `/` so to call the get endpoint on the httpbin service 
+we simply run `curl localhost:8080/get`
 
 # Local development with docker-compose
 
