@@ -2,9 +2,6 @@
 
 set -e
 
-echo "creating registry k3d-reg:5000. add 127.0.0.1 k3d-reg to /etc/hosts (note the k3d- prefix)"
-k3d registry create reg -p 5000
-
 echo "creating cluster..."
 k3d cluster create local-k8s --servers 1 --agents 1 --registry-use reg --k3s-arg "--disable=traefik@server:0" -p "8080:8080@loadbalancer" --wait
 
@@ -41,10 +38,7 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5
 echo "installing CRDs"
 make install
 
-echo "installing "
+echo "building control-plane docker image and installing into cluster"
 make docker-build docker-push deploy
 
-echo "installing httpbin"
-kubectl apply -f examples/httpbin/manifest.yaml
-kubectl apply -f examples/httpbin/httpbin_v1_api.yaml
-
+kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system
