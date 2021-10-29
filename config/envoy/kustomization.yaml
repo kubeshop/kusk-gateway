@@ -1,6 +1,5 @@
 resources:
 - envoy.yaml
-- service.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

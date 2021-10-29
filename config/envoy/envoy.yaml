@@ -23,3 +23,17 @@ spec:
         - /etc/envoy/envoy.yaml
         image: envoyproxy/envoy-dev:latest
         name: envoy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: envoy
+  name: envoy
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: envoy
+  type: LoadBalancer

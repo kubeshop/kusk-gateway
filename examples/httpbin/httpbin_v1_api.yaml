@@ -16,8 +16,8 @@ spec:
     - https
     x-kusk:
       service:
-        name: $HTTP_BIN_POD_IP
-        port: 80
+        name: httpbin.default.svc.cluster.local
+        port: 8080
       path:
         base: /
     paths:

@@ -37,6 +37,12 @@ help: ## Display this help.
 
 ##@ Development
 
+create-env: ## Spin up a local development cluster with k3d
+	./development/cluster/create-env.sh
+
+delete-env: ## Destroy the local development k3d cluster
+	./development/cluster/delete-env.sh
+
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
