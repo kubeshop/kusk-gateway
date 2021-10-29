@@ -3,7 +3,7 @@
 set -e
 
 echo "creating cluster..."
-k3d cluster create local-k8s --servers 1 --agents 1 --registry-use reg --k3s-arg "--disable=traefik@server:0" -p "8080:8080@loadbalancer" --wait
+k3d cluster create local-k8s --registry-use reg --k3s-arg "--no-deploy=traefik@server:*" --wait
 
 # determine load balancer ingress range
 cidr_block=$(docker network inspect k3d-local-k8s | jq '.[0].IPAM.Config[0].Subnet' | tr -d '"')
@@ -34,6 +34,9 @@ EOF
 
 echo "installing cert manager"
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+
+echo "waiting for cert manager to become ready"
+kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-webhook -n cert-manager
 
 echo "installing CRDs"
 make install
