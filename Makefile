@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= k3d-reg:5000/kusk-gateway:latest
+IMG ?= kusk-gateway:dev
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 

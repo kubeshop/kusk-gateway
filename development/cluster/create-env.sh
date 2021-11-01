@@ -2,19 +2,25 @@
 
 set -e
 
-echo "creating cluster..."
-k3d cluster create local-k8s --servers 1 --agents 1 --registry-use reg --k3s-arg "--disable=traefik@server:0" -p "8080:8080@loadbalancer" --wait
+if ! command -v jq &> /dev/null
+then
+    echo "jq could not be found"
+    exit
+fi
+
+echo "========> creating cluster..."
+minikube start --profile kgw
 
 # determine load balancer ingress range
-cidr_block=$(docker network inspect k3d-local-k8s | jq '.[0].IPAM.Config[0].Subnet' | tr -d '"')
+cidr_block=$(docker network inspect kgw | jq '.[0].IPAM.Config[0].Subnet' | tr -d '"')
 cidr_base_addr=${cidr_block%???}
-ingress_first_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,255,0}' OFS='.')
-ingress_last_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,255,255}' OFS='.')
+ingress_first_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,2}' OFS='.')
+ingress_last_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,255}' OFS='.')
 ingress_range=$ingress_first_addr-$ingress_last_addr
 
 # deploy metallb
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
 
 # configure metallb ingress address range
 cat <<EOF | kubectl apply -f -
@@ -32,13 +38,26 @@ data:
       - $ingress_range
 EOF
 
-echo "installing cert manager"
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+echo "========> installing cert manager"
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
 
-echo "installing CRDs"
+echo "========> waiting for cert manager to become ready"
+kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-webhook -n cert-manager
+
+echo "========> installing CRDs"
 make install
 
-echo "building control-plane docker image and installing into cluster"
-make docker-build docker-push deploy
+
+echo "========> building control-plane docker image and installing into cluster"
+
+SHELL=/bin/bash
+eval $(minikube docker-env --profile "kgw")
+make docker-build deploy
 
 kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system
+
+external_ip=""; while [ -z $external_ip ]; do echo "Waiting for end point..."; external_ip=$(kubectl -n kusk-system get svc kusk-envoy --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}"); [ -z "$external_ip" ] && sleep 10; done; echo "End point ready-" && echo http://$external_ip:8080; export endpoint=$external_ip
+
+echo "Try running:"
+echo "kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin"
+echo "curl -v http://$external_ip:8080/get"
