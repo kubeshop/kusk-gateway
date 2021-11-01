@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
@@ -68,41 +69,38 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 			routePath := generateRoutePath(finalOpts.Path.Base, path)
 			routeName := generateRouteName(routePath, method)
 
+			routeConfig := &RouteConfiguration{
+				name:   routeName,
+				method: method,
+				path:   routePath,
+			}
 			// This block creates redirect route
 			redirectAction, err := generateRedirectAction(&finalOpts.Redirect)
 			if err != nil {
 				return nil, err
 			}
-
+			// We either create the redirect or the route with proxy to backend
 			if redirectAction != nil {
-				e.AddRouteRedirect(routeName, routePath, method, redirectAction)
-				// skip the rest of setup
-				continue
-			}
+				routeConfig.redirectAction = redirectAction
+				e.AddRouteRedirect(routeConfig)
+			} else {
+				// This block create usual route with backend service
+				routeConfig.clusterName = generateClusterName(finalOpts.Service)
+				if !e.ClusterExist(routeConfig.clusterName) {
+					e.AddCluster(routeConfig.clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
+				}
 
-			// This block create usual route with backend service
-			clusterName := generateClusterName(finalOpts.Service)
-			if !e.ClusterExist(clusterName) {
-				e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
-			}
+				routeConfig.rewritePathRegex = generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+				routeConfig.idleTimeout = int64(finalOpts.Timeouts.IdleTimeout)
+				routeConfig.timeout = int64(finalOpts.Timeouts.RequestTimeout)
+				routeConfig.retries = finalOpts.Path.Retries
+				routeConfig.corsPolicy, err = generateCORSPolicy(&finalOpts.CORS)
+				if err != nil {
+					return nil, err
+				}
 
-			trimPrefixRegex := generateTrimPrefixRegex(finalOpts.Path.TrimPrefix)
-			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
-			if err != nil {
-				return nil, err
+				e.AddRoute(routeConfig)
 			}
-
-			e.AddRoute(
-				routeName,
-				routePath,
-				method,
-				clusterName,
-				trimPrefixRegex,
-				corsPolicy,
-				int64(finalOpts.Timeouts.RequestTimeout),
-				int64(finalOpts.Timeouts.IdleTimeout),
-				finalOpts.Path.Retries,
-			)
 		}
 	}
 
@@ -125,11 +123,17 @@ func generateRoutePath(base string, path string) string {
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
 }
 
-func generateTrimPrefixRegex(trimPath string) string {
-	if trimPath == "" {
-		return ""
+func generateRewriteRegex(pattern string, substitution string) *envoytypematcher.RegexMatchAndSubstitute {
+	if pattern == "" {
+		return nil
 	}
-	// for e.g. '/path/' or '/path' or 'path' or 'path/' returns '^/path/'
-	sanitisedTrimPath := strings.TrimPrefix(strings.TrimSuffix(trimPath, httpPathSeparator), httpPathSeparator)
-	return fmt.Sprintf("^%s%s%s", httpPathSeparator, sanitisedTrimPath, httpPathSeparator)
+	return &envoytypematcher.RegexMatchAndSubstitute{
+		Pattern: &envoytypematcher.RegexMatcher{
+			EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+				GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
+			},
+			Regex: pattern,
+		},
+		Substitution: substitution,
+	}
 }

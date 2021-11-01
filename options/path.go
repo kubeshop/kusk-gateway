@@ -1,19 +1,21 @@
 package options
 
 import (
-	"github.com/go-ozzo/ozzo-validation/v4"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 type PathOptions struct {
 	// Base is the preceding prefix for the route (i.e. /your-prefix/here/rest/of/the/route).
 	Base string `yaml:"base,omitempty" json:"base,omitempty"`
 
-	// TrimPrefix is the prefix that would be omitted from the URL when request is being forwarded
-	// to the upstream service, i.e. given that Base is set to "/petstore/api/v3", TrimPrefix is set to "/petstore",
+	// Rewrite is the pattern (regex) and a substitution string that will change URL when request is being forwarded
+	// to the upstream service.
+	// e.g. given that Base is set to "/petstore/api/v3", and with
+	// Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution is set to ""
 	// path that would be generated is "/petstore/api/v3/pets", URL that the upstream service would receive
 	// is "/api/v3/pets".
-	TrimPrefix string `yaml:"trim_prefix,omitempty" json:"trim_prefix,omitempty"`
-	Retries    uint32 `yaml:"retries,omitempty" json:"retries,omitempty"`
+	Rewrite RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
+	Retries uint32       `yaml:"retries,omitempty" json:"retries,omitempty"`
 }
 
 func (o *PathOptions) Validate() error {
