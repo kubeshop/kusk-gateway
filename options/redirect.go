@@ -26,21 +26,30 @@ type RedirectOptions struct {
 	StripQuery   *bool  `yaml:"strip_query,omitempty" json:"strip_query,omitempty"`
 }
 
-func (o *RedirectOptions) Validate() error {
-	// TODO: add more validations
-	if o.PathRedirect != "" && o.RewriteRegex.Pattern != "" {
-		return fmt.Errorf("path redirect and rewrite regex are defined but are mutually exclusive")
-	}
-	return v.ValidateStruct(o,
+func (o RedirectOptions) Validate() error {
+	return v.ValidateStruct(&o,
 		v.Field(&o.SchemeRedirect, v.In("http", "https")),
 		v.Field(&o.ResponseCode, v.In(
-			http.StatusFound,
-			http.StatusMovedPermanently,
-			http.StatusPermanentRedirect,
-			http.StatusSeeOther,
-			http.StatusTemporaryRedirect,
+			uint32(http.StatusFound),
+			uint32(http.StatusMovedPermanently),
+			uint32(http.StatusPermanentRedirect),
+			uint32(http.StatusSeeOther),
+			uint32(http.StatusTemporaryRedirect),
 		)),
 		v.Field(&o.HostRedirect, is.Host),
-		v.Field(&o.PortRedirect, is.Port),
+		v.Field(&o.PortRedirect, v.Min(uint32(1)), v.Max(uint32(65535))),
+		v.Field(&o.RewriteRegex),
+		v.Field(&o.PathRedirect, v.By(o.MutuallyExlusivePathRedirectCheck)),
 	)
+}
+
+func (o RedirectOptions) MutuallyExlusivePathRedirectCheck(value interface{}) error {
+	pathRedirect, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("validatable object must be the string")
+	}
+	if pathRedirect != "" && o.RewriteRegex.Pattern != "" {
+		return fmt.Errorf("only one of path or rewrite regex redirects may be specified, but supplied both")
+	}
+	return nil
 }
