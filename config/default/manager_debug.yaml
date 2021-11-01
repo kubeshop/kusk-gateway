@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          command: [/dlv, --listen=:40000, --headless=true, --api-version=2, exec, /manager]
+          securityContext:
+            capabilities:
+              add:
+                - SYS_PTRACE
+          ports:
+            - containerPort: 40000
+              name: debug
+              protocol: TCP
