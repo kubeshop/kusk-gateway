@@ -1,8 +1,13 @@
 package options
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"fmt"
+	"strings"
+
+	v "github.com/go-ozzo/ozzo-validation/v4"
 )
+
+const MaxRetries uint32 = 255
 
 type PathOptions struct {
 	// Base is the preceding prefix for the route (i.e. /your-prefix/here/rest/of/the/route).
@@ -18,8 +23,24 @@ type PathOptions struct {
 	Retries uint32       `yaml:"retries,omitempty" json:"retries,omitempty"`
 }
 
-func (o *PathOptions) Validate() error {
-	return validation.ValidateStruct(o,
-		validation.Field(&o.Base, validation.Required.Error("Base path required")),
+func (o PathOptions) Validate() error {
+	return v.ValidateStruct(&o,
+		v.Field(&o.Base, v.By(validateBasePath)),
+		v.Field(&o.Retries, v.Min(uint32(0)), v.Max(MaxRetries)),
+		v.Field(&o.Rewrite),
 	)
+}
+
+func validateBasePath(value interface{}) error {
+	path, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("validatable object must be a string")
+	}
+	if path == "" {
+		return nil
+	}
+	if !strings.HasPrefix(path, "/") {
+		return fmt.Errorf("base path should start with /")
+	}
+	return nil
 }
