@@ -43,10 +43,11 @@ func (o RedirectOptions) Validate() error {
 	)
 }
 
+// MutuallyExclusivePathRedirectCheck returns error if both path redirect and regex substitution redirect are enabled
 func (o RedirectOptions) MutuallyExlusivePathRedirectCheck(value interface{}) error {
 	pathRedirect, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("validatable object must be the string")
+		return fmt.Errorf("validatable object must be a string")
 	}
 	if pathRedirect != "" && o.RewriteRegex.Pattern != "" {
 		return fmt.Errorf("only one of path or rewrite regex redirects may be specified, but supplied both")

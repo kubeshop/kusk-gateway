@@ -83,10 +83,10 @@ func (o Options) Validate() error {
 func validateHost(value interface{}) error {
 	host, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("validatable object must be the string")
+		return fmt.Errorf("validatable object must be a string")
 	}
 	// We're looking for *, either single, in the preffix and in the suffix.
-	// For preffix and suffix * is replaced with "w" to form the DNS name that we can validate (e.g. "*-site.com", "site.*").
+	// For prefix and suffix * is replaced with "w" to form a DNS name that we can validate (e.g. "*-site.com", "site.*").
 	switch {
 	case host == "*":
 		return nil
@@ -99,7 +99,7 @@ func validateHost(value interface{}) error {
 		host = strings.TrimSuffix(host, "*")
 		host = host + "w"
 	}
-	// Finally check if this is DNS name
+	// Finally check if this is a valid DNS name
 	return v.Validate(host, is.DNSName)
 }
 
