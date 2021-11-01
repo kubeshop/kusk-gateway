@@ -8,7 +8,17 @@ spec:
     spec:
       containers:
         - name: manager
-          command: [/dlv, --listen=:40000, --headless=true, --api-version=2, exec, /manager]
+          resources: null
+          command:
+            - /dlv
+            - --listen=:40000
+            - --headless=true
+            - --api-version=2
+            - exec
+            - /manager
+            - --
+            - "--health-probe-bind-address=:8081 --metrics-bind-address=127.0.0.1:8080 --leader-elect"
+          args: []
           securityContext:
             capabilities:
               add:
