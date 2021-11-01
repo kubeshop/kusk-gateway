@@ -2,4 +2,4 @@
 
 set -e
 
-k3d cluster delete local-k8s
+minikube delete --profile kgw
