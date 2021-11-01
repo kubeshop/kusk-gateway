@@ -25,13 +25,13 @@ type PathOptions struct {
 
 func (o PathOptions) Validate() error {
 	return v.ValidateStruct(&o,
-		v.Field(&o.Base, v.By(checkBasePath)),
+		v.Field(&o.Base, v.By(validateBasePath)),
 		v.Field(&o.Retries, v.Min(uint32(0)), v.Max(MaxRetries)),
 		v.Field(&o.Rewrite),
 	)
 }
 
-func checkBasePath(value interface{}) error {
+func validateBasePath(value interface{}) error {
 	path, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("validatable object must be a string")
