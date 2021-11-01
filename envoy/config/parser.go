@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	envoy_type_matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
@@ -123,14 +123,14 @@ func generateRoutePath(base string, path string) string {
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
 }
 
-func generateRewriteRegex(pattern string, substitution string) *envoy_type_matcher.RegexMatchAndSubstitute {
+func generateRewriteRegex(pattern string, substitution string) *envoytypematcher.RegexMatchAndSubstitute {
 	if pattern == "" {
 		return nil
 	}
-	return &envoy_type_matcher.RegexMatchAndSubstitute{
-		Pattern: &envoy_type_matcher.RegexMatcher{
-			EngineType: &envoy_type_matcher.RegexMatcher_GoogleRe2{
-				GoogleRe2: &envoy_type_matcher.RegexMatcher_GoogleRE2{},
+	return &envoytypematcher.RegexMatchAndSubstitute{
+		Pattern: &envoytypematcher.RegexMatcher{
+			EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+				GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
 			},
 			Regex: pattern,
 		},
