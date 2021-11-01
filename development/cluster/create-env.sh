@@ -43,8 +43,9 @@ make install
 
 
 echo "========> building control-plane docker image and installing into cluster"
-$(minikube docker-env --profile kgw)
+
+SHELL=/bin/bash
+eval $(minikube docker-env --profile "kgw")
 make docker-build deploy
-$(minikube docker-env --profile kgw -u)
 
 kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system
