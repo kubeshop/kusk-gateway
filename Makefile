@@ -92,9 +92,9 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 
 deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}-debug
-	cd config/default && $(KUSTOMIZE) edit add patch --path ./manager_debug.yaml
+	cd config/default && $(KUSTOMIZE) edit add patch --path ./manager_debug_patch.yaml
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	cd config/default && $(KUSTOMIZE) edit remove patch --path ./manager_debug.yaml
+	cd config/default && $(KUSTOMIZE) edit remove patch --path ./manager_debug_patch.yaml
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
