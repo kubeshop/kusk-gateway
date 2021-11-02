@@ -1,8 +1,0 @@
-apiVersion: v2
-name: envoy
-description: |-
-  Helm chart to deploy [envoy](https://www.envoyproxy.io/).
-type: application
-version: 0.0.10
-appVersion: "v1.18.2"
-icon: https://www.envoyproxy.io/docs/envoy/latest/_static/envoy-logo.png
