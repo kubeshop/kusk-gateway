@@ -66,8 +66,9 @@ test: manifests generate fmt vet ## Run tests.
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
-run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
+	go build -o bin/manager main.go
+	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 docker-build: ## Build docker image with the manager.
 	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
@@ -76,6 +77,12 @@ docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 ##@ Deployment
+
+install-local: manifests kustomize ## Install CRDs and Envoy into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/local | kubectl apply -f -
+
+uninstall-local: manifests kustomize ## Uninstall CRDs and Envoy from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/local | kubectl delete -f -
 
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
