@@ -93,3 +93,13 @@ curl -v -X GET 'http://localhost:8080/petstore/api/v3/pet/findByStatus?status=av
 ```
 
 For the convenience you can use provided petshop-openapi-short-with-kusk.yaml or petshop-openapi-short-with-kusk-and-mock.yaml files in ./development.
+
+# Remote debugging contoller-manager in cluster
+- Set up remote debugging for your IDE pointed at localhost:40000 
+  - [Goland](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-in-the-docker-container)
+  - [VSCode](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#configure)
+- Run `make create-env`
+- When the make script is waiting for kusk-controller-manager to become healthy, run `kubectl port-forward deployment/kusk-controller-manager -n kusk-system 40000:40000`
+- Run your debug configuration from your IDE. The pod won't become healthy until you do this as Delve waits for a connection on :40000.
+- When the script completes, you can now deploy httpbin with `kubectl apply -f examples/httpbin`
+- Place breakpoints in the code and debug as normal

@@ -1,6 +1,7 @@
 
 # Image URL to use all building/pushing image targets
 IMG ?= kusk-gateway:dev
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -73,6 +74,8 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 docker-build: ## Build docker image with the manager.
 	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
 
+docker-build-debug: ## Build docker image with the manager and debugger.
+	DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
@@ -93,6 +96,12 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}-debug
+	cd config/default && $(KUSTOMIZE) edit add patch --path ./manager_debug_patch.yaml
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	cd config/default && $(KUSTOMIZE) edit remove patch --path ./manager_debug_patch.yaml
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
