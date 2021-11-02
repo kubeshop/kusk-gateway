@@ -67,7 +67,8 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
-	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false go run -gcflags="all=-N -l" ./main.go ; fg
+	go build -o bin/manager main.go
+	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 docker-build: ## Build docker image with the manager.
 	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
