@@ -18,9 +18,10 @@ type RedirectOptions struct {
 	HostRedirect string `yaml:"host_redirect,omitempty" json:"host_redirect,omitempty"`
 	PortRedirect uint32 `yaml:"port_redirect,omitempty" json:"port_redirect,omitempty"`
 
-	// These 2 are mutually exclusive
-	PathRedirect string       `yaml:"path_redirect,omitempty" json:"path_redirect,omitempty"`
-	RewriteRegex RewriteRegex `yaml:"rewrite_regex,omitempty" json:"rewrite_regex,omitempty"`
+	// mutually exclusive with rewrite regex redirect
+	PathRedirect string `yaml:"path_redirect,omitempty" json:"path_redirect,omitempty"`
+	// mutually exclusive with path redirect
+	RewriteRegex *RewriteRegex `yaml:"rewrite_regex,omitempty" json:"rewrite_regex,omitempty"`
 
 	ResponseCode uint32 `yaml:"response_code,omitempty" json:"response_code,omitempty"`
 	StripQuery   *bool  `yaml:"strip_query,omitempty" json:"strip_query,omitempty"`
@@ -53,4 +54,17 @@ func (o RedirectOptions) MutuallyExlusivePathRedirectCheck(value interface{}) er
 		return fmt.Errorf("only one of path or rewrite regex redirects may be specified, but supplied both")
 	}
 	return nil
+}
+
+// DeepCopy is used to copy
+func (in *RedirectOptions) DeepCopy() *RedirectOptions {
+	if in == nil {
+		return nil
+	}
+	out := new(RedirectOptions)
+	*out = *in
+	if in.RewriteRegex != nil {
+		*out = *in
+	}
+	return out
 }

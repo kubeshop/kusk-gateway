@@ -1,0 +1,6 @@
+apiVersion: gateway.kusk.io/v1
+kind: StaticRoute
+metadata:
+  name: staticroute-sample
+spec:
+  # TODO(user): Add fields here

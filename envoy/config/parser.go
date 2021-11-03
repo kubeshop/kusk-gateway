@@ -16,7 +16,9 @@ const httpPathSeparator string = "/"
 
 // GenerateConfigSnapshotFromOpts creates Snapshot from OpenAPI spec and x-kusk options
 func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Options, spec *openapi3.T) (*cache.Snapshot, error) {
-	e.vhosts = opts.Hosts
+	for _, vhost := range opts.Hosts {
+		e.vhosts = append(e.vhosts, string(vhost))
+	}
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path create a copy of top x-kusk SubOpts struct as new pathOpts var. For that path override it with pathSubOpts.
