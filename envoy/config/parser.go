@@ -38,7 +38,7 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 		}
 
 		// x-kusk options per operation (http method)
-		for method := range pathItem.Operations() {
+		for method, operation := range pathItem.Operations() {
 			opSubOpts, ok := opts.OperationSubOptions[method+path]
 			if ok {
 				// Exit early if disabled per method, don't do further copies
@@ -66,14 +66,17 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				continue
 			}
 
-			routePath := generateRoutePath(finalOpts.Path.Base, path)
+			routePath := generateRoutePath(finalOpts.Path.Base, path, &operation.Parameters)
 			routeName := generateRouteName(routePath, method)
 
+			params := extractParams(operation.Parameters)
 			routeConfig := &RouteConfiguration{
-				name:   routeName,
-				method: method,
-				path:   routePath,
+				name:       routeName,
+				method:     method,
+				path:       routePath,
+				parameters: params,
 			}
+
 			// This block creates redirect route
 			redirectAction, err := generateRedirectAction(&finalOpts.Redirect)
 			if err != nil {
@@ -107,6 +110,25 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 	return e.GenerateSnapshot()
 }
 
+func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
+	params := map[string]ParamSchema{}
+
+	for _, parameter := range parameters {
+		if parameter.Value != nil {
+			params[parameter.Value.Name] = ParamSchema{}
+			if parameter.Value.Schema != nil && parameter.Value.Schema.Value != nil {
+				schemaValue := parameter.Value.Schema.Value
+				params[fmt.Sprintf("{%s}", parameter.Value.Name)] = ParamSchema{
+					Type: schemaValue.Type,
+					Enum: schemaValue.Enum,
+				}
+			}
+		}
+	}
+
+	return params
+}
+
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 func generateClusterName(service options.ServiceOptions) string {
 	return fmt.Sprintf("%s-%d", service.Name, service.Port)
@@ -115,10 +137,11 @@ func generateClusterName(service options.ServiceOptions) string {
 // Can be moved to operationID, but generally we just need unique string
 func generateRouteName(path string, method string) string { return fmt.Sprintf("%s-%s", path, method) }
 
-func generateRoutePath(base string, path string) string {
+func generateRoutePath(base, path string, parameters *openapi3.Parameters) string {
 	if base == "" {
 		return path
 	}
+
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
 }
