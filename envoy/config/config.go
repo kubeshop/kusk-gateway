@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -27,7 +28,7 @@ import (
 
 var (
 	// compiles e.g. /pets/{petID}/legs/{leg1}
-	rePathParams = regexp.MustCompile(`/{[A-z0-9]+}`)
+	rePathParams = regexp.MustCompile(`{[A-z0-9]+}`)
 )
 
 // TODO: move to params
@@ -81,6 +82,16 @@ func New() *envoyConfiguration {
 	}
 }
 
+type ParamSchema struct {
+	Type string
+	Enum []interface{}
+}
+
+var parameterTypeRegexReplacements = map[string]string{
+	"string": `([A-z]+)`,
+	"number": `(\d+)`,
+}
+
 // RouteConfiguration is a convenient configuration object used for route creation
 type RouteConfiguration struct {
 	name             string
@@ -93,6 +104,7 @@ type RouteConfiguration struct {
 	idleTimeout      int64
 	retries          uint32
 	redirectAction   *route.RedirectAction
+	parameters       map[string]ParamSchema
 }
 
 // AddRoute appends new route with proxying to the backend to the list of routes by path and method
@@ -138,15 +150,33 @@ func (e *envoyConfiguration) AddRoute(config *RouteConfiguration) {
 	var routeMatcher *route.RouteMatch
 	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
 	// if simple path - RouteMatch_Path with path
+
+	routePath := config.path
+	for _, match := range rePathParams.FindAllString(routePath, -1) {
+		param := config.parameters[match]
+
+		replacementRegex := ""
+		// if type = enum, construct enum regex capture grouup
+		if len(param.Enum) > 0 {
+			enumStrings := convertToStringSlice(param.Enum)
+			replacementRegex = fmt.Sprintf("(%s)", strings.Join(enumStrings, "|"))
+		} else if regex, ok := parameterTypeRegexReplacements[param.Type]; ok {
+			replacementRegex = regex
+		} else {
+			replacementRegex = "([A-z0-9]+)"
+		}
+
+		routePath = strings.ReplaceAll(routePath, match, replacementRegex)
+	}
+
 	if rePathParams.MatchString(config.path) {
-		replacementRegex := string(rePathParams.ReplaceAll([]byte(config.path), []byte("/([A-z0-9]+)")))
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
 					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
 						GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
 					},
-					Regex: replacementRegex,
+					Regex: routePath,
 				},
 			},
 			Headers: headerMatcher,
@@ -359,8 +389,8 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		clusters = append(clusters, cluster)
 	}
 	// We're using uuid V1 to provide time sortable snapshot version
-	snapshot_version, _ := uuid.NewV1()
-	snap, err := cache.NewSnapshot(snapshot_version.String(),
+	snapshotVersion, _ := uuid.NewV1()
+	snap, err := cache.NewSnapshot(snapshotVersion.String(),
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
@@ -371,4 +401,13 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		return nil, err
 	}
 	return &snap, snap.Consistent()
+}
+
+func convertToStringSlice(in []interface{}) []string {
+	s := make([]string, len(in))
+	for i := range in {
+		s[i] = fmt.Sprint(in[i])
+	}
+
+	return s
 }

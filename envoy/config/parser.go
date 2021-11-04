@@ -109,15 +109,22 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 
 	return e.GenerateSnapshot()
 }
-
+// extract Params returns a map mapping the name of a paths parameter to its schema
+// where the schema elements we care about are its type and enum if its defined
 func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
 	params := map[string]ParamSchema{}
 
 	for _, parameter := range parameters {
-		if parameter.Value != nil {
+		// Prevent populating map with empty parameter names
+		if parameter.Value != nil && parameter.Value.Name != "" {
 			params[parameter.Value.Name] = ParamSchema{}
+
+			// Extract the schema if it's not nil and assign the map value
 			if parameter.Value.Schema != nil && parameter.Value.Schema.Value != nil {
 				schemaValue := parameter.Value.Schema.Value
+
+				// It is acceptable for Type and / or Enum to have their zero value
+				// It means the user has not defined it, and we will construct the regex path accordingly
 				params[fmt.Sprintf("{%s}", parameter.Value.Name)] = ParamSchema{
 					Type: schemaValue.Type,
 					Enum: schemaValue.Enum,
