@@ -66,7 +66,7 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 				continue
 			}
 
-			routePath := generateRoutePath(finalOpts.Path.Base, path, &operation.Parameters)
+			routePath := generateRoutePath(finalOpts.Path.Base, path)
 			routeName := generateRouteName(routePath, method)
 
 			params := extractParams(operation.Parameters)
@@ -144,7 +144,7 @@ func generateClusterName(service options.ServiceOptions) string {
 // Can be moved to operationID, but generally we just need unique string
 func generateRouteName(path string, method string) string { return fmt.Sprintf("%s-%s", path, method) }
 
-func generateRoutePath(base, path string, parameters *openapi3.Parameters) string {
+func generateRoutePath(base, path string) string {
 	if base == "" {
 		return path
 	}
