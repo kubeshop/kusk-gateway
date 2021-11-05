@@ -48,8 +48,8 @@ spec:
               paths:
                 additionalProperties:
                   additionalProperties:
-                    description: RouteAction is either a route to a backend or a redirect,
-                      they're mutually exclusive.
+                    description: RouteAction is either a route to the backend or a
+                      redirect, they're mutually exclusive.
                     properties:
                       redirect:
                         description: RedirectOptions provide http redirects see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-redirectaction
@@ -150,7 +150,7 @@ spec:
                         - cors
                         type: object
                     type: object
-                  description: MethodToRoute maps Method (GET, POST) to RouteAction
+                  description: MethodToRoute maps Method (get, post) to RouteAction
                     a special method "*" means "all methods"
                   type: object
                 description: Paths is a multidimensional map of path / method to the

@@ -45,7 +45,7 @@ type StaticRouteSpec struct {
 // Must start with /, could be exact (/index.html), prefix (/front/, / in the end defines prefix), regex (/images/(\d+))
 type Path string
 
-// MethodToRoute maps Method (GET, POST) to RouteAction
+// MethodToRoute maps Method (get, post) to RouteAction
 // a special method "*" means "all methods"
 type MethodToRoute map[HTTPMethod]*RouteAction
 

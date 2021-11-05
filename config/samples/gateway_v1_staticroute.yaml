@@ -3,4 +3,9 @@ kind: StaticRoute
 metadata:
   name: staticroute-sample
 spec:
-  # TODO(user): Add fields here
+  hosts: [ "*" ]
+  paths:
+    /: 
+       get:
+         redirect:
+           port_redirect: 81

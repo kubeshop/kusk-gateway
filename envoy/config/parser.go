@@ -1,23 +1,20 @@
 package config
 
 import (
-	"fmt"
-	"strings"
-
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
 
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
 const httpPathSeparator string = "/"
 
-// GenerateConfigSnapshotFromOpts creates Snapshot from OpenAPI spec and x-kusk options
-func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Options, spec *openapi3.T) (*cache.Snapshot, error) {
+// UpdateConfigFromOpts creates Snapshot from OpenAPI spec and x-kusk options
+func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.Options, spec *openapi3.T) error {
+	vhosts := []string{}
 	for _, vhost := range opts.Hosts {
-		e.vhosts = append(e.vhosts, string(vhost))
+		vhosts = append(vhosts, string(vhost))
 	}
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -30,12 +27,12 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 		// we do this merge once per path since it is expensive to do it for every method
 		var pathOpts options.SubOptions
 		if err := copier.CopyWithOption(&pathOpts, &opts.SubOptions, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-			return nil, err
+			return err
 		}
 
 		if pathSubOpts, ok := opts.PathSubOptions[path]; ok {
 			if err := copier.CopyWithOption(&pathOpts, &pathSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -53,13 +50,13 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 
 			// copy into new var already merged path opts
 			if err := copier.CopyWithOption(&finalOpts, &pathOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-				return nil, err
+				return err
 			}
 
 			// finally override with opSubOpts, if there are any
 			if ok {
 				if err := copier.CopyWithOption(&finalOpts, &opSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-					return nil, err
+					return err
 				}
 			}
 
@@ -72,100 +69,50 @@ func (e *envoyConfiguration) GenerateConfigSnapshotFromOpts(opts *options.Option
 			routeName := generateRouteName(routePath, method)
 
 			params := extractParams(operation.Parameters)
-			routeConfig := &RouteConfiguration{
-				name:       routeName,
-				method:     method,
-				path:       routePath,
-				parameters: params,
+			// routeConfig := &RouteConfiguration{
+			// 	name:       routeName,
+			// 	method:     method,
+			// 	path:       routePath,
+			// 	vhosts:     vhosts,
+			// 	parameters: params,
+			// }
+
+			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
+			if err != nil {
+				return err
 			}
+			// routeMatcher defines how we match a route by the provided path and the headers
+			routeMatcher := generateRouteMatch(routePath, method, params, corsPolicy)
 
 			// This block creates redirect route
-			redirectAction, err := generateRedirectAction(&finalOpts.Redirect)
-			if err != nil {
-				return nil, err
-			}
 			// We either create the redirect or the route with proxy to backend
-			if redirectAction != nil {
-				routeConfig.redirectAction = redirectAction
-				e.AddRouteRedirect(routeConfig)
+			// Redirect takes a precedence.
+			var routeRedirect *route.Route_Redirect
+			var routeRoute *route.Route_Route
+			if &finalOpts.Redirect != nil {
+				if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
+					return err
+				}
 			} else {
-				// This block create usual route with backend service
-				routeConfig.clusterName = generateClusterName(finalOpts.Service)
-				if !e.ClusterExist(routeConfig.clusterName) {
-					e.AddCluster(routeConfig.clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
+				clusterName := generateClusterName(finalOpts.Service)
+				if !e.ClusterExist(clusterName) {
+					e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
+				}
+				rewritePathRegex := generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+				if routeRoute, err = generateRoute(
+					clusterName,
+					corsPolicy,
+					rewritePathRegex,
+					int64(finalOpts.Timeouts.RequestTimeout),
+					int64(finalOpts.Timeouts.IdleTimeout),
+					finalOpts.Path.Retries); err != nil {
+					return err
 				}
 
-				routeConfig.rewritePathRegex = generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
-				routeConfig.idleTimeout = int64(finalOpts.Timeouts.IdleTimeout)
-				routeConfig.timeout = int64(finalOpts.Timeouts.RequestTimeout)
-				routeConfig.retries = finalOpts.Path.Retries
-				routeConfig.corsPolicy, err = generateCORSPolicy(&finalOpts.CORS)
-				if err != nil {
-					return nil, err
-				}
-
-				e.AddRoute(routeConfig)
 			}
+			e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, routeRedirect)
 		}
 	}
 
-	return e.GenerateSnapshot()
-}
-// extract Params returns a map mapping the name of a paths parameter to its schema
-// where the schema elements we care about are its type and enum if its defined
-func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
-	params := map[string]ParamSchema{}
-
-	for _, parameter := range parameters {
-		// Prevent populating map with empty parameter names
-		if parameter.Value != nil && parameter.Value.Name != "" {
-			params[parameter.Value.Name] = ParamSchema{}
-
-			// Extract the schema if it's not nil and assign the map value
-			if parameter.Value.Schema != nil && parameter.Value.Schema.Value != nil {
-				schemaValue := parameter.Value.Schema.Value
-
-				// It is acceptable for Type and / or Enum to have their zero value
-				// It means the user has not defined it, and we will construct the regex path accordingly
-				params[fmt.Sprintf("{%s}", parameter.Value.Name)] = ParamSchema{
-					Type: schemaValue.Type,
-					Enum: schemaValue.Enum,
-				}
-			}
-		}
-	}
-
-	return params
-}
-
-// each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func generateClusterName(service options.ServiceOptions) string {
-	return fmt.Sprintf("%s-%d", service.Name, service.Port)
-}
-
-// Can be moved to operationID, but generally we just need unique string
-func generateRouteName(path string, method string) string { return fmt.Sprintf("%s-%s", path, method) }
-
-func generateRoutePath(base, path string) string {
-	if base == "" {
-		return path
-	}
-
-	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
-	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
-}
-
-func generateRewriteRegex(pattern string, substitution string) *envoytypematcher.RegexMatchAndSubstitute {
-	if pattern == "" {
-		return nil
-	}
-	return &envoytypematcher.RegexMatchAndSubstitute{
-		Pattern: &envoytypematcher.RegexMatcher{
-			EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
-				GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
-			},
-			Regex: pattern,
-		},
-		Substitution: substitution,
-	}
+	return nil
 }
