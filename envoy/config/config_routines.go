@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -21,6 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/kubeshop/kusk-gateway/options"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 var (
@@ -109,8 +111,9 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 
 		routePath = strings.ReplaceAll(routePath, match, replacementRegex)
 	}
-
-	if rePathParams.MatchString(path) {
+	switch {
+	// if has regex - regex matcher
+	case rePathParams.MatchString(path):
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
@@ -122,7 +125,16 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 			},
 			Headers: headerMatcher,
 		}
-	} else {
+	case strings.HasSuffix(path, "/"):
+		// if ends in / - path prefix match
+		routeMatcher = &route.RouteMatch{
+			PathSpecifier: &route.RouteMatch_Prefix{
+				Prefix: path,
+			},
+			Headers: headerMatcher,
+		}
+	default:
+		// default - exact path matching
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Path{
 				Path: path,
@@ -140,21 +152,31 @@ func generateMethodHeaderMatcher(methods []string) *route.HeaderMatcher {
 	case 1:
 		// creates exact match for method
 		return &route.HeaderMatcher{
-			Name:                 ":method",
-			HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{ExactMatch: methods[0]},
+			Name: ":method",
+			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+				StringMatch: &envoytypematcher.StringMatcher{
+					MatchPattern: &envoytypematcher.StringMatcher_Exact{Exact: methods[0]},
+				},
+			},
 		}
 	default:
 		// creates regex "^OPTIONS$|^GET$"
 		for i := range methods {
-			methods[i] = fmt.Sprint("^%s$", methods[i])
+			methods[i] = fmt.Sprintf("^%s$", methods[i])
 		}
 		regex := strings.Join(methods, "|")
 		return &route.HeaderMatcher{
 			Name: ":method",
-			HeaderMatchSpecifier: &route.HeaderMatcher_SafeRegexMatch{
-				&envoytypematcher.RegexMatcher{
-					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{}},
-					Regex:      regex,
+			HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+				StringMatch: &envoytypematcher.StringMatcher{
+					MatchPattern: &envoytypematcher.StringMatcher_SafeRegex{
+						SafeRegex: &envoytypematcher.RegexMatcher{
+							EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
+								GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
+							},
+							Regex: regex,
+						},
+					},
 				},
 			},
 		}
@@ -237,12 +259,14 @@ func convertToStringSlice(in []interface{}) []string {
 }
 
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func generateClusterName(service options.ServiceOptions) string {
-	return fmt.Sprintf("%s-%d", service.Name, service.Port)
+func generateClusterName(name string, port uint32) string {
+	return fmt.Sprintf("%s-%d", name, port)
 }
 
 // Can be moved to operationID, but generally we just need unique string
-func generateRouteName(path string, method string) string { return fmt.Sprintf("%s-%s", path, method) }
+func generateRouteName(path string, method string) string {
+	return fmt.Sprintf("%s-%s", path, strings.ToUpper(method))
+}
 
 func generateRoutePath(base, path string) string {
 	if base == "" {
@@ -323,7 +347,7 @@ func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redir
 	}
 	// PathRedirect and RewriteRegex are mutually exlusive
 	// Path rewrite with regex
-	if redirectOpts.RewriteRegex.Pattern != "" {
+	if redirectOpts.RewriteRegex != nil && redirectOpts.RewriteRegex.Pattern != "" {
 		redirectAction.PathRewriteSpecifier = &route.RedirectAction_RegexRewrite{
 			RegexRewrite: generateRewriteRegex(redirectOpts.RewriteRegex.Pattern, redirectOpts.RewriteRegex.Substitution),
 		}
@@ -352,4 +376,37 @@ func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redir
 		return nil, fmt.Errorf("incorrect Redirect Action: %w", err)
 	}
 	return &route.Route_Redirect{Redirect: redirectAction}, nil
+}
+
+func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error) {
+	if corsOpts == nil || reflect.DeepEqual(&options.CORSOptions{}, corsOpts) {
+		return nil, nil
+	}
+	allowOriginsMatcher := []*envoytypematcher.StringMatcher{}
+	for _, origin := range corsOpts.Origins {
+		entry := &envoytypematcher.StringMatcher{
+			// TODO: We support only exact strings, no regexp - fix this if applicable
+			MatchPattern: &envoytypematcher.StringMatcher_Exact{
+				Exact: origin,
+			},
+			IgnoreCase: false,
+		}
+		allowOriginsMatcher = append(allowOriginsMatcher, entry)
+	}
+	corsPolicy := &route.CorsPolicy{
+		AllowOriginStringMatch: allowOriginsMatcher,
+		AllowMethods:           strings.Join(corsOpts.Methods, ","),
+		AllowHeaders:           strings.Join(corsOpts.Headers, ","),
+		ExposeHeaders:          strings.Join(corsOpts.ExposeHeaders, ","),
+		MaxAge:                 strconv.Itoa(corsOpts.MaxAge),
+	}
+	if corsOpts.Credentials != nil {
+		corsPolicy.AllowCredentials = &wrapperspb.BoolValue{
+			Value: *corsOpts.Credentials,
+		}
+	}
+	if err := corsPolicy.Validate(); err != nil {
+		return nil, fmt.Errorf("incorrect CORS configuration: %w", err)
+	}
+	return corsPolicy, nil
 }

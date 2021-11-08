@@ -5,13 +5,14 @@ import (
 	"github.com/jinzhu/copier"
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
 const httpPathSeparator string = "/"
 
-// UpdateConfigFromOpts creates Snapshot from OpenAPI spec and x-kusk options
-func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.Options, spec *openapi3.T) error {
+// UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
+func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec *openapi3.T) error {
 	vhosts := []string{}
 	for _, vhost := range opts.Hosts {
 		vhosts = append(vhosts, string(vhost))
@@ -69,13 +70,6 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.Options, spec *o
 			routeName := generateRouteName(routePath, method)
 
 			params := extractParams(operation.Parameters)
-			// routeConfig := &RouteConfiguration{
-			// 	name:       routeName,
-			// 	method:     method,
-			// 	path:       routePath,
-			// 	vhosts:     vhosts,
-			// 	parameters: params,
-			// }
 
 			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
 			if err != nil {
@@ -88,13 +82,14 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.Options, spec *o
 			// We either create the redirect or the route with proxy to backend
 			// Redirect takes a precedence.
 			var routeRedirect *route.Route_Redirect
-			var routeRoute *route.Route_Route
-			if &finalOpts.Redirect != nil {
-				if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
-					return err
-				}
+			if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
+				return err
+			}
+			if routeRedirect != nil {
+				e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
 			} else {
-				clusterName := generateClusterName(finalOpts.Service)
+				var routeRoute *route.Route_Route
+				clusterName := generateClusterName(finalOpts.Service.Name, finalOpts.Service.Port)
 				if !e.ClusterExist(clusterName) {
 					e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
 				}
@@ -108,10 +103,109 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.Options, spec *o
 					finalOpts.Path.Retries); err != nil {
 					return err
 				}
+				e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
+			}
+		}
+	}
+
+	return nil
+}
+
+// UpdateConfigFromOpts updates Envoy configuration from Options only
+func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) error {
+	vhosts := []string{}
+	for _, vhost := range opts.Hosts {
+		vhosts = append(vhosts, string(vhost))
+	}
+	// Iterate on all paths and build routes
+	for path, methods := range opts.Paths {
+		for method, methodOpts := range methods {
+			routePath := generateRoutePath("", path)
+			routeName := generateRouteName(routePath, string(method))
+			corsPolicy, err := generateCORSPolicy(methodOpts.CORS)
+			if err != nil {
+				return err
+			}
+			routeMatcher := generateRouteMatch(routePath, string(method), nil, corsPolicy)
+			if methodOpts.Redirect != nil {
+				// Generating Redirect
+				var routeRedirect *route.Route_Redirect
+				routeRedirect, err := generateRedirect(methodOpts.Redirect)
+				if err != nil {
+					return err
+				}
+				e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
+				continue
+			} else {
+				// Generating Route
+				var routeRoute *route.Route_Route
+				// TODO: right now we support only one backend in cluster, support multiple
+				backend := methodOpts.Backends[0]
+				clusterName := generateClusterName(backend.Hostname, backend.Port)
+				// for _, backend := range methodOpts.Backends {
+				// 	clusterName := generateClusterName(backend.Hostname, backend.Port)
+				// 	if !e.ClusterExist(clusterName) {
+				// 		e.AddCluster(clusterName, backend.Hostname, backend.Port)
+				// 	}
+				// }
+				var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
+				if backend.Rewrite != nil {
+					rewritePathRegex = generateRewriteRegex(backend.Rewrite.Pattern, backend.Rewrite.Substitution)
+				}
+				var requestTimeout, requestIdleTimeout int64 = 0, 0
+				if methodOpts.Timeouts != nil {
+					requestTimeout = int64(methodOpts.Timeouts.RequestTimeout)
+					requestIdleTimeout = int64(methodOpts.Timeouts.IdleTimeout)
+
+				}
+				if routeRoute, err = generateRoute(
+					clusterName,
+					corsPolicy,
+					rewritePathRegex,
+					requestTimeout,
+					requestIdleTimeout,
+					backend.Retries); err != nil {
+					return err
+				}
+				e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
 
 			}
-			e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, routeRedirect)
 		}
+
+		// 	corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	// routeMatcher defines how we match a route by the provided path and the headers
+		// 	routeMatcher := generateRouteMatch(routePath, method, params, corsPolicy)
+
+		// 	// This block creates redirect route
+		// 	// We either create the redirect or the route with proxy to backend
+		// 	// Redirect takes a precedence.
+		// 	var routeRedirect *route.Route_Redirect
+		// 	if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
+		// 		return err
+		// 	}
+		// 	if routeRedirect != nil {
+		// 		e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
+		// 	} else {
+		// 		var routeRoute *route.Route_Route
+		// 		clusterName := generateClusterName(finalOpts.Service)
+		// 		if !e.ClusterExist(clusterName) {
+		// 			e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
+		// 		}
+		// 		rewritePathRegex := generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+		// 		if routeRoute, err = generateRoute(
+		// 			clusterName,
+		// 			corsPolicy,
+		// 			rewritePathRegex,
+		// 			int64(finalOpts.Timeouts.RequestTimeout),
+		// 			int64(finalOpts.Timeouts.IdleTimeout),
+		// 			finalOpts.Path.Retries); err != nil {
+		// 			return err
+		// 		}
+		// 		e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
+		// 	}
 	}
 
 	return nil

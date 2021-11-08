@@ -145,13 +145,23 @@ spec:
                                   type: string
                                 type: array
                             type: object
+                          timeouts:
+                            properties:
+                              idle_timeout:
+                                description: IdleTimeout is timeout for idle connection
+                                format: int32
+                                type: integer
+                              request_timeout:
+                                description: RequestTimeout is total request timeout
+                                format: int32
+                                type: integer
+                            type: object
                         required:
                         - backends
-                        - cors
                         type: object
                     type: object
-                  description: MethodToRoute maps Method (get, post) to RouteAction
-                    a special method "*" means "all methods"
+                  description: Methods maps Method (get, post) to RouteAction a special
+                    method "*" means "all methods"
                   type: object
                 description: Paths is a multidimensional map of path / method to the
                   routing rules

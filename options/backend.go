@@ -19,7 +19,7 @@ type BackendOptions struct {
 	// e.g. given that URL path is "/petstore/api/v3",
 	// with Rewrite.Pattern "^/petstore", Rewrite.Substitution ""
 	// backend will receive "/api/v3/pets".
-	Rewrite RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
+	Rewrite *RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
 
 	// Retries define how many times to retry calling the backend
 	Retries uint32 `yaml:"retries,omitempty" json:"retries,omitempty"`

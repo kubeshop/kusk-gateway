@@ -50,7 +50,7 @@ func (o RedirectOptions) MutuallyExlusivePathRedirectCheck(value interface{}) er
 	if !ok {
 		return fmt.Errorf("validatable object must be a string")
 	}
-	if pathRedirect != "" && o.RewriteRegex.Pattern != "" {
+	if pathRedirect != "" && o.RewriteRegex != nil && o.RewriteRegex.Pattern != "" {
 		return fmt.Errorf("only one of path or rewrite regex redirects may be specified, but supplied both")
 	}
 	return nil

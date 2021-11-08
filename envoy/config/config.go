@@ -4,6 +4,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -50,25 +51,16 @@ import (
 //
 
 type envoyConfiguration struct {
-	// vhosts maps vhost name or pattern to the list of vhosts assigned to this vhost
-	vhosts   map[string]*vhostConfiguration
+	// vhosts maps vhost domain name or domain pattern to the list of vhosts assigned to the listener
+	vhosts   map[string]*route.VirtualHost
 	clusters map[string]*cluster.Cluster
 	listener *listener.Listener
-}
-
-type vhostConfiguration struct {
-	routes []*route.Route
-}
-
-func (vc *vhostConfiguration) AddRoute(rt *route.Route) error {
-	// TODO: return error if there is already such route
-	return nil
 }
 
 func New() *envoyConfiguration {
 	return &envoyConfiguration{
 		clusters: make(map[string]*cluster.Cluster),
-		vhosts:   make(map[string]*vhostConfiguration),
+		vhosts:   make(map[string]*route.VirtualHost),
 	}
 }
 
@@ -96,14 +88,28 @@ func (e *envoyConfiguration) AddRoute(
 		vhostConfig, ok := e.vhosts[vhost]
 		// add if new vhost entry
 		if !ok {
-			vhostConfig = new(vhostConfiguration)
+			vhostConfig = &route.VirtualHost{
+				Name:    vhost,
+				Domains: []string{vhost},
+			}
 			e.vhosts[vhost] = vhostConfig
 		}
-		if err := vhostConfig.AddRoute(rt); err != nil {
-			return err
+		if routeExists(rt.Name, vhostConfig.Routes) {
+			return fmt.Errorf("route %s already exists for vhost %s", rt.Name, vhostConfig.Name)
 		}
+		vhostConfig.Routes = append(vhostConfig.Routes, rt)
 	}
 	return nil
+}
+
+// this check if the route with such path-method is already present for that vhost
+func routeExists(name string, routes []*route.Route) bool {
+	for _, route := range routes {
+		if route.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *envoyConfiguration) ClusterExist(name string) bool {
@@ -149,13 +155,13 @@ func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost 
 }
 
 func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {
+	vhosts := []*route.VirtualHost{}
+	for _, vhost := range e.vhosts {
+		vhosts = append(vhosts, vhost)
+	}
 	return &route.RouteConfiguration{
-		Name: routeConfigName,
-		VirtualHosts: []*route.VirtualHost{{
-			Name:    "local_service",
-			Domains: e.vhosts,
-			Routes:  e.vhosts,
-		}},
+		Name:         routeConfigName,
+		VirtualHosts: vhosts,
 	}
 }
 func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {

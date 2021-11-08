@@ -25,6 +25,7 @@ import (
 	gateway "github.com/kubeshop/kusk-gateway/api/v1"
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
+	"github.com/kubeshop/kusk-gateway/options"
 	"github.com/kubeshop/kusk-gateway/spec"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,20 +57,14 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	parser := spec.NewParser(nil)
 
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
-	var staticRoutes gateway.StaticRouteList
-
-	l.Info("Getting Static Routes")
-	if err := c.Client.List(ctx, &staticRoutes); err != nil {
-		return err
-	}
 	l.Info("Getting APIs")
 	var apis gateway.APIList
 	if err := c.Client.List(ctx, &apis); err != nil {
 		return err
 	}
-
 	envoyConfig := config.New()
 	for _, api := range apis.Items {
+		l.Info("Processing API %v", "api", api)
 		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
 		if err != nil {
 			return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
@@ -80,20 +75,34 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to parse options: %w", err)
 		}
 
-		err = opts.FillDefaultsAndValidate()
-		if err != nil {
+		if err := opts.FillDefaultsAndValidate(); err != nil {
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = envoyConfig.UpdateConfigFromOpts(opts, apiSpec); err != nil {
+		if err = envoyConfig.UpdateConfigFromAPIOpts(opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "api", api)
 	}
-	for _, sr := range staticRoutes.Items {
-		l.Info("Static route processed", "route", sr)
+	l.Info("Succesfully processed APIs")
+	l.Info("Getting Static Routes")
+	var staticRoutes gateway.StaticRouteList
+	if err := c.Client.List(ctx, &staticRoutes); err != nil {
+		return err
 	}
+	for _, sr := range staticRoutes.Items {
+		l.Info("Processing static routes", "route", sr)
+		opts, err := optionsFromStaticRouteSpec(sr.Spec)
+		if err != nil {
+			return fmt.Errorf("failed to generate options from the static route config: %w", err)
+		}
 
+		if err := envoyConfig.UpdateConfigFromOpts(opts); err != nil {
+			return fmt.Errorf("failed to generate config: %w", err)
+		}
+	}
+	l.Info("Succesfully processed Static Routes")
+	l.Info("Generating configuration snapshot")
 	snapshot, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
 		l.Error(err, "Envoy configuration snapshot is invalid")
@@ -107,4 +116,39 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	}
 
 	return nil
+}
+
+func optionsFromStaticRouteSpec(spec gateway.StaticRouteSpec) (*options.StaticOptions, error) {
+	// 2 dimensional map["path"]["method"]SubOptions
+	paths := make(map[string]options.StaticOperationSubOptions)
+	opts := &options.StaticOptions{
+		Paths: paths,
+		Hosts: spec.Hosts,
+	}
+	if err := opts.FillDefaultsAndValidate(); err != nil {
+		return nil, fmt.Errorf("failed to validate options: %w", err)
+	}
+	for specPath, specMethods := range spec.Paths {
+		path := string(specPath)
+		opts.Paths[path] = make(options.StaticOperationSubOptions)
+		pathMethods := opts.Paths[path]
+		for specMethod, specRouteAction := range specMethods {
+			methodOpts := &options.StaticSubOptions{}
+			pathMethods[specMethod] = methodOpts
+			if specRouteAction.Redirect != nil {
+				methodOpts.Redirect = specRouteAction.Redirect
+				continue
+			}
+			if specRouteAction.Route != nil {
+				methodOpts.Backends = *&specRouteAction.Route.Backends
+				if specRouteAction.Route.CORS != nil {
+					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
+				}
+				if specRouteAction.Route.Timeouts != nil {
+					methodOpts.Timeouts = specRouteAction.Route.Timeouts
+				}
+			}
+		}
+	}
+	return opts, nil
 }

@@ -89,7 +89,7 @@ func parseAndApply(apiSpecPath string, envoyMgr *envoyConfigManager.EnvoyConfigM
 		return err
 	}
 	envoyConfig := envoyConfig.New()
-	if err := envoyConfig.UpdateConfigFromOpts(kuskExtensionOpts, apiSpec); err != nil {
+	if err := envoyConfig.UpdateConfigFromAPIOpts(kuskExtensionOpts, apiSpec); err != nil {
 		return err
 	}
 	snapshot, err := envoyConfig.GenerateSnapshot()
