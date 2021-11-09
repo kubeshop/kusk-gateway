@@ -36,21 +36,11 @@ type StaticRouteSpec struct {
 	Paths map[Path]Methods `json:"paths"`
 }
 
-// Host is a vhost (domain name) definition that is used during request routing.
-// Could be wildcard ("*" - all vhosts), prefix/suffix wildcard (*-example.com, example.*, but not both *example*),
-// or simple domain (www.example.com)
-// type Host string
-
 // Path is a URL path without a query
 // Must start with /, could be exact (/index.html), prefix (/front/, / in the end defines prefix), regex (/images/(\d+))
 type Path string
 
-func (p Path) String() string {
-	return string(p)
-}
-
-// Methods maps Method (get, post) to RouteAction
-// a special method "*" means "all methods"
+// Methods maps Method (GET, POST) to RouteAction
 type Methods map[options.HTTPMethod]*RouteAction
 
 // RouteAction is either a route to the backend or a redirect, they're mutually exclusive.
@@ -61,13 +51,10 @@ type RouteAction struct {
 
 // Route defines a routing rule that proxies to backend
 type Route struct {
-	Backends []*options.BackendOptions `json:"backends"`
-	CORS     *options.CORSOptions      `json:"cors,omitempty"`
-	Timeouts *options.TimeoutOptions   `json:"timeouts,omitempty"`
+	Backend  *options.BackendOptions `json:"backend"`
+	CORS     *options.CORSOptions    `json:"cors,omitempty"`
+	Timeouts *options.TimeoutOptions `json:"timeouts,omitempty"`
 }
-
-// // HTTPMethod defines HTTP Method like GET, POST...
-// type HTTPMethod string
 
 // StaticRouteStatus defines the observed state of StaticRoute
 type StaticRouteStatus struct {

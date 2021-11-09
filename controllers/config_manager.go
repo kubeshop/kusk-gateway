@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// KubeEnvoyConfigManager manages all Envoy configurations from CRDs
+// KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme       *runtime.Scheme
@@ -44,6 +44,7 @@ var (
 	configManagerLogger = ctrl.Log.WithName("controller.config-manager")
 )
 
+// UpdateConfiguration is the main method to gather all routing configs and to create and apply Envoy config
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error {
 
 	l := configManagerLogger
@@ -55,14 +56,13 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	defer l.Info("Finished updating configuration")
 
 	parser := spec.NewParser(nil)
-
+	envoyConfig := config.New()
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs")
 	var apis gateway.APIList
 	if err := c.Client.List(ctx, &apis); err != nil {
 		return err
 	}
-	envoyConfig := config.New()
 	for _, api := range apis.Items {
 		l.Info("Processing API %v", "api", api)
 		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
@@ -118,6 +118,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	return nil
 }
 
+// optionsFromStaticRouteSpec is a converter to generate Options object from StaticRoutes spec
 func optionsFromStaticRouteSpec(spec gateway.StaticRouteSpec) (*options.StaticOptions, error) {
 	// 2 dimensional map["path"]["method"]SubOptions
 	paths := make(map[string]options.StaticOperationSubOptions)
@@ -140,7 +141,7 @@ func optionsFromStaticRouteSpec(spec gateway.StaticRouteSpec) (*options.StaticOp
 				continue
 			}
 			if specRouteAction.Route != nil {
-				methodOpts.Backends = *&specRouteAction.Route.Backends
+				methodOpts.Backend = *&specRouteAction.Route.Backend
 				if specRouteAction.Route.CORS != nil {
 					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
 				}
@@ -150,5 +151,5 @@ func optionsFromStaticRouteSpec(spec gateway.StaticRouteSpec) (*options.StaticOp
 			}
 		}
 	}
-	return opts, nil
+	return opts, opts.Validate()
 }

@@ -86,42 +86,40 @@ spec:
                         description: Route defines a routing rule that proxies to
                           backend
                         properties:
-                          backends:
-                            items:
-                              description: BackendOptions describes backend to proxy
-                                to
-                              properties:
-                                hostname:
-                                  description: Hostname is the upstream hostname,
-                                    without port.
-                                  type: string
-                                port:
-                                  description: Port is the upstream port.
-                                  format: int32
-                                  type: integer
-                                retries:
-                                  description: Retries define how many times to retry
-                                    calling the backend
-                                  format: int32
-                                  type: integer
-                                rewrite:
-                                  description: Rewrite is the pattern (regex) and
-                                    a substitution string that will change URL when
-                                    request is being forwarded to the upstream service.
-                                    e.g. given that URL path is "/petstore/api/v3",
-                                    with Rewrite.Pattern "^/petstore", Rewrite.Substitution
-                                    "" backend will receive "/api/v3/pets".
-                                  properties:
-                                    pattern:
-                                      type: string
-                                    substitution:
-                                      type: string
-                                  required:
-                                  - pattern
-                                  - substitution
-                                  type: object
-                              type: object
-                            type: array
+                          backend:
+                            description: BackendOptions describes backend to proxy
+                              to
+                            properties:
+                              hostname:
+                                description: Hostname is the upstream hostname, without
+                                  port.
+                                type: string
+                              port:
+                                description: Port is the upstream port.
+                                format: int32
+                                type: integer
+                              retries:
+                                description: Retries define how many times to retry
+                                  calling the backend
+                                format: int32
+                                type: integer
+                              rewrite:
+                                description: Rewrite is the pattern (regex) and a
+                                  substitution string that will change URL when request
+                                  is being forwarded to the upstream service. e.g.
+                                  given that URL path is "/petstore/api/v3", with
+                                  Rewrite.Pattern "^/petstore", Rewrite.Substitution
+                                  "" backend will receive "/api/v3/pets".
+                                properties:
+                                  pattern:
+                                    type: string
+                                  substitution:
+                                    type: string
+                                required:
+                                - pattern
+                                - substitution
+                                type: object
+                            type: object
                           cors:
                             properties:
                               credentials:
@@ -157,7 +155,7 @@ spec:
                                 type: integer
                             type: object
                         required:
-                        - backends
+                        - backend
                         type: object
                     type: object
                   description: Methods maps Method (get, post) to RouteAction a special

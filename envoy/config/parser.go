@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jinzhu/copier"
 
@@ -8,6 +10,28 @@ import (
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/kubeshop/kusk-gateway/options"
 )
+
+/* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
+When Envoy matches a route, it uses the following procedure:
+
+    The HTTP request’s Host or :authority header is matched to a virtual host.
+
+    Each route entry in the virtual host is checked, in order. If there is a match, the route is used and no further route checks are made.
+
+    Independently, each virtual cluster in the virtual host is checked, in order. If there is a match, the virtual cluster is used and no further virtual cluster checks are made.
+
+From the istio issue tracker:
+
+The virtual hosts order does not influence the domain matching order
+
+It is the domain matters
+
+Domain search order:
+1. Exact domain names: www.foo.com.
+2. Suffix domain wildcards: *.foo.com or *-bar.foo.com.
+3. Prefix domain wildcards: foo.* or foo-*.
+4. Special wildcard * matching any domain.
+*/
 
 const httpPathSeparator string = "/"
 
@@ -86,7 +110,9 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 				return err
 			}
 			if routeRedirect != nil {
-				e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
+				if err := e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect); err != nil {
+					return fmt.Errorf("failure adding redirect route: %w", err)
+				}
 			} else {
 				var routeRoute *route.Route_Route
 				clusterName := generateClusterName(finalOpts.Service.Name, finalOpts.Service.Port)
@@ -103,7 +129,9 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 					finalOpts.Path.Retries); err != nil {
 					return err
 				}
-				e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
+				if err := e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil); err != nil {
+					return fmt.Errorf("failure adding route: %w", err)
+				}
 			}
 		}
 	}
@@ -129,29 +157,27 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 			routeMatcher := generateRouteMatch(routePath, string(method), nil, corsPolicy)
 			if methodOpts.Redirect != nil {
 				// Generating Redirect
-				var routeRedirect *route.Route_Redirect
 				routeRedirect, err := generateRedirect(methodOpts.Redirect)
 				if err != nil {
 					return err
 				}
-				e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
+				if err := e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect); err != nil {
+					return fmt.Errorf("failure adding redirect route: %w", err)
+				}
 				continue
 			} else {
 				// Generating Route
 				var routeRoute *route.Route_Route
-				// TODO: right now we support only one backend in cluster, support multiple
-				backend := methodOpts.Backends[0]
+
+				backend := methodOpts.Backend
+
 				clusterName := generateClusterName(backend.Hostname, backend.Port)
-				// for _, backend := range methodOpts.Backends {
-				// 	clusterName := generateClusterName(backend.Hostname, backend.Port)
-				// 	if !e.ClusterExist(clusterName) {
-				// 		e.AddCluster(clusterName, backend.Hostname, backend.Port)
-				// 	}
-				// }
+
 				var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 				if backend.Rewrite != nil {
 					rewritePathRegex = generateRewriteRegex(backend.Rewrite.Pattern, backend.Rewrite.Substitution)
 				}
+
 				var requestTimeout, requestIdleTimeout int64 = 0, 0
 				if methodOpts.Timeouts != nil {
 					requestTimeout = int64(methodOpts.Timeouts.RequestTimeout)
@@ -167,45 +193,12 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 					backend.Retries); err != nil {
 					return err
 				}
-				e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
+				if err := e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil); err != nil {
+					return fmt.Errorf("failure adding route: %w", err)
+				}
 
 			}
 		}
-
-		// 	corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	// routeMatcher defines how we match a route by the provided path and the headers
-		// 	routeMatcher := generateRouteMatch(routePath, method, params, corsPolicy)
-
-		// 	// This block creates redirect route
-		// 	// We either create the redirect or the route with proxy to backend
-		// 	// Redirect takes a precedence.
-		// 	var routeRedirect *route.Route_Redirect
-		// 	if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
-		// 		return err
-		// 	}
-		// 	if routeRedirect != nil {
-		// 		e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect)
-		// 	} else {
-		// 		var routeRoute *route.Route_Route
-		// 		clusterName := generateClusterName(finalOpts.Service)
-		// 		if !e.ClusterExist(clusterName) {
-		// 			e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
-		// 		}
-		// 		rewritePathRegex := generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
-		// 		if routeRoute, err = generateRoute(
-		// 			clusterName,
-		// 			corsPolicy,
-		// 			rewritePathRegex,
-		// 			int64(finalOpts.Timeouts.RequestTimeout),
-		// 			int64(finalOpts.Timeouts.IdleTimeout),
-		// 			finalOpts.Path.Retries); err != nil {
-		// 			return err
-		// 		}
-		// 		e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil)
-		// 	}
 	}
 
 	return nil

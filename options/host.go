@@ -8,12 +8,11 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
-// Host is a vhost (domain name) definition that is used during request routing.
+// Host is a vHost (and domain name) definition that is used during request routing.
 // Could be wildcard ("*" - all vhosts), prefix/suffix wildcard (*-example.com, example.*, but not both *example*),
 // or simple domain (www.example.com)
 type Host string
 
-// validation helper to check vHost
 func (h Host) Validate() error {
 	host := string(h)
 	// We're looking for *, either single, in the preffix and in the suffix.
@@ -31,6 +30,6 @@ func (h Host) Validate() error {
 		host = strings.TrimSuffix(host, "*")
 		host = host + "w"
 	}
-	// Finally check if this is a valid DNS name
-	return v.Validate(host, is.DNSName)
+	// Finally check if this is a valid Host
+	return v.Validate(host, is.Host)
 }

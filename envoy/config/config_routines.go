@@ -84,6 +84,7 @@ func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
 func generateRouteMatch(path string, method string, pathParameters map[string]ParamSchema, corsPolicy *route.CorsPolicy) *route.RouteMatch {
 	// headerMatcher allows as to match route by the method (:method header) or any other header
 	var headerMatcher []*route.HeaderMatcher
+	method = strings.ToUpper(method)
 	if corsPolicy != nil {
 		// If CORS specified, we add OPTIONS method to match the route
 		headerMatcher = append(headerMatcher, generateMethodHeaderMatcher([]string{method, "OPTIONS"}))
@@ -93,7 +94,6 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 
 	var routeMatcher *route.RouteMatch
 	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
-	// if simple path - RouteMatch_Path with path
 	routePath := path
 	for _, match := range rePathParams.FindAllString(routePath, -1) {
 		param := pathParameters[match]
@@ -111,6 +111,7 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 
 		routePath = strings.ReplaceAll(routePath, match, replacementRegex)
 	}
+	// Create Path matcher - either regex from above, prefix or simple path match
 	switch {
 	// if has regex - regex matcher
 	case rePathParams.MatchString(path):
@@ -126,7 +127,7 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 			Headers: headerMatcher,
 		}
 	case strings.HasSuffix(path, "/"):
-		// if ends in / - path prefix match
+		// if path ends in / - path prefix match
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Prefix{
 				Prefix: path,
@@ -145,6 +146,8 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 	return routeMatcher
 }
 
+// Matching on method means matching on its header.
+// Additional headers can be ammended.
 func generateMethodHeaderMatcher(methods []string) *route.HeaderMatcher {
 	switch len(methods) {
 	case 0:

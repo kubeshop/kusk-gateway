@@ -5,7 +5,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
-// BackendOptions describes backend to proxy to
+// BackendOptions defines backend options
 type BackendOptions struct {
 
 	// Hostname is the upstream hostname, without port.
@@ -23,6 +23,20 @@ type BackendOptions struct {
 
 	// Retries define how many times to retry calling the backend
 	Retries uint32 `yaml:"retries,omitempty" json:"retries,omitempty"`
+}
+
+// DeepCopy creates a copy of an object
+func (in *BackendOptions) DeepCopy() *BackendOptions {
+	if in == nil {
+		return nil
+	}
+	out := new(BackendOptions)
+	*out = *in
+	if in.Rewrite != nil {
+		in, out := &in.Rewrite, &out.Rewrite
+		*out = *in
+	}
+	return out
 }
 
 func (o BackendOptions) Validate() error {
