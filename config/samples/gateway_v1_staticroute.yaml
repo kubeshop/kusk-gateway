@@ -1,0 +1,17 @@
+apiVersion: gateway.kusk.io/v1
+kind: StaticRoute
+metadata:
+  name: staticroute-sample
+spec:
+  hosts: [ "*" ]
+  paths:
+    /: 
+       get:
+        route:
+         backend:
+            hostname: blablab
+            port: 8080
+    /static: 
+       get:
+         redirect:
+           port_redirect: 81

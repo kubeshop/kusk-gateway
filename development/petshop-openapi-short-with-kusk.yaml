@@ -33,6 +33,9 @@ tags:
       description: Find out more about our store
       url: 'http://swagger.io'
 x-kusk:
+  hosts: 
+  - "*"
+  - "example.org"
   disabled: false
   cors:
     origins:

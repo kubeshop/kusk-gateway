@@ -58,3 +58,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - staticroutes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - staticroutes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - staticroutes/status
+  verbs:
+  - get
+  - patch
+  - update

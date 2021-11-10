@@ -91,6 +91,9 @@ spec:
           operationId: "/delete"
           responses: {}
       "/xml":
+        # Disable this path for test
+        x-kusk:
+          disabled: true
         get:
           description: Returns some XML.
           operationId: "/xml"
@@ -206,6 +209,53 @@ spec:
         get:
           operationId: "/stream"
           description: Streams min(number, 100) lines.
+          parameters:
+          - name: number
+            in: path
+            description: Number of lines to stream.
+            required: true
+            type: number
+            default: '10'
+          responses: {}
+      # Old API stream, rewrite to new
+      "/oldAPI/stream/{number}":
+        x-kusk:
+          path:
+            # /oldAPI/stream/{number} -> to backend: /stream/{number}
+            rewrite:
+              pattern: "^/oldAPI"
+              substitution: ""
+        get:
+          description: Old stream, rewrite to new.
+          parameters:
+          - name: number
+            in: path
+            description: Number of lines to stream.
+            required: true
+            type: number
+            default: '10'
+          responses: {}
+      # Old stream, redirect to new
+      "/oldAPI/streamOld/{number}":
+        x-kusk:
+          redirect:
+            rewrite_regex:
+              # "/oldAPI/streamOld/{number}" -> "/stream/{number}"
+              pattern: '^/.*/streamOld/(\d+)'
+              substitution: '/stream/\1'
+            # host_redirect: example.org
+            # scheme_redirect: http|https
+            # scheme_redirect: https
+            # To the port
+            # port_redirect: 8081
+            # Set it to full redirect
+            # path_redirect: /pet/findByStatus
+            # Permanent redirect
+            response_code: 308
+            # Strips query after URL
+            # strip_query: true
+        get:
+          description: Old stream, redirect to new.
           parameters:
           - name: number
             in: path

@@ -99,7 +99,6 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-
 	if err = (&controllers.EnvoyFleetReconciler{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
@@ -108,10 +107,15 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
 		os.Exit(1)
 	}
-	if err = (&controllers.APIReconciler{
+	controllerConfigManager := controllers.KubeEnvoyConfigManager{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
 		EnvoyManager: envoyManager,
+	}
+	if err = (&controllers.APIReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "API")
 		os.Exit(1)
@@ -122,6 +126,14 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "API")
 			os.Exit(1)
 		}
+	}
+	if err = (&controllers.StaticRouteReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ConfigManager: &controllerConfigManager,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "StaticRoute")
+		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 
