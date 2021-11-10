@@ -39,8 +39,8 @@ spec:
               hosts:
                 description: Hosts is a collection of vhosts the rules apply to
                 items:
-                  description: Host is a vhost (domain name) definition that is used
-                    during request routing. Could be wildcard ("*" - all vhosts),
+                  description: Host is a vHost (and domain name) definition that is
+                    used during request routing. Could be wildcard ("*" - all vhosts),
                     prefix/suffix wildcard (*-example.com, example.*, but not both
                     *example*), or simple domain (www.example.com)
                   type: string
@@ -48,8 +48,8 @@ spec:
               paths:
                 additionalProperties:
                   additionalProperties:
-                    description: RouteAction is either a route to the backend or a
-                      redirect, they're mutually exclusive.
+                    description: Action is either a route to the backend or a redirect,
+                      they're mutually exclusive.
                     properties:
                       redirect:
                         description: RedirectOptions provide http redirects see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-redirectaction
@@ -87,8 +87,7 @@ spec:
                           backend
                         properties:
                           backend:
-                            description: BackendOptions describes backend to proxy
-                              to
+                            description: BackendOptions defines backend options
                             properties:
                               hostname:
                                 description: Hostname is the upstream hostname, without
@@ -158,8 +157,7 @@ spec:
                         - backend
                         type: object
                     type: object
-                  description: Methods maps Method (get, post) to RouteAction a special
-                    method "*" means "all methods"
+                  description: Methods maps Method (GET, POST) to Action
                   type: object
                 description: Paths is a multidimensional map of path / method to the
                   routing rules

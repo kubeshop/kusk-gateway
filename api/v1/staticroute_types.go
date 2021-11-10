@@ -40,11 +40,11 @@ type StaticRouteSpec struct {
 // Must start with /, could be exact (/index.html), prefix (/front/, / in the end defines prefix), regex (/images/(\d+))
 type Path string
 
-// Methods maps Method (GET, POST) to RouteAction
-type Methods map[options.HTTPMethod]*RouteAction
+// Methods maps Method (GET, POST) to Action
+type Methods map[options.HTTPMethod]*Action
 
-// RouteAction is either a route to the backend or a redirect, they're mutually exclusive.
-type RouteAction struct {
+// Action is either a route to the backend or a redirect, they're mutually exclusive.
+type Action struct {
 	Route    *Route                   `json:"route,omitempty"`
 	Redirect *options.RedirectOptions `json:"redirect,omitempty"`
 }
