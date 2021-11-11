@@ -28,11 +28,10 @@ type EnvoyFleetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Replicas field specifies the number of Envoy Pods being deployed. Optional, default value is 1.
+	// Size field specifies the number of Envoy Pods being deployed. Optional, default value is 1.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:default:=1
-	// +optional
-	Replicas *int32 `json:"replicas"`
+	Size *int32 `json:"size,omitempty"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet
@@ -43,13 +42,14 @@ type EnvoyFleetStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="size",type="integer",JSONPath=".spec.size"
 
 // EnvoyFleet is the Schema for the envoyfleet API
 type EnvoyFleet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   EnvoyFleetSpec   `json:"spec,omitempty"`
+	Spec   EnvoyFleetSpec   `json:"spec"`
 	Status EnvoyFleetStatus `json:"status,omitempty"`
 }
 

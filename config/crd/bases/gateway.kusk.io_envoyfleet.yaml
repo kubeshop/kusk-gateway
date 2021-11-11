@@ -16,7 +16,11 @@ spec:
     singular: envoyfleet
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.size
+      name: size
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
         description: EnvoyFleet is the Schema for the envoyfleet API
@@ -36,10 +40,10 @@ spec:
           spec:
             description: EnvoyFleetSpec defines the desired state of EnvoyFleet
             properties:
-              replicas:
+              size:
                 default: 1
-                description: Replicas field specifies the number of Envoy Pods being
-                  deployed. Optional, default value is 1.
+                description: Size field specifies the number of Envoy Pods being deployed.
+                  Optional, default value is 1.
                 format: int32
                 minimum: 1
                 type: integer
@@ -47,6 +51,8 @@ spec:
           status:
             description: EnvoyFleetStatus defines the observed state of EnvoyFleet
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true
