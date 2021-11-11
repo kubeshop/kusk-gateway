@@ -99,19 +99,22 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	if err = (&controllers.EnvoyFleetReconciler{
-		Client:       mgr.GetClient(),
-		Scheme:       mgr.GetScheme(),
-		EnvoyManager: envoyManager,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
-		os.Exit(1)
-	}
+
 	controllerConfigManager := controllers.KubeEnvoyConfigManager{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
 		EnvoyManager: envoyManager,
 	}
+
+	if err = (&controllers.EnvoyFleetReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ConfigManager: &controllerConfigManager,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.APIReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),

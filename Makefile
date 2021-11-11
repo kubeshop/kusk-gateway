@@ -83,6 +83,8 @@ docker-push: ## Push docker image with the manager.
 
 install-local: manifests kustomize ## Install CRDs and Envoy into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/local | kubectl apply -f -
+	kubectl -n kusk-system wait --for condition=established --timeout=60s crd/envoyfleet.gateway.kusk.io
+	kubectl -n kusk-system apply -f config/samples/gateway_v1_envoyfleet.yaml
 
 uninstall-local: manifests kustomize ## Uninstall CRDs and Envoy from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/local | kubectl delete -f -
