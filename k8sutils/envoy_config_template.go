@@ -1,6 +1,8 @@
+package k8sutils
+
+var envoyConfigTemplate = `
 node:
-  cluster: default
-  id: default-1
+  cluster: %s
 
 dynamic_resources:
   ads_config:
@@ -40,3 +42,5 @@ admin:
     socket_address:
       address: 0.0.0.0
       port_value: 19000
+
+`

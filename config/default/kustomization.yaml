@@ -35,7 +35,6 @@ namePrefix: kusk-
 # 'CERTMANAGER' needs to be enabled to use ca injection
 patchesStrategicMerge:
 - manager_auth_proxy_patch.yaml
-- envoy_config_patch.yaml
 - manager_webhook_patch.yaml
 - webhookcainjection_patch.yaml
 
@@ -76,6 +75,5 @@ resources:
 - ../crd
 - ../rbac
 - ../manager
-- ../envoy
 - ../webhook
 - ../certmanager

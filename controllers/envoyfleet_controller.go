@@ -66,8 +66,16 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	if err := k8sutils.CreateEnvoyConfig(ctx, r.Client, ef); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy config: %w", err)
+	}
+
 	if err := k8sutils.CreateEnvoyDeployment(ctx, r.Client, ef); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to create envoy deployment: %w", err)
+	}
+
+	if err := k8sutils.CreateEnvoyService(ctx, r.Client, ef); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy service: %w", err)
 	}
 
 	return ctrl.Result{}, nil
