@@ -9,7 +9,7 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-RUN CGO_ENABLED=0 go get github.com/go-delve/delve/cmd/dlv
+RUN CGO_ENABLED=0 go get github.com/go-delve/delve/cmd/dlv@v1.7.2
 
 # Copy the go source
 COPY . .
