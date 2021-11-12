@@ -41,8 +41,9 @@ type StaticRouteSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Hosts is a collection of vhosts the rules apply to.
-	// Default - "*" - vhost that matches all domain names.
-	Hosts []options.Host `json:"hosts"`
+	// Defaults to "*" - vhost that matches all domain names.
+	// +optional
+	Hosts []options.Host `json:"hosts,omitempty"`
 
 	// Paths is a multidimensional map of path / method to the routing rules
 	Paths map[Path]Methods `json:"paths"`
