@@ -37,8 +37,8 @@ spec:
             description: StaticRouteSpec defines the desired state of StaticRoute
             properties:
               hosts:
-                description: Hosts is a collection of vhosts the rules apply to. Default
-                  - "*" - vhost that matches all domain names.
+                description: Hosts is a collection of vhosts the rules apply to. Defaults
+                  to "*" - vhost that matches all domain names.
                 items:
                   description: Host is a vHost (and domain name) definition that is
                     used during request routing. Could be wildcard ("*" - all vhosts),

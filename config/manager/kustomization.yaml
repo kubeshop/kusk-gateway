@@ -14,4 +14,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: kusk-gateway
-  newTag: dev
+  newTag: dev-debug
