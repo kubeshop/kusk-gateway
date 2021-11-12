@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve Kusk
+about: Create a report to help us improve Kusk Gateway
 title: ''
 labels: kind/bug
 assignees: ''
@@ -20,11 +20,12 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Screenshots**
-If applicable, add CLI commands/output to help explain your problem.
+If applicable, add log output to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Version [e.g. 22]
+ - Kubernetes version
+ - Kube Gateway Version
+
  
 **Additional context**
 Add any other context about the problem here.

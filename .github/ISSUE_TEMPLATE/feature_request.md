@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea or new feature for Kusk
+about: Suggest an idea or new feature for Kusk Gateway
 title: ''
 labels: kind/feature
 assignees: ''
@@ -17,4 +17,4 @@ A clear and concise description of what you want to happen.
 A clear and concise description of any alternative solutions or features you've considered.
 
 **Additional context**
-Add any other context, CLI input/output, etc. about the feature request here.
+Add any other context about the feature request here.
