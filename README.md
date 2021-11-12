@@ -4,7 +4,7 @@
 
 <!-- Add buttons here -->
 
-Kusk Gateway is a self-service API gateway powered by [OpenAPI]() and [Envoy](https://www.envoyproxy.io/)!
+Kusk Gateway is a self-service API gateway powered by [OpenAPI](https://www.openapis.org/) and [Envoy](https://www.envoyproxy.io/)!
 
 Kusk Gateway is for you if:
 - You or your team develop REST APIs running in Kubernetes
