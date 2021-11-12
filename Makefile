@@ -38,8 +38,11 @@ help: ## Display this help.
 
 ##@ Development
 
-create-env: ## Spin up a local development cluster with k3d
+create-env: ## Spin up a local development cluster with Minikube and install kusk-gateway for debugging
 	./development/cluster/create-env.sh
+
+create-cluster: ## Spin up a local minikube cluster with metallb and cert manager installed
+	./development/cluster/create-cluster.sh
 
 delete-env: ## Destroy the local development k3d cluster
 	./development/cluster/delete-env.sh
