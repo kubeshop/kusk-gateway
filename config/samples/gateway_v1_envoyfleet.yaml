@@ -2,4 +2,5 @@ apiVersion: gateway.kusk.io/v1
 kind: EnvoyFleet
 metadata:
   name: default
-spec: {}
+spec:
+  size: 1

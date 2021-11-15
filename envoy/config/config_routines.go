@@ -36,9 +36,17 @@ var (
 		307: "TEMPORARY_REDIRECT",
 		308: "PERMANENT_REDIRECT",
 	}
+
+	// regexes for path that has OpenAPI parameters names ({petID})
+	// OpenAPI supports:
+	// * strings
+	// * number (double and float)
+	// * integer (int32, int64)
+	// we don't use OpenAPI "format" or "pattern" right now
 	parameterTypeRegexReplacements = map[string]string{
-		"string": `([A-z]+)`,
-		"number": `(\d+)`,
+		"string":  `([.a-zA-Z0-9-]+)`,
+		"integer": `([0-9]+)`,
+		"number":  `([0-9]*[.])?[0-9]+`,
 	}
 )
 
@@ -93,28 +101,29 @@ func generateRouteMatch(path string, method string, pathParameters map[string]Pa
 	}
 
 	var routeMatcher *route.RouteMatch
-	// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by /([A-z0-9]+) regex
-	routePath := path
-	for _, match := range rePathParams.FindAllString(routePath, -1) {
-		param := pathParameters[match]
-
-		replacementRegex := ""
-		// if type = enum, construct enum regex capture grouup
-		if len(param.Enum) > 0 {
-			enumStrings := convertToStringSlice(param.Enum)
-			replacementRegex = fmt.Sprintf("(%s)", strings.Join(enumStrings, "|"))
-		} else if regex, ok := parameterTypeRegexReplacements[param.Type]; ok {
-			replacementRegex = regex
-		} else {
-			replacementRegex = "([A-z0-9]+)"
-		}
-
-		routePath = strings.ReplaceAll(routePath, match, replacementRegex)
-	}
-	// Create Path matcher - either regex from above, prefix or simple path match
+	// Create Path matcher - either regex if there are parameters, prefix or simple path match
 	switch {
 	// if has regex - regex matcher
 	case rePathParams.MatchString(path):
+		// if regex in the path - matcher is using RouteMatch_Regex with /{pattern} replaced by related regex
+		routePath := path
+		for _, match := range rePathParams.FindAllString(routePath, -1) {
+			param := pathParameters[match]
+
+			// default replacement regex
+			replacementRegex := ""
+			// if type = enum, construct enum regex capture grouup
+			if len(param.Enum) > 0 {
+				enumStrings := convertToStringSlice(param.Enum)
+				replacementRegex = fmt.Sprintf("(%s)", strings.Join(enumStrings, "|"))
+			} else if regex, ok := parameterTypeRegexReplacements[param.Type]; ok {
+				replacementRegex = regex
+			} else {
+				// If param type didn't match, we use string, basically - anything valid for URL path
+				replacementRegex = parameterTypeRegexReplacements["string"]
+			}
+			routePath = strings.ReplaceAll(routePath, match, replacementRegex)
+		}
 		routeMatcher = &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
@@ -277,7 +286,7 @@ func generateRoutePath(base, path string) string {
 	}
 
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
-	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, httpPathSeparator), strings.TrimPrefix(path, httpPathSeparator))
+	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, "/"), strings.TrimPrefix(path, "/"))
 }
 
 func generateRewriteRegex(pattern string, substitution string) *envoytypematcher.RegexMatchAndSubstitute {
