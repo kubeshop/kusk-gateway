@@ -8,13 +8,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	clientPkg "sigs.k8s.io/controller-runtime/pkg/client"
 
 	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
 )
 
-func CreateEnvoyConfig(ctx context.Context, client client.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyConfig(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy-config",
@@ -26,7 +28,7 @@ func CreateEnvoyConfig(ctx context.Context, client client.Client, ef *gatewayv1.
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
-			APIVersion: "core/v1",
+			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            configMapName,
@@ -39,10 +41,10 @@ func CreateEnvoyConfig(ctx context.Context, client client.Client, ef *gatewayv1.
 		},
 	}
 
-	return createOrReplace(ctx, client, configMap)
+	return createOrReplace(ctx, client, configMap.GroupVersionKind(), configMap)
 }
 
-func CreateEnvoyService(ctx context.Context, client client.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyService(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy-svc",
@@ -59,8 +61,8 @@ func CreateEnvoyService(ctx context.Context, client client.Client, ef *gatewayv1
 
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
+			Kind:       "Service",
+			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            serviceName,
@@ -80,10 +82,10 @@ func CreateEnvoyService(ctx context.Context, client client.Client, ef *gatewayv1
 		},
 	}
 
-	return createOrReplace(ctx, client, service)
+	return createOrReplace(ctx, client, service.GroupVersionKind(), service)
 }
 
-func CreateEnvoyDeployment(ctx context.Context, client client.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyDeployment(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy",
@@ -156,7 +158,7 @@ func CreateEnvoyDeployment(ctx context.Context, client client.Client, ef *gatewa
 		},
 	}
 
-	return createOrReplace(ctx, client, deployment)
+	return createOrReplace(ctx, client, deployment.GroupVersionKind(), deployment)
 }
 
 func envoyFleetAsOwner(cr *gatewayv1.EnvoyFleet) metav1.OwnerReference {
@@ -174,13 +176,33 @@ func labelSelectors(labels map[string]string) *metav1.LabelSelector {
 	return &metav1.LabelSelector{MatchLabels: labels}
 }
 
-func createOrReplace(ctx context.Context, client client.Client, obj client.Object) error {
-	err := client.Create(ctx, obj)
+func checkIfExists(ctx context.Context, client clientPkg.Client, gvk schema.GroupVersionKind, key clientPkg.ObjectKey) (resourceVersion string, ok bool, err error) {
+	var obj unstructured.Unstructured
+
+	obj.SetGroupVersionKind(gvk)
+
+	err = client.Get(ctx, key, &obj)
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
-			err = client.Update(ctx, obj)
+		if errors.IsNotFound(err) {
+			return "", false, nil
 		}
+
+		return "", false, err
 	}
 
-	return err
+	return obj.GetResourceVersion(), true, nil
+}
+
+func createOrReplace(ctx context.Context, client clientPkg.Client, gvk schema.GroupVersionKind, obj clientPkg.Object) error {
+	resourceVersion, ok, err := checkIfExists(ctx, client, gvk, clientPkg.ObjectKeyFromObject(obj))
+	if err != nil {
+		return err
+	}
+
+	if ok {
+		obj.SetResourceVersion(resourceVersion)
+		return client.Update(ctx, obj)
+	}
+
+	return client.Create(ctx, obj)
 }
