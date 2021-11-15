@@ -72,10 +72,10 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 docker-build: ## Build docker image with the manager.
-	eval $(minikube docker-env --profile "kgw") && DOCKER_BUILDKIT=1 docker build -t ${IMG} .
+	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
 
 docker-build-debug:## Build docker image with the manager and debugger.
-	eval $(minikube docker-env --profile "kgw") && DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
+	DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
