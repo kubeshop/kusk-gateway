@@ -54,9 +54,3 @@ eval $(minikube docker-env --profile "kgw")
 make docker-build deploy
 
 kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system
-
-external_ip=""; while [ -z $external_ip ]; do echo "Waiting for end point..."; external_ip=$(kubectl -n kusk-system get svc kusk-envoy --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}"); [ -z "$external_ip" ] && sleep 10; done; echo "End point ready-" && echo http://$external_ip:8080; export endpoint=$external_ip
-
-echo "Try running:"
-echo "kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin"
-echo "curl -v http://$external_ip:8080/get"
