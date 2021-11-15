@@ -34,8 +34,6 @@ Domain search order:
 4. Special wildcard * matching any domain.
 */
 
-const httpPathSeparator string = "/"
-
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
 func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec *openapi3.T) error {
 	vhosts := []string{}
