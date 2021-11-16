@@ -11,86 +11,30 @@ Kusk Gateway is for you if:
 - Embrace a contract-first approach to developing your APIS using OpenAPI or Swagger
 - You don't want to spend lots of time configuring hard-to-work-with ingress controllers that require a dedicated Ops Engineer
 
-Kusk Gateway configures itself through the endpoints defined in your OpenAPI or Swagger document removing the need to DevOps intervention. 
+Kusk Gateway configures itself through the metadata defined in your OpenAPI or Swagger document.
 
 You can apply your API definition like any other Kubernetes resource using our custom-made Kusk API CustomResourceDefinition.
 
-##  Why did we create Kusk Gateway?
 See our [announcement blog post](...) for full details!
 
-But in short, we wanted to achieve the following:
-- Hit the ground running when deploying a new REST api to Kubernetes
-
-- Simplified configuration for development workflows when deployed locally
-
-- Provides observability for deployed endpoints without having to learn multiple tools (Prometheus, Grafana, etc) out of the box
-
-- Decoupling: let the Ops configure cluster-wide settings and let Developers deploy the APIs in self-service manner
-
-- Automated QoS: 
-    - schema-based request validation
-    - rate-limiting
-    - timeouts
-
-### How are things normally done today?
-By manually creating and updating API-related resources, such as Ingress. The format of which will depend on your Gateway. This is not something develpers normally have control over.
-
-Installing and maintaining several observability tools, such as Prometheus and Grafana and implementing the observability functionality in the code
-
-This means developers have to learn how to use these tools.
-
-### How does Kusk Gateway solve these issues?
-- Removes requirement for developers to know multiple tools just to deploy their APIs. If you know how to write an OpenAPI document, you know Kusk Gateway!
-
-- Maintainability/safety: API related settings (rate limiting, security) are held in one place being the (reviewable!) source of truth, removing the manual configuration step, lowering the chance of human error
-
-- Flexibility: services can be created in any language and have same level of observability / security features without having to implement it on your own
-
-- No vendor lock: kusk-gateway can be installed on any cloud or bare metal Kubernetes cluster
-
 # Table of contents
-- [Installation](#installation)
-- [Usage](#usage)
+- [Get Started](#get-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
 - [Development](#development)
 - [Contribute](#contribute)
 - [License](#license)
 
-# Installation
+# Get Started
+## Installation
 [(Back to top)](#table-of-contents)
 
-TODO(#63) - Add Helm installation instructions.
+See our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install Kusk Gateway with Helm or how to get kusk gateway running locally.
 
-## Local Installation for Evaluation
-If you want to run kusk-gateway locally, you can do this easily using Minikube
-
-Prerequisites - make sure you have the following installed and on your PATH:
-- `jq`
-- `kubectl`
-- `docker`
-- `minikube`
-
-Run:
-- `make create-cluster` # creates and configures the minikube cluster
-- `make install` # install the required CRDs
-- `eval $(minikube docker-env --profile "kgw")` # so built docker images are available to Minikube
-- `make docker-build deploy` # build and deploy the kusk gateway image
-- `kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system`
-
-Once Kusk Gateway is installed and running, you can try and apply your own OpenAPI specs, see Usage below or you can apply one of our examples
-
-### Example
-```
-kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin
-
-external_ip=$(kubectl -n kusk-system get svc kusk-envoy --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-curl -v http://$external_ip:8080/get
-
-```
-
-# Usage
+## Usage
 [(Back to top)](#table-of-contents)
 
-## API CRD Format
+### API CRD Format
 ```
 apiVersion: gateway.kusk.io/v1
 kind: API
@@ -110,23 +54,7 @@ TODO(#65) - provide link to fill x-kusk documentation
 # Development
 [(Back to top)](#table-of-contents)
 
-Kusk Gateway is built on top of Kubebuilder which uses custom-written managers that react to creation of new APIs and updates the envoy configuration using the xDS protocol.
-
-## Set up development environment
-### with in-cluster debugging
-- Set up remote debugging for your IDE pointed at localhost:40000 
-  - [Goland](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-in-the-docker-container)
-  - [VSCode](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#configure)
-- Run `make create-env`
-- When the make script is waiting for kusk-controller-manager to become healthy, run `kubectl port-forward deployment/kusk-controller-manager -n kusk-system 40000:40000` in a new terminal window
-- Run your debug configuration from your IDE. The pod won't become healthy until you do this as Delve waits for a connection on :40000.
-- When the script completes, you can now deploy httpbin with `kubectl apply -f examples/httpbin`
-- Place breakpoints in the code and debug as normal
-
-### Run kusk gateway locally
-- Run `make create-env`
-- Run `make run` 
-  - This runs the built binary on your machine and creates a tunnel to minikube so envoy and kusk gateway can communicate.
+See our [Development document](https://kubeshop.github.io/kusk-gateway/development/) for how to develop Kusk Gateway.
 
 # Contribute
 [(Back to top)](#table-of-contents)
