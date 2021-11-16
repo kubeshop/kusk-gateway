@@ -34,7 +34,6 @@ jobs:
         with:
           images: kubeshop/kusk-gateway
           tags: |
-            type=ref,event=tag
             type=semver,pattern=v{{version}}
             type=sha
           flavor: |
