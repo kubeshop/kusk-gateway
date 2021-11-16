@@ -16,6 +16,7 @@ make sure you have the following installed and on your PATH:
 Run:
 - `make create-cluster` # creates and configures the minikube cluster
 - `make install` # install the required CRDs
+- `kubectl apply -f ./config/samples/gateway_v1_envoyfleet.yaml -n kusk-system` to install the envoy fleet
 - `eval $(minikube docker-env --profile "kgw")` # so built docker images are available to Minikube
 - `make docker-build deploy` # build and deploy the kusk gateway image
 - `kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system`

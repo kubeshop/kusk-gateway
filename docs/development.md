@@ -15,5 +15,6 @@ Kusk Gateway is built on top of Kubebuilder which uses custom-written managers t
 
 ### Run kusk gateway locally
 - Run `make create-env`
+- Run `kubectl apply -f ./config/samples/gateway_v1_envoyfleet.yaml -n kusk-system`
 - Run `make run` 
   - This runs the built binary on your machine and creates a tunnel to minikube so envoy and kusk gateway can communicate.
