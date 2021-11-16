@@ -1,3 +1,5 @@
+builds: []
+
 dockers:
   -
     id: kusk-gateway
