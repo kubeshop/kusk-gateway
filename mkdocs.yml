@@ -1,0 +1,33 @@
+site_name: Kusk Gateway
+site_description: 'OpenAPI for Kubernetes done right'
+site_author: 'Kubeshop Kusk team'
+docs_dir: docs/
+repo_name: 'kubeshop/kusk-gateway'
+repo_url: 'https://github.com/kubeshop/kusk-gateway'
+edit_uri: blob/main/docs/
+
+theme:
+  name: material
+  locale: en
+  highlightjs: true
+  hljs_languages:
+    - yaml
+  features:
+    - navigation.expand
+nav:
+  - Welcome: index.md
+  - Architecture: arch.md
+
+extra:
+  analytics:
+    provider: google
+    property: UA-204665550-4
+
+  consent:
+    title: Cookie consent
+    description: >
+      We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our
+      documentation and whether users find what they're searching for. With your consent, you're helping us to make our
+      documentation better.
+
+copyright: Copyright &copy; 2021 <a href="https://kubeshop.io">Kubeshop</a>
