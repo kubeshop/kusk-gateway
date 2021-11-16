@@ -28,12 +28,31 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
-        name: Run GoReleaser
+        name: Docker metadata for Kusk Gateway
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: kubeshop/kusk-gateway
+          tags: |
+            type=semver,pattern=v{{version}}
+            type=sha
+          flavor: |
+            latest=true
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      -
+        name: Run GoReleaser to publish release notes
         if: github.event_name != 'pull_request'
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
           version: latest
-          args: release --rm-dist
+          args: release --rm-dist --skip-sign
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}

@@ -2,40 +2,6 @@ builds:
   - id: kusk-gateway
     skip: true
 
-dockers:
-  -
-    id: kusk-gateway
-    image_templates:
-    - "kubeshop/kusk-gateway:latest"
-    - "kubeshop/kusk-gateway:{{ .Tag }}"
-    # GOOS of the built binaries/packages that should be used.
-    goos: linux
-    # GOARCH of the built binaries/packages that should be used.
-    goarch: amd64
-    # Skips the docker push.
-    # Could be useful if you also do draft releases.
-    #
-    # If set to auto, the release will not be pushed to the Docker repository
-    #  in case there is an indicator of a prerelease in the tag, e.g. v1.0.0-rc1.
-    #
-    dockerfile: Dockerfile
-    # Defaults to false.
-    skip_push: false
-    # Set the "backend" for the Docker pipe.
-    # Valid options are: docker, buildx, podman, buildpacks
-    # podman is a GoReleaser Pro feature and is only available on Linux.
-    # Defaults to docker.
-    use: buildx
-
-    # Template of the docker build flags.
-    build_flag_templates:
-    - "--pull"
-    - "--label=org.opencontainers.image.created={{.Date}}"
-    - "--label=org.opencontainers.image.title={{.ProjectName}}"
-    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-    - "--label=org.opencontainers.image.version={{.Version}}"
-    - "--platform=linux/amd64"
-
 changelog:
   sort: asc
   filters:
