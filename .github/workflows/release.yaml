@@ -30,7 +30,7 @@ jobs:
       -
         name: Run GoReleaser
         if: github.event_name != 'pull_request'
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v2.8.0
         with:
           distribution: goreleaser
           version: latest
