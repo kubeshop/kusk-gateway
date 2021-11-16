@@ -8,6 +8,7 @@ import (
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
@@ -32,8 +33,6 @@ Domain search order:
 3. Prefix domain wildcards: foo.* or foo-*.
 4. Special wildcard * matching any domain.
 */
-
-const httpPathSeparator string = "/"
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
 func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec *openapi3.T) error {
@@ -172,6 +171,9 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 				backend := methodOpts.Backend
 
 				clusterName := generateClusterName(backend.Hostname, backend.Port)
+				if !e.ClusterExist(clusterName) {
+					e.AddCluster(clusterName, backend.Hostname, backend.Port)
+				}
 
 				var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 				if backend.Rewrite != nil {

@@ -25,6 +25,8 @@ SOFTWARE.
 package v1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubeshop/kusk-gateway/options"
@@ -38,11 +40,49 @@ type StaticRouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Hosts is a collection of vhosts the rules apply to
-	Hosts []options.Host `json:"hosts"`
+	// Hosts is a collection of vhosts the rules apply to.
+	// Defaults to "*" - vhost that matches all domain names.
+	// +optional
+	Hosts []options.Host `json:"hosts,omitempty"`
 
 	// Paths is a multidimensional map of path / method to the routing rules
 	Paths map[Path]Methods `json:"paths"`
+}
+
+// GetOptionsFromSpec is a converter to generate Options object from StaticRoutes spec
+func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error) {
+	// 2 dimensional map["path"]["method"]SubOptions
+	paths := make(map[string]options.StaticOperationSubOptions)
+	opts := &options.StaticOptions{
+		Paths: paths,
+		Hosts: spec.Hosts,
+	}
+	if err := opts.Validate(); err != nil {
+		return nil, fmt.Errorf("failed to validate options: %w", err)
+	}
+	for specPath, specMethods := range spec.Paths {
+		path := string(specPath)
+		opts.Paths[path] = make(options.StaticOperationSubOptions)
+		pathMethods := opts.Paths[path]
+		for specMethod, specRouteAction := range specMethods {
+			methodOpts := &options.StaticSubOptions{}
+			pathMethods[specMethod] = methodOpts
+			if specRouteAction.Redirect != nil {
+				methodOpts.Redirect = specRouteAction.Redirect
+				continue
+			}
+			if specRouteAction.Route != nil {
+				methodOpts.Backend = *&specRouteAction.Route.Backend
+				if specRouteAction.Route.CORS != nil {
+					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
+				}
+				if specRouteAction.Route.Timeouts != nil {
+					methodOpts.Timeouts = specRouteAction.Route.Timeouts
+				}
+			}
+		}
+	}
+	return opts, opts.Validate()
 }
 
 // Path is a URL path without a query
@@ -54,14 +94,18 @@ type Methods map[options.HTTPMethod]*Action
 
 // Action is either a route to the backend or a redirect, they're mutually exclusive.
 type Action struct {
-	Route    *Route                   `json:"route,omitempty"`
+	// +optional
+	Route *Route `json:"route,omitempty"`
+	// +optional
 	Redirect *options.RedirectOptions `json:"redirect,omitempty"`
 }
 
 // Route defines a routing rule that proxies to backend
 type Route struct {
-	Backend  *options.BackendOptions `json:"backend"`
-	CORS     *options.CORSOptions    `json:"cors,omitempty"`
+	Backend *options.BackendOptions `json:"backend"`
+	// +optional
+	CORS *options.CORSOptions `json:"cors,omitempty"`
+	// +optional
 	Timeouts *options.TimeoutOptions `json:"timeouts,omitempty"`
 }
 

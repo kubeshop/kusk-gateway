@@ -37,7 +37,6 @@ import (
 	gateway "github.com/kubeshop/kusk-gateway/api/v1"
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
-	"github.com/kubeshop/kusk-gateway/options"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
 
@@ -101,7 +100,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	}
 	for _, sr := range staticRoutes.Items {
 		l.Info("Processing static routes", "route", sr)
-		opts, err := optionsFromStaticRouteSpec(sr.Spec)
+		opts, err := sr.Spec.GetOptionsFromSpec()
 		if err != nil {
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
 		}
@@ -125,40 +124,4 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	}
 
 	return nil
-}
-
-// optionsFromStaticRouteSpec is a converter to generate Options object from StaticRoutes spec
-func optionsFromStaticRouteSpec(spec gateway.StaticRouteSpec) (*options.StaticOptions, error) {
-	// 2 dimensional map["path"]["method"]SubOptions
-	paths := make(map[string]options.StaticOperationSubOptions)
-	opts := &options.StaticOptions{
-		Paths: paths,
-		Hosts: spec.Hosts,
-	}
-	if err := opts.FillDefaultsAndValidate(); err != nil {
-		return nil, fmt.Errorf("failed to validate options: %w", err)
-	}
-	for specPath, specMethods := range spec.Paths {
-		path := string(specPath)
-		opts.Paths[path] = make(options.StaticOperationSubOptions)
-		pathMethods := opts.Paths[path]
-		for specMethod, specRouteAction := range specMethods {
-			methodOpts := &options.StaticSubOptions{}
-			pathMethods[specMethod] = methodOpts
-			if specRouteAction.Redirect != nil {
-				methodOpts.Redirect = specRouteAction.Redirect
-				continue
-			}
-			if specRouteAction.Route != nil {
-				methodOpts.Backend = *&specRouteAction.Route.Backend
-				if specRouteAction.Route.CORS != nil {
-					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
-				}
-				if specRouteAction.Route.Timeouts != nil {
-					methodOpts.Timeouts = specRouteAction.Route.Timeouts
-				}
-			}
-		}
-	}
-	return opts, opts.Validate()
 }

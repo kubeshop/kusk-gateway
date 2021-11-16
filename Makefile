@@ -77,7 +77,7 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 docker-build: ## Build docker image with the manager.
 	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
 
-docker-build-debug: ## Build docker image with the manager and debugger.
+docker-build-debug:## Build docker image with the manager and debugger.
 	DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}

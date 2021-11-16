@@ -88,7 +88,9 @@ func (r *API) validate() error {
 	if err != nil {
 		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
 	}
-
+	if len(apiSpec.Paths) == 0 {
+		return fmt.Errorf("spec: should be a valid OpenAPI spec, no paths found")
+	}
 	opts, err := spec.GetOptions(apiSpec)
 	if err != nil {
 		return fmt.Errorf("spec: x-kusk should be a valid set of options: %w", err)
