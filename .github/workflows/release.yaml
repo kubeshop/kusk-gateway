@@ -1,0 +1,46 @@
+name: Release kubectl-testkube
+
+on:
+  push:
+    tags: 
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+jobs:
+
+  release:
+    name: Create and upload release-artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      # -
+      #   name: Checkout
+      #   uses: actions/checkout@v2
+      #   with:
+      #     fetch-depth: 0
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Docker metadata for Kusk Gateway
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: kubeshop/kusk-gateway
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
