@@ -1,4 +1,14 @@
-builds: []
+builds:
+  - id: kusk-gateway
+    goos: []
+    goarch: []
+    goarm:
+    - "6"
+    gomips:
+    - hardfloat
+    targets: []
+    dir: .
+    main: .
 
 dockers:
   -
