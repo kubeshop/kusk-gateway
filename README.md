@@ -1,105 +1,134 @@
-# kusk-gateway
-Kusk-gateway is the API Gateway, based on Envoy and using OpenAPI specification as the source of configuration
+<!-- Add banner here -->
 
-## Steps to setup local development cluster and deploy kusk-gateway operator
+# Kusk Gateway
 
-#### Create local cluster
-The local cluster setup depends on having a k3d registry named reg available
-- `make create-env`
+<!-- Add buttons here -->
 
-#### Delete local cluster
-- `make delete-env`
+Kusk Gateway is a self-service API gateway powered by [OpenAPI](https://www.openapis.org/) and [Envoy](https://www.envoyproxy.io/)!
 
-#### Deploy an example API
-`kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin`
-This will create a deployment and load balancer service for httpbin.
-The openapi / swagger document describing the API will be applied in the form of a kusk API CRD.
-This will cause the reconcile loop in the kusk-gateway control plane to kick in and update the envoy config to allow you 
-to curl the service.
+Kusk Gateway is for you if:
+- You or your team develop REST APIs running in Kubernetes
+- Embrace a contract-first approach to developing your APIs using OpenAPI or Swagger
+- You don't want to spend lots of time configuring hard-to-work-with ingress controllers that require a dedicated Ops Engineer
 
-Envoy is listening on port 8080, the IP will be published after `create-env` succeeds.
+Kusk Gateway configures itself through the metadata defined in your OpenAPI or Swagger document.
 
-The httpbin service in this example is available at the basepath `/` so to call the get endpoint on the httpbin service 
-we simply run `curl http://<published-IP>:8080/get`
+You can apply your API definition like any other Kubernetes resource using our custom-made Kusk API CustomResourceDefinition.
 
-# Local development with docker-compose
+See our [announcement blog post](...) for full details!
 
-This development mode utilises an ability of kusk-gateway to consume OpenAPI file directly.
+# Table of contents
+- [Get Started](#get-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
+- [Development](#development)
+- [Contribute](#contribute)
+- [License](#license)
 
-Preliminary steps:
+# Get Started
 
-```shell
-# From the project root
-cp development/.env.example ./.env
+See the [architecture document](docs/arch.md) for an overview of the Kusk Gateway architecture
+
+## Installation
+[(Back to top)](#table-of-contents)
+
+See our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install Kusk Gateway with Helm or how to get kusk gateway running locally.
+
+## Usage
+[(Back to top)](#table-of-contents)
+
+Kusk Gateway configures itself via the API CRD that contains your embedded Swagger or OpenAPI document.
+All that's required is to apply it as you would any other Kubernetes resource. The easiest way to get started is to use our httpbin example, found in
+`examples/httpbin`.
+
+`kubectl apply -f examples/httpbin`
+
+Grab the loadbalancer IP
+
+`external_ip=$(kubectl -n kusk-system get svc kusk-envoy-svc-default --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")`
+
+Curl the httpbin service
+```
+❯ curl http://$external_ip:8080/
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "192.168.64.2:8080",
+    "User-Agent": "curl/7.64.1",
+    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
+    "X-Envoy-Original-Path": "/"
+  },
+  "origin": "172.17.0.1",
+  "url": "http://192.168.64.2:8080/get"
+}
 ```
 
-.env file has variables that control Docker stack behaviour.
-
-For the development change PROJECT_ROOT/.env file to point GO_CONTROL_PLANE_ADDRESS and GO_CONTROL_PLANE_PORT variables to ip address and port your kusk-gateway is listening on.
-This will allow Envoy instance to connect to your application in IDE.
-
-Front-envoy will generate configuration from envoy.yaml.tmpl with "default" Envoy cluster name and Node ID based on ENVOY_CLUSTER + HOSTNAME.
-
-Kusk-gateway will consume OpenAPI file, passed with "--in" parameter and will switch to "local" mode that will skip Kubernetes connection.
-
-Once Front Envoy starts, it will connect to kusk-gateway with GRPC with its NodeID and Cluster ("default") fields specified and kusk-gateway will provide generated configuration.
-
-To run with kusk-gateway being developed in IDE:
-
-```shell
-# From the project root
-# Make sure .env has GO_CONTROL_PLANE_ADDRESS=<IP_ADDRESS_OF_APP_IN_IDE>
-docker-compose up
+### API CRD Format
+```
+apiVersion: gateway.kusk.io/v1
+kind: API
+metadata:
+  name: httpbin-sample
+spec:
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    swagger: '2.0'
+    info:
+      title: httpbin.org
+      description: API Management facade for a very handy and free online HTTP tool.
+      version: '1.0'
+    x-kusk:
+      service:
+        name: httpbin.default.svc.cluster.local
+        port: 8080
+      path:
+        base: /
+    paths:
+      "/get":
+          get:
+            description: Returns GET data.
+            operationId: "/get"
+            responses: {}
+      "/delay/{seconds}":
+        get:
+          description: Delays responding for n–10 seconds.
+          operationId: "/delay"
+          parameters:
+          - name: seconds
+            in: path
+            description: ''
+            required: true
+            type: string
+            default: 2
+            enum:
+            - 2
+          responses: {}
+      ...
 ```
 
-To run with kusk-gateway built as Docker container:
+See [httpbin API Resource](examples/httpbin/httpbin_v1_api.yaml) for a full example
 
-```shell
-# From the project root
-# Make sure .env has GO_CONTROL_PLANE_ADDRESS=kusk-gateway before running this.
-docker-compose --profile gateway up
-```
 
-To run with kusk-gateway and mock server:
+TODO(#65) - provide link to fill x-kusk documentation
 
-```shell
-# From the project root
-# Make sure .env has GO_CONTROL_PLANE_ADDRESS=kusk-gateway before running this.
-docker-compose --profile gateway --profile mock up
-```
+# Development
+[(Back to top)](#table-of-contents)
 
-By default kusk-gateway in Docker mode uses ./development/petshop-openapi-short-with-kusk-and-mock.yaml file with mocking enabled on some endpoints.
+See our [Development document](https://kubeshop.github.io/kusk-gateway/development/) for how to develop Kusk Gateway.
 
-Envoy frontends will be available on *http://172.21.0.5:8080* (Cluster1) and *http://172.21.0.6:8080* (Cluster2) while backend (petstore app) could be reached on http://172.21.0.3:8080 .
+# Contribute
+[(Back to top)](#table-of-contents)
 
-On MacOS, the frontends are available on *http://localhost:8080* (Cluster1) and *http://localhost:8081* (Cluster2)
+- Check out our [Contributor Guide](https://github.com/kubeshop/.github/blob/main/CONTRIBUTING.md) and
+  [Code of Conduct](https://github.com/kubeshop/.github/blob/main/CODE_OF_CONDUCT.md)
+- Fork/Clone the repo and make sure you can run it as shown above
+- Check out open [issues](https://github.com/kubeshop/kusk-gateway/issues) here on GitHub
+- Get in touch with the team by starting a discussion on [GitHub](https://github.com/kubeshop/kusk-gateway/discussions) or on our [Discord Server](https://discord.gg/uNuhy6GDyn).
+- or open an issue of your own that you would like to contribute to the project.
 
-Envoy management interface is available on *http://172.21.0.5:19000*,  *http://172.21.0.6:19000*, there one can verify what configuration it has in config_dump.
+# License
+[(Back to top)](#table-of-contents)
 
-On MacOS, the Envoy management interface is available on *http://localhost:19000* and *http://localhost:19001*  
+[MIT](https://mit-license.org/)
 
-Mock server will be available on *http://172.21.0.10:8080*
-
-On MacOS, Mock server will be available on *http://127.0.0.1:8082*
-
-To test (depends on configured variables in your OpenAPI file):
-
-```shell
-# Linux
-curl -v -X GET 'http://172.21.0.5:8080/petstore/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
-
-# MacOS
-curl -v -X GET 'http://localhost:8080/petstore/api/v3/pet/findByStatus?status=available' -H 'accept: application/json'
-```
-
-For the convenience you can use provided petshop-openapi-short-with-kusk.yaml or petshop-openapi-short-with-kusk-and-mock.yaml files in ./development.
-
-# Remote debugging contoller-manager in cluster
-- Set up remote debugging for your IDE pointed at localhost:40000 
-  - [Goland](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-in-the-docker-container)
-  - [VSCode](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#configure)
-- Run `make create-env`
-- When the make script is waiting for kusk-controller-manager to become healthy, run `kubectl port-forward deployment/kusk-controller-manager -n kusk-system 40000:40000`
-- Run your debug configuration from your IDE. The pod won't become healthy until you do this as Delve waits for a connection on :40000.
-- When the script completes, you can now deploy httpbin with `kubectl apply -f examples/httpbin`
-- Place breakpoints in the code and debug as normal
