@@ -1,14 +1,6 @@
 builds:
   - id: kusk-gateway
-    goos: []
-    goarch: []
-    goarm:
-    - "6"
-    gomips:
-    - hardfloat
-    targets: []
-    dir: .
-    main: .
+    skip: true
 
 dockers:
   -
@@ -26,6 +18,7 @@ dockers:
     # If set to auto, the release will not be pushed to the Docker repository
     #  in case there is an indicator of a prerelease in the tag, e.g. v1.0.0-rc1.
     #
+    dockerfile: Dockerfile
     # Defaults to false.
     skip_push: false
     # Set the "backend" for the Docker pipe.
