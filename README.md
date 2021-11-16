@@ -8,7 +8,7 @@ Kusk Gateway is a self-service API gateway powered by [OpenAPI](https://www.open
 
 Kusk Gateway is for you if:
 - You or your team develop REST APIs running in Kubernetes
-- Embrace a contract-first approach to developing your APIS using OpenAPI or Swagger
+- Embrace a contract-first approach to developing your APIs using OpenAPI or Swagger
 - You don't want to spend lots of time configuring hard-to-work-with ingress controllers that require a dedicated Ops Engineer
 
 Kusk Gateway configures itself through the metadata defined in your OpenAPI or Swagger document.
@@ -26,6 +26,9 @@ See our [announcement blog post](...) for full details!
 - [License](#license)
 
 # Get Started
+
+See the [architecture document](docs/arch.md) for an overview of the Kusk Gateway architecture
+
 ## Installation
 [(Back to top)](#table-of-contents)
 
@@ -33,6 +36,33 @@ See our [Installation document](https://kubeshop.github.io/kusk-gateway/installa
 
 ## Usage
 [(Back to top)](#table-of-contents)
+
+Kusk Gateway configures itself via the API CRD that contains your embedded Swagger or OpenAPI document.
+All that's required is to apply it as you would any other Kubernetes resource. The easiest way to get started is to use our httpbin example, found in
+`examples/httpbin`.
+
+`kubectl apply -f examples/httpbin`
+
+Grab the loadbalancer IP
+
+`external_ip=$(kubectl -n kusk-system get svc kusk-envoy-svc-default --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")`
+
+Curl the httpbin service
+```
+❯ curl http://$external_ip:8080/
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "192.168.64.2:8080",
+    "User-Agent": "curl/7.64.1",
+    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
+    "X-Envoy-Original-Path": "/"
+  },
+  "origin": "172.17.0.1",
+  "url": "http://192.168.64.2:8080/get"
+}
+```
 
 ### API CRD Format
 ```
@@ -43,7 +73,38 @@ metadata:
 spec:
   # service name and port should be specified inside x-kusk annotation
   spec: |
-    $YOUR_API_DOCUMENT_HERE
+    swagger: '2.0'
+    info:
+      title: httpbin.org
+      description: API Management facade for a very handy and free online HTTP tool.
+      version: '1.0'
+    x-kusk:
+      service:
+        name: httpbin.default.svc.cluster.local
+        port: 8080
+      path:
+        base: /
+    paths:
+      "/get":
+          get:
+            description: Returns GET data.
+            operationId: "/get"
+            responses: {}
+      "/delay/{seconds}":
+        get:
+          description: Delays responding for n–10 seconds.
+          operationId: "/delay"
+          parameters:
+          - name: seconds
+            in: path
+            description: ''
+            required: true
+            type: string
+            default: 2
+            enum:
+            - 2
+          responses: {}
+      ...
 ```
 
 See [httpbin API Resource](examples/httpbin/httpbin_v1_api.yaml) for a full example
