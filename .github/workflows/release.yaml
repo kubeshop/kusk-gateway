@@ -2,8 +2,6 @@ name: Release Kusk Gateway
 
 on:
   push:
-    branches:
-      - 'main'
     tags: 
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*"
@@ -12,6 +10,7 @@ jobs:
 
   release:
     name: Create and upload release-artifacts
+    if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
