@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
+	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/k8sutils"
 )
 
@@ -57,7 +57,7 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	l := ctrl.LoggerFrom(ctx)
 	l.Info("EnvoyFleet changed", "changed", req.NamespacedName)
 
-	ef := &gatewayv1.EnvoyFleet{}
+	ef := &gatewayv1alpha1.EnvoyFleet{}
 
 	err := r.Client.Get(context.TODO(), req.NamespacedName, ef)
 	if err != nil {
@@ -92,6 +92,6 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 // SetupWithManager sets up the controller with the Manager.
 func (r *EnvoyFleetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gatewayv1.EnvoyFleet{}).
+		For(&gatewayv1alpha1.EnvoyFleet{}).
 		Complete(r)
 }

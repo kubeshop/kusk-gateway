@@ -20,7 +20,7 @@ spec:
     - jsonPath: .spec.size
       name: size
       type: integer
-    name: v1
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: EnvoyFleet is the Schema for the envoyfleet API

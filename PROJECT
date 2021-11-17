@@ -11,8 +11,8 @@ resources:
   domain: kusk.io
   group: gateway
   kind: EnvoyFleet
-  path: github.com/kubeshop/kusk-gateway/api/v1
-  version: v1
+  path: github.com/kubeshop/kusk-gateway/api/v1alpha1
+  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
@@ -20,8 +20,8 @@ resources:
   domain: kusk.io
   group: gateway
   kind: API
-  path: github.com/kubeshop/kusk-gateway/api/v1
-  version: v1
+  path: github.com/kubeshop/kusk-gateway/api/v1alpha1
+  version: v1alpha1
   webhooks:
     defaulting: true
     validation: true
@@ -33,8 +33,8 @@ resources:
   domain: kusk.io
   group: gateway
   kind: StaticRoute
-  path: github.com/kubeshop/kusk-gateway/api/v1
-  version: v1
+  path: github.com/kubeshop/kusk-gateway/api/v1alpha1
+  version: v1alpha1
   webhooks:
     defaulting: true
     validation: true
