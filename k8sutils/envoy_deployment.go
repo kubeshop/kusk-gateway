@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientPkg "sigs.k8s.io/controller-runtime/pkg/client"
 
-	gatewayv1 "github.com/kubeshop/kusk-gateway/api/v1"
+	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
-func CreateEnvoyConfig(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyConfig(ctx context.Context, client clientPkg.Client, ef *gatewayv1alpha1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy-config",
@@ -44,7 +44,7 @@ func CreateEnvoyConfig(ctx context.Context, client clientPkg.Client, ef *gateway
 	return createOrReplace(ctx, client, configMap.GroupVersionKind(), configMap)
 }
 
-func CreateEnvoyService(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyService(ctx context.Context, client clientPkg.Client, ef *gatewayv1alpha1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy-svc",
@@ -85,7 +85,7 @@ func CreateEnvoyService(ctx context.Context, client clientPkg.Client, ef *gatewa
 	return createOrReplace(ctx, client, service.GroupVersionKind(), service)
 }
 
-func CreateEnvoyDeployment(ctx context.Context, client clientPkg.Client, ef *gatewayv1.EnvoyFleet) error {
+func CreateEnvoyDeployment(ctx context.Context, client clientPkg.Client, ef *gatewayv1alpha1.EnvoyFleet) error {
 	labels := map[string]string{
 		"app":       "kusk-gateway",
 		"component": "envoy",
@@ -161,7 +161,7 @@ func CreateEnvoyDeployment(ctx context.Context, client clientPkg.Client, ef *gat
 	return createOrReplace(ctx, client, deployment.GroupVersionKind(), deployment)
 }
 
-func envoyFleetAsOwner(cr *gatewayv1.EnvoyFleet) metav1.OwnerReference {
+func envoyFleetAsOwner(cr *gatewayv1alpha1.EnvoyFleet) metav1.OwnerReference {
 	trueVar := true
 	return metav1.OwnerReference{
 		APIVersion: cr.APIVersion,

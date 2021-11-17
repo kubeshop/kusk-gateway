@@ -31,7 +31,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gateway "github.com/kubeshop/kusk-gateway/api/v1"
+	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
 // APIReconciler reconciles a API object
@@ -61,6 +61,6 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *APIReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gateway.API{}).
+		For(&gatewayv1alpha1.API{}).
 		Complete(r)
 }

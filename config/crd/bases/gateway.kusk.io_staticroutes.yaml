@@ -16,7 +16,7 @@ spec:
     singular: staticroute
   scope: Namespaced
   versions:
-  - name: v1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: StaticRoute is the Schema for the staticroutes API

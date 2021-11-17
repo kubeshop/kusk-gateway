@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package v1
+package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,7 +42,7 @@ func (r *StaticRoute) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1-staticroute,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1,name=mstaticroute.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1alpha1-staticroute,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1alpha1,name=mstaticroute.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &StaticRoute{}
 
@@ -56,7 +56,7 @@ func (r *StaticRoute) Default() {
 	staticroutelog.Info("spec", "r", r.Spec)
 }
 
-//+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1-staticroute,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1,name=vstaticroute.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-staticroute,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1alpha1,name=vstaticroute.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &StaticRoute{}
 

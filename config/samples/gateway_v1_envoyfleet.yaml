@@ -1,4 +1,4 @@
-apiVersion: gateway.kusk.io/v1
+apiVersion: gateway.kusk.io/v1alpha1
 kind: EnvoyFleet
 metadata:
   name: default
