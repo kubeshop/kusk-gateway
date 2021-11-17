@@ -47,7 +47,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       -
         name: Run GoReleaser to publish release notes
-        if: github.event_name != 'pull_request'
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
