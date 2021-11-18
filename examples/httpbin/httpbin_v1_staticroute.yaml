@@ -1,4 +1,4 @@
-apiVersion: gateway.kusk.io/v1
+apiVersion: gateway.kusk.io/v1alpha1
 kind: StaticRoute
 metadata:
   name: httpbin-sample
@@ -10,9 +10,11 @@ spec:
     /: 
       get: &root_route
         route:
-          backend:
-            hostname: httpbin.default.svc.cluster.local
-            port: 8080
+          upstream:
+            host:
+              hostname: httpbin.default.svc.cluster.local
+              port: 8080
+          path:
             rewrite:
               pattern: "^/$"
               substitution: "/get"
@@ -26,4 +28,18 @@ spec:
         redirect:
           path_redirect: "/"
           response_code: 308
+    # /get2 routed to k8s service httpbin in default namespace with rewrite to /get
+    /get2: 
+      get:
+        route:
+          upstream:
+            service:
+              name: httpbin
+              namespace: default
+              port: 8080
+          path:
+            rewrite:
+              pattern: "^/get2$"
+              substitution: "/get"
+
 

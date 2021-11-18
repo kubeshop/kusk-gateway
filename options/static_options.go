@@ -4,23 +4,36 @@ import (
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-// StaticSubOptions allow user to specify proxy routing options to a backend
+// StaticSubOptions allow user to specify proxy routing options to a upstream or redirect
 type StaticSubOptions struct {
-	// Backend defines where trafic is proxied to
-	Backend *BackendOptions `yaml:"backend,omitempty" json:"backend,omitempty"`
+	// Upstream defines where trafic is proxied to
+	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
 	// Redirect specifies redirect option, mutually exlusive with the backend option
-	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
-	CORS     *CORSOptions     `yaml:"cors,omitempty" json:"cors,omitempty"`
-	Timeouts *TimeoutOptions  `yaml:"timeouts,omitempty" json:"timeouts,omitempty"`
+	Redirect *RedirectOptions   `yaml:"redirect,omitempty" json:"redirect,omitempty"`
+	CORS     *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	QoS      *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	Path     *StaticPathOptions `yaml:"path,omitempty" json:"path,omitempty"`
 }
 
 func (s StaticSubOptions) Validate() error {
 	return v.ValidateStruct(&s,
-		v.Field(&s.Backend),
+		v.Field(&s.Upstream),
 		v.Field(&s.Redirect),
 		v.Field(&s.CORS),
-		v.Field(&s.Timeouts),
+		v.Field(&s.QoS),
+		v.Field(&s.Path),
 	)
+}
+
+// StaticPathOptions differ from PathOptions since we don't use Prefix in static routes
+type StaticPathOptions struct {
+	// Rewrite is the pattern (regex) and a substitution string that will change URL when request is being forwarded
+	// to the upstream service.
+	// e.g. given that Prefix is set to "/petstore/api/v3", and with
+	// Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution is set to ""
+	// path that would be generated is "/petstore/api/v3/pets", URL that the upstream service would receive
+	// is "/api/v3/pets".
+	Rewrite RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
 }
 
 // StaticOperationSubOptions maps method (get, post) to related static subopts

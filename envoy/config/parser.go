@@ -89,7 +89,7 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 				continue
 			}
 
-			routePath := generateRoutePath(finalOpts.Path.Base, path)
+			routePath := generateRoutePath(finalOpts.Path.Prefix, path)
 			routeName := generateRouteName(routePath, method)
 
 			params := extractParams(operation.Parameters)
@@ -102,30 +102,41 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 			routeMatcher := generateRouteMatch(routePath, method, params, corsPolicy)
 
 			// This block creates redirect route
-			// We either create the redirect or the route with proxy to backend
+			// We either create the redirect or the route with proxy to upstream
 			// Redirect takes a precedence.
-			var routeRedirect *route.Route_Redirect
-			if routeRedirect, err = generateRedirect(&finalOpts.Redirect); err != nil {
-				return err
-			}
-			if routeRedirect != nil {
+			if finalOpts.Redirect != nil {
+				routeRedirect, err := generateRedirect(finalOpts.Redirect)
+				if err != nil {
+					return err
+				}
 				if err := e.AddRoute(routeName, vhosts, routeMatcher, nil, routeRedirect); err != nil {
 					return fmt.Errorf("failure adding redirect route: %w", err)
 				}
 			} else {
 				var routeRoute *route.Route_Route
-				clusterName := generateClusterName(finalOpts.Service.Name, finalOpts.Service.Port)
+				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
+				clusterName := generateClusterName(upstreamHostname, upstreamPort)
 				if !e.ClusterExist(clusterName) {
-					e.AddCluster(clusterName, finalOpts.Service.Name, finalOpts.Service.Port)
+					e.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
 				rewritePathRegex := generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+
+				var (
+					requestTimeout, requestIdleTimeout int64  = 0, 0
+					retries                            uint32 = 0
+				)
+				if finalOpts.QoS != nil {
+					retries = finalOpts.QoS.Retries
+					requestTimeout = int64(finalOpts.QoS.RequestTimeout)
+					requestIdleTimeout = int64(finalOpts.QoS.IdleTimeout)
+				}
 				if routeRoute, err = generateRoute(
 					clusterName,
 					corsPolicy,
 					rewritePathRegex,
-					int64(finalOpts.Timeouts.RequestTimeout),
-					int64(finalOpts.Timeouts.IdleTimeout),
-					finalOpts.Path.Retries); err != nil {
+					requestTimeout,
+					requestIdleTimeout,
+					retries); err != nil {
 					return err
 				}
 				if err := e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil); err != nil {
@@ -168,22 +179,27 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 				// Generating Route
 				var routeRoute *route.Route_Route
 
-				backend := methodOpts.Backend
-
-				clusterName := generateClusterName(backend.Hostname, backend.Port)
+				upstreamHostname, upstreamPort := getUpstreamHost(methodOpts.Upstream)
+				clusterName := generateClusterName(upstreamHostname, upstreamPort)
 				if !e.ClusterExist(clusterName) {
-					e.AddCluster(clusterName, backend.Hostname, backend.Port)
+					e.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
 
 				var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-				if backend.Rewrite != nil {
-					rewritePathRegex = generateRewriteRegex(backend.Rewrite.Pattern, backend.Rewrite.Substitution)
+				if methodOpts.Path != nil {
+					if methodOpts.Path.Rewrite.Pattern != "" {
+						rewritePathRegex = generateRewriteRegex(methodOpts.Path.Rewrite.Pattern, methodOpts.Path.Rewrite.Substitution)
+					}
 				}
 
-				var requestTimeout, requestIdleTimeout int64 = 0, 0
-				if methodOpts.Timeouts != nil {
-					requestTimeout = int64(methodOpts.Timeouts.RequestTimeout)
-					requestIdleTimeout = int64(methodOpts.Timeouts.IdleTimeout)
+				var (
+					requestTimeout, requestIdleTimeout int64  = 0, 0
+					retries                            uint32 = 0
+				)
+				if methodOpts.QoS != nil {
+					retries = methodOpts.QoS.Retries
+					requestTimeout = int64(methodOpts.QoS.RequestTimeout)
+					requestIdleTimeout = int64(methodOpts.QoS.IdleTimeout)
 
 				}
 				if routeRoute, err = generateRoute(
@@ -192,7 +208,7 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 					rewritePathRegex,
 					requestTimeout,
 					requestIdleTimeout,
-					backend.Retries); err != nil {
+					retries); err != nil {
 					return err
 				}
 				if err := e.AddRoute(routeName, vhosts, routeMatcher, routeRoute, nil); err != nil {

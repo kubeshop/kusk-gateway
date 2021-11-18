@@ -33,6 +33,9 @@ tags:
       description: Find out more about our store
       url: 'http://swagger.io'
 x-kusk:
+  hosts: 
+  - "*"
+  - "example.org"
   disabled: false
   cors:
     origins:
@@ -48,11 +51,13 @@ x-kusk:
     - X-Custom-Header1
     - X-Custom-Header2
     max_age: 86200
-  service:
-    name: petstore
-    port: 8080
+  upstream:
+    service:
+      name: petstore
+      namespace: default
+      port: 8080
   path:
-    base: /petstore/api/v3
+    prefix: /petstore/api/v3
     rewrite:
       pattern: "^/petstore"
       substitution: ""
@@ -63,8 +68,8 @@ paths:
     post:
       x-kusk:
         disabled: false
-        service:
-          name: petstore1
+        host:
+          hostname: petstore1.default1.svc.cluster.local
           port: 8080
       tags:
         - pet
@@ -141,7 +146,8 @@ paths:
               $ref: '#/components/schemas/Pet'
   /pet/findByStatus:
     x-kusk:
-      retries: 3
+      qos:
+        retries: 3
     get:
       tags:
         - pet
@@ -236,9 +242,11 @@ paths:
       x-kusk:
         disabled: false
         # Routing to mocking here
-        service:
-          name: openapi-mock
-          port: 8080
+        upstream:
+          service:
+            name: openapi-mock
+            namespace: default
+            port: 8080
         # Test CORS with: curl -v -H "Accept: application/json" -H "Origin: http://example.com" http://localhost:8080/petstore/api/v3/pet/2
         # The result must be available access-control-allow-origin header.
         # Any other domain in Origin header will result in the absense of all CORS headers
@@ -255,12 +263,9 @@ paths:
           expose_headers:
             - X-Custom-Header3
           max_age: 86300
-        timeouts:
+        qos:
           request_timeout: 10
           idle_timeout: 40
-        rate_limits:
-          rps: 10
-          burst: 30
       tags:
         - pet
       summary: Find pet by ID

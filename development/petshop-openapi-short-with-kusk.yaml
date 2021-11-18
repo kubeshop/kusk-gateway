@@ -51,11 +51,13 @@ x-kusk:
     - X-Custom-Header1
     - X-Custom-Header2
     max_age: 86200
-  service:
-    name: petstore
-    port: 8080
+  upstream:
+    service:
+      name: petstore
+      namespace: default
+      port: 8080
   path:
-    base: /petstore/api/v3
+    prefix: /petstore/api/v3
     rewrite:
       pattern: "^/petstore"
       substitution: ""
@@ -66,9 +68,10 @@ paths:
     post:
       x-kusk:
         disabled: false
-        service:
-          name: petstore1
-          port: 8080
+        upstream:
+          host:
+            hostname: petstore1.default1.svc.cluster.local
+            port: 8080
       tags:
         - pet
       summary: Add a new pet to the store
@@ -144,7 +147,8 @@ paths:
               $ref: '#/components/schemas/Pet'
   /pet/findByStatus:
     x-kusk:
-      retries: 3
+      qos:
+        retries: 3
     get:
       tags:
         - pet
@@ -250,12 +254,9 @@ paths:
           expose_headers:
             - X-Custom-Header3
           max_age: 86300
-        timeouts:
+        qos:
           request_timeout: 10
           idle_timeout: 40
-        rate_limits:
-          rps: 10
-          burst: 30
       tags:
         - pet
       summary: Find pet by ID

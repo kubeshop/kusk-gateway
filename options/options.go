@@ -1,30 +1,37 @@
 package options
 
 import (
+	"fmt"
+
 	v "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // SubOptions allow user to overwrite certain options at path/operation level using x-kusk extension
 type SubOptions struct {
 	Disabled *bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
-	// Service is a set of options of a target service to receive traffic.
-	Service ServiceOptions `yaml:"service,omitempty" json:"service,omitempty"`
+	// Upstream is a set of options of a target service to receive traffic.
+	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
+	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path       PathOptions      `yaml:"path,omitempty" json:"path,omitempty"`
-	Redirect   RedirectOptions  `yaml:"redirect,omitempty" json:"redirect,omitempty"`
-	CORS       CORSOptions      `yaml:"cors,omitempty" json:"cors,omitempty"`
-	RateLimits RateLimitOptions `yaml:"rate_limits,omitempty" json:"rate_limits,omitempty"`
-	Timeouts   TimeoutOptions   `yaml:"timeouts,omitempty" json:"timeouts,omitempty"`
+	Path PathOptions `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS  *QoSOptions `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS CORSOptions `yaml:"cors,omitempty" json:"cors,omitempty"`
 }
 
-func (s SubOptions) Validate() error {
-	return v.ValidateStruct(&s,
-		v.Field(&s.Service),
-		v.Field(&s.Path),
-		v.Field(&s.Redirect),
-		v.Field(&s.CORS),
-		v.Field(&s.RateLimits),
-		v.Field(&s.Timeouts),
+func (o SubOptions) Validate() error {
+	if o.Upstream != nil && o.Redirect != nil {
+		return fmt.Errorf("Upstream and Service are mutually exclusive")
+	}
+	if o.Upstream == nil && o.Redirect == nil {
+		return fmt.Errorf("either Upstream or Service must be specified")
+	}
+	return v.ValidateStruct(&o,
+		v.Field(&o.Upstream),
+		v.Field(&o.Redirect),
+		v.Field(&o.Path),
+		v.Field(&o.QoS),
+		v.Field(&o.CORS),
 	)
 }
 
