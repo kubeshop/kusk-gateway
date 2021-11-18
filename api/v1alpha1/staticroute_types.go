@@ -72,12 +72,15 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 				continue
 			}
 			if specRouteAction.Route != nil {
-				methodOpts.Backend = *&specRouteAction.Route.Backend
+				methodOpts.Upstream = *&specRouteAction.Route.Upstream
 				if specRouteAction.Route.CORS != nil {
 					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
 				}
-				if specRouteAction.Route.Timeouts != nil {
-					methodOpts.Timeouts = specRouteAction.Route.Timeouts
+				if specRouteAction.Route.QoS != nil {
+					methodOpts.QoS = specRouteAction.Route.QoS
+				}
+				if specRouteAction.Route.Path != nil {
+					methodOpts.Path = specRouteAction.Route.Path
 				}
 			}
 		}
@@ -92,7 +95,7 @@ type Path string
 // Methods maps Method (GET, POST) to Action
 type Methods map[options.HTTPMethod]*Action
 
-// Action is either a route to the backend or a redirect, they're mutually exclusive.
+// Action is either a route to the upstream or a redirect, they're mutually exclusive.
 type Action struct {
 	// +optional
 	Route *Route `json:"route,omitempty"`
@@ -100,13 +103,15 @@ type Action struct {
 	Redirect *options.RedirectOptions `json:"redirect,omitempty"`
 }
 
-// Route defines a routing rule that proxies to backend
+// Route defines a routing rule that proxies to upstream
 type Route struct {
-	Backend *options.BackendOptions `json:"backend"`
+	Upstream *options.UpstreamOptions `json:"upstream"`
 	// +optional
 	CORS *options.CORSOptions `json:"cors,omitempty"`
 	// +optional
-	Timeouts *options.TimeoutOptions `json:"timeouts,omitempty"`
+	QoS *options.QoSOptions `json:"qos,omitempty"`
+	// +optional
+	Path *options.StaticPathOptions `json:"path,omitempty"`
 }
 
 // StaticRouteStatus defines the observed state of StaticRoute

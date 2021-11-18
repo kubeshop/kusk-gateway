@@ -280,13 +280,13 @@ func generateRouteName(path string, method string) string {
 	return fmt.Sprintf("%s-%s", path, strings.ToUpper(method))
 }
 
-func generateRoutePath(base, path string) string {
-	if base == "" {
+func generateRoutePath(prefix, path string) string {
+	if prefix == "" {
 		return path
 	}
 
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
-	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(base, "/"), strings.TrimPrefix(path, "/"))
+	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
 }
 
 func generateRewriteRegex(pattern string, substitution string) *envoytypematcher.RegexMatchAndSubstitute {
@@ -334,7 +334,7 @@ func generateRoute(
 		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
 	}
 
-	if retries > 0 {
+	if retries != 0 {
 		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
 			RetryOn:    "5xx",
 			NumRetries: &wrappers.UInt32Value{Value: retries},
@@ -421,4 +421,11 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 		return nil, fmt.Errorf("incorrect CORS configuration: %w", err)
 	}
 	return corsPolicy, nil
+}
+
+func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, port uint32) {
+	if upstreamOpts.Service != nil {
+		return fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace), upstreamOpts.Service.Port
+	}
+	return upstreamOpts.Host.Hostname, upstreamOpts.Host.Port
 }

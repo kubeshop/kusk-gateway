@@ -49,7 +49,7 @@ spec:
               paths:
                 additionalProperties:
                   additionalProperties:
-                    description: Action is either a route to the backend or a redirect,
+                    description: Action is either a route to the upstream or a redirect,
                       they're mutually exclusive.
                     properties:
                       redirect:
@@ -85,41 +85,8 @@ spec:
                         type: object
                       route:
                         description: Route defines a routing rule that proxies to
-                          backend
+                          upstream
                         properties:
-                          backend:
-                            description: BackendOptions defines backend options
-                            properties:
-                              hostname:
-                                description: Hostname is the upstream hostname, without
-                                  port.
-                                type: string
-                              port:
-                                description: Port is the upstream port.
-                                format: int32
-                                type: integer
-                              retries:
-                                description: Retries define how many times to retry
-                                  calling the backend
-                                format: int32
-                                type: integer
-                              rewrite:
-                                description: Rewrite is the pattern (regex) and a
-                                  substitution string that will change URL when request
-                                  is being forwarded to the upstream service. e.g.
-                                  given that URL path is "/petstore/api/v3", with
-                                  Rewrite.Pattern "^/petstore", Rewrite.Substitution
-                                  "" backend will receive "/api/v3/pets".
-                                properties:
-                                  pattern:
-                                    type: string
-                                  substitution:
-                                    type: string
-                                required:
-                                - pattern
-                                - substitution
-                                type: object
-                            type: object
                           cors:
                             properties:
                               credentials:
@@ -143,7 +110,29 @@ spec:
                                   type: string
                                 type: array
                             type: object
-                          timeouts:
+                          path:
+                            description: StaticPathOptions differ from PathOptions
+                              since we don't use Prefix in static routes
+                            properties:
+                              rewrite:
+                                description: Rewrite is the pattern (regex) and a
+                                  substitution string that will change URL when request
+                                  is being forwarded to the upstream service. e.g.
+                                  given that Base is set to "/petstore/api/v3", and
+                                  with Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution
+                                  is set to "" path that would be generated is "/petstore/api/v3/pets",
+                                  URL that the upstream service would receive is "/api/v3/pets".
+                                properties:
+                                  pattern:
+                                    type: string
+                                  substitution:
+                                    type: string
+                                required:
+                                - pattern
+                                - substitution
+                                type: object
+                            type: object
+                          qos:
                             properties:
                               idle_timeout:
                                 description: IdleTimeout is timeout for idle connection
@@ -153,9 +142,56 @@ spec:
                                 description: RequestTimeout is total request timeout
                                 format: int32
                                 type: integer
+                              retries:
+                                description: Retries define how many times to retry
+                                  calling the backend
+                                format: int32
+                                type: integer
+                            type: object
+                          upstream:
+                            description: UpstreamOptions defines upstream that we
+                              proxy to Host and Service are mutually exclusive
+                            properties:
+                              host:
+                                description: UpstreamHost defines any DNS hostname
+                                  with port that we can proxy to, even outside of
+                                  the cluster
+                                properties:
+                                  hostname:
+                                    description: Hostname is the upstream hostname,
+                                      without port.
+                                    type: string
+                                  port:
+                                    description: Port is the upstream port.
+                                    format: int32
+                                    type: integer
+                                required:
+                                - hostname
+                                - port
+                                type: object
+                              service:
+                                description: UpstreamService defines K8s Service in
+                                  the cluster
+                                properties:
+                                  name:
+                                    description: Name is the upstream K8s Service's
+                                      name.
+                                    type: string
+                                  namespace:
+                                    description: Namespace where service is located
+                                    type: string
+                                  port:
+                                    description: Port is the upstream K8s Service's
+                                      port.
+                                    format: int32
+                                    type: integer
+                                required:
+                                - namespace
+                                - port
+                                type: object
                             type: object
                         required:
-                        - backend
+                        - upstream
                         type: object
                     type: object
                   description: Methods maps Method (GET, POST) to Action

@@ -71,7 +71,7 @@ kind: API
 metadata:
   name: httpbin-sample
 spec:
-  # service name and port should be specified inside x-kusk annotation
+  # service name, namespace and port should be specified inside x-kusk annotation
   spec: |
     swagger: '2.0'
     info:
@@ -79,11 +79,18 @@ spec:
       description: API Management facade for a very handy and free online HTTP tool.
       version: '1.0'
     x-kusk:
-      service:
-        name: httpbin.default.svc.cluster.local
-        port: 8080
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
       path:
-        base: /
+        # allows to serve under /api prefix
+        prefix: "/api"
+        # removes prefix when sending to upstream service
+        rewrite:
+          pattern: "^/api"
+          substitution: ""
     paths:
       "/get":
           get:

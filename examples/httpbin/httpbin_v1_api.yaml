@@ -1,4 +1,4 @@
-apiVersion: gateway.kusk.io/v1
+apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
   name: httpbin-sample
@@ -15,15 +15,15 @@ spec:
     - http
     - https
     x-kusk:
-      service:
-        name: httpbin.default.svc.cluster.local
-        port: 8080
-      path:
-        base: /
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
     paths:
       "/status/{code}":
         x-kusk:
-          path:
+          qos:
             retries: 5
         get:
           description: Returns provided HTTP Status code.
@@ -221,7 +221,7 @@ spec:
       "/oldAPI/stream/{number}":
         x-kusk:
           path:
-            # /oldAPI/stream/{number} -> to backend: /stream/{number}
+            # /oldAPI/stream/{number} -> to upstream: /stream/{number}
             rewrite:
               pattern: "^/oldAPI"
               substitution: ""

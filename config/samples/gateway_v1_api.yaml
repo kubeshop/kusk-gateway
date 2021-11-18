@@ -55,12 +55,17 @@ spec:
         - X-Custom-Header1
         - X-Custom-Header2
         max_age: 86200
-      service:
-        name: petstore.default.svc.cluster.local
-        port: 80
+      upstream:
+        service:
+          name: petstore
+          namespace: default
+          port: 80
       path:
-        base: /petstore/api/v3
-        trim_prefix: /petstore
+        prefix: /petstore/api/v3
+        # Strips prefix when forwarding to upstream
+        rewrite:
+          pattern: "^/petstore"
+          substitution: ""
     paths:
       /pet:
         x-kusk:
@@ -68,9 +73,10 @@ spec:
         post:
           x-kusk:
             disabled: false
-            service:
-              name: petstore1
-              port: 8080
+            upstream:
+              host:
+                hostname: petstore1.default1.svc.cluster.local
+                port: 8080
           tags:
             - pet
           summary: Add a new pet to the store
@@ -201,12 +207,10 @@ spec:
               expose_headers:
                 - X-Custom-Header3
               max_age: 86300
-            timeouts:
+            qos:
               request_timeout: 10
               idle_timeout: 40
-            rate_limits:
-              rps: 10
-              burst: 30
+              retries: 5
           tags:
             - pet
           summary: Find pet by ID

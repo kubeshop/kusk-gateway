@@ -65,7 +65,7 @@ func New() *envoyConfiguration {
 	}
 }
 
-// AddRoute appends new route with proxying to the backend to the list of routes by path and method
+// AddRoute appends new route with proxying to the upstream to the list of routes by path and method
 func (e *envoyConfiguration) AddRoute(
 	name string,
 	vhosts []string,
