@@ -23,6 +23,9 @@ func (o SubOptions) Validate() error {
 	if o.Upstream != nil && o.Redirect != nil {
 		return fmt.Errorf("Upstream and Service are mutually exclusive")
 	}
+	if o.Upstream == nil && o.Redirect == nil {
+		return fmt.Errorf("either Upstream or Service must be specified")
+	}
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),
 		v.Field(&o.Redirect),
