@@ -17,6 +17,7 @@ theme:
 nav:
   - Welcome: index.md
   - Installation: installation.md
+  - Extension (x-kusk) docs: extension.md
   - Architecture: arch.md
   - For Developers: development.md
   - Troubleshooting: troubleshooting.md
