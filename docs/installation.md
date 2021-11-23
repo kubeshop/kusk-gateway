@@ -98,15 +98,15 @@ kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-ma
 helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
 ```
 
-Run this to find out External IP address of EnvoyFleet Load balancer that was setup by MetalLB.
+Run this to find out the External IP address of EnvoyFleet Load balancer that was setup by MetalLB.
 
-NOTE: It may take a seconds for the LoadBalancer IP to be available.
+NOTE: It may take a few seconds for the LoadBalancer IP to become available.
 
 ```sh
 kubectl get svc -l "app=kusk-gateway,component=envoy-svc,fleet=default" --namespace kusk-system
 ```
 
-You can now use found EXTERNAL-IP in your URLs.
+You can now use the found EXTERNAL-IP in your URLs.
 
 If you want to try deploying the example, please run the following:
 
@@ -154,7 +154,7 @@ Once Kusk Gateway is installed and running, you can try and apply your own OpenA
 
 ### Example
 
-This example will deploy httpbin application and configure Kusk Gateway to serve it.
+This example will deploy the httpbin application and configure Kusk Gateway to serve it.
 
 ```sh
 kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin

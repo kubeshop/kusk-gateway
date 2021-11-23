@@ -42,7 +42,7 @@ See our [Installation document](https://kubeshop.github.io/kusk-gateway/installa
 
 Kusk Gateway configures itself via the API CRD that contains your embedded Swagger or OpenAPI document.
 
-See [x-kusk extension documentation](#docs/extension.md) for the guidelines on how to add the necessary routing information to your OpenAPI file.
+See [x-kusk extension documentation](docs/extension.md) for the guidelines on how to add the necessary routing information to your OpenAPI file.
 
 After that all that's required is to apply it as you would any other Kubernetes resource.
 
