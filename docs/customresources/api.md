@@ -3,7 +3,7 @@
 This resource uses OpenAPI file with x-kusk annotations as the source of truth to configure routing.
 Refer to [extention](../extension.md) for the further information on how to add routing information to OpenAPI file.
 
-The required field of API resource is spec.**spec** where `x-kusk`-enhanced OpenAPI file is supplied as a string. You can generate it (and integrate into your CI) using [kgw](https://github.com/kubeshop/kgw) CLI tool.
+The required field of API resource is spec.**spec** where `x-kusk`-enhanced OpenAPI file is supplied as an embedded string. You can generate it (and integrate into your CI) using [kgw](https://github.com/kubeshop/kgw) CLI tool.
 
 Once the resource manifest is deployed, Kusk Gateway Manager will use it to configure routing for Envoy Fleet.
 Multiple resources can exist in different namespaces, all of them will be evaluated and the configuration merged on any update with these resource.
