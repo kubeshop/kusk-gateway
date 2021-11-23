@@ -6,7 +6,7 @@ We provide [Helm v3](https://helm.sh/) [charts](https://github.com/kubeshop/helm
 
 There are 2 charts to install:
 
-* **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as Kusk Gateway Manager (Operator) deployment.
+* **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as the Kusk Gateway Manager (Operator) deployment.
 
 * **[kusk-gateway-envoyfleet](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway-envoyfleet)** chart provides the EnvoyFleet Custom Resource installation, which is used to configure the gateway with KGW Manager.
 
@@ -56,6 +56,8 @@ Installed:
 ### Minikube cluster setup and installation with Helm
 
 Run the following set of commands to quickly setup Minikube-based K8s cluster and setup Kusk Gateway with Helm.
+
+For MacOS users: you'll need to specify the hyperkit driver, please look at [hyperkit](https://minikube.sigs.k8s.io/docs/drivers/hyperkit/) for the details.
 
 ```sh
 minikube start --profile kgw
