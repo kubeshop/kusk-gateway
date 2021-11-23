@@ -127,7 +127,9 @@ When set to true at the top level all paths will be hidden; you will have to ove
 
 ### hosts
 
-This string array property configures hosts list the Gateway will listen traffic for.
+This string array property configures hosts (i.e. `Host` HTTP header) list the Gateway will listen traffic for. Wildcard hosts are supported in the suffix or prefix form, exclusively, i.e.:
+- *.example.org
+- example.*
 
 ### cors
 
@@ -153,12 +155,13 @@ Options for configuring QoS settings, such as retries and timeouts.
 | `request_timeout` | total request timeout (in seconds)
 | `idle_timeout` | timeout for idle connections (in seconds)
 
-Please see the documentation for each individual generator to see which of these properties they support and how they apply.
-
 ### upstream
 
 This setting configures where the traffic goes. `service` and `host` are available and are mutually exclusive.
 The `upstream` settings is mutually exclusive with `redirect` setting.
+
+`service` is a reference to a Kubernetes Service inside the cluster, while `host` can reference any hostname, even
+outside the cluster.
 
 #### service
 
@@ -200,7 +203,7 @@ The path object contains the following properties to configure service endpoints
 
 | Name                       | Description                                                                                                    |
 |----------------------------|----------------------------------------------------------------------------------------------------------------|
-| base                       | Base is the preceding prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
+| prefix                     | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/"                       |
 | rewrite_regex.pattern      | Regular expression to rewrite the URL                                                                          |
 | rewrite_regex.substitution | Regular expression's substitution                                                                              |
 
