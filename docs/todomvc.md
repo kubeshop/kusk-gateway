@@ -14,8 +14,8 @@ Luckily, Kusk Gateway Manager allows you to do that right in your OpenAPI specif
 
 First, deploy the backend and frontend services:
 ```
-kubectl apply -f examples/todomvc/backend
-kubectl apply -f examples/todomvc/frontend
+kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/backend.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml
 ```
 
 ## Configure the API (backend)
@@ -67,19 +67,19 @@ spec:
 ```
 Or by using [kgw](https://github.com/kubeshop/kgw) CLI tool:
 ```
-kgw api generate -i examples/todomvc/todospec.yaml --name todo > todo-api.yaml
+kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml --name todo > kusk-backend-api.yaml
 ```
 
 You can see the result you should get [here](/examples/todomvc/kusk-backend-api.yaml).
 
 Apply it to the cluster:
 ```
-kubectl apply -f todo-api.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-backend-api.yaml
 ```
 
 or pipe directly from **kgw** CLI - you can even do it in your CI/CD:
 ```
-kgw api generate -i examples/todomvc/todospec.yaml --name todo | kubectl apply -f -
+kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml --name todo | kubectl apply -f -
 
 ```
 
@@ -112,7 +112,7 @@ spec:
 
 And apply it to the cluster:
 ```
-kubectl apply -f examples/todomvc/kusk-frontend-route.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml
 ```
 
 ## Test access

@@ -18,3 +18,15 @@ spec:
         ports:
         - containerPort: 3000
           name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: todo-frontend
+  ports:
+    - port: 3000
+      targetPort: http
