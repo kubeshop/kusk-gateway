@@ -1,0 +1,17 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: todo-frontend
+spec:
+  # should work with localhost, example.org
+  hosts: [ "localhost", "*"]
+  paths:
+  # Root goes to frontend service
+    /: 
+       get: &root_route
+        route:
+         upstream:
+            service:
+              namespace: default
+              name: todo-frontend
+              port: 3000
