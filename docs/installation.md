@@ -1,166 +1,97 @@
 # Installing Kusk Gateway
 
-## Helm installation
+---
+**NOTE**
 
-We provide [Helm v3](https://helm.sh/) [charts](https://github.com/kubeshop/helm-charts) for the Kusk Gateway installation.
+This documents describes the installation of the Kusk Gateway and its load balancing component Envoy Fleet to the generic Kubernetes cluster.
 
-There are 2 charts to install:
+If you're looking for the quick way to try Kusk Gateway in a locally setup Kubernetes cluster, please see [Local Installation with Minikube](local-installation.md).
 
-* **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as the Kusk Gateway Manager (Operator) deployment.
+---
 
-* **[kusk-gateway-envoyfleet](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway-envoyfleet)** chart provides the EnvoyFleet Custom Resource installation, which is used to configure the gateway with KGW Manager.
+# Table of contents
+- [Prerequsities](#prerequsities)
+  - [Cluster requirements](#cluster-requirements)
+  - [Install requirements](#install-requirements)
+- [Installation](#installation)
+- [Uninstallation](#uninstallation)
 
-Container images are hosted on Docker Hub [Kusk-Gateway repository](https://hub.docker.com/r/kubeshop/kusk-gateway).
+During the setup we'll deploy Kusk Gateway Custom Resources Definitions, Kusk Gateway Manager and Envoy Fleet with Helm.
 
-### Prerequsities
+For the architectural overview of the components please check the [Architecture](arch.md) page.
 
-* [Helm v3](https://helm.sh/) and [Kubectl](https://kubernetes.io/docs/tasks/tools/) installed
+## Prerequsities
 
-* Kubernetes cluster administration rights are required - we install CRDs, service account with ClusterRoles and RoleBindings.
+### Cluster requirements
 
-* We heavily depend on [jetstack cert-manager](https://github.com/jetstack/cert-manager) for webhooks TLS configuration. If it is not installed in your cluster, then please install it with the official instructions [here](https://cert-manager.io/docs/installation/).
+- Kubernetes v1.16+
 
-* If you try to install the chart to your local machine cluster (k3d or minikube), you may need to install and configure [MetalLB](https://metallb.universe.tf/) to handle LoadBalancer type services,
-otherwise EnvoyFleet service ExternalIP address will be in Pending state forever. See installing [Locally with Minikube and Helm](#locally-with-minikube-and-helm) 
+- Kubernetes cluster administration rights are required - we install CRDs, service account with ClusterRoles and RoleBindings.
+
+- If you don't have Jetstack Cert-Manager installed in your cluster, then please follow the official [instructions](https://cert-manager.io/docs/installation/) to setup it. We use Cert-Manager for the webhooks configuration.
+
+- If you have the managed cluster (GCP, EKS, etc) then you can skip reading this paragraph.
+If you have the baremetal or locally setup cluster, then you should have the controller that manages load balancing setup when a Service with the type **LoadBalancer** is setup. Otherwise when the Manager creates the Envoy Fleet Service, it will have stuck ExternalIP address in a Pending state forever. [MetalLB](https://metallb.universe.tf/installation/) provides such functionality, so we advise to setup it if you haven't already.
+
+### Installation requirements
+
+Tools needed for the installation:
+
+- [Helm v3](https://helm.sh/docs/intro/install/)
+- [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 ### Installation
+
+We provide 2 Helm [charts](https://github.com/kubeshop/helm-charts):
+
+- **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as the Kusk Gateway Manager (Operator) deployment.
+
+- **[kusk-gateway-envoyfleet](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway-envoyfleet)** chart provides the EnvoyFleet Custom Resource installation, which is used to configure the gateway with KGW Manager.
+
+Container images are hosted on Docker Hub [Kusk-Gateway repository](https://hub.docker.com/r/kubeshop/kusk-gateway).
 
 The commands below will install Kusk Gateway and the "default" Envoy Fleet (LoadBalancer) in the recommended **kusk-system** namespace.
 
 ```sh
+# Install Kubeshop Helm repo and update it
 helm repo add kubeshop https://kubeshop.github.io/helm-charts
 helm repo update
+
+# Install the Kusk Gateway with CRDs into kusk-system namespace.
 helm install kusk-gateway kubeshop/kusk-gateway -n kusk-system --create-namespace
+
+# We need to wait for the kusk-gateway-manager deployment to finish the setup for the next step.
 kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-manager  -n kusk-system
+
+# Install the "default" EnvoyFleet Custom Resource, which will be used by the Kusk Gateway
+# to create Envoy Fleet Deployment and Service with the type LoadBalancer
 helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
 ```
 
-You can now deploy your Gateway Custom resources, see also Examples section below.
+This concludes the installation
 
-### Uninstallation
+It may take a few seconds for the LoadBalancer IP to become available.
 
-```sh
-helm delete kusk-gateway-default-envoyfleet kusk-gateway -n kusk-system && kubectl delete namespace kusk-system
-```
-
-## Locally with Minikube and Helm
-
-### Prerequisities
-
-Installed:
-
-* [Minikube](https://minikube.sigs.k8s.io/docs/)
-* [Helm v3](https://helm.sh/)
-* [Kubectl](https://kubernetes.io/docs/tasks/tools/)
-
-### Minikube cluster setup and installation with Helm
-
-Run the following set of commands to quickly setup Minikube-based K8s cluster and setup Kusk Gateway with Helm.
-
-For MacOS users: you'll need to specify the hyperkit driver, please look at [hyperkit](https://minikube.sigs.k8s.io/docs/drivers/hyperkit/) for the details.
-
-```sh
-minikube start --profile kgw
-
-# determine load balancer ingress range
-cidr_base_addr=$(minikube ip --profile kgw)
-ingress_first_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,2}' OFS='.')
-ingress_last_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,255}' OFS='.')
-ingress_range=$ingress_first_addr-$ingress_last_addr
-
-# deploy metallb
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
-
-# configure metallb ingress address range
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: metallb-system
-  name: config
-data:
-  config: |
-    address-pools:
-    - name: default
-      protocol: layer2
-      addresses:
-      - $ingress_range
-EOF
-
-# Install Jetstack Cert Manager and wait for it to be ready
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
-kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-webhook -n cert-manager
-
-# Finally install KGW
-helm repo add kubeshop https://kubeshop.github.io/helm-charts
-helm repo update
-helm install kusk-gateway kubeshop/kusk-gateway -n kusk-system --create-namespace
-kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-manager  -n kusk-system
-helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
-```
-
-Run this to find out the External IP address of EnvoyFleet Load balancer that was setup by MetalLB.
-
-NOTE: It may take a few seconds for the LoadBalancer IP to become available.
+Run this to find out the External IP address of EnvoyFleet Load balancer.
 
 ```sh
 kubectl get svc -l "app=kusk-gateway,component=envoy-svc,fleet=default" --namespace kusk-system
 ```
 
-You can now use the found EXTERNAL-IP in your URLs.
+The output should contain the Service **kusk-envoy-svc-default** with the **External-IP** address field - use this address for your API endpoints querying.
 
-If you want to try deploying the example, please run the following:
+You can now deploy your API or Front applications to this cluster and configure access to them with [Custom Resources](customresources/index.md) or you can check the [ToDoMVC Example](todomvc.md) for the guidelines on how to do this.
 
-```sh
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/httpbin/manifest.yaml && kubectl rollout status -w deployment/httpbin
+In case of the problems please check the [Troubleshooting](troubleshooting.md) section.
 
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/httpbin/httpbin_v1_api.yaml
+### Uninstallation
 
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/httpbin/httpbin_v1_staticroute.yaml
-
-# Wait few seconds for KGW to finish the configuration.
-# This should return
-curl -v http://<YOUR_EXTERNAL_IP>:8080/get
-```
-
-To uninstall everything - just delete that cluster.
+The following command will uninstall Kusk Gateway with CRDs and the **default** Envoy Fleet with their namespace.
 
 ```sh
-minikube delete --profile kgw
-```
+# Delete releases
+helm delete kusk-gateway-default-envoyfleet kusk-gateway -n kusk-system
 
-## Locally with manifests files and Docker build
-
-This the approach used for the development.
-
-### Prerequisites
-
-Make sure you have the following installed and on your PATH:
-
-- `jq`
-- `kubectl`
-- `docker`
-- `minikube`
-
-Run:
-
-- `make create-cluster` # creates and configures the minikube cluster
-- `make install` # install the required CRDs
-- `kubectl apply -f ./config/samples/gateway_v1_envoyfleet.yaml -n kusk-system` to install the envoy fleet
-- `eval $(minikube docker-env --profile "kgw")` # so built docker images are available to Minikube
-- `make docker-build deploy` # build and deploy the kusk gateway image
-- `kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system`
-
-Once Kusk Gateway is installed and running, you can try and apply your own OpenAPI specs, or apply one of our examples below.
-
-### Example
-
-This example will deploy the httpbin application and configure Kusk Gateway to serve it.
-
-```sh
-kubectl apply -f examples/httpbin && kubectl rollout status -w deployment/httpbin
-
-external_ip=$(kubectl -n kusk-system get svc kusk-envoy --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-curl -v http://$external_ip:8080/get
+# Delete namespace too
+kubectl delete namespace kusk-system
 ```
