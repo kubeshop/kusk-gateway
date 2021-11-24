@@ -15,8 +15,6 @@ Kusk Gateway configures itself through the metadata defined in your OpenAPI or S
 
 You can apply your API definition like any other Kubernetes resource using our custom-made Kusk API CustomResourceDefinition.
 
-See our [announcement blog post](...) for full details!
-
 # Table of contents
 - [Get Started](#get-started)
   - [Installation](#installation)
