@@ -23,3 +23,6 @@ bin
 kusk-gateway
 .vscode/
 testbin/
+
+# mkdocs built site
+/site

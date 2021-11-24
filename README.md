@@ -21,6 +21,7 @@ See our [announcement blog post](...) for full details!
 - [Get Started](#get-started)
   - [Installation](#installation)
   - [Usage](#usage)
+  - [Custom Resources](#custom-resources)
 - [Development](#development)
 - [Contribute](#contribute)
 - [License](#license)
@@ -30,16 +31,22 @@ See our [announcement blog post](...) for full details!
 See the [architecture document](docs/arch.md) for an overview of the Kusk Gateway architecture
 
 ## Installation
+
 [(Back to top)](#table-of-contents)
 
 See our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install Kusk Gateway with Helm or how to get kusk gateway running locally.
 
 ## Usage
+
 [(Back to top)](#table-of-contents)
 
 Kusk Gateway configures itself via the API CRD that contains your embedded Swagger or OpenAPI document.
-All that's required is to apply it as you would any other Kubernetes resource. The easiest way to get started is to use our httpbin example, found in
-`examples/httpbin`.
+
+See [x-kusk extension documentation](docs/extension.md) for the guidelines on how to add the necessary routing information to your OpenAPI file.
+
+After that all that's required is to apply it as you would any other Kubernetes resource.
+
+The easiest way to get started is to use our httpbin example, found in `examples/httpbin`.
 
 `kubectl apply -f examples/httpbin`
 
@@ -48,6 +55,7 @@ Grab the loadbalancer IP
 `external_ip=$(kubectl -n kusk-system get svc kusk-envoy-svc-default --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")`
 
 Curl the httpbin service
+
 ```
 ❯ curl http://$external_ip:8080/
 {
@@ -65,7 +73,8 @@ Curl the httpbin service
 ```
 
 ### API CRD Format
-```
+
+```yaml
 apiVersion: gateway.kusk.io/v1
 kind: API
 metadata:
@@ -116,15 +125,20 @@ spec:
 
 See [httpbin API Resource](examples/httpbin/httpbin_v1_api.yaml) for a full example
 
+## Custom Resources
 
-TODO(#65) - provide link to fill x-kusk documentation
+[(Back to top)](#table-of-contents)
+
+See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for how to develop Kusk Gateway.
 
 # Development
+
 [(Back to top)](#table-of-contents)
 
 See our [Development document](https://kubeshop.github.io/kusk-gateway/development/) for how to develop Kusk Gateway.
 
 # Contribute
+
 [(Back to top)](#table-of-contents)
 
 - Check out our [Contributor Guide](https://github.com/kubeshop/.github/blob/main/CONTRIBUTING.md) and
@@ -135,7 +149,7 @@ See our [Development document](https://kubeshop.github.io/kusk-gateway/developme
 - or open an issue of your own that you would like to contribute to the project.
 
 # License
+
 [(Back to top)](#table-of-contents)
 
 [MIT](https://mit-license.org/)
-
