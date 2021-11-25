@@ -18,7 +18,9 @@ You can apply your API definition like any other Kubernetes resource using our c
 # Table of contents
 - [Get Started](#get-started)
   - [Installation](#installation)
+  - [Installation to the Local Kubernetes cluster with Minikube](#installation)
   - [Usage](#usage)
+  - [Troubleshooting](#troubleshooting)
   - [Custom Resources](#custom-resources)
 - [Development](#development)
 - [Contribute](#contribute)
@@ -32,45 +34,41 @@ See the [architecture document](docs/arch.md) for an overview of the Kusk Gatewa
 
 [(Back to top)](#table-of-contents)
 
-See our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install Kusk Gateway with Helm or how to get kusk gateway running locally.
+If you want to quickly setup and evaluate the Kusk Gateway, then please use the [local installation instructions with Minikube](local-installation.md).
+
+Otherwise see our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install the Kusk Gateway to Kubernetes.
+
+For the quick and impatient, [Jetstack Cert-Manager](https://cert-manager.io/docs/installation/) must be installed in the cluster and then:
+
+```sh
+
+# Install Kubeshop Helm repo and update it
+helm repo add kubeshop https://kubeshop.github.io/helm-charts && helm repo update
+
+# Install the Kusk Gateway with CRDs into kusk-system namespace.
+# We need to wait for the kusk-gateway-manager deployment to finish the setup for the next step.
+helm install kusk-gateway kubeshop/kusk-gateway -n kusk-system --create-namespace &&\
+kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-manager -n kusk-system
+
+# Install the "default" EnvoyFleet Custom Resource, which will be used by the Kusk Gateway
+# to create Envoy Fleet Deployment and Service with the type LoadBalancer
+helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
+
+```
 
 ## Usage
 
 [(Back to top)](#table-of-contents)
 
-Kusk Gateway configures itself via the API CRD that contains your embedded Swagger or OpenAPI document.
+Kusk Gateway configures itself via the [API CRD](docs/customeresources/api.md) that contains your embedded Swagger or OpenAPI document.
 
-See [x-kusk extension documentation](docs/extension.md) for the guidelines on how to add the necessary routing information to your OpenAPI file.
+The easiest way to get started is to go through [ToDoMVC example](docs/todomvc.md).
+
+See also [x-kusk extension documentation](docs/extension.md) and [Custom Resources](docs/customresources/index.md) for the guidelines on how to add the necessary routing information to your OpenAPI file and Kusk Gateway.
 
 After that all that's required is to apply it as you would any other Kubernetes resource.
 
-The easiest way to get started is to use our httpbin example, found in `examples/httpbin`.
-
-`kubectl apply -f examples/httpbin`
-
-Grab the loadbalancer IP
-
-`external_ip=$(kubectl -n kusk-system get svc kusk-envoy-svc-default --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")`
-
-Curl the httpbin service
-
-```
-❯ curl http://$external_ip:8080/
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Host": "192.168.64.2:8080",
-    "User-Agent": "curl/7.64.1",
-    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
-    "X-Envoy-Original-Path": "/"
-  },
-  "origin": "172.17.0.1",
-  "url": "http://192.168.64.2:8080/get"
-}
-```
-
-### API CRD Format
+### API CRD Example
 
 ```yaml
 apiVersion: gateway.kusk.io/v1
@@ -121,13 +119,17 @@ spec:
       ...
 ```
 
-See [httpbin API Resource](examples/httpbin/httpbin_v1_api.yaml) for a full example
-
 ## Custom Resources
 
 [(Back to top)](#table-of-contents)
 
 See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for how to develop Kusk Gateway.
+
+## Troubleshooting
+
+[(Back to top)](#table-of-contents)
+
+See the [Troubleshooting](https://kubeshop.github.io/kusk-gateway/troubleshooting/) for how to troubleshoot the Kusk Gateway problems.
 
 # Development
 

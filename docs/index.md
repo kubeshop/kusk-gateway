@@ -13,3 +13,5 @@ Kusk Gateway is configured through the metadata defined in your OpenAPI or Swagg
 You can apply your API definition like any other Kubernetes resource using our custom-made Kusk Gateway [API](customresources/api.md) CustomResourceDefinition (CRDs).
 
 Other [Custom Resources](customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
+
+Check our [Installation] instructions for installing to the generic Kubernetes cluster or use these [local installation instructions](local-installation.md) to evaluate the Kusk Gateway locally with Minikube.
