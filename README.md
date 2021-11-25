@@ -38,10 +38,9 @@ If you want to quickly setup and evaluate the Kusk Gateway, then please use the 
 
 Otherwise see our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install the Kusk Gateway to Kubernetes.
 
-For the quick and impatient:
+For the quick and impatient, [Jetstack Cert-Manager](https://cert-manager.io/docs/installation/) must be installed in the cluster and then:
 
 ```sh
-# Jetstack Cert-Manager MUST BE INSTALLED TO THE CLUSTER BEFORE!!
 
 # Install Kubeshop Helm repo and update it
 helm repo add kubeshop https://kubeshop.github.io/helm-charts && helm repo update

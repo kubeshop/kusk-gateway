@@ -30,7 +30,7 @@ For the architectural overview of the components please check the [Architecture]
 
 - If you don't have Jetstack Cert-Manager installed in your cluster, then please follow the official [instructions](https://cert-manager.io/docs/installation/) to setup it. We use Cert-Manager for the webhooks configuration.
 
-- If you have the managed cluster (GCP, EKS, etc) then you can skip reading this paragraph.
+- If you have the managed cluster (GCP, EKS, etc) then you can skip to the next section.
 If you have the baremetal or locally setup cluster, then you should have the controller that manages load balancing setup when a Service with the type **LoadBalancer** is setup. Otherwise when the Manager creates the Envoy Fleet Service, it will have stuck ExternalIP address in a Pending state forever. [MetalLB](https://metallb.universe.tf/installation/) provides such functionality, so we advise to setup it if you haven't already.
 
 ### Installation requirements
