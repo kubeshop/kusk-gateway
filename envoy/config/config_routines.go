@@ -5,7 +5,6 @@ package config
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,9 +19,10 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/kubeshop/kusk-gateway/options"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/kubeshop/kusk-gateway/options"
 )
 
 var (
@@ -347,7 +347,7 @@ func generateRoute(
 }
 
 func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redirect, error) {
-	if reflect.DeepEqual(&options.RedirectOptions{}, redirectOpts) {
+	if redirectOpts == nil {
 		return nil, nil
 	}
 	redirectAction := &route.RedirectAction{
@@ -391,7 +391,7 @@ func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redir
 }
 
 func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error) {
-	if corsOpts == nil || reflect.DeepEqual(&options.CORSOptions{}, corsOpts) {
+	if corsOpts == nil {
 		return nil, nil
 	}
 	allowOriginsMatcher := []*envoytypematcher.StringMatcher{}

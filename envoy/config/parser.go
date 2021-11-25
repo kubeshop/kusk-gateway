@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/jinzhu/copier"
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -42,59 +41,29 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 	}
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
-	// 1. For each path create a copy of top x-kusk SubOpts struct as new pathOpts var. For that path override it with pathSubOpts.
-	// 2. For each method create a copy of previously created pathOpts (finalOpts) and override it with opSubOpts.
-	// Copier will skip override of undefined (nul) fields with IgnoreEmpty option.
+	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts
+	// 2. For each method we get SubOptions for that method from the opts map and merge in path SubOpts
 	for path, pathItem := range spec.Paths {
-		// x-kusk options per path
-		// This var is reused during following methods merges,
-		// we do this merge once per path since it is expensive to do it for every method
-		var pathOpts options.SubOptions
-		if err := copier.CopyWithOption(&pathOpts, &opts.SubOptions, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-			return err
-		}
-
-		if pathSubOpts, ok := opts.PathSubOptions[path]; ok {
-			if err := copier.CopyWithOption(&pathOpts, &pathSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-				return err
-			}
-		}
-
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
-			opSubOpts, ok := opts.OperationSubOptions[method+path]
-			if ok {
-				// Exit early if disabled per method, don't do further copies
-				if *opSubOpts.Disabled {
-					continue
-				}
-			}
 
-			var finalOpts options.SubOptions
+			finalOpts := opts.OperationFinalSubOptions[method+path]
 
-			// copy into new var already merged path opts
-			if err := copier.CopyWithOption(&finalOpts, &pathOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-				return err
-			}
-
-			// finally override with opSubOpts, if there are any
-			if ok {
-				if err := copier.CopyWithOption(&finalOpts, &opSubOpts, copier.Option{IgnoreEmpty: true, DeepCopy: false}); err != nil {
-					return err
-				}
-			}
-
-			// Once we have final merged Options, skip if disabled either on top, path or method level.
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
 
-			routePath := generateRoutePath(finalOpts.Path.Prefix, path)
+			var routePath string
+			if finalOpts.Path != nil {
+				routePath = generateRoutePath(finalOpts.Path.Prefix, path)
+			} else {
+				routePath = generateRoutePath("", path)
+			}
 			routeName := generateRouteName(routePath, method)
 
 			params := extractParams(operation.Parameters)
 
-			corsPolicy, err := generateCORSPolicy(&finalOpts.CORS)
+			corsPolicy, err := generateCORSPolicy(finalOpts.CORS)
 			if err != nil {
 				return err
 			}
@@ -119,7 +88,10 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 				if !e.ClusterExist(clusterName) {
 					e.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
-				rewritePathRegex := generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+				var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
+				if finalOpts.Path != nil {
+					rewritePathRegex = generateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+				}
 
 				var (
 					requestTimeout, requestIdleTimeout int64  = 0, 0

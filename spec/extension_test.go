@@ -37,7 +37,7 @@ func TestGetOptions(t *testing.T) {
 				},
 			},
 			res: options.Options{
-				PathSubOptions: map[string]options.SubOptions{
+				OperationFinalSubOptions: map[string]options.SubOptions{
 					"/pet": {
 						Disabled: &trueValue,
 					},
@@ -60,7 +60,7 @@ func TestGetOptions(t *testing.T) {
 				},
 			},
 			res: options.Options{
-				OperationSubOptions: map[string]options.SubOptions{
+				OperationFinalSubOptions: map[string]options.SubOptions{
 					"PUT/pet": {
 						Disabled: &trueValue,
 					},

@@ -28,42 +28,36 @@ func getOperationOptions(operation *openapi3.Operation) (options.SubOptions, boo
 	return res, ok, err
 }
 
-// GetOptions would retrieve and parse x-kusk top-level OpenAPI extension
+// GetOptions would retrieve and parse x-kusk OpenAPI extension
 // that contains Kusk options. If there's no extension found, an empty object will be returned.
+// For each found method in the document top and path level x-kusk options will be merged in
+// to form OperationFinalSubOptions map that has the complete configuration for each method.
 func GetOptions(spec *openapi3.T) (*options.Options, error) {
-	var res options.Options
+	res := options.Options{
+		OperationFinalSubOptions: make(map[string]options.SubOptions),
+	}
 
 	if _, err := parseExtension(&spec.ExtensionProps, &res); err != nil {
 		return nil, err
 	}
 
 	for path, pathItem := range spec.Paths {
-		pathSubOptions, ok, err := getPathOptions(pathItem)
+		pathSubOptions, _, err := getPathOptions(pathItem)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract path suboptions: %w", err)
 		}
 
-		if ok {
-			if res.PathSubOptions == nil {
-				res.PathSubOptions = map[string]options.SubOptions{}
-			}
-
-			res.PathSubOptions[path] = pathSubOptions
-		}
-
+		// Merge in top level.
+		pathSubOptions.MergeInSubOptions(&res.SubOptions)
 		for method, operation := range pathItem.Operations() {
-			operationSubOptions, ok, err := getOperationOptions(operation)
+			operationSubOptions, _, err := getOperationOptions(operation)
 			if err != nil {
 				return nil, fmt.Errorf("failed to extract operation suboptions: %w", err)
 			}
 
-			if ok {
-				if res.OperationSubOptions == nil {
-					res.OperationSubOptions = map[string]options.SubOptions{}
-				}
-
-				res.OperationSubOptions[method+path] = operationSubOptions
-			}
+			// Merged in path
+			operationSubOptions.MergeInSubOptions(&pathSubOptions)
+			res.OperationFinalSubOptions[method+path] = operationSubOptions
 		}
 	}
 

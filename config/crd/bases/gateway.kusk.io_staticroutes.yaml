@@ -118,10 +118,11 @@ spec:
                                 description: Rewrite is the pattern (regex) and a
                                   substitution string that will change URL when request
                                   is being forwarded to the upstream service. e.g.
-                                  given that Base is set to "/petstore/api/v3", and
-                                  with Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution
-                                  is set to "" path that would be generated is "/petstore/api/v3/pets",
-                                  URL that the upstream service would receive is "/api/v3/pets".
+                                  given that Prefix is set to "/petstore/api/v3",
+                                  and with Rewrite.Pattern is set to "^/petstore",
+                                  Rewrite.Substitution is set to "" path that would
+                                  be generated is "/petstore/api/v3/pets", URL that
+                                  the upstream service would receive is "/api/v3/pets".
                                 properties:
                                   pattern:
                                     type: string

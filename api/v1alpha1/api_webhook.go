@@ -95,9 +95,8 @@ func (r *API) validate() error {
 	if err != nil {
 		return fmt.Errorf("spec: x-kusk should be a valid set of options: %w", err)
 	}
-
-	err = opts.FillDefaultsAndValidate()
-	if err != nil {
+	opts.FillDefaults()
+	if err = opts.Validate(); err != nil {
 		return fmt.Errorf("spec: x-kusk should be a valid set of options: %w", err)
 	}
 

@@ -20,6 +20,21 @@ spec:
           name: httpbin
           namespace: default
           port: 8080
+      cors:
+        origins:
+        - "*"
+        methods:
+        - POST
+        - GET
+        - OPTIONS
+        - PUT
+        headers:
+        - Content-Type
+        credentials: true
+        expose_headers:
+        - X-Custom-TopLevel1
+        - X-Custom-TopLevel2
+        max_age: 86200
     paths:
       "/status/{code}":
         x-kusk:
@@ -220,12 +235,44 @@ spec:
       # Old API stream, rewrite to new
       "/oldAPI/stream/{number}":
         x-kusk:
+          cors:
+            origins:
+            - "*"
+            methods:
+            - POST
+            - GET
+            - OPTIONS
+            headers:
+            - Content-Type
+            credentials: true
+            expose_headers:
+            - X-Custom-PathLevel1
+            - X-Custom-PathLevel2
+            max_age: 86200
           path:
             # /oldAPI/stream/{number} -> to upstream: /stream/{number}
             rewrite:
               pattern: "^/oldAPI"
               substitution: ""
+          # Since at the top we specify upstream.service, this one should replace it as upstream.host
+          upstream:
+            host:
+              hostname: httpbin
+              port: 8080
         get:
+          x-kusk:
+            cors:
+              origins:
+              - "*"
+              methods:
+              - GET
+              headers:
+              - Content-Type
+              credentials: true
+              expose_headers:
+              - X-Custom-OperationLevel1
+              - X-Custom-OperationLevel2
+              max_age: 86200
           description: Old stream, rewrite to new.
           parameters:
           - name: number
