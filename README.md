@@ -34,7 +34,7 @@ See the [architecture document](docs/arch.md) for an overview of the Kusk Gatewa
 
 [(Back to top)](#table-of-contents)
 
-If you want to quickly setup and evaluate the Kusk Gateway, then please use the [local installation instructions with Minikube](local-installation.md).
+If you want to quickly setup and evaluate the Kusk Gateway, then please use the [local installation instructions with Minikube](docs/local-installation.md).
 
 Otherwise see our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install the Kusk Gateway to Kubernetes.
 
