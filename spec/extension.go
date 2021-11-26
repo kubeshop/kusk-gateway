@@ -33,13 +33,13 @@ func getOperationOptions(operation *openapi3.Operation) (options.SubOptions, boo
 // For each found method in the document top and path level x-kusk options will be merged in
 // to form OperationFinalSubOptions map that has the complete configuration for each method.
 func GetOptions(spec *openapi3.T) (*options.Options, error) {
-	res := options.Options{}
+	res := options.Options{
+		OperationFinalSubOptions: make(map[string]options.SubOptions),
+	}
 
 	if _, err := parseExtension(&spec.ExtensionProps, &res); err != nil {
 		return nil, err
 	}
-
-	res.OperationFinalSubOptions = make(map[string]options.SubOptions)
 
 	for path, pathItem := range spec.Paths {
 		pathSubOptions, _, err := getPathOptions(pathItem)

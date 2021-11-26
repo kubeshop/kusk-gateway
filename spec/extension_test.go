@@ -21,7 +21,9 @@ func TestGetOptions(t *testing.T) {
 		{
 			name: "no extensions",
 			spec: &openapi3.T{},
-			res:  options.Options{},
+			res: options.Options{
+				OperationFinalSubOptions: make(map[string]options.SubOptions),
+			},
 		},
 		{
 			name: "path level options set",
@@ -33,12 +35,13 @@ func TestGetOptions(t *testing.T) {
 								kuskExtensionKey: json.RawMessage(`{"disabled":true}`),
 							},
 						},
+						Get: &openapi3.Operation{},
 					},
 				},
 			},
 			res: options.Options{
 				OperationFinalSubOptions: map[string]options.SubOptions{
-					"/pet": {
+					"GET/pet": {
 						Disabled: &trueValue,
 					},
 				},
