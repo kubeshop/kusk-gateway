@@ -82,8 +82,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		if err != nil {
 			return fmt.Errorf("failed to parse options: %w", err)
 		}
-
-		if err := opts.FillDefaultsAndValidate(); err != nil {
+		opts.FillDefaults()
+		if err := opts.Validate(); err != nil {
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 

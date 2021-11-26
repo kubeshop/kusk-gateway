@@ -85,7 +85,8 @@ func parseAndApply(apiSpecPath string, envoyMgr *envoyConfigManager.EnvoyConfigM
 	if err != nil {
 		return err
 	}
-	if err = kuskExtensionOpts.FillDefaultsAndValidate(); err != nil {
+	kuskExtensionOpts.FillDefaults()
+	if err = kuskExtensionOpts.Validate(); err != nil {
 		return err
 	}
 	envoyConfig := envoyConfig.New()
