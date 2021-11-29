@@ -17,6 +17,7 @@ theme:
 nav:
   - Welcome: index.md
   - Installation: installation.md
+  - TodoMVC example: todomvc.md
   - Extension (x-kusk) docs: extension.md
   - 'Custom Resources':
     - 'EnvoyFleet': customresources/envoyfleet.md
