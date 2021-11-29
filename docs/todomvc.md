@@ -32,6 +32,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/ex
 ```
 
 4. Test access
+
 We assume that you have followed the [installation instructions](/docs/installation.md) and have determined the external IP of the EnvoyFleet Service:
 
 ```
