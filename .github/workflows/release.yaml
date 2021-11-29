@@ -10,7 +10,7 @@ jobs:
 
   release:
     name: Create and upload release-artifacts
-    # if: github.event.base_ref == 'refs/heads/main'
+    if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -37,20 +37,20 @@ jobs:
             type=sha
           flavor: |
             latest=true
-      # -
-      #   name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: .
-      #     push: ${{ github.event_name != 'pull_request' }}
-      #     tags: ${{ steps.meta.outputs.tags }}
-      #     labels: ${{ steps.meta.outputs.labels }}
-      # -
-      #   name: Run GoReleaser to publish release notes
-      #   uses: goreleaser/goreleaser-action@v2
-      #   with:
-      #     distribution: goreleaser
-      #     version: latest
-      #     args: release --rm-dist --skip-sign
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      -
+        name: Run GoReleaser to publish release notes
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist --skip-sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
