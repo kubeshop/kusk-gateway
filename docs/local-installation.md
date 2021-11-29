@@ -59,7 +59,7 @@ You can select and copy all of these commands as one block and paste it into the
 
 ```sh
 # determine load balancer ingress range
-cidr_base_addr=$(minikube ip --profile kgw1)
+cidr_base_addr=$(minikube ip --profile kgw)
 ingress_first_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,2}' OFS='.')
 ingress_last_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,255}' OFS='.')
 ingress_range=$ingress_first_addr-$ingress_last_addr
