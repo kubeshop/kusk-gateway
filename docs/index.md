@@ -14,4 +14,5 @@ You can apply your API definition like any other Kubernetes resource using our c
 
 Other [Custom Resources](customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
 
-Check our [Installation] instructions for installing to the generic Kubernetes cluster or use these [local installation instructions](local-installation.md) to evaluate the Kusk Gateway locally with Minikube.
+Proceed with our [Installation](installation.md) instructions for installing to the generic Kubernetes cluster or use these [local installation instructions](local-installation.md) to evaluate the Kusk Gateway locally with Minikube.
+Once you have Kusk Gateway installed, feel free to check out the [TodoMVC](todomvc.md) example to deploy backend and frontend with Kusk Gateway.
