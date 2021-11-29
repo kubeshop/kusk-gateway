@@ -21,12 +21,12 @@ kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/ex
 kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml
 ```
 
-2. Exposer backend API via Kusk Gateway:
+2. Expose backend API via Kusk Gateway:
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-backend-api.yaml
 ```
 
-3. Exposer frontend via Kusk Gateway:
+3. Expose frontend via Kusk Gateway:
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml
 ```
