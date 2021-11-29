@@ -33,7 +33,7 @@ jobs:
         with:
           images: kubeshop/kusk-gateway
           tags: |
-            type=semver,pattern=v{{version}}
+            type=match,pattern=v(.*)
             type=sha
           flavor: |
             latest=true
