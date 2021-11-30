@@ -1,16 +1,16 @@
 # TodoMVC step by step example
 
-This [example](/examples/todomvc) will show you how to deploy a famous [TodoMVC](https://todomvc.com/) website using Kusk Gateway.
+This example will show you how to deploy a famous [TodoMVC](https://todomvc.com/) website using Kusk Gateway.
 We chose the [TodoBackend](http://www.todobackend.com/) implementation for an example. The website consists of a Go-powered
-[backend](/examples/todomvc/backend) and a NodeJS [SPA frontend](/examples/todomvc/frontend) that talks to the backend.
+[backend](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/backend.yaml) and a NodeJS [SPA frontend](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml) that talks to the backend.
 
-The backend application comes with an OpenAPI [specification](/examples/todomvc/todospec.yaml), which we will use to configure the Kusk Gateway.
+The backend application comes with an OpenAPI [specification](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml), which we will use to configure the Kusk Gateway.
 
 In order to let the frontend communicate with the backend, modern browsers require [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) to be properly
-configured. Luckily, Kusk Gateway Manager allows you to do that right in your OpenAPI specification file using the **x-kusk** [extension](/docs/extension.md).
+configured. Luckily, Kusk Gateway Manager allows you to do that right in your OpenAPI specification file using the **x-kusk** [extension](extension.md).
 
 ## Prerequisites
-- Kusk Gateway Manager [installed](/docs/installation.md) into the cluster
+- Kusk Gateway Manager [installed](installation.md) into the cluster
 - Envoy LoadBalancer IP is reachable from your browser - we will refer to it as `EXTERNAL_IP`
 
 ## Deploy services
@@ -33,7 +33,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/ex
 
 4. Test access
 
-We assume that you have followed the [installation instructions](/docs/installation.md) and have determined the external IP of the EnvoyFleet Service:
+We assume that you have followed the [installation instructions](installation.md) and have determined the external IP of the EnvoyFleet Service:
 
 ```
 export EXTERNAL_IP=192.168.64.2 # this IP is example, yours will be different
@@ -47,7 +47,7 @@ You should now see the TodoMVC app running against your backend, with Kusk Gatew
 
 ## How it's done - backend
 
-Inside the `x-kusk` extension [upstream](/docs/extension.md#upstream) is specified so that Kusk knows where to route traffic to:
+Inside the `x-kusk` extension [upstream](extension.md#upstream) is specified so that Kusk knows where to route traffic to:
 ```yaml
 x-kusk:
   upstream:
@@ -57,7 +57,7 @@ x-kusk:
       port: 3000
 ```
 
-Then, [CORS](/docs/extension.md#cors) is configured:
+Then, [CORS](extension.md#cors) is configured:
 ```yaml
 x-kusk:
   upstream:
@@ -81,7 +81,7 @@ x-kusk:
     max_age: 86200
 ```
 
-Now, in order to apply it to our cluster, you need to envelope it in a [API](/docs/customresources/api.md) CRD.
+Now, in order to apply it to our cluster, you need to envelope it in a [API](customresources/api.md) CRD.
 You can do it either manually:
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1
@@ -111,9 +111,9 @@ kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main
 ## How it's done - frontend
 
 In order to configure access to services that do not have an OpenAPI specification,
-Kusk Gateway allows you to use a [StaticRoute](/docs/customresources/staticroute.md) CRD.
+Kusk Gateway allows you to use a [StaticRoute](customresources/staticroute.md) CRD.
 
-Example `kusk-frontend-route.yaml` [file](/examples/todomvc/kusk-frontend-route.yaml):
+Example `kusk-frontend-route.yaml` [file](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml):
 
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1
