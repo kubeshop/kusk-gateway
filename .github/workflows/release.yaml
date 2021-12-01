@@ -93,9 +93,15 @@ jobs:
           # yellow
           SLACK_COLOR: "#FFFF00"
           SLACK_ICON: https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg
-          SLACK_TITLE: Kusk Gateway Release ${{ github.ref }} has changed CRDs or RBAC
-          SLACK_MESSAGE: "kusk-gateway Helm chart won't be updated automatically. Merge the changes in manually in helm-charts repository."
+          SLACK_TITLE: Kusk Gateway Release has changed CRDs or RBAC
+          SLACK_MESSAGE: "The kusk-gateway Helm chart won't be updated automatically. Merge the changes in manually in helm-charts repository."
           SLACK_USERNAME: GitHub
           SLACK_LINK_NAMES: true
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
+      -
+        name: Trigger Helm chart version bump with the new appVersion if CRDs or RBAC didn't change
+        if: ${{ env.CRDS_CHANGED == 'false' }}
+        uses: kubeshop/helm-charts/.github/workflows/kusk-gateway-update-helm-chart-version.yaml@tyatsurak/feature/120-kusk-gateway-trigger
+        with:
+          appVersion: ${{ github.ref_name }}
