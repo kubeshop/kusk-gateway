@@ -67,8 +67,8 @@ jobs:
       -
         name: Check if we have modified CRDs or RBAC between 2 last tags
         run: |
-          CHANGED_FILES_NUMBER=$(git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac |wc -l)
-          echo "Changed CRD or RBAC files: ${CHANGED_FILES_NUMBER}"
+          CHANGED_FILES_STATS=$(git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac | tail -1)
+          echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
           git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac
 
           # SECURITY: disable command workflow processing
@@ -76,7 +76,7 @@ jobs:
           echo "::stop-commands::`echo -n ${{ github.token }} | sha256sum | head -c 64`"
 
           # This will set global environment variable CRDS_CHANGED to true or false
-          if [[ $CHANGED_FILES_NUMBER -gt 0 ]]; then
+          if [[ -n "$CHANGED_FILES_STATS" ]]; then
             echo "CRDS_CHANGED=true" >> $GITHUB_ENV
           else
             echo "CRDS_CHANGED=false" >> $GITHUB_ENV
