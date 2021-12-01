@@ -99,9 +99,10 @@ jobs:
           SLACK_LINK_NAMES: true
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
-      -
-        name: Trigger Helm chart version bump with the new appVersion if CRDs or RBAC didn't change
-        if: ${{ env.CRDS_CHANGED == 'false' }}
-        uses: kubeshop/helm-charts/.github/workflows/kusk-gateway-update-helm-chart-version.yaml@tyatsurak/feature/120-kusk-gateway-trigger
-        with:
-          appVersion: ${{ github.ref_name }}
+
+  helm_chart_release:
+      if: ${{ env.CRDS_CHANGED == 'false' }}
+      needs: [ "release" ]
+      uses: kubeshop/helm-charts/.github/workflows/kusk-gateway-update-helm-chart-version.yaml@tyatsurak/feature/120-kusk-gateway-trigger
+      with:
+        appVersion: ${{ github.ref_name }}
