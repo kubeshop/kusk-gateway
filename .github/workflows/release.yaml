@@ -23,7 +23,7 @@ jobs:
     # if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
-      changed_resources: ${{ steps.check_modified_resources.output.changed_resources }}
+      changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
 
     steps:
       -
@@ -83,10 +83,12 @@ jobs:
 
   notify_resources_changed:
     name: "Notify when CRD or RBAC changed"
+    needs: "release"
     if: ${{ needs.release.outputs.changed_resources == 'true'}}
     runs-on: ubuntu-latest
-    needs: "release"
     steps:
+      - name: show output
+        run: echo ${{ needs.release.outputs.changed_resources }}
       -
         name: Notify Slack channel
         uses: rtCamp/action-slack-notify@v2
