@@ -22,6 +22,8 @@ jobs:
     name: Create and upload release-artifacts, triggers Helm charts release
     # if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      changed_resources: ${{ steps.check_modified_custom_resources.output.changed_resources }}
 
     steps:
       -
@@ -66,6 +68,7 @@ jobs:
       #     GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
       -
         name: Check if we have modified CRDs or RBAC between 2 last tags
+        id: check_modified_resources
         run: |
           CHANGED_FILES_STATS=$(git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac | tail -1)
           echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
@@ -77,17 +80,23 @@ jobs:
 
           # This will set global environment variable CRDS_CHANGED to true or false
           if [[ -n "$CHANGED_FILES_STATS" ]]; then
-            echo "CRDS_CHANGED=true" >> $GITHUB_ENV
+            echo "::set-output name=changed_resources::true"
           else
-            echo "CRDS_CHANGED=false" >> $GITHUB_ENV
+            echo "::set-output name=changed_resources::false"
           fi
 
           # SECURITY: enable workflow command processing
           echo "::`echo -n ${{ github.token }} | sha256sum | head -c 64`::"
+
+  notify_resources_changed:
+    name: "Notify when CRD or RBAC changed"
+    if: ${{ needs.release.outputs.changed_resources == 'true'}}
+    runs-on: ubuntu-latest
+    needs: "release"
+    steps:
       -
-        name: Notify Slack channel if CRDs or RBAC changes
+        name: Notify Slack channel
         uses: rtCamp/action-slack-notify@v2
-        if: ${{ env.CRDS_CHANGED == 'true' }}
         env:
           SLACK_CHANNEL: testmessages
           # yellow
@@ -100,9 +109,10 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-  helm_chart_release:
-      if: ${{ env.CRDS_CHANGED == 'false' }}
-      needs: [ "release" ]
+  helm_chart_version_bump:
+      name: "Trigger Helm chart appVersion update"
+      needs: "release"
+      if: ${{ needs.release.outputs.changed_resources == 'false'}}
       uses: kubeshop/helm-charts/.github/workflows/kusk-gateway-update-helm-chart-version.yaml@tyatsurak/feature/120-kusk-gateway-trigger
       with:
         appVersion: ${{ github.ref_name }}
