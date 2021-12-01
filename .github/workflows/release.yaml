@@ -74,19 +74,12 @@ jobs:
           echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
           git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac
 
-          # SECURITY: disable command workflow processing
-          # https://github.blog/changelog/2020-10-01-github-actions-deprecating-set-env-and-add-path-commands/
-          echo "::stop-commands::`echo -n ${{ github.token }} | sha256sum | head -c 64`"
-
           # This will set global environment variable CRDS_CHANGED to true or false
           if [[ -n "$CHANGED_FILES_STATS" ]]; then
             echo "::set-output name=changed_resources::true"
           else
             echo "::set-output name=changed_resources::false"
           fi
-
-          # SECURITY: enable workflow command processing
-          echo "::`echo -n ${{ github.token }} | sha256sum | head -c 64`::"
 
   notify_resources_changed:
     name: "Notify when CRD or RBAC changed"
