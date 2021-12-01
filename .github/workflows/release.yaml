@@ -23,7 +23,7 @@ jobs:
     # if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
-      changed_resources: ${{ steps.check_modified_custom_resources.output.changed_resources }}
+      changed_resources: ${{ steps.check_modified_resources.output.changed_resources }}
 
     steps:
       -
@@ -74,7 +74,7 @@ jobs:
           echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
           git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac
 
-          # This will set global environment variable CRDS_CHANGED to true or false
+          # This will set joub output to changed_resource=true or false
           if [[ -n "$CHANGED_FILES_STATS" ]]; then
             echo "::set-output name=changed_resources::true"
           else
