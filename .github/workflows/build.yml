@@ -1,5 +1,10 @@
 name: build and test
 
+# Cancel any pending or running workflow if the new one is triggered
+concurrency:
+  group: "build"
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main ]
