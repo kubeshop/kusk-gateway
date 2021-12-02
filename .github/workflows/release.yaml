@@ -12,15 +12,14 @@ defaults:
 on:
   push:
     tags: 
-      # - "v[0-9]+.[0-9]+.[0-9]+"
-      # - "v[0-9]+.[0-9]+.[0-9]+-*"
-      - "test-*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
 
   release:
     name: Create and upload release-artifacts, triggers Helm charts release
-    # if: github.event.base_ref == 'refs/heads/main'
+    if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
@@ -32,41 +31,41 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      # -
-      #   name: Login to DockerHub
-      #   if: github.event_name != 'pull_request'
-      #   uses: docker/login-action@v1 
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # -
-      #   name: Docker metadata for Kusk Gateway
-      #   id: meta
-      #   uses: docker/metadata-action@v3
-      #   with:
-      #     images: kubeshop/kusk-gateway
-      #     tags: |
-      #       type=semver,pattern=v{{version}}
-      #       type=sha
-      #     flavor: |
-      #       latest=true
-      # -
-      #   name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: .
-      #     push: ${{ github.event_name != 'pull_request' }}
-      #     tags: ${{ steps.meta.outputs.tags }}
-      #     labels: ${{ steps.meta.outputs.labels }}
-      # -
-      #   name: Run GoReleaser to publish release notes
-      #   uses: goreleaser/goreleaser-action@v2
-      #   with:
-      #     distribution: goreleaser
-      #     version: latest
-      #     args: release --rm-dist --skip-sign
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+      -
+        name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Docker metadata for Kusk Gateway
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: kubeshop/kusk-gateway
+          tags: |
+            type=semver,pattern=v{{version}}
+            type=sha
+          flavor: |
+            latest=true
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      -
+        name: Run GoReleaser to publish release notes
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist --skip-sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
       -
         name: Check if we have modified CRDs or RBAC between 2 last tags
         id: check_modified_resources
@@ -96,7 +95,7 @@ jobs:
         name: Notify Slack channel
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_CHANNEL: testmessages
+          SLACK_CHANNEL: kusk
           SLACK_COLOR: "#FFFF00" #yellow
           SLACK_ICON: https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg
           SLACK_TITLE: Kusk Gateway Release has changed CRDs or RBAC
@@ -118,7 +117,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: "kubeshop/helm-charts"
-          ref: "tyatsurak/feature/120-kusk-gateway-trigger"
+          ref: "main"
           fetch-depth: 0
           token: ${{ secrets.CI_BOT_TOKEN }}
 
@@ -160,7 +159,7 @@ jobs:
         name: Slack Notification if the helm version bump succeeded
         uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_CHANNEL: testmessages
+          SLACK_CHANNEL: kusk
           SLACK_COLOR: good
           SLACK_ICON: https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg
           SLACK_TITLE: Helm chart version bump succeeded :party_blob:!
@@ -178,7 +177,7 @@ jobs:
     - name: Slack Notification if Helm Release action failed
       uses: rtCamp/action-slack-notify@v2
       env:
-        SLACK_CHANNEL: testmessages
+        SLACK_CHANNEL: kusk
         SLACK_COLOR: ${{ needs.helm_chart_version_bump.result }} # or a specific color like 'good' or '#ff00ff'
         SLACK_ICON: https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg
         SLACK_TITLE: Helm Chart version bump action failed :boom:!
