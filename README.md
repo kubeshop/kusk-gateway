@@ -60,7 +60,7 @@ helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n
 
 [(Back to top)](#table-of-contents)
 
-Kusk Gateway configures itself via the [API CRD](docs/customeresources/api.md) that contains your embedded Swagger or OpenAPI document.
+Kusk Gateway configures itself via the [API CRD](docs/customresources/api.md) that contains your embedded Swagger or OpenAPI document.
 
 The easiest way to get started is to go through [ToDoMVC example](docs/todomvc.md).
 
