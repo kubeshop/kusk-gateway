@@ -207,6 +207,28 @@ The path object contains the following properties to configure service endpoints
 | rewrite_regex.pattern      | Regular expression to rewrite the URL                                                                          |
 | rewrite_regex.substitution | Regular expression's substitution                                                                              |
 
+If a rewrite isn't specified then the upstream service will receive the request as is with any path still appended.
+
+#### Example
+
+We have a service `foo` with a single endpoint `/bar`.
+
+We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
+
+![path rewrite example](img/rewrite-path-example.png)
+
+If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
+
+Therefore we must rewrite the path from `/foo/bar` to `/bar` before sending it onto the `foo` service.
+
+The following config extract will allow us to do this
+```
+path:
+  # /foo/bar/... -> to upstream: /bar/...
+  rewrite:
+    pattern: "^/foo"
+    substitution: ""
+```
 
 ### qos
 The QoS objects contains the following properties to configure quality of service for endpoints:
