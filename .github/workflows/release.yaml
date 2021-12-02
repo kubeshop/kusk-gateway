@@ -117,6 +117,7 @@ jobs:
           repository: "kubeshop/helm-charts"
           ref: "tyatsurak/feature/120-kusk-gateway-trigger"
           fetch-depth: 0
+          token: ${{ secrets.CI_BOT_TOKEN }}
 
       - 
         name: Install Helm
@@ -146,6 +147,7 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git remote -v
           git add .
           git commit -m "automatically updated kusk-gateway related charts"
           git push
