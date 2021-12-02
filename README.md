@@ -123,7 +123,7 @@ spec:
 
 [(Back to top)](#table-of-contents)
 
-See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for how to develop Kusk Gateway.
+See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for more information on the Custom Resources that Kusk Gateway supports.
 
 ## Troubleshooting
 
