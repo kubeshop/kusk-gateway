@@ -131,7 +131,7 @@ jobs:
         name: Bump up kusk-gateway chart
         run: |
           # sets appVersion in the Chart.yaml
-          echo New appVersion: ${{ needs.release.github.ref_name }}
+          echo New appVersion: ${{ needs.release.outputs.release_version }}
           sed  -i -e "s/^appVersion: .*$/appVersion: \"${{ needs.release.outputs.release_version }}\"/" charts/kusk-gateway/Chart.yaml
           # Bumps charts patch version
           CURRENT_VERSION=$(sed  -n  -e  "s/^version: \(.*\)$/\1/p"  charts/kusk-gateway/Chart.yaml)
