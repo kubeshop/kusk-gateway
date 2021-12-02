@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
+      release_version: ${{ steps.check_modified_resources.outputs.release_version }}
 
     steps:
       -
