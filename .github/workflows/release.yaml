@@ -73,8 +73,10 @@ jobs:
           CHANGED_FILES_STATS=$(git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac | tail -1)
           echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
           git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac
+          # Pass version (git tag name) to other jobs
+          echo "::set-output name=release_version::${{ github.ref_name }}"
 
-          # This will set joub output to changed_resource=true or false
+          # This will set job output to changed_resource=true or false
           if [[ -n "$CHANGED_FILES_STATS" ]]; then
             echo "::set-output name=changed_resources::true"
           else
@@ -129,7 +131,8 @@ jobs:
         name: Bump up kusk-gateway chart
         run: |
           # sets appVersion in the Chart.yaml
-          sed  -i -e "s/^appVersion: .*$/appVersion: \"${{ needs.release.github.ref_name }}\"/" charts/kusk-gateway/Chart.yaml
+          echo New appVersion: ${{ needs.release.github.ref_name }}
+          sed  -i -e "s/^appVersion: .*$/appVersion: \"${{ needs.release.outputs.release_version }}\"/" charts/kusk-gateway/Chart.yaml
           # Bumps charts patch version
           CURRENT_VERSION=$(sed  -n  -e  "s/^version: \(.*\)$/\1/p"  charts/kusk-gateway/Chart.yaml)
           echo Current chart version ${CURRENT_VERSION}
@@ -160,6 +163,7 @@ jobs:
           SLACK_COLOR: good
           SLACK_ICON: https://github.githubassets.com/images/modules/site/features/actions-icon-actions.svg
           SLACK_TITLE: Helm chart version bump succeeded :party_blob:!
+          SLACK_MESSAGE: "Kusk Gateway chart version was bumped"
           SLACK_USERNAME: GitHub
           SLACK_LINK_NAMES: true
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
