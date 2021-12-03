@@ -1,5 +1,10 @@
 name: mkdocs
 
+# Cancel any pending or running workflow if the new one is triggered
+concurrency:
+  group: "mkdocs"
+  cancel-in-progress: true
+
 on:
   push:
     branches:
