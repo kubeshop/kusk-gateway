@@ -84,3 +84,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - tls
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - tls/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - gateway.kusk.io
+  resources:
+  - tls/status
+  verbs:
+  - get
+  - patch
+  - update

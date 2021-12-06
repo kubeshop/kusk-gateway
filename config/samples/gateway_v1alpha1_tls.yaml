@@ -1,0 +1,11 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: TLS
+metadata:
+  name: tls-sample
+spec:
+  # Add fields here
+  secretName: my-tls-secret
+  cipherSuites:
+    - foo
+    - bar
+    - baz
