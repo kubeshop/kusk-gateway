@@ -2,4 +2,73 @@ apiVersion: gateway.kusk.io/v1alpha1
 kind: EnvoyFleet
 metadata:
   name: default
-spec: {}
+spec:
+  image: "envoyproxy/envoy-alpine:v1.20.0"
+  service:
+    # NodePort, ClusterIP, LoadBalancer
+    type: LoadBalancer
+    # Specify annotations to modify service behaviour, e.g. for GCP to create internal load balancer:
+    # annotations:
+    #   networking.gke.io/load-balancer-type: "Internal"
+    # Specify predefined static load balancer IP address if present
+    #loadBalancerIP: 10.10.10.10
+    ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+  resources:
+    # limits:
+    #   cpu: 1
+    #   memory: 100M
+    requests:
+      cpu: 10m
+      memory: 100M
+  # Put annotations to scrape pods.
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9102'
+  # Scheduling directives
+  # Read https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ for the details.
+
+  # Optional - schedule Envoy pods to the node with the label "disktype=ssd".
+  # nodeSelector:
+  #   disktype: "ssd"
+
+  # Optional - allow to be scheduled on the "tainted" node. Taint with "kubectl taint nodes node1 key1=value1:NoSchedule".
+  # Taints will repel the pods from the node unless the pods have the specific toleration.
+  # The line below will allow this specific Envoy pod to be scheduled there (but scheduler decideds where to put it anyway).
+  # tolerations:
+  # - key: "key1"
+  #   operator: "Exists"
+  #   effect: "NoSchedule"
+
+  # Optional - provide pods affinity and anti-affinity settings.
+  # This newer and more flexible scheme can replace nodeSelector but they can be specified together too.
+  # For the scalability and fault tolerance we prefer to put all Envoy pods on different nodes - in case one node fails we survive on others.
+  # The block below will search for all matching labels of THIS "default" envoy fleet pods and will try to schedule pods
+  # on different nodes.
+  # Other fleets (if present) are not taken into consideration. You can specify nodeAffinity and podAffinity as well.
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app
+  #           operator: In
+  #           values:
+  #           - kusk-gateway
+  #         - key: component
+  #           operator: In
+  #           values:
+  #           - envoy
+  #         - key: fleet
+  #           operator: In
+  #           values:
+  #           - default
+  #       topologyKey: kubernetes.io/hostname
+
+  # optional
+  size: 1

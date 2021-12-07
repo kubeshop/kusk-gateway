@@ -25,6 +25,7 @@ SOFTWARE.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,10 +37,60 @@ type EnvoyFleetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Service describes Envoy K8s service settings
+	Service *ServiceConfig `json:"service"`
+
+	// Envoy image tag
+	Image string `json:"image"`
+	// Node Selector is used to schedule the Envoy pod(s) to the specificly labeled nodes, optional
+	// This is the map of "key: value" labels (e.g. "disktype": "ssd")
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity is used to schedule Envoy pod(s) to specific nodes, optional
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allow pod to be scheduled to the nodes that has specific toleration labels, optional
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request.
+	// Value must be non-negative integer. The value zero indicates stop immediately via
+	// the kill signal (no opportunity to shut down).
+	// If this value is nil, the default grace period will be used instead.
+	// The grace period is the duration in seconds after the processes running in the pod are sent
+	// a termination signal and the time when the processes are forcibly halted with a kill signal.
+	// Set this value longer than the expected cleanup time for your process.
+	// Defaults to 30 seconds.
+	// +optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+	// Additional Envoy Deployment annotations, optional
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// Resources allow to set CPU and Memory resource requests and limits, optional
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// Size field specifies the number of Envoy Pods being deployed. Optional, default value is 1.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:default:=1
 	Size *int32 `json:"size,omitempty"`
+}
+
+type ServiceConfig struct {
+
+	// Kubernetes service type: NodePort, ClusterIP or LoadBalancer
+	// +kubebuilder:validation:Enum=NodePort;ClusterIP;LoadBalancer
+	Type corev1.ServiceType `json:"type"`
+
+	// Kubernetes Service ports
+	Ports []corev1.ServicePort `json:"ports"`
+
+	// Service's annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Static ip address for the LoadBalancer type if available
+	// +optional
+	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet

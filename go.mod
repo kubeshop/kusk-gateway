@@ -3,7 +3,7 @@ module github.com/kubeshop/kusk-gateway
 go 1.16
 
 require (
-	github.com/envoyproxy/go-control-plane v0.10.0
+	github.com/envoyproxy/go-control-plane v0.10.1
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/getkin/kin-openapi v0.76.0
 	github.com/ghodss/yaml v1.0.0

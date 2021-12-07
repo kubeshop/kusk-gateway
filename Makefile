@@ -111,10 +111,13 @@ deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+cycle: ## Trigger manager deployment rollout restart to pick up the new container image with the same tag
+	kubectl rollout restart deployment/kusk-controller-manager -n kusk-system
+	@echo "Triggered deployment/kusk-controller-manager restart"
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.

@@ -41,8 +41,7 @@ import (
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
 type EnvoyFleetReconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	ConfigManager *KubeEnvoyConfigManager
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet,verbs=get;list;watch;create;update;patch;delete
@@ -59,32 +58,41 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}
 
-	err := r.Client.Get(context.TODO(), req.NamespacedName, ef)
+	err := r.Client.Get(ctx, req.NamespacedName, ef)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// EnvoyFleet was deleted - deployment and config deletion is handled by the API server itself
 			// thanks to OwnerReference
+			l.Info("No objects found, looks like EnvoyFleet was deleted")
 			return ctrl.Result{}, nil
 		}
-
+		l.Error(err, "Failed to retrieve EnvoyFleet object with cluster API")
 		return ctrl.Result{Requeue: true}, err
 	}
 
 	if err := controllerutil.SetControllerReference(ef, ef, r.Scheme); err != nil {
+		l.Error(err, "Failed setting controller owner reference")
 		return ctrl.Result{}, err
 	}
-
-	if err := k8sutils.CreateEnvoyConfig(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy config: %w", err)
+	efResources, err := NewEnvoyFleetResources(ef)
+	if err != nil {
+		l.Error(err, "Failed to create envoy fleet configuration")
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet configuration: %w", err)
 	}
 
-	if err := k8sutils.CreateEnvoyDeployment(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy deployment: %w", err)
+	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.configMap); err != nil {
+		l.Error(err, "Failed to create envoy envoy config map")
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet config map: %w", err)
 	}
-
-	if err := k8sutils.CreateEnvoyService(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy service: %w", err)
+	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.deployment); err != nil {
+		l.Error(err, "Failed to create envoy deployment")
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet deployment: %w", err)
 	}
+	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.service); err != nil {
+		l.Error(err, "Failed to create envoy fleet service")
+		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleetconfig map: %w", err)
+	}
+	l.Info(fmt.Sprintf("Reconciled Envoy Fleet '%s' resources", efResources.fleetName))
 
 	return ctrl.Result{}, nil
 }
