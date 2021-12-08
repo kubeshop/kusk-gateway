@@ -17,8 +17,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -214,7 +214,8 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 				Name: wellknown.Router,
 			}},
 	}
-	pbst, err := ptypes.MarshalAny(manager)
+
+	pbst, err := anypb.New(manager)
 	if err != nil {
 		panic(err)
 	}
