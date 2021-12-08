@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: envoyfleet-viewer-role
+  name: kusk-gateway-envoyfleet-viewer-role
 rules:
 - apiGroups:
   - gateway.kusk.io

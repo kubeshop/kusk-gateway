@@ -198,7 +198,6 @@ func (f *EnvoyFleetResources) CreateService(ef *gatewayv1alpha1.EnvoyFleet) erro
 		labels[key] = value
 	}
 	serviceName := "kusk-envoy-svc-" + ef.Name
-
 	f.service = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",

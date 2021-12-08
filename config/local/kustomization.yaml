@@ -9,8 +9,10 @@ namespace: kusk-system
 namePrefix: kusk-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+commonLabels:
+  app.kubernetes.io/name: kusk-gateway
+  app.kubernetes.io/instance: kusk-gateway-development
+
 
 bases:
 - namespace.yaml

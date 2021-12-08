@@ -6,11 +6,12 @@ namespace: kusk-system
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: kusk-
+# namePrefix: 
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+commonLabels:
+  app.kubernetes.io/name: kusk-gateway
+  app.kubernetes.io/instance: kusk-gateway-development
 
 bases:
 - ../crd
@@ -64,11 +65,11 @@ vars:
   objref:
     kind: Service
     version: v1
-    name: webhook-service
+    name: kusk-gateway-webhooks-service
   fieldref:
     fieldpath: metadata.namespace
 - name: SERVICE_NAME
   objref:
     kind: Service
     version: v1
-    name: webhook-service
+    name: kusk-gateway-webhooks-service
