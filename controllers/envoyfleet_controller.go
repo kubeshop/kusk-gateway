@@ -27,6 +27,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,7 +36,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/k8sutils"
+)
+
+const (
+	reconcilerDefaultRetrySeconds int = 30
 )
 
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
@@ -74,26 +78,32 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		l.Error(err, "Failed setting controller owner reference")
 		return ctrl.Result{}, err
 	}
-	efResources, err := NewEnvoyFleetResources(ef)
+	// Generate Envoy Fleet resources...
+	efResources, err := NewEnvoyFleetResources(ctx, r.Client, ef)
 	if err != nil {
-		l.Error(err, "Failed to create envoy fleet configuration")
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet configuration: %w", err)
+		l.Error(err, "Failed to create EnvoyFleet configuration")
+		ef.Status.State = fmt.Sprint("Failed to create EnvoyFleet configuration: ", err)
+		if err := r.Client.Status().Update(ctx, ef); err != nil {
+			l.Error(err, "Unable to update Envoy Fleet status")
+		}
+		return ctrl.Result{}, fmt.Errorf("failed to create EnvoyFleet configuration: %w", err)
 	}
-
-	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.configMap); err != nil {
-		l.Error(err, "Failed to create envoy envoy config map")
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet config map: %w", err)
+	// and deploy them
+	if err = efResources.CreateOrUpdate(ctx); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile EnvoyFleet, will retry in %d seconds", reconcilerDefaultRetrySeconds))
+		ef.Status.State = fmt.Sprint("Failed to reconcile EnvoyFleet configuration: ", err)
+		if err := r.Client.Status().Update(ctx, ef); err != nil {
+			l.Error(err, "Unable to update Envoy Fleet status")
+		}
+		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
 	}
-	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.deployment); err != nil {
-		l.Error(err, "Failed to create envoy deployment")
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleet deployment: %w", err)
+	l.Info(fmt.Sprintf("Reconciled EnvoyFleet '%s' resources", ef.Name))
+	ef.Status.State = "EnvoyFleet was successfully deployed"
+	if err := r.Client.Status().Update(ctx, ef); err != nil {
+		l.Error(err, "Unable to update Envoy Fleet status")
+		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("unable to update Envoy Fleet status")
 	}
-	if err := k8sutils.CreateOrReplace(ctx, r.Client, efResources.service); err != nil {
-		l.Error(err, "Failed to create envoy fleet service")
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy fleetconfig map: %w", err)
-	}
-	l.Info(fmt.Sprintf("Reconciled Envoy Fleet '%s' resources", efResources.fleetName))
-
+	l.Info("UPDATED STATUS")
 	return ctrl.Result{}, nil
 }
 

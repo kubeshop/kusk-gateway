@@ -1057,6 +1057,10 @@ spec:
             type: object
           status:
             description: EnvoyFleetStatus defines the observed state of EnvoyFleet
+            properties:
+              state:
+                description: State indicates Envoy Fleet state
+                type: string
             type: object
         required:
         - spec

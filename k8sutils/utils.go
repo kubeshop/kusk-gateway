@@ -2,7 +2,9 @@ package k8sutils
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,4 +40,15 @@ func CreateOrReplace(ctx context.Context, client clientPkg.Client, obj clientPkg
 	}
 
 	return client.Create(ctx, obj)
+}
+
+func GetServicesByLabels(ctx context.Context, client clientPkg.Client, labels map[string]string) ([]corev1.Service, error) {
+	labelSelector := clientPkg.MatchingLabels(labels)
+
+	servicesList := &corev1.ServiceList{}
+	if err := client.List(ctx, servicesList, labelSelector); err != nil {
+		return []corev1.Service{}, fmt.Errorf("failed getting services from the cluster: %w", err)
+	}
+
+	return servicesList.Items, nil
 }

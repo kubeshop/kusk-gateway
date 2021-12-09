@@ -1,0 +1,12 @@
+[
+    {
+        "op": "replace",
+        "path": "/webhooks/0/clientConfig/service/name",
+        "value": "kusk-gateway-webhooks-service"
+    },
+    {
+        "op": "replace",
+        "path": "/webhooks/1/clientConfig/service/name",
+        "value": "kusk-gateway-webhooks-service"
+    }
+]

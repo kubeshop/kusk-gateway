@@ -10,7 +10,7 @@ Internally Kusk Gateway uses the [go-control-plane](https://github.com/envoyprox
   - [Goland](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#attach-to-a-process-in-the-docker-container)
   - [VSCode](https://github.com/golang/vscode-go/blob/master/docs/debugging.md#configure) (see below for a working example)
 - Run `make create-env`
-- When the make script is waiting for kusk-controller-manager to become healthy, run `kubectl port-forward deployment/kusk-controller-manager -n kusk-system 40000:40000` in a new terminal window
+- When the make script is waiting for kusk-gateway-manager to become healthy, run `kubectl port-forward deployment/kusk-gateway-manager -n kusk-system 40000:40000` in a new terminal window
 - Run your debug configuration from your IDE. The pod won't become healthy until you do this as Delve waits for a connection on :40000.
 - When the script completes, you can now deploy the httpbin example that creates a backend API service and pushes gateway CRDs to configure Envoy with `kubectl apply -f examples/httpbin`.
 - Place breakpoints in the code and debug as normal
@@ -19,7 +19,7 @@ To test changes to the code, run the following:
 - `make generate manifests install docker-build`
 	- If your running the code in minikube, don't forget to `eval $(minikube docker-env [--profile "$PROFILE_NAME"])`
 	- e.g. `eval $(minikube docker-env --profile "kgw")` if you ran `make create-env`
-- restart kusk-gateway deployment to pick up the new image - `kubectl rollout restart deployment/kusk-controller-manager -n kusk-system`
+- restart kusk-gateway deployment to pick up the new image - `kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system`
 
 #### VSCode launch.json example
 ```

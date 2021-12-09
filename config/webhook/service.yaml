@@ -5,14 +5,10 @@ metadata:
   name: kusk-gateway-webhooks-service
   namespace: system
   labels:
-    app.kubernetes.io/name: kusk-gateway
     app.kubernetes.io/component: kusk-gateway-webhooks-service
-    app.kubernetes.io/instance: kusk-gateway-development
 spec:
   ports:
     - port: 443
       targetPort: webhook-server
   selector:
-    app.kubernetes.io/name: kusk-gateway
     app.kubernetes.io/component: kusk-gateway-manager
-    app.kubernetes.io/instance: kusk-gateway-development

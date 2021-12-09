@@ -4,15 +4,11 @@ metadata:
   name: kusk-gateway-xds-service
   namespace: system
   labels:
-    app.kubernetes.io/name: kusk-gateway
     app.kubernetes.io/component: xds-service
-    app.kubernetes.io/instance: kusk-gateway-development
 spec:
   ports:
     - port: 18000
       name: xds
       targetPort: xds
   selector:
-    app.kubernetes.io/name: kusk-gateway
     app.kubernetes.io/component: kusk-gateway-manager
-    app.kubernetes.io/instance: kusk-gateway-development

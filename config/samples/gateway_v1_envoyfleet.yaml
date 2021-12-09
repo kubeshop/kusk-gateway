@@ -27,9 +27,9 @@ spec:
       cpu: 10m
       memory: 100M
   # Put annotations to scrape pods.
-  annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/port: '9102'
+  # annotations:
+  #   prometheus.io/scrape: 'true'
+  #   prometheus.io/port: '9102'
   # Scheduling directives
   # Read https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ for the details.
 
@@ -46,8 +46,8 @@ spec:
   #   effect: "NoSchedule"
 
   # Optional - provide pods affinity and anti-affinity settings.
-  # This newer and more flexible scheme can replace nodeSelector but they can be specified together too.
-  # For the scalability and fault tolerance we prefer to put all Envoy pods on different nodes - in case one node fails we survive on others.
+  # This is more flexible than nodeSelector scheme but they can be specified together.
+  # For the scalability and fault tolerance we prefer to put all Envoy pods onto different nodes - in a case one node fails we survive on others.
   # The block below will search for all matching labels of THIS "default" envoy fleet pods and will try to schedule pods
   # on different nodes.
   # Other fleets (if present) are not taken into consideration. You can specify nodeAffinity and podAffinity as well.
@@ -56,14 +56,10 @@ spec:
   #     requiredDuringSchedulingIgnoredDuringExecution:
   #     - labelSelector:
   #         matchExpressions:
-  #         - key: app
+  #         - key: app.kubernetes.io/name
   #           operator: In
   #           values:
-  #           - kusk-gateway
-  #         - key: component
-  #           operator: In
-  #           values:
-  #           - envoy
+  #           - kusk-gateway-envoy-fleet
   #         - key: fleet
   #           operator: In
   #           values:

@@ -99,7 +99,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image manager=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image kusk-gateway=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
@@ -112,8 +112,8 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 cycle: ## Trigger manager deployment rollout restart to pick up the new container image with the same tag
-	kubectl rollout restart deployment/kusk-controller-manager -n kusk-system
-	@echo "Triggered deployment/kusk-controller-manager restart"
+	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
+	@echo "Triggered deployment/kusk-gateway-manager restart"
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.

@@ -53,4 +53,4 @@ SHELL=/bin/bash
 eval $(minikube docker-env --profile "kgw")
 make docker-build deploy
 
-kubectl rollout status -w deployment/kusk-controller-manager -n kusk-system
+kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
