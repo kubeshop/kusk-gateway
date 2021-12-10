@@ -125,7 +125,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 
 	for _, tlsResource := range tlsList.Items {
 
-		namespace := tlsResource.Spec.SecretNamespace
+		namespace := tlsResource.Spec.SecretNameSpace
 		if namespace == "" {
 			namespace = "default"
 		}
@@ -133,7 +133,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		var secret v1.Secret
 		if err := c.Get(ctx, types.NamespacedName{
 			Name:      tlsResource.Spec.SecretName,
-			Namespace: tlsResource.Spec.SecretNamespace,
+			Namespace: tlsResource.Spec.SecretNameSpace,
 		}, &secret); err != nil {
 			panic(err)
 		}

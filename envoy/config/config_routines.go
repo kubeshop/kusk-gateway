@@ -13,6 +13,7 @@ import (
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -220,6 +221,28 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 		panic(err)
 	}
 
+	downstreamTLSContext := &tls.DownstreamTlsContext{
+		CommonTlsContext: &tls.CommonTlsContext{
+			TlsCertificates: []*tls.TlsCertificate{
+				{
+					CertificateChain: &core.DataSource{
+						Specifier: &core.DataSource_InlineBytes{
+							InlineBytes: []byte{},
+						},
+					},
+				},
+			},
+			TlsParams: &tls.TlsParameters{
+				CipherSuites: []string{},
+			},
+		},
+	}
+
+	pbDownstreamTlsContext, err := anypb.New(downstreamTLSContext)
+	if err != nil {
+		panic(err)
+	}
+
 	return &listener.Listener{
 		Name: listenerName,
 		Address: &core.Address{
@@ -240,6 +263,12 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 					TypedConfig: pbst,
 				},
 			}},
+			TransportSocket: &core.TransportSocket{
+				Name: wellknown.TransportSocketTLS,
+				ConfigType: &core.TransportSocket_TypedConfig{
+					TypedConfig: pbDownstreamTlsContext,
+				},
+			},
 		}},
 	}
 }
