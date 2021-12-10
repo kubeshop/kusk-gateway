@@ -39,6 +39,9 @@ type TLSSpec struct {
 	// SecretName refers to the Kubernetes secret which contains the certificates
 	SecretName string `json:"secretName,omitempty"`
 
+	// SecretNamespace refers to the Kubernetes namespace where SecretName resides
+	SecretNameSpace string `json:"secretNamespace,omitempty"`
+
 	// CipherSuites is a list of CipherSuites the user wants to include
 	CipherSuites []string `json:"cipherSuits,omitempty"`
 }

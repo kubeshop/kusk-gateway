@@ -5,6 +5,7 @@ metadata:
 spec:
   # Add fields here
   secretName: my-tls-secret
+  secretNamespace: my-tls-namespace
   cipherSuites:
     - foo
     - bar

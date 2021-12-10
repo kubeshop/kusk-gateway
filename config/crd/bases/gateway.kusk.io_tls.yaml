@@ -46,6 +46,10 @@ spec:
                 description: SecretName refers to the Kubernetes secret which contains
                   the certificates
                 type: string
+              secretNamespace:
+                description: SecretNamespace refers to the Kubernetes namespace where
+                  SecretName resides
+                type: string
             type: object
           status:
             description: TLSStatus defines the observed state of TLS
