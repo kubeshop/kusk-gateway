@@ -26,15 +26,15 @@ type EnvoyFleetResources struct {
 	configMap    *corev1.ConfigMap
 	deployment   *appsv1.Deployment
 	service      *corev1.Service
-	commonLabels map[string]string
+	sharedLabels map[string]string
 }
 
 func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gatewayv1alpha1.EnvoyFleet) (*EnvoyFleetResources, error) {
 	f := &EnvoyFleetResources{
 		client: client,
 		fleet:  ef,
-		commonLabels: map[string]string{
-			"app.kubernetes.io/name":       "kuks-gateway-envoy-fleet",
+		sharedLabels: map[string]string{
+			"app.kubernetes.io/name":       "kusk-gateway-envoy-fleet",
 			"app.kubernetes.io/managed-by": "kusk-gateway-manager",
 			"app.kubernetes.io/created-by": "kusk-gateway-manager",
 			"app.kubernetes.io/part-of":    "kusk-gateway",
@@ -47,13 +47,10 @@ func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gatew
 		return nil, err
 	}
 	// Depends on the ConfigMap
-	if err := f.generateDeployment(); err != nil {
-		return nil, err
-	}
+	f.generateDeployment()
 	// Depends on the Service
-	if err := f.generateService(); err != nil {
-		return nil, err
-	}
+	f.generateService()
+
 	return f, nil
 }
 
@@ -76,7 +73,7 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 		"app.kubernetes.io/component": "envoy-config",
 	}
 	// Copy over shared labels map
-	for key, value := range e.commonLabels {
+	for key, value := range e.sharedLabels {
 		labels[key] = value
 	}
 
@@ -116,13 +113,13 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 	return nil
 }
 
-func (e *EnvoyFleetResources) generateDeployment() error {
+func (e *EnvoyFleetResources) generateDeployment() {
 	// future object labels
 	labels := map[string]string{
 		"app.kubernetes.io/component": "envoy",
 	}
 	// Copy over shared labels map
-	for key, value := range e.commonLabels {
+	for key, value := range e.sharedLabels {
 		labels[key] = value
 	}
 
@@ -130,6 +127,7 @@ func (e *EnvoyFleetResources) generateDeployment() error {
 
 	configMapName := e.configMap.Name
 
+	// Create container template first
 	envoyContainer := corev1.Container{
 		Name:            "envoy",
 		Image:           e.fleet.Spec.Image,
@@ -179,6 +177,7 @@ func (e *EnvoyFleetResources) generateDeployment() error {
 			envoyContainer.Resources.Requests = *&e.fleet.Spec.Resources.Requests
 		}
 	}
+	// Create deployment
 	e.deployment = &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -222,16 +221,16 @@ func (e *EnvoyFleetResources) generateDeployment() error {
 			},
 		},
 	}
-	return nil
+	return
 }
 
-func (e *EnvoyFleetResources) generateService() error {
+func (e *EnvoyFleetResources) generateService() {
 	// future object labels
 	labels := map[string]string{
 		"app.kubernetes.io/component": "envoy-svc",
 	}
 	// Copy over shared labels map
-	for key, value := range e.commonLabels {
+	for key, value := range e.sharedLabels {
 		labels[key] = value
 	}
 	serviceName := "kusk-gateway-envoy-svc-" + e.fleet.Name
@@ -258,7 +257,7 @@ func (e *EnvoyFleetResources) generateService() error {
 		e.service.Spec.LoadBalancerIP = e.fleet.Spec.Service.LoadBalancerIP
 	}
 
-	return nil
+	return
 }
 func envoyFleetAsOwner(cr *gatewayv1alpha1.EnvoyFleet) metav1.OwnerReference {
 	trueVar := true

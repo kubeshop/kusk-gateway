@@ -34,12 +34,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
 const (
 	reconcilerDefaultRetrySeconds int = 30
+
+	// Used to set the State field in the Status
+	envoyFleetStateSuccess string = "Deployed"
+	envoyFleetStateFailure string = "Failed"
 )
 
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
@@ -82,7 +87,7 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	efResources, err := NewEnvoyFleetResources(ctx, r.Client, ef)
 	if err != nil {
 		l.Error(err, "Failed to create EnvoyFleet configuration")
-		ef.Status.State = fmt.Sprint("Failed to create EnvoyFleet configuration: ", err)
+		ef.Status.State = envoyFleetStateFailure
 		if err := r.Client.Status().Update(ctx, ef); err != nil {
 			l.Error(err, "Unable to update Envoy Fleet status")
 		}
@@ -91,25 +96,27 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// and deploy them
 	if err = efResources.CreateOrUpdate(ctx); err != nil {
 		l.Error(err, fmt.Sprintf("Failed to reconcile EnvoyFleet, will retry in %d seconds", reconcilerDefaultRetrySeconds))
-		ef.Status.State = fmt.Sprint("Failed to reconcile EnvoyFleet configuration: ", err)
+		ef.Status.State = envoyFleetStateFailure
 		if err := r.Client.Status().Update(ctx, ef); err != nil {
 			l.Error(err, "Unable to update Envoy Fleet status")
 		}
 		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
 	}
 	l.Info(fmt.Sprintf("Reconciled EnvoyFleet '%s' resources", ef.Name))
-	ef.Status.State = "EnvoyFleet was successfully deployed"
+	ef.Status.State = envoyFleetStateSuccess
 	if err := r.Client.Status().Update(ctx, ef); err != nil {
 		l.Error(err, "Unable to update Envoy Fleet status")
 		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("unable to update Envoy Fleet status")
 	}
-	l.Info("UPDATED STATUS")
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *EnvoyFleetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// predicate will prevent triggering the Reconciler on resource Status field changes.
+	pred := predicate.GenerationChangedPredicate{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gatewayv1alpha1.EnvoyFleet{}).
+		WithEventFilter(pred).
 		Complete(r)
 }

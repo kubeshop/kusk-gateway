@@ -75,10 +75,11 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 docker-build: ## Build docker image with the manager.
-	DOCKER_BUILDKIT=1 docker build -t ${IMG} .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} .
 
-docker-build-debug:## Build docker image with the manager and debugger.
-	DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
+docker-build-debug: ## Build docker image with the manager and debugger.
+	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
+
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
@@ -99,21 +100,21 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image kusk-gateway=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}-debug
-	cd config/default && $(KUSTOMIZE) edit add patch --path ./manager_debug_patch.yaml
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	cd config/default && $(KUSTOMIZE) edit remove patch --path ./manager_debug_patch.yaml
+	$(KUSTOMIZE) build config/debug | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-cycle: ## Trigger manager deployment rollout restart to pick up the new container image with the same tag
+update: docker-build deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+
+cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
-	@echo "Triggered deployment/kusk-gateway-manager restart"
+	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
+	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=30s
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.

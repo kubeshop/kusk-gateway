@@ -9,6 +9,9 @@ spec:
       containers:
         - name: manager
           resources: null
+          # Disable healtchecks for the debuging image
+          livenessProbe: null
+          readinessProbe: null
           command:
             - /dlv
             - --listen=:40000
