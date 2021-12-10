@@ -30,7 +30,9 @@ import (
 	"strings"
 	"sync"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -110,6 +112,37 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		}
 	}
 	l.Info("Succesfully processed Static Routes")
+
+	// Get all TLS resources
+
+	// Check for conflicts
+
+	// envoyConfig up
+	var tlsList gateway.TLSList
+	if err := c.Client.List(ctx, &tlsList); err != nil {
+		return err
+	}
+
+	for _, tlsResource := range tlsList.Items {
+
+		namespace := tlsResource.Spec.SecretNamespace
+		if namespace == "" {
+			namespace = "default"
+		}
+
+		var secret v1.Secret
+		if err := c.Get(ctx, types.NamespacedName{
+			Name:      tlsResource.Spec.SecretName,
+			Namespace: tlsResource.Spec.SecretNamespace,
+		}, &secret); err != nil {
+			panic(err)
+		}
+	}
+
+	// if err := envoyConfig.UpdateTLS(...); err != nil {
+	// 	return fmt.Errorf("failed to update envoy TLS: %w", err)
+	// }
+
 	l.Info("Generating configuration snapshot")
 	snapshot, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
