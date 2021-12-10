@@ -131,7 +131,7 @@ func (e *EnvoyFleetResources) generateDeployment() {
 	envoyContainer := corev1.Container{
 		Name:            "envoy",
 		Image:           e.fleet.Spec.Image,
-		ImagePullPolicy: "IfNotPresent",
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/bin/sh", "-c"},
 		Args: []string{
 			"envoy -c /etc/envoy/envoy.yaml --service-node $POD_NAME",
