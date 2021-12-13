@@ -116,8 +116,9 @@ func main() {
 	}
 
 	if err = (&controllers.EnvoyFleetReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
 		os.Exit(1)

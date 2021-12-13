@@ -50,7 +50,8 @@ const (
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
 type EnvoyFleetReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme        *runtime.Scheme
+	ConfigManager *KubeEnvoyConfigManager
 }
 
 // +kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet,verbs=get;list;watch;create;update;patch;delete
