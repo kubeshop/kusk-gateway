@@ -6,8 +6,8 @@
 ```
 ❯ kubectl get deployment -n kusk-system
 NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-kusk-controller-manager   1/1     1            1           15m
-kusk-envoy-default        1/1     1            1           2m33s
+kusk-gateway-manager   1/1     1            1           15m
+kusk-gateway-envoy-default    1/1     1            1           2m33s
 ```
 
 For this example, it's `kusk-envoy-default`. Be sure to query the correct namespace for your installation.

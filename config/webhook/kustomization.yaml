@@ -1,6 +1,38 @@
+namespace: kusk-system
+
 resources:
 - manifests.yaml
 - service.yaml
 
 configurations:
 - kustomizeconfig.yaml
+
+
+# Webhook configuration and names are hardcoded by controller-gen in manifests.yaml so we need to override paths and names with kustomize
+patches:
+- patch: |-
+    - op: replace
+      path: /metadata/name
+      value: kusk-gateway-mutating-webhook-configuration
+    - op: replace
+      path: /webhooks/0/clientConfig/service/name
+      value: kusk-gateway-webhooks-service
+    - op: replace
+      path: /webhooks/1/clientConfig/service/name
+      value: kusk-gateway-webhooks-service
+  target:
+    group: admissionregistration.k8s.io
+    kind: MutatingWebhookConfiguration
+- patch: |-
+    - op: replace
+      path: /metadata/name
+      value: kusk-gateway-validating-webhook-configuration
+    - op: replace
+      path: /webhooks/0/clientConfig/service/name
+      value: kusk-gateway-webhooks-service
+    - op: replace
+      path: /webhooks/1/clientConfig/service/name
+      value: kusk-gateway-webhooks-service
+  target:
+    group: admissionregistration.k8s.io
+    kind: ValidatingWebhookConfiguration

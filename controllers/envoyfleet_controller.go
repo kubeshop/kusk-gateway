@@ -27,15 +27,24 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/k8sutils"
+)
+
+const (
+	reconcilerDefaultRetrySeconds int = 30
+
+	// Used to set the State field in the Status
+	envoyFleetStateSuccess string = "Deployed"
+	envoyFleetStateFailure string = "Failed"
 )
 
 // EnvoyFleetReconciler reconciles a EnvoyFleet object
@@ -59,39 +68,56 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}
 
-	err := r.Client.Get(context.TODO(), req.NamespacedName, ef)
+	err := r.Client.Get(ctx, req.NamespacedName, ef)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// EnvoyFleet was deleted - deployment and config deletion is handled by the API server itself
 			// thanks to OwnerReference
+			l.Info("No objects found, looks like EnvoyFleet was deleted")
 			return ctrl.Result{}, nil
 		}
-
+		l.Error(err, "Failed to retrieve EnvoyFleet object with cluster API")
 		return ctrl.Result{Requeue: true}, err
 	}
 
 	if err := controllerutil.SetControllerReference(ef, ef, r.Scheme); err != nil {
+		l.Error(err, "Failed setting controller owner reference")
 		return ctrl.Result{}, err
 	}
-
-	if err := k8sutils.CreateEnvoyConfig(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy config: %w", err)
+	// Generate Envoy Fleet resources...
+	efResources, err := NewEnvoyFleetResources(ctx, r.Client, ef)
+	if err != nil {
+		l.Error(err, "Failed to create EnvoyFleet configuration")
+		ef.Status.State = envoyFleetStateFailure
+		if err := r.Client.Status().Update(ctx, ef); err != nil {
+			l.Error(err, "Unable to update Envoy Fleet status")
+		}
+		return ctrl.Result{}, fmt.Errorf("failed to create EnvoyFleet configuration: %w", err)
 	}
-
-	if err := k8sutils.CreateEnvoyDeployment(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy deployment: %w", err)
+	// and deploy them
+	if err = efResources.CreateOrUpdate(ctx); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile EnvoyFleet, will retry in %d seconds", reconcilerDefaultRetrySeconds))
+		ef.Status.State = envoyFleetStateFailure
+		if err := r.Client.Status().Update(ctx, ef); err != nil {
+			l.Error(err, "Unable to update Envoy Fleet status")
+		}
+		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
 	}
-
-	if err := k8sutils.CreateEnvoyService(ctx, r.Client, ef); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create envoy service: %w", err)
+	l.Info(fmt.Sprintf("Reconciled EnvoyFleet '%s' resources", ef.Name))
+	ef.Status.State = envoyFleetStateSuccess
+	if err := r.Client.Status().Update(ctx, ef); err != nil {
+		l.Error(err, "Unable to update Envoy Fleet status")
+		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("unable to update Envoy Fleet status")
 	}
-
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *EnvoyFleetReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// predicate will prevent triggering the Reconciler on resource Status field changes.
+	pred := predicate.GenerationChangedPredicate{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gatewayv1alpha1.EnvoyFleet{}).
+		WithEventFilter(pred).
 		Complete(r)
 }

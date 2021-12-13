@@ -6,11 +6,13 @@ namespace: kusk-system
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: kusk-
+#namePrefix: kusk-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+commonLabels:
+  app.kubernetes.io/name: kusk-gateway
+  app.kubernetes.io/instance: kusk-gateway-development
+
 
 bases:
 - namespace.yaml
@@ -26,7 +28,7 @@ bases:
 
 patchesStrategicMerge:
 # Protect the /metrics endpoint by putting it behind auth.
-# If you want your controller-manager to expose the /metrics
+# If you want your kusk-gateway-manager to expose the /metrics
 # endpoint w/o any authn/z, please comment the following line.
 #- manager_auth_proxy_patch.yaml
 

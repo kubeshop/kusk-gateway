@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: api-editor-role
+  name: kusk-gateway-api-editor-role
 rules:
 - apiGroups:
   - gateway.kusk.io

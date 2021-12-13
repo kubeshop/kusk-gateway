@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: kusk-gateway-manager
   namespace: system
 spec:
   template:
@@ -9,6 +9,9 @@ spec:
       containers:
         - name: manager
           resources: null
+          # Disable healtchecks for the debuging image
+          livenessProbe: null
+          readinessProbe: null
           command:
             - /dlv
             - --listen=:40000

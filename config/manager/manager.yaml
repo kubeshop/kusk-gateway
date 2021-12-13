@@ -1,26 +1,24 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    control-plane: controller-manager
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: kusk-gateway-manager
   namespace: system
   labels:
-    control-plane: controller-manager
+    app.kubernetes.io/component: kusk-gateway-manager
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      app.kubernetes.io/component: kusk-gateway-manager
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        app.kubernetes.io/component: kusk-gateway-manager
     spec:
       securityContext:
         runAsNonRoot: true
@@ -29,7 +27,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: kusk-gateway:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -52,5 +50,5 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-      serviceAccountName: controller-manager
+      serviceAccountName: kusk-gateway-manager
       terminationGracePeriodSeconds: 10

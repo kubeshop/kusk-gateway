@@ -2,8 +2,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-service
+    app.kubernetes.io/name: kusk-gateway
+    app.kubernetes.io/component: metrics-service
+    app.kubernetes.io/instance: kusk-gateway-development
+  name: kusk-gateway-manager-metrics-service
   namespace: system
 spec:
   ports:
@@ -11,4 +13,6 @@ spec:
     port: 8443
     targetPort: https
   selector:
-    control-plane: controller-manager
+    app.kubernetes.io/name: kusk-gateway
+    app.kubernetes.io/component: kusk-gateway-manager
+    app.kubernetes.io/instance: kusk-gateway-development
