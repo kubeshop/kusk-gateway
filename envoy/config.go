@@ -68,7 +68,7 @@ type envoyConfiguration struct {
 	listener *listener.Listener
 }
 
-func New() *envoyConfiguration {
+func NewConfiguration() *envoyConfiguration {
 	return &envoyConfiguration{
 		clusters: make(map[string]*cluster.Cluster),
 		vhosts:   make(map[string]*route.VirtualHost),

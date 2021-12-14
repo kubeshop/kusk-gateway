@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/envoy/config"
+	"github.com/kubeshop/kusk-gateway/envoy"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
@@ -56,15 +56,18 @@ var (
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error {
 
 	l := configManagerLogger
+
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
 	// this probably should be done on a per-envoy basis but as we have a static config for now this will do
 	c.m.Lock()
 	defer c.m.Unlock()
+
 	l.Info("Started updating configuration")
 	defer l.Info("Finished updating configuration")
 
 	parser := spec.NewParser(nil)
-	envoyConfig := config.New()
+	envoyConfig := envoy.NewConfiguration()
+
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs")
 	var apis gateway.APIList
@@ -92,6 +95,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		}
 		l.Info("API route configuration processed", "api", api)
 	}
+
 	l.Info("Succesfully processed APIs")
 	l.Info("Getting Static Routes")
 	var staticRoutes gateway.StaticRouteList
@@ -109,6 +113,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 	}
+
 	l.Info("Succesfully processed Static Routes")
 	l.Info("Generating configuration snapshot")
 	snapshot, err := envoyConfig.GenerateSnapshot()
