@@ -1,7 +1,7 @@
 // package config provides structures to create and update routing configuration for Envoy Fleet
 // it is not used for Fleet creation, only for configuration snapshot creation.
 
-package config
+package envoy
 
 import (
 	"fmt"
@@ -13,11 +13,21 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/types/known/anypb"
+)
+
+// TODO: move to params
+const (
+	ListenerName string = "listener_0"
+	ListenerPort uint32 = 8080
+	RouteName    string = "local_route"
 )
 
 // Simplified objects hierarchy configuration as for the static Envoy config
@@ -67,23 +77,9 @@ func New() *envoyConfiguration {
 
 // AddRoute appends new route with proxying to the upstream to the list of routes by path and method
 func (e *envoyConfiguration) AddRoute(
-	name string,
 	vhosts []string,
-	routeMatcher *route.RouteMatch,
-	routeRoute *route.Route_Route,
-	routeRedirect *route.Route_Redirect) error {
-
-	// finally create the route and append it to the list
-	rt := &route.Route{
-		Name:  name,
-		Match: routeMatcher,
-	}
-	// Redirect in config has a precedence before routing configuration
-	if routeRedirect != nil {
-		rt.Action = routeRedirect
-	} else {
-		rt.Action = routeRoute
-	}
+	rt *route.Route,
+) error {
 	// Add this route to the list of vhost it applies to
 	for _, vhost := range vhosts {
 		vhostConfig, ok := e.vhosts[vhost]
@@ -95,18 +91,17 @@ func (e *envoyConfiguration) AddRoute(
 			}
 			e.vhosts[vhost] = vhostConfig
 		}
-		if routeExists(rt.Name, vhostConfig.Routes) {
-			return fmt.Errorf("route %s already exists for vhost %s", rt.Name, vhostConfig.Name)
+		if routeExists(rt.GetName(), vhostConfig.Routes) {
+			return fmt.Errorf("route %s already exists for vhost %s", rt.GetName(), vhostConfig.Name)
 		}
 		vhostConfig.Routes = append(vhostConfig.Routes, rt)
 	}
 	return nil
 }
 
-// this check if the route with such path-method is already present for that vhost
 func routeExists(name string, routes []*route.Route) bool {
-	for _, route := range routes {
-		if route.Name == name {
+	for _, rt := range routes {
+		if rt.Name == name {
 			return true
 		}
 	}
@@ -156,7 +151,7 @@ func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost 
 }
 
 func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {
-	vhosts := []*route.VirtualHost{}
+	var vhosts []*route.VirtualHost
 	for _, vhost := range e.vhosts {
 		vhost.Routes = sortRoutesByPathMatcher(vhost.Routes)
 		vhosts = append(vhosts, vhost)
@@ -166,10 +161,11 @@ func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *rou
 		VirtualHosts: vhosts,
 	}
 }
+
 func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 	var clusters []types.Resource
-	for _, cluster := range e.clusters {
-		clusters = append(clusters, cluster)
+	for _, c := range e.clusters {
+		clusters = append(clusters, c)
 	}
 	// We're using uuid V1 to provide time sortable snapshot version
 	snapshotVersion, _ := uuid.NewV1()
@@ -184,6 +180,73 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		return nil, err
 	}
 	return &snap, snap.Consistent()
+}
+
+func makeHTTPListener(listenerName string, routeConfigName string) *listener.Listener {
+	// HTTP filter configuration
+	manager := &hcm.HttpConnectionManager{
+		CodecType:  hcm.HttpConnectionManager_AUTO,
+		StatPrefix: "http",
+		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
+			Rds: &hcm.Rds{
+				ConfigSource:    makeConfigSource(),
+				RouteConfigName: routeConfigName,
+			},
+		},
+		HttpFilters: []*hcm.HttpFilter{
+			{
+				Name: wellknown.CORS,
+			},
+			{
+				Name: wellknown.Router,
+			}},
+	}
+
+	pbst, err := anypb.New(manager)
+	if err != nil {
+		panic(err)
+	}
+
+	return &listener.Listener{
+		Name: listenerName,
+		Address: &core.Address{
+			Address: &core.Address_SocketAddress{
+				SocketAddress: &core.SocketAddress{
+					Protocol: core.SocketAddress_TCP,
+					Address:  "0.0.0.0",
+					PortSpecifier: &core.SocketAddress_PortValue{
+						PortValue: ListenerPort,
+					},
+				},
+			},
+		},
+		FilterChains: []*listener.FilterChain{{
+			Filters: []*listener.Filter{{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: pbst,
+				},
+			}},
+		}},
+	}
+}
+
+func makeConfigSource() *core.ConfigSource {
+	source := &core.ConfigSource{}
+	source.ResourceApiVersion = resource.DefaultAPIVersion
+	source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
+		ApiConfigSource: &core.ApiConfigSource{
+			TransportApiVersion:       resource.DefaultAPIVersion,
+			ApiType:                   core.ApiConfigSource_GRPC,
+			SetNodeOnFirstMessageOnly: true,
+			GrpcServices: []*core.GrpcService{{
+				TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+					EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
+				},
+			}},
+		},
+	}
+	return source
 }
 
 // sortRoutesByPathMatcher creates route list ordered by:
