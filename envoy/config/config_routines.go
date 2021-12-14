@@ -17,7 +17,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -338,7 +337,7 @@ func generateRoute(
 	if retries != 0 {
 		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
 			RetryOn:    "5xx",
-			NumRetries: &wrappers.UInt32Value{Value: retries},
+			NumRetries: &wrapperspb.UInt32Value{Value: retries},
 		}
 	}
 	if err := routeRoute.Route.Validate(); err != nil {
