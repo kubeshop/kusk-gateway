@@ -6,7 +6,6 @@ package config
 import (
 	"fmt"
 	"sort"
-	"time"
 
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -17,7 +16,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/gofrs/uuid"
-	"github.com/golang/protobuf/ptypes"
+
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // Simplified objects hierarchy configuration as for the static Envoy config
@@ -147,7 +147,7 @@ func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost 
 
 	e.clusters[clusterName] = &cluster.Cluster{
 		Name:                 clusterName,
-		ConnectTimeout:       ptypes.DurationProto(5 * time.Second),
+		ConnectTimeout:       &durationpb.Duration{Seconds: 5},
 		ClusterDiscoveryType: &cluster.Cluster_Type{Type: cluster.Cluster_LOGICAL_DNS},
 		LbPolicy:             cluster.Cluster_ROUND_ROBIN,
 		LoadAssignment:       upstreamEndpoint,
