@@ -194,9 +194,9 @@ func generateMethodHeaderMatcher(methods []string) *route.HeaderMatcher {
 	}
 }
 
-func makeHTTPListener(listenerName string, routeConfigName string) *listener.Listener {
-	// HTTP filter configuration
-	manager := &hcm.HttpConnectionManager{
+func makeHTTPConnectionManager(routeConfigName string) *hcm.HttpConnectionManager {
+	// HTTP filter initinal configuration
+	return &hcm.HttpConnectionManager{
 		CodecType:  hcm.HttpConnectionManager_AUTO,
 		StatPrefix: "http",
 		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
@@ -211,13 +211,12 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 			},
 			{
 				Name: wellknown.Router,
-			}},
+			},
+		},
 	}
+}
 
-	pbst, err := anypb.New(manager)
-	if err != nil {
-		panic(err)
-	}
+func makeHTTPListener(listenerName string) *listener.Listener {
 
 	return &listener.Listener{
 		Name: listenerName,
@@ -232,15 +231,28 @@ func makeHTTPListener(listenerName string, routeConfigName string) *listener.Lis
 				},
 			},
 		},
-		FilterChains: []*listener.FilterChain{{
-			Filters: []*listener.Filter{{
-				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &listener.Filter_TypedConfig{
-					TypedConfig: pbst,
-				},
-			}},
-		}},
 	}
+}
+
+func (e *envoyConfiguration) addListenerFilterChain(c *listener.FilterChain) {
+	e.listener.FilterChains = append(e.listener.FilterChains, c)
+}
+
+func (e *envoyConfiguration) addHTTPManagerFilterChain() error {
+	anyHTTPManagerConfig, err := anypb.New(e.httpManager)
+	if err != nil {
+		return fmt.Errorf("failed to add http manager to the filter chain: cannot convert to Any message type: %w", err)
+	}
+	hcmchain := &listener.FilterChain{
+		Filters: []*listener.Filter{
+			{
+				Name:       wellknown.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{TypedConfig: anyHTTPManagerConfig},
+			},
+		},
+	}
+	e.addListenerFilterChain(hcmchain)
+	return nil
 }
 
 func makeConfigSource() *core.ConfigSource {

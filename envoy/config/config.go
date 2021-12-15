@@ -12,11 +12,11 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/gofrs/uuid"
-
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -53,15 +53,18 @@ import (
 
 type envoyConfiguration struct {
 	// vhosts maps vhost domain name or domain pattern to the list of vhosts assigned to the listener
-	vhosts   map[string]*route.VirtualHost
-	clusters map[string]*cluster.Cluster
-	listener *listener.Listener
+	vhosts      map[string]*route.VirtualHost
+	clusters    map[string]*cluster.Cluster
+	listener    *listener.Listener
+	httpManager *hcm.HttpConnectionManager
 }
 
 func New() *envoyConfiguration {
 	return &envoyConfiguration{
-		clusters: make(map[string]*cluster.Cluster),
-		vhosts:   make(map[string]*route.VirtualHost),
+		clusters:    make(map[string]*cluster.Cluster),
+		vhosts:      make(map[string]*route.VirtualHost),
+		listener:    makeHTTPListener(ListenerName),
+		httpManager: makeHTTPConnectionManager(RouteName),
 	}
 }
 
@@ -171,13 +174,17 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 	for _, cluster := range e.clusters {
 		clusters = append(clusters, cluster)
 	}
+	// Add the finalized HTTPManager to the Listener filter chains
+	if err := e.addHTTPManagerFilterChain(); err != nil {
+		return nil, fmt.Errorf("cannot generate snapshot: %w", err)
+	}
 	// We're using uuid V1 to provide time sortable snapshot version
 	snapshotVersion, _ := uuid.NewV1()
 	snap, err := cache.NewSnapshot(snapshotVersion.String(),
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
-			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
+			resource.ListenerType: {e.listener},
 		},
 	)
 	if err != nil {

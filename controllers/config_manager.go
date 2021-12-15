@@ -110,6 +110,33 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		}
 	}
 	l.Info("Succesfully processed Static Routes")
+
+	l.Info("Processing EnvoyFleet configuration")
+	var envoyFleets gateway.EnvoyFleetList
+	if err := c.Client.List(ctx, &envoyFleets); err != nil {
+		return err
+	}
+	// FIXME: need to detect the exact fleet, multiple EnvoyFleets are currently not supported
+	fleet := envoyFleets.Items[0]
+	if fleet.Spec.AccessLog != nil {
+		var accessLogFormatTemplate interface{}
+		// Depending on the Format (text or json) we send different format templates or empty interface
+		switch fleet.Spec.AccessLog.Format {
+		case config.AccessLogFormatText:
+			accessLogFormatTemplate = fleet.Spec.AccessLog.TextTemplate
+		case config.AccessLogFormatJson:
+			accessLogFormatTemplate = fleet.Spec.AccessLog.JsonTemplate
+		default:
+			err := fmt.Errorf("unknown access log format %s", fleet.Spec.AccessLog.Format)
+			l.Error(err, "Failure adding access logger to Envoy configuration")
+			return err
+		}
+		if err := envoyConfig.AddLogger(fleet.Spec.AccessLog.Format, accessLogFormatTemplate); err != nil {
+			l.Error(err, "Failure adding access logger to Envoy configuration")
+			return fmt.Errorf("failed adding access logger to Envoy configuration: %w", err)
+		}
+	}
+
 	l.Info("Generating configuration snapshot")
 	snapshot, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
