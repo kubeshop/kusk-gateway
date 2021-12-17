@@ -1,4 +1,4 @@
-package envoy
+package types
 
 import (
 	"fmt"
@@ -79,6 +79,10 @@ func (r RouteMatcherBuilder) GetRouteMatcher(headers []*route.HeaderMatcher) *ro
 
 func (r RouteMatcherBuilder) convertParamsToRoutePath() string {
 	routePath := r.path
+	if r.pathParameters == nil {
+		return routePath
+	}
+
 	for _, match := range rePathParams.FindAllString(routePath, -1) {
 		param := r.pathParameters[match]
 

@@ -1,4 +1,4 @@
-package envoy
+package types
 
 import (
 	"fmt"

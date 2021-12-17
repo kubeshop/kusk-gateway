@@ -1,12 +1,10 @@
-package envoy
+package types
 
 import (
 	"fmt"
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 )
-
-type VirtualHosts map[string]*VirtualHost
 
 type VirtualHost struct {
 	*route.VirtualHost
