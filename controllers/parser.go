@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/kubeshop/kusk-gateway/envoy/types"
 	"github.com/kubeshop/kusk-gateway/options"
 )
 
@@ -100,7 +101,7 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 			}
 			var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 			if finalOpts.Path != nil {
-				rewritePathRegex = GenerateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
+				rewritePathRegex = types.GenerateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
 			}
 
 			var (
@@ -141,13 +142,13 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 
 // extract Params returns a map mapping the name of a paths parameter to its schema
 // where the schema elements we care about are its type and enum if its defined
-func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
-	params := map[string]ParamSchema{}
+func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema {
+	params := map[string]types.ParamSchema{}
 
 	for _, parameter := range parameters {
 		// Prevent populating map with empty parameter names
 		if parameter.Value != nil && parameter.Value.Name != "" {
-			params[parameter.Value.Name] = ParamSchema{}
+			params[parameter.Value.Name] = types.ParamSchema{}
 
 			// Extract the schema if it's not nil and assign the map value
 			if parameter.Value.Schema != nil && parameter.Value.Schema.Value != nil {
@@ -155,7 +156,7 @@ func extractParams(parameters openapi3.Parameters) map[string]ParamSchema {
 
 				// It is acceptable for Type and / or Enum to have their zero value
 				// It means the user has not defined it, and we will construct the regex path accordingly
-				params[fmt.Sprintf("{%s}", parameter.Value.Name)] = ParamSchema{
+				params[fmt.Sprintf("{%s}", parameter.Value.Name)] = types.ParamSchema{
 					Type: schemaValue.Type,
 					Enum: schemaValue.Enum,
 				}
@@ -215,7 +216,7 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 			var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 			if methodOpts.Path != nil {
 				if methodOpts.Path.Rewrite.Pattern != "" {
-					rewritePathRegex = GenerateRewriteRegex(methodOpts.Path.Rewrite.Pattern, methodOpts.Path.Rewrite.Substitution)
+					rewritePathRegex = types.GenerateRewriteRegex(methodOpts.Path.Rewrite.Pattern, methodOpts.Path.Rewrite.Substitution)
 				}
 			}
 
@@ -253,12 +254,12 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 	return nil
 }
 
-func generateRouteMatch(path string, method string, pathParameters map[string]ParamSchema, corsPolicy *route.CorsPolicy) *route.RouteMatch {
+func generateRouteMatch(path string, method string, pathParameters map[string]types.ParamSchema, corsPolicy *route.CorsPolicy) *route.RouteMatch {
 	headerMatcherConfig := []*route.HeaderMatcher{
-		GetHeaderMatcherConfig([]string{strings.ToUpper(method)}, corsPolicy != nil),
+		types.GetHeaderMatcherConfig([]string{strings.ToUpper(method)}, corsPolicy != nil),
 	}
 
-	routeMatcherBuilder := NewRouteMatcherBuilder(path, pathParameters)
+	routeMatcherBuilder := types.NewRouteMatcherBuilder(path, pathParameters)
 	return routeMatcherBuilder.GetRouteMatcher(headerMatcherConfig)
 }
 
@@ -267,7 +268,7 @@ func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redir
 		return nil, nil
 	}
 
-	redirect, err := NewRouteRedirectBuilder().
+	redirect, err := types.NewRouteRedirectBuilder().
 		HostRedirect(redirectOpts.HostRedirect).
 		PortRedirect(redirectOpts.PortRedirect).
 		SchemeRedirect(redirectOpts.SchemeRedirect).
@@ -289,7 +290,7 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 		return nil, nil
 	}
 
-	return GenerateCORSPolicy(
+	return types.GenerateCORSPolicy(
 		corsOpts.Origins,
 		corsOpts.Methods,
 		corsOpts.Headers,
