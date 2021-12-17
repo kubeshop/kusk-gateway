@@ -1,4 +1,4 @@
-package envoy
+package controllers
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/types"
 	"github.com/kubeshop/kusk-gateway/options"
 )
@@ -37,10 +38,10 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec *openapi3.T) error {
-	var vhosts []string
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.Options, spec *openapi3.T) error {
 	for _, vhost := range opts.Hosts {
-		vhosts = append(vhosts, string(vhost))
+		vh := types.NewVirtualHost(string(vhost))
+		envoyConfiguration.AddVirtualHost(vh)
 	}
 
 	// Iterate on all paths and build routes
@@ -61,15 +62,20 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 				routePath = generateRoutePath(finalOpts.Path.Prefix, path)
 			}
 
-			routeName := generateRouteName(routePath, method)
-			params := extractParams(operation.Parameters)
-
 			corsPolicy, err := generateCORSPolicy(finalOpts.CORS)
 			if err != nil {
 				return err
 			}
-			// routeMatcher defines how we match a route by the provided path and the headers
-			routeMatcher := generateRouteMatch(routePath, method, params, corsPolicy)
+
+			rt := &route.Route{
+				Name: generateRouteName(routePath, method),
+				Match: generateRouteMatch(
+					routePath,
+					method,
+					extractParams(operation.Parameters),
+					corsPolicy,
+				),
+			}
 
 			// This block creates redirect route
 			// We either create the redirect or the route with proxy to upstream
@@ -80,59 +86,33 @@ func (e *envoyConfiguration) UpdateConfigFromAPIOpts(opts *options.Options, spec
 					return err
 				}
 
-				rt := &route.Route{
-					Name:   routeName,
-					Match:  routeMatcher,
-					Action: routeRedirect,
+				rt.Action = routeRedirect
+			} else {
+				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
+				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
 
-				if err := e.AddRoute(vhosts, rt); err != nil {
+				routeRoute, err := generateRoute(
+					clusterName,
+					corsPolicy,
+					&generateRouteOpts{
+						RewriteRegex: &opts.Path.Rewrite,
+						QoS:          opts.QoS,
+					},
+				)
+				if err != nil {
+					return err
+				}
+
+				rt.Action = routeRoute
+			}
+
+			for _, vh := range envoyConfiguration.GetVirtualHosts() {
+				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
 					return fmt.Errorf("failure adding redirect route: %w", err)
 				}
-
-				return nil
-			}
-
-			//var routeRoute *route.Route_Route
-			upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
-			clusterName := generateClusterName(upstreamHostname, upstreamPort)
-			if !e.ClusterExist(clusterName) {
-				e.AddCluster(clusterName, upstreamHostname, upstreamPort)
-			}
-			var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-			if finalOpts.Path != nil {
-				rewritePathRegex = types.GenerateRewriteRegex(finalOpts.Path.Rewrite.Pattern, finalOpts.Path.Rewrite.Substitution)
-			}
-
-			var (
-				requestTimeout, requestIdleTimeout int64  = 0, 0
-				retries                            uint32 = 0
-			)
-			if finalOpts.QoS != nil {
-				retries = finalOpts.QoS.Retries
-				requestTimeout = int64(finalOpts.QoS.RequestTimeout)
-				requestIdleTimeout = int64(finalOpts.QoS.IdleTimeout)
-			}
-
-			routeRoute, err := generateRoute(
-				clusterName,
-				corsPolicy,
-				rewritePathRegex,
-				requestTimeout,
-				requestIdleTimeout,
-				retries)
-
-			if err != nil {
-				return err
-			}
-
-			rt := &route.Route{
-				Name:   routeName,
-				Match:  routeMatcher,
-				Action: routeRoute,
-			}
-			if err := e.AddRoute(vhosts, rt); err != nil {
-				return fmt.Errorf("failure adding route: %w", err)
 			}
 		}
 	}
@@ -168,24 +148,35 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 }
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
-func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) error {
-	var vhosts []string
+func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
 	for _, vhost := range opts.Hosts {
-		vhosts = append(vhosts, string(vhost))
+		vh := types.NewVirtualHost(string(vhost))
+		envoyConfiguration.AddVirtualHost(vh)
 	}
 
 	// Iterate on all paths and build routes
 	for path, methods := range opts.Paths {
 		for method, methodOpts := range methods {
+			strMethod := string(method)
+
 			routePath := generateRoutePath("", path)
-			routeName := generateRouteName(routePath, string(method))
 
 			corsPolicy, err := generateCORSPolicy(methodOpts.CORS)
 			if err != nil {
 				return err
 			}
 
-			routeMatcher := generateRouteMatch(routePath, string(method), nil, corsPolicy)
+			// routeMatcher defines how we match a route by the provided path and the headers
+			rt := &route.Route{
+				Name: generateRouteName(routePath, strMethod),
+				Match: generateRouteMatch(
+					routePath,
+					string(method),
+					nil,
+					corsPolicy,
+				),
+			}
+
 			if methodOpts.Redirect != nil {
 				// Generating Redirect
 				routeRedirect, err := generateRedirect(methodOpts.Redirect)
@@ -193,60 +184,37 @@ func (e *envoyConfiguration) UpdateConfigFromOpts(opts *options.StaticOptions) e
 					return err
 				}
 
-				rt := &route.Route{
-					Name:   routeName,
-					Match:  routeMatcher,
-					Action: routeRedirect,
+				rt.Action = routeRedirect
+			} else {
+				upstreamHostname, upstreamPort := getUpstreamHost(methodOpts.Upstream)
+				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
-				if err := e.AddRoute(vhosts, rt); err != nil {
+
+				var rewriteOpts options.RewriteRegex
+				if methodOpts.Path != nil {
+					rewriteOpts = methodOpts.Path.Rewrite
+				}
+				routeRoute, err := generateRoute(
+					clusterName,
+					corsPolicy,
+					&generateRouteOpts{
+						RewriteRegex: &rewriteOpts,
+						QoS:          methodOpts.QoS,
+					},
+				)
+				if err != nil {
+					return err
+				}
+
+				rt.Action = routeRoute
+			}
+
+			for _, vh := range envoyConfiguration.GetVirtualHosts() {
+				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
 					return fmt.Errorf("failure adding redirect route: %w", err)
 				}
-				continue
-			}
-
-			// Generating Route
-			var routeRoute *route.Route_Route
-
-			upstreamHostname, upstreamPort := getUpstreamHost(methodOpts.Upstream)
-			clusterName := generateClusterName(upstreamHostname, upstreamPort)
-			if !e.ClusterExist(clusterName) {
-				e.AddCluster(clusterName, upstreamHostname, upstreamPort)
-			}
-
-			var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-			if methodOpts.Path != nil {
-				if methodOpts.Path.Rewrite.Pattern != "" {
-					rewritePathRegex = types.GenerateRewriteRegex(methodOpts.Path.Rewrite.Pattern, methodOpts.Path.Rewrite.Substitution)
-				}
-			}
-
-			var (
-				requestTimeout, requestIdleTimeout int64  = 0, 0
-				retries                            uint32 = 0
-			)
-			if methodOpts.QoS != nil {
-				retries = methodOpts.QoS.Retries
-				requestTimeout = int64(methodOpts.QoS.RequestTimeout)
-				requestIdleTimeout = int64(methodOpts.QoS.IdleTimeout)
-
-			}
-			if routeRoute, err = generateRoute(
-				clusterName,
-				corsPolicy,
-				rewritePathRegex,
-				requestTimeout,
-				requestIdleTimeout,
-				retries); err != nil {
-				return err
-			}
-
-			rt := &route.Route{
-				Name:   routeName,
-				Match:  routeMatcher,
-				Action: routeRoute,
-			}
-			if err := e.AddRoute(vhosts, rt); err != nil {
-				return fmt.Errorf("failure adding route: %w", err)
 			}
 		}
 	}
@@ -326,13 +294,31 @@ func generateRoutePath(prefix, path string) string {
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
 }
 
+type generateRouteOpts struct {
+	RewriteRegex *options.RewriteRegex
+	QoS          *options.QoSOptions
+}
+
 func generateRoute(
 	clusterName string,
 	corsPolicy *route.CorsPolicy,
-	rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute,
-	timeout int64,
-	idleTimeout int64,
-	retries uint32) (*route.Route_Route, error) {
+	opts *generateRouteOpts,
+) (*route.Route_Route, error) {
+
+	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
+	if opts.RewriteRegex != nil {
+		rewritePathRegex = types.GenerateRewriteRegex(opts.RewriteRegex.Pattern, opts.RewriteRegex.Substitution)
+	}
+
+	var (
+		requestTimeout, requestIdleTimeout int64  = 0, 0
+		retries                            uint32 = 0
+	)
+	if opts.QoS != nil {
+		retries = opts.QoS.Retries
+		requestTimeout = int64(opts.QoS.RequestTimeout)
+		requestIdleTimeout = int64(opts.QoS.IdleTimeout)
+	}
 
 	routeRoute := &route.Route_Route{
 		Route: &route.RouteAction{
@@ -349,11 +335,11 @@ func generateRoute(
 		routeRoute.Route.RegexRewrite = rewritePathRegex
 	}
 
-	if timeout != 0 {
-		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: timeout}
+	if requestTimeout != 0 {
+		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: requestTimeout}
 	}
-	if idleTimeout != 0 {
-		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: idleTimeout}
+	if requestIdleTimeout != 0 {
+		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: requestIdleTimeout}
 	}
 
 	if retries != 0 {
@@ -362,8 +348,10 @@ func generateRoute(
 			NumRetries: &wrappers.UInt32Value{Value: retries},
 		}
 	}
+
 	if err := routeRoute.Route.Validate(); err != nil {
 		return nil, fmt.Errorf("incorrect Route Action: %w", err)
 	}
+
 	return routeRoute, nil
 }

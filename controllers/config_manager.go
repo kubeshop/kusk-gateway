@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/envoy"
+	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
@@ -66,7 +66,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 	defer l.Info("Finished updating configuration")
 
 	parser := spec.NewParser(nil)
-	envoyConfig := envoy.NewConfiguration()
+	envoyConfig := config.New()
 
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs")
@@ -90,7 +90,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = envoyConfig.UpdateConfigFromAPIOpts(opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "api", api)
@@ -109,7 +109,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
 		}
 
-		if err := envoyConfig.UpdateConfigFromOpts(opts); err != nil {
+		if err := UpdateConfigFromOpts(envoyConfig, opts); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 	}
