@@ -59,63 +59,61 @@ var (
 	}
 )
 
-// AddLogger adds stdout logging configuration to HTTPManager
-func (e *envoyConfiguration) AddLogger(logFormat string, logFormatTemplate interface{}) error {
-	// Creating stdout logging configuration
-	var accessLogFormatString *core.SubstitutionFormatString
+type AccessLogBuilder struct {
+	al *accesslog.AccessLog
+}
+
+func (a *AccessLogBuilder) Validate() error {
+	return a.al.Validate()
+}
+
+func (a *AccessLogBuilder) GetAccessLog() *accesslog.AccessLog {
+	return a.al
+}
+
+func NewJSONAccessLog(template map[string]string) (*AccessLogBuilder, error) {
+	// Default template on the start
+	var formatTemplate *structpb.Struct = defaultJsonLogTemplate
 	var err error
-	// Depending on the logFormat (json or text), we parse logFormatTemplate for the type we expect there (string or map[string]string)
-	switch logFormat {
-	case AccessLogFormatJson:
-		// If template is not the empty interface - check for provided template
-		// otherwise use default template
-		var formatTemplate *structpb.Struct = defaultJsonLogTemplate
-		if logFormatTemplate != nil {
-			jsonFormatMap, ok := logFormatTemplate.(map[string]string)
-			if !ok {
-				return fmt.Errorf("cannot assert log format template to map")
-			}
-			if len(jsonFormatMap) != 0 {
-				// convert map[string]string to map[string]interface{} for the structpb.Struct conversion
-				interfaceMap := make(map[string]interface{}, len(jsonFormatMap))
-				for k, v := range jsonFormatMap {
-					interfaceMap[k] = v
-				}
-				if formatTemplate, err = structpb.NewStruct(interfaceMap); err != nil {
-					return fmt.Errorf("cannot convert log format template to struct")
-				}
-			}
+
+	if len(template) != 0 {
+		// convert map[string]string to map[string]interface{} for the structpb.Struct conversion
+		interfaceMap := make(map[string]interface{}, len(template))
+		for k, v := range template {
+			interfaceMap[k] = v
 		}
-		accessLogFormatString = &core.SubstitutionFormatString{
-			Format: &core.SubstitutionFormatString_JsonFormat{
-				JsonFormat: formatTemplate,
-			},
+		if formatTemplate, err = structpb.NewStruct(interfaceMap); err != nil {
+			return nil, fmt.Errorf("cannot convert log format template to struct")
 		}
-	case AccessLogFormatText:
-		// If template is not the empty interface - check for provided template
-		// otherwise - use the default
-		var formatTemplate string = defaultTextLogTemplate
-		if logFormatTemplate != nil {
-			textFormat, ok := logFormatTemplate.(string)
-			if !ok {
-				return fmt.Errorf("cannot assert log format template to string")
-			}
-			if textFormat != "" {
-				formatTemplate = textFormat
-			}
-		}
-		accessLogFormatString = &core.SubstitutionFormatString{
-			Format: &core.SubstitutionFormatString_TextFormatSource{
-				TextFormatSource: &core.DataSource{
-					Specifier: &core.DataSource_InlineString{
-						InlineString: formatTemplate,
-					},
+	}
+	accessLogFormatString := &core.SubstitutionFormatString{
+		Format: &core.SubstitutionFormatString_JsonFormat{
+			JsonFormat: formatTemplate,
+		},
+	}
+	return accessLogFinalize(accessLogFormatString)
+}
+
+func NewTextAccessLog(template string) (*AccessLogBuilder, error) {
+	var formatTemplate string = defaultTextLogTemplate
+	if template != "" {
+		formatTemplate = template
+
+	}
+	accessLogFormatString := &core.SubstitutionFormatString{
+		Format: &core.SubstitutionFormatString_TextFormatSource{
+			TextFormatSource: &core.DataSource{
+				Specifier: &core.DataSource_InlineString{
+					InlineString: formatTemplate,
 				},
 			},
-		}
-	default:
-		return fmt.Errorf("unknown log format type %s", logFormat)
+		},
 	}
+	return accessLogFinalize(accessLogFormatString)
+}
+
+// This block is shared between JSON and Text types of AccessLog creation
+func accessLogFinalize(accessLogFormatString *core.SubstitutionFormatString) (*AccessLogBuilder, error) {
 	accessLogConfig, err := conversion.MessageToStruct(
 		&accesslogstream.StdoutAccessLog{
 			AccessLogFormat: &accesslogstream.StdoutAccessLog_LogFormat{
@@ -124,19 +122,20 @@ func (e *envoyConfiguration) AddLogger(logFormat string, logFormatTemplate inter
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("failed to convert access log config to struct: %w", err)
+		return nil, fmt.Errorf("failed to convert access log config to struct: %w", err)
 	}
 	anyAccessLog, err := anypb.New(accessLogConfig)
 	if err != nil {
-		return fmt.Errorf("failed to convert access log config to Any message type: %w", err)
+		return nil, fmt.Errorf("failed to convert access log config to Any message type: %w", err)
 	}
-	e.httpManager.AccessLog = append(e.httpManager.AccessLog,
-		&accesslog.AccessLog{
-			Name: AccessLogStdoutName,
-			ConfigType: &accesslog.AccessLog_TypedConfig{
-				TypedConfig: anyAccessLog,
-			},
+	accessLog := &accesslog.AccessLog{
+		Name: AccessLogStdoutName,
+		ConfigType: &accesslog.AccessLog_TypedConfig{
+			TypedConfig: anyAccessLog,
 		},
-	)
-	return nil
+	}
+	if err := accessLog.Validate(); err != nil {
+		return nil, fmt.Errorf("failed validation of the new access log: %w", err)
+	}
+	return &AccessLogBuilder{al: accessLog}, nil
 }
