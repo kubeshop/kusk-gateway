@@ -16,7 +16,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/gofrs/uuid"
-
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -166,6 +165,11 @@ func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *rou
 		VirtualHosts: vhosts,
 	}
 }
+
+func (e *envoyConfiguration) AddListener(l *listener.Listener) {
+	e.listener = l
+}
+
 func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 	var clusters []types.Resource
 	for _, cluster := range e.clusters {
@@ -177,7 +181,7 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
-			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
+			resource.ListenerType: {e.listener},
 		},
 	)
 	if err != nil {

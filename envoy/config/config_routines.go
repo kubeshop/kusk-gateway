@@ -9,15 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -47,13 +41,6 @@ var (
 		"integer": `([0-9]+)`,
 		"number":  `([0-9]*[.])?[0-9]+`,
 	}
-)
-
-// TODO: move to params
-const (
-	ListenerName string = "listener_0"
-	ListenerPort uint32 = 8080
-	RouteName    string = "local_route"
 )
 
 type ParamSchema struct {
@@ -192,73 +179,6 @@ func generateMethodHeaderMatcher(methods []string) *route.HeaderMatcher {
 			},
 		}
 	}
-}
-
-func makeHTTPListener(listenerName string, routeConfigName string) *listener.Listener {
-	// HTTP filter configuration
-	manager := &hcm.HttpConnectionManager{
-		CodecType:  hcm.HttpConnectionManager_AUTO,
-		StatPrefix: "http",
-		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
-			Rds: &hcm.Rds{
-				ConfigSource:    makeConfigSource(),
-				RouteConfigName: routeConfigName,
-			},
-		},
-		HttpFilters: []*hcm.HttpFilter{
-			{
-				Name: wellknown.CORS,
-			},
-			{
-				Name: wellknown.Router,
-			}},
-	}
-
-	pbst, err := anypb.New(manager)
-	if err != nil {
-		panic(err)
-	}
-
-	return &listener.Listener{
-		Name: listenerName,
-		Address: &core.Address{
-			Address: &core.Address_SocketAddress{
-				SocketAddress: &core.SocketAddress{
-					Protocol: core.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &core.SocketAddress_PortValue{
-						PortValue: ListenerPort,
-					},
-				},
-			},
-		},
-		FilterChains: []*listener.FilterChain{{
-			Filters: []*listener.Filter{{
-				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &listener.Filter_TypedConfig{
-					TypedConfig: pbst,
-				},
-			}},
-		}},
-	}
-}
-
-func makeConfigSource() *core.ConfigSource {
-	source := &core.ConfigSource{}
-	source.ResourceApiVersion = resource.DefaultAPIVersion
-	source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
-		ApiConfigSource: &core.ApiConfigSource{
-			TransportApiVersion:       resource.DefaultAPIVersion,
-			ApiType:                   core.ApiConfigSource_GRPC,
-			SetNodeOnFirstMessageOnly: true,
-			GrpcServices: []*core.GrpcService{{
-				TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-					EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
-				},
-			}},
-		},
-	}
-	return source
 }
 
 func convertToStringSlice(in []interface{}) []string {

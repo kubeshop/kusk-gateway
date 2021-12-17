@@ -40,6 +40,31 @@ spec:
           spec:
             description: EnvoyFleetSpec defines the desired state of EnvoyFleet
             properties:
+              accesslog:
+                description: Access logging settings for the Envoy
+                properties:
+                  format:
+                    description: Stdout logging format - text for unstructured and
+                      json for the structured type of logging
+                    enum:
+                    - json
+                    - text
+                    type: string
+                  json_template:
+                    additionalProperties:
+                      type: string
+                    description: Logging format template for the structured json type.
+                      See https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
+                      for the usage. Uses Kusk Gateway defaults if not specified.
+                    type: object
+                  text_template:
+                    description: Logging format template for the unstructured text
+                      type. See https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
+                      for the usage. Uses Kusk Gateway defaults if not specified.
+                    type: string
+                required:
+                - format
+                type: object
               affinity:
                 description: Affinity is used to schedule Envoy pod(s) to specific
                   nodes, optional

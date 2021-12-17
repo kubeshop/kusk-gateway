@@ -110,6 +110,51 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 		}
 	}
 	l.Info("Succesfully processed Static Routes")
+
+	l.Info("Processing EnvoyFleet configuration")
+	var envoyFleets gateway.EnvoyFleetList
+	if err := c.Client.List(ctx, &envoyFleets); err != nil {
+		return err
+	}
+	// FIXME: need to detect the exact fleet, multiple EnvoyFleets are currently not supported
+	fleet := envoyFleets.Items[0]
+	httpConnectionManagerBuilder := config.NewHCMBuilder()
+	if fleet.Spec.AccessLog != nil {
+		var accessLogBuilder *config.AccessLogBuilder
+		var err error
+		// Depending on the Format (text or json) we send different format templates or empty interface
+		switch fleet.Spec.AccessLog.Format {
+		case config.AccessLogFormatText:
+			accessLogBuilder, err = config.NewTextAccessLog(fleet.Spec.AccessLog.TextTemplate)
+			if err != nil {
+				l.Error(err, "Failure creating new text access log builder")
+				return fmt.Errorf("failure creating new text access log builder: %w", err)
+			}
+		case config.AccessLogFormatJson:
+			accessLogBuilder, err = config.NewJSONAccessLog(fleet.Spec.AccessLog.JsonTemplate)
+			if err != nil {
+				l.Error(err, "Failure creating new JSON access log builder")
+				return fmt.Errorf("failure creating new JSON access log builder: %w", err)
+			}
+		default:
+			err := fmt.Errorf("unknown access log format %s", fleet.Spec.AccessLog.Format)
+			l.Error(err, "Failure adding access logger to Envoy configuration")
+			return err
+		}
+		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
+	}
+	if err := httpConnectionManagerBuilder.Validate(); err != nil {
+		l.Error(err, "Failed validation for HttpConnectionManager")
+		return fmt.Errorf("failed validation for HttpConnectionManager")
+	}
+	listenerBuilder := config.NewListenerBuilder()
+	listenerBuilder.AddHTTPManagerFilterChain(httpConnectionManagerBuilder.GetHTTPConnectionManager())
+	if err := listenerBuilder.Validate(); err != nil {
+		l.Error(err, "Failed validation for the Listener")
+		return fmt.Errorf("failed validation for Listener")
+
+	}
+	envoyConfig.AddListener(listenerBuilder.GetListener())
 	l.Info("Generating configuration snapshot")
 	snapshot, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
