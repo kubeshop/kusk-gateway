@@ -64,6 +64,7 @@ const (
 type envoyConfiguration struct {
 	// vhosts maps vhost domain name or domain pattern to the list of vhosts assigned to the listener
 	vhosts   map[string]*route.VirtualHost
+	vvHosts  map[string]*VirtualHost
 	clusters map[string]*cluster.Cluster
 	listener *listener.Listener
 }
@@ -76,10 +77,7 @@ func NewConfiguration() *envoyConfiguration {
 }
 
 // AddRoute appends new route with proxying to the upstream to the list of routes by path and method
-func (e *envoyConfiguration) AddRoute(
-	vhosts []string,
-	rt *route.Route,
-) error {
+func (e *envoyConfiguration) AddRoute(vhosts []string, rt *route.Route) error {
 	// Add this route to the list of vhost it applies to
 	for _, vhost := range vhosts {
 		vhostConfig, ok := e.vhosts[vhost]
