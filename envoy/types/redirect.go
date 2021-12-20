@@ -28,22 +28,12 @@ func NewRouteRedirectBuilder() *RouteRedirectBuilder {
 }
 
 func (r *RouteRedirectBuilder) HostRedirect(host string) *RouteRedirectBuilder {
-	if r.redirect.Redirect == nil {
-		r.redirect.Redirect = &route.RedirectAction{}
-	}
-
 	r.redirect.Redirect.HostRedirect = host
-
 	return r
 }
 
 func (r *RouteRedirectBuilder) PortRedirect(port uint32) *RouteRedirectBuilder {
-	if r.redirect.Redirect == nil {
-		r.redirect.Redirect = &route.RedirectAction{}
-	}
-
 	r.redirect.Redirect.PortRedirect = port
-
 	return r
 }
 
@@ -58,6 +48,9 @@ func (r *RouteRedirectBuilder) SchemeRedirect(scheme string) *RouteRedirectBuild
 
 func (r *RouteRedirectBuilder) RegexRedirect(pattern, substitution string) *RouteRedirectBuilder {
 	if pattern != "" {
+		if r.redirect.Redirect == nil {
+			r.redirect.Redirect = &route.RedirectAction{}
+		}
 		// If PathRedirect is set, this will overwrite it as they are mutually exclusive
 		r.redirect.Redirect.PathRewriteSpecifier = &route.RedirectAction_RegexRewrite{
 			RegexRewrite: GenerateRewriteRegex(pattern, substitution),
@@ -95,6 +88,9 @@ func (r *RouteRedirectBuilder) PathRedirect(path string) *RouteRedirectBuilder {
 
 func (r *RouteRedirectBuilder) ResponseCode(code uint32) *RouteRedirectBuilder {
 	if code > 0 {
+		if r.redirect.Redirect == nil {
+			r.redirect.Redirect = &route.RedirectAction{}
+		}
 		// if the code is undefined, set it to 301 as default in Envoy
 		// otherwise we need to convert HTTP code (e.g. 308) to internal go-control-plane enumeration
 		if redirectActionResponseCodeName, ok := redirectResponseCodeName[code]; ok {
