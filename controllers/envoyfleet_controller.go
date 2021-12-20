@@ -101,7 +101,20 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		if err := r.Client.Status().Update(ctx, ef); err != nil {
 			l.Error(err, "Unable to update Envoy Fleet status")
 		}
-		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)}, fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
+		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)},
+			fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
+	}
+	// Call Envoy configuration manager to update Envoy fleet configuration when applicable
+	if efResources.fleet.Spec.AccessLog != nil {
+		l.Info("Calling Config Manager due to change in resource", "changed", req.NamespacedName)
+		if err := r.ConfigManager.UpdateConfiguration(ctx); err != nil {
+			ef.Status.State = envoyFleetStateFailure
+			if err := r.Client.Status().Update(ctx, ef); err != nil {
+				l.Error(err, "Unable to update Envoy Fleet status")
+			}
+			return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)},
+				fmt.Errorf("failed to update Envoy fleet %s configuration: %w", ef.Name, err)
+		}
 	}
 	l.Info(fmt.Sprintf("Reconciled EnvoyFleet '%s' resources", ef.Name))
 	ef.Status.State = envoyFleetStateSuccess

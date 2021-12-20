@@ -73,6 +73,9 @@ type EnvoyFleetSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:default:=1
 	Size *int32 `json:"size,omitempty"`
+
+	// Access logging settings for the Envoy
+	AccessLog *AccessLoggingConfig `json:"accesslog,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -91,6 +94,25 @@ type ServiceConfig struct {
 	// Static ip address for the LoadBalancer type if available
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
+}
+
+// AccessLoggingConfig defines the access logs Envoy logging settings
+type AccessLoggingConfig struct {
+	// Stdout logging format - text for unstructured and json for the structured type of logging
+	// +kubebuilder:validation:Enum=json;text
+	Format string `json:"format"`
+
+	// Logging format template for the unstructured text type.
+	// See https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage for the usage.
+	// Uses Kusk Gateway defaults if not specified.
+	// +optional
+	TextTemplate string `json:"text_template,omitempty"`
+
+	// Logging format template for the structured json type.
+	// See https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage for the usage.
+	// Uses Kusk Gateway defaults if not specified.
+	// +optional
+	JsonTemplate map[string]string `json:"json_template,omitempty"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet
