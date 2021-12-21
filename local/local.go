@@ -11,7 +11,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/getkin/kin-openapi/openapi3"
 
-	envoyConfig "github.com/kubeshop/kusk-gateway/envoy/config"
+	"github.com/kubeshop/kusk-gateway/controllers"
+	"github.com/kubeshop/kusk-gateway/envoy/config"
 	envoyConfigManager "github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
 )
@@ -89,8 +90,8 @@ func parseAndApply(apiSpecPath string, envoyMgr *envoyConfigManager.EnvoyConfigM
 	if err = kuskExtensionOpts.Validate(); err != nil {
 		return err
 	}
-	envoyConfig := envoyConfig.New()
-	if err := envoyConfig.UpdateConfigFromAPIOpts(kuskExtensionOpts, apiSpec); err != nil {
+	envoyConfig := config.New()
+	if err := controllers.UpdateConfigFromAPIOpts(envoyConfig, kuskExtensionOpts, apiSpec); err != nil {
 		return err
 	}
 	snapshot, err := envoyConfig.GenerateSnapshot()

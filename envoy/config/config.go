@@ -1,6 +1,3 @@
-// package config provides structures to create and update routing configuration for Envoy Fleet
-// it is not used for Fleet creation, only for configuration snapshot creation.
-
 package config
 
 import (
@@ -12,11 +9,13 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	cacheTypes "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/gofrs/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/kubeshop/kusk-gateway/envoy/types"
 )
 
 // Simplified objects hierarchy configuration as for the static Envoy config
@@ -50,69 +49,48 @@ import (
 //                port_value: backendsvc1-port
 //
 
-type envoyConfiguration struct {
+type EnvoyConfiguration struct {
 	// vhosts maps vhost domain name or domain pattern to the list of vhosts assigned to the listener
-	vhosts   map[string]*route.VirtualHost
+	vHosts   map[string]*types.VirtualHost
 	clusters map[string]*cluster.Cluster
 	listener *listener.Listener
 }
 
-func New() *envoyConfiguration {
-	return &envoyConfiguration{
+func New() *EnvoyConfiguration {
+	return &EnvoyConfiguration{
 		clusters: make(map[string]*cluster.Cluster),
-		vhosts:   make(map[string]*route.VirtualHost),
+		vHosts:   make(map[string]*types.VirtualHost),
 	}
 }
 
-// AddRoute appends new route with proxying to the upstream to the list of routes by path and method
-func (e *envoyConfiguration) AddRoute(
-	name string,
-	vhosts []string,
-	routeMatcher *route.RouteMatch,
-	routeRoute *route.Route_Route,
-	routeRedirect *route.Route_Redirect) error {
+func (e *EnvoyConfiguration) AddListener(l *listener.Listener) {
+	e.listener = l
+}
 
-	// finally create the route and append it to the list
-	rt := &route.Route{
-		Name:  name,
-		Match: routeMatcher,
+func (e *EnvoyConfiguration) GetVirtualHosts() map[string]*types.VirtualHost {
+	return e.vHosts
+}
+
+func (e *EnvoyConfiguration) AddVirtualHost(vh *types.VirtualHost) {
+	e.vHosts[vh.Name] = vh
+}
+
+// AddRouteToVHost appends new route with proxying to the upstream to the list of routes by path and method
+func (e *EnvoyConfiguration) AddRouteToVHost(vhost string, rt *route.Route) error {
+	virtualHost, ok := e.vHosts[vhost]
+
+	if !ok {
+		return fmt.Errorf("envoy configuration doesnt have virtualhost: %s", vhost)
 	}
-	// Redirect in config has a precedence before routing configuration
-	if routeRedirect != nil {
-		rt.Action = routeRedirect
-	} else {
-		rt.Action = routeRoute
+
+	if err := virtualHost.AddRoute(rt); err != nil {
+		return fmt.Errorf("can't add route %s to vhost %s: %w", rt.GetName(), vhost, err)
 	}
-	// Add this route to the list of vhost it applies to
-	for _, vhost := range vhosts {
-		vhostConfig, ok := e.vhosts[vhost]
-		// add if new vhost entry
-		if !ok {
-			vhostConfig = &route.VirtualHost{
-				Name:    vhost,
-				Domains: []string{vhost},
-			}
-			e.vhosts[vhost] = vhostConfig
-		}
-		if routeExists(rt.Name, vhostConfig.Routes) {
-			return fmt.Errorf("route %s already exists for vhost %s", rt.Name, vhostConfig.Name)
-		}
-		vhostConfig.Routes = append(vhostConfig.Routes, rt)
-	}
+
 	return nil
 }
 
-// this check if the route with such path-method is already present for that vhost
-func routeExists(name string, routes []*route.Route) bool {
-	for _, route := range routes {
-		if route.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (e *envoyConfiguration) ClusterExist(name string) bool {
+func (e *EnvoyConfiguration) ClusterExist(name string) bool {
 	_, exist := e.clusters[name]
 	return exist
 }
@@ -120,7 +98,7 @@ func (e *envoyConfiguration) ClusterExist(name string) bool {
 // AddCluster creates Envoy cluster which is the representation of backend service
 // For the simplicity right now we don't support endpoints assignments separately, i.e. one cluster - one endpoint, not multiple load balanced
 // Cluster with the same name will be overwritten
-func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost string, upstreamServicePort uint32) {
+func (e *EnvoyConfiguration) AddCluster(clusterName, upstreamServiceHost string, upstreamServicePort uint32) {
 	upstreamEndpoint := &endpoint.ClusterLoadAssignment{
 		ClusterName: clusterName,
 		Endpoints: []*endpoint.LocalityLbEndpoints{{
@@ -154,31 +132,15 @@ func (e *envoyConfiguration) AddCluster(clusterName string, upstreamServiceHost 
 	}
 }
 
-func (e *envoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {
-	vhosts := []*route.VirtualHost{}
-	for _, vhost := range e.vhosts {
-		vhost.Routes = sortRoutesByPathMatcher(vhost.Routes)
-		vhosts = append(vhosts, vhost)
-	}
-	return &route.RouteConfiguration{
-		Name:         routeConfigName,
-		VirtualHosts: vhosts,
-	}
-}
-
-func (e *envoyConfiguration) AddListener(l *listener.Listener) {
-	e.listener = l
-}
-
-func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
-	var clusters []types.Resource
-	for _, cluster := range e.clusters {
-		clusters = append(clusters, cluster)
+func (e *EnvoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
+	var clusters []cacheTypes.Resource
+	for _, c := range e.clusters {
+		clusters = append(clusters, c)
 	}
 	// We're using uuid V1 to provide time sortable snapshot version
 	snapshotVersion, _ := uuid.NewV1()
 	snap, err := cache.NewSnapshot(snapshotVersion.String(),
-		map[resource.Type][]types.Resource{
+		map[resource.Type][]cacheTypes.Resource{
 			resource.ClusterType:  clusters,
 			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
 			resource.ListenerType: {e.listener},
@@ -188,6 +150,18 @@ func (e *envoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 		return nil, err
 	}
 	return &snap, snap.Consistent()
+}
+
+func (e *EnvoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {
+	var vhosts []*route.VirtualHost
+	for _, vhost := range e.vHosts {
+		vhost.Routes = sortRoutesByPathMatcher(vhost.Routes)
+		vhosts = append(vhosts, vhost.VirtualHost)
+	}
+	return &route.RouteConfiguration{
+		Name:         routeConfigName,
+		VirtualHosts: vhosts,
+	}
 }
 
 // sortRoutesByPathMatcher creates route list ordered by:

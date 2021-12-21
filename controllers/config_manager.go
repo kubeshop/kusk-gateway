@@ -56,15 +56,18 @@ var (
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error {
 
 	l := configManagerLogger
+
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
 	// this probably should be done on a per-envoy basis but as we have a static config for now this will do
 	c.m.Lock()
 	defer c.m.Unlock()
+
 	l.Info("Started updating configuration")
 	defer l.Info("Finished updating configuration")
 
 	parser := spec.NewParser(nil)
 	envoyConfig := config.New()
+
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs")
 	var apis gateway.APIList
@@ -87,11 +90,12 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = envoyConfig.UpdateConfigFromAPIOpts(opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "api", api)
 	}
+
 	l.Info("Succesfully processed APIs")
 	l.Info("Getting Static Routes")
 	var staticRoutes gateway.StaticRouteList
@@ -105,10 +109,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context) error 
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
 		}
 
-		if err := envoyConfig.UpdateConfigFromOpts(opts); err != nil {
+		if err := UpdateConfigFromOpts(envoyConfig, opts); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 	}
+
 	l.Info("Succesfully processed Static Routes")
 
 	l.Info("Processing EnvoyFleet configuration")
