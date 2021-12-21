@@ -94,13 +94,15 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
 
+				var rewriteOpts *options.RewriteRegex
+				if opts.Path != nil {
+					rewriteOpts = &opts.Path.Rewrite
+				}
 				routeRoute, err := generateRoute(
 					clusterName,
 					corsPolicy,
-					&generateRouteOpts{
-						RewriteRegex: &opts.Path.Rewrite,
-						QoS:          opts.QoS,
-					},
+					rewriteOpts,
+					opts.QoS,
 				)
 				if err != nil {
 					return err
@@ -111,7 +113,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 
 			for _, vh := range envoyConfiguration.GetVirtualHosts() {
 				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
-					return fmt.Errorf("failure adding redirect route: %w", err)
+					return fmt.Errorf("failure adding the route: %w", err)
 				}
 			}
 		}
@@ -192,17 +194,15 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
 
-				var rewriteOpts options.RewriteRegex
+				var rewriteOpts *options.RewriteRegex
 				if methodOpts.Path != nil {
-					rewriteOpts = methodOpts.Path.Rewrite
+					rewriteOpts = &methodOpts.Path.Rewrite
 				}
 				routeRoute, err := generateRoute(
 					clusterName,
 					corsPolicy,
-					&generateRouteOpts{
-						RewriteRegex: &rewriteOpts,
-						QoS:          methodOpts.QoS,
-					},
+					rewriteOpts,
+					methodOpts.QoS,
 				)
 				if err != nil {
 					return err
@@ -213,7 +213,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 			for _, vh := range envoyConfiguration.GetVirtualHosts() {
 				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
-					return fmt.Errorf("failure adding redirect route: %w", err)
+					return fmt.Errorf("failure adding the route: %w", err)
 				}
 			}
 		}
@@ -294,30 +294,26 @@ func generateRoutePath(prefix, path string) string {
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
 }
 
-type generateRouteOpts struct {
-	RewriteRegex *options.RewriteRegex
-	QoS          *options.QoSOptions
-}
-
 func generateRoute(
 	clusterName string,
 	corsPolicy *route.CorsPolicy,
-	opts *generateRouteOpts,
+	rewriteRegex *options.RewriteRegex,
+	QoS *options.QoSOptions,
 ) (*route.Route_Route, error) {
 
 	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-	if opts.RewriteRegex != nil {
-		rewritePathRegex = types.GenerateRewriteRegex(opts.RewriteRegex.Pattern, opts.RewriteRegex.Substitution)
+	if rewriteRegex != nil {
+		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
 	}
 
 	var (
 		requestTimeout, requestIdleTimeout int64  = 0, 0
 		retries                            uint32 = 0
 	)
-	if opts.QoS != nil {
-		retries = opts.QoS.Retries
-		requestTimeout = int64(opts.QoS.RequestTimeout)
-		requestIdleTimeout = int64(opts.QoS.IdleTimeout)
+	if QoS != nil {
+		retries = QoS.Retries
+		requestTimeout = int64(QoS.RequestTimeout)
+		requestIdleTimeout = int64(QoS.IdleTimeout)
 	}
 
 	routeRoute := &route.Route_Route{

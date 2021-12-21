@@ -84,7 +84,7 @@ func (e *EnvoyConfiguration) AddRouteToVHost(vhost string, rt *route.Route) erro
 	}
 
 	if err := virtualHost.AddRoute(rt); err != nil {
-		return fmt.Errorf("route %s already exists for vhost %s", rt.GetName(), vhost)
+		return fmt.Errorf("can't add route %s to vhost %s: %w", rt.GetName(), vhost, err)
 	}
 
 	return nil
