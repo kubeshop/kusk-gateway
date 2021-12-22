@@ -28,7 +28,6 @@ import (
 	"context"
 	"flag"
 	"os"
-
 	// +kubebuilder:scaffold:imports
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,10 +35,11 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/controllers"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/local"
@@ -53,7 +53,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(gatewayv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(gateway.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -100,8 +100,6 @@ func main() {
 	// TODO: setup logger correctly
 	envoyManager := manager.New(context.Background(), envoyControlPlaneAddr, nil)
 
-	// TODO: initialize envoyManager with static envoy deployment configuration
-
 	go func() {
 		if err := envoyManager.Start(); err != nil {
 			setupLog.Error(err, "unable to start Envoy xDS API Server")
@@ -133,8 +131,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Setup client caching index by API objects spec.Fleet field
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.TODO(),
+		&gateway.API{},
+		"spec.fleet",
+		func(rawObj client.Object) []string {
+			api := rawObj.(*gateway.API)
+			return []string{api.Spec.Fleet.String()}
+		},
+	); err != nil {
+		setupLog.Error(err, "unable to add API filed indexer to the cache")
+		os.Exit(1)
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&gatewayv1alpha1.API{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&gateway.API{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "API")
 			os.Exit(1)
 		}
@@ -147,14 +159,28 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "StaticRoute")
 		os.Exit(1)
 	}
+
+	// Setup client caching index by StaticRoute objects spec.Fleet field
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.TODO(),
+		&gateway.StaticRoute{},
+		"spec.fleet",
+		func(rawObj client.Object) []string {
+			api := rawObj.(*gateway.StaticRoute)
+			return []string{api.Spec.Fleet.String()}
+		},
+	); err != nil {
+		setupLog.Error(err, "unable to add StaticRoute field indexer to the cache")
+		os.Exit(1)
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&gatewayv1alpha1.StaticRoute{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&gateway.StaticRoute{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "StaticRoute")
 			os.Exit(1)
 		}
 	}
 	//+kubebuilder:scaffold:builder
-
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)

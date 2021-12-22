@@ -23,6 +23,7 @@ const (
 type EnvoyFleetResources struct {
 	client       client.Client
 	fleet        *gatewayv1alpha1.EnvoyFleet
+	fleetID      string
 	configMap    *corev1.ConfigMap
 	deployment   *appsv1.Deployment
 	service      *corev1.Service
@@ -30,16 +31,18 @@ type EnvoyFleetResources struct {
 }
 
 func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gatewayv1alpha1.EnvoyFleet) (*EnvoyFleetResources, error) {
+	fleetID := fmt.Sprint(ef.Name, ".", ef.Namespace)
 	f := &EnvoyFleetResources{
-		client: client,
-		fleet:  ef,
+		client:  client,
+		fleet:   ef,
+		fleetID: fleetID,
 		sharedLabels: map[string]string{
 			"app.kubernetes.io/name":       "kusk-gateway-envoy-fleet",
 			"app.kubernetes.io/managed-by": "kusk-gateway-manager",
 			"app.kubernetes.io/created-by": "kusk-gateway-manager",
 			"app.kubernetes.io/part-of":    "kusk-gateway",
 			"app.kubernetes.io/instance":   ef.Name,
-			"fleet":                        ef.Name,
+			"fleet":                        fleetID,
 		},
 	}
 
@@ -106,7 +109,7 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 			OwnerReferences: []metav1.OwnerReference{envoyFleetAsOwner(e.fleet)},
 		},
 		Data: map[string]string{
-			"envoy-config.yaml": fmt.Sprintf(envoyConfigTemplate, e.fleet.Name, xdsServiceHostname, xdsServicePort),
+			"envoy-config.yaml": fmt.Sprintf(envoyConfigTemplate, e.fleetID, xdsServiceHostname, xdsServicePort),
 		},
 	}
 

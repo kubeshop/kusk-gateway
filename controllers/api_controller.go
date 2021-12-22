@@ -26,12 +26,19 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+)
+
+const (
+	APIFinalizer = "gateway.kusk.io/apifinalizer"
 )
 
 // APIReconciler reconciles a API object
@@ -51,9 +58,58 @@ type APIReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx)
-	l.Info("Calling Config Manager due to updated resource", "changed", req.NamespacedName)
-	if err := r.ConfigManager.UpdateConfiguration(ctx); err != nil {
-		return ctrl.Result{Requeue: true}, err
+
+	l.Info("Reconciling updated API resource", "changed", req.NamespacedName)
+	defer l.Info("Finished reconciling updated API resource", "changed", req.NamespacedName)
+
+	var apiObj gateway.API
+	// In order to get fleet ID we MUST find the object.
+	// If it is missing, that means it was deleted without the finalizer, we don't do anything.
+	// If it is in the state of deletion - we get the object and remove the finalizer to allow K8s to finally delete it.
+	// If it is present and without the finalizer - we add it.
+	if err := r.Client.Get(ctx, req.NamespacedName, &apiObj); err != nil {
+		// Object not found, return error but not retry
+		if client.IgnoreNotFound(err) == nil {
+			l.Error(err, fmt.Sprintf("the API object %s was not found", req.NamespacedName))
+			return ctrl.Result{}, err
+		}
+		// Other errors, fail with retry
+		l.Error(err, fmt.Sprintf("Failed to reconcile API, will retry in %d seconds", reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+	}
+	// Handle finalisers
+	if apiObj.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// registering our finalizer.
+		if !containsString(apiObj.GetFinalizers(), APIFinalizer) {
+			controllerutil.AddFinalizer(&apiObj, APIFinalizer)
+			if err := r.Update(ctx, &apiObj); err != nil {
+				l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		if containsString(apiObj.GetFinalizers(), APIFinalizer) {
+			// our finalizer is present
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(&apiObj, APIFinalizer)
+			if err := r.Update(ctx, &apiObj); err != nil {
+				l.Error(err, fmt.Sprintf("Failed to reconcile API %s during finalizer remove, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+			}
+		}
+	}
+	if apiObj.Spec.Fleet == nil {
+		err := fmt.Errorf("API object %s.%s - fleet field is empty", apiObj.Name, apiObj.Namespace)
+		l.Error(err, "Failed to reconcile API")
+		return ctrl.Result{}, err
+	}
+	// Finally call ConfigManager to update the configuration with this fleet ID
+	if err := r.ConfigManager.UpdateConfiguration(ctx, *apiObj.Spec.Fleet); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -61,6 +117,6 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *APIReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gatewayv1alpha1.API{}).
+		For(&gateway.API{}).
 		Complete(r)
 }

@@ -36,6 +36,25 @@ spec:
           spec:
             description: StaticRouteSpec defines the desired state of StaticRoute
             properties:
+              fleet:
+                description: Fleet represents EnvoyFleet ID, which is deployed EnvoyFleet
+                  CustomResource name and namespace Optional, if missing will be automatically
+                  added by the Kusk Gateway with the discovery of the single fleet
+                  in the cluster (MutatingWebhookConfiguration for the API resource
+                  must be enabled).
+                properties:
+                  name:
+                    description: deployed Envoy Fleet CR name
+                    pattern: ^[a-z0-9-]{1,62}$
+                    type: string
+                  namespace:
+                    description: deployed Envoy Fleet CR namespace
+                    pattern: ^[a-z0-9-]{1,62}$
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               hosts:
                 description: Hosts is a collection of vhosts the rules apply to. Defaults
                   to "*" - vhost that matches all domain names.

@@ -149,3 +149,20 @@ type EnvoyFleetList struct {
 func init() {
 	SchemeBuilder.Register(&EnvoyFleet{}, &EnvoyFleetList{})
 }
+
+// EnvoyFleetID is used to bind other CR configurations to the deployed Envoy Fleet
+// Consists of EnvoyFleet CR name and namespace
+type EnvoyFleetID struct {
+
+	//+kubebuilder:validation:Pattern:="^[a-z0-9-]{1,62}$"
+	// deployed Envoy Fleet CR name
+	Name string `json:"name"`
+
+	//+kubebuilder:validation:Pattern:="^[a-z0-9-]{1,62}$"
+	// deployed Envoy Fleet CR namespace
+	Namespace string `json:"namespace"`
+}
+
+func (e EnvoyFleetID) String() string {
+	return string(e.Name + "." + e.Namespace)
+}

@@ -26,13 +26,20 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+)
+
+const (
+	StaticRouteFinalizer = "gateway.kusk.io/srfinalizer"
 )
 
 // StaticRouteReconciler reconciles a StaticRoute object
@@ -52,9 +59,59 @@ type StaticRouteReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
-	l.Info("Calling Config Manager due to updated resource", "changed", req.NamespacedName)
-	if err := r.ConfigManager.UpdateConfiguration(ctx); err != nil {
-		return ctrl.Result{Requeue: true}, err
+
+	l.Info("Reconciling updated API resource", "changed", req.NamespacedName)
+	defer l.Info("Finished reconciling updated API resource", "changed", req.NamespacedName)
+
+	var srObj gateway.StaticRoute
+	// In order to get fleet ID we MUST find the object.
+	// If it is missing, that means it was deleted without the finalizer, we don't do anything.
+	// If it is in the state of deletion - we get the object and remove the finalizer to allow K8s to finally delete it.
+	// If it is present and without the finalizer - we add it.
+	if err := r.Client.Get(ctx, req.NamespacedName, &srObj); err != nil {
+		// Object not found, return error but not retry
+		if client.IgnoreNotFound(err) == nil {
+			l.Error(err, fmt.Sprintf("the StaticRoute object %s was not found", req.NamespacedName))
+			return ctrl.Result{}, err
+		}
+		// Other errors, fail with retry
+		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+	}
+	// Handle finalisers
+	if srObj.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// registering our finalizer.
+		if !containsString(srObj.GetFinalizers(), StaticRouteFinalizer) {
+			controllerutil.AddFinalizer(&srObj, StaticRouteFinalizer)
+			if err := r.Update(ctx, &srObj); err != nil {
+				l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		if containsString(srObj.GetFinalizers(), StaticRouteFinalizer) {
+			// our finalizer is present
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(&srObj, StaticRouteFinalizer)
+			if err := r.Update(ctx, &srObj); err != nil {
+				l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s during finalizer remove, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+			}
+		}
+	}
+
+	if srObj.Spec.Fleet == nil {
+		err := fmt.Errorf("StaticRoute object %s.%s - fleet field is empty", srObj.Name, srObj.Namespace)
+		l.Error(err, "Failed to reconcile API")
+		return ctrl.Result{}, err
+	}
+	// Finally call ConfigManager to update the configuration with this fleet ID
+	if err := r.ConfigManager.UpdateConfiguration(ctx, *srObj.Spec.Fleet); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
 	return ctrl.Result{}, nil
 }
@@ -62,6 +119,6 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *StaticRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gatewayv1alpha1.StaticRoute{}).
+		For(&gateway.StaticRoute{}).
 		Complete(r)
 }
