@@ -59,8 +59,8 @@ type APIReconciler struct {
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx)
 
-	l.Info("Reconciling updated API resource", "changed", req.NamespacedName)
-	defer l.Info("Finished reconciling updated API resource", "changed", req.NamespacedName)
+	l.Info("Reconciling changed API resource", "changed", req.NamespacedName)
+	defer l.Info("Finished reconciling changed API resource", "changed", req.NamespacedName)
 
 	var apiObj gateway.API
 	// In order to get fleet ID we MUST find the object.
@@ -68,10 +68,10 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// If it is in the state of deletion - we get the object and remove the finalizer to allow K8s to finally delete it.
 	// If it is present and without the finalizer - we add it.
 	if err := r.Client.Get(ctx, req.NamespacedName, &apiObj); err != nil {
-		// Object not found, return error but not retry
+		// Object not found, log the error but do not retry (not returning the error to the caller)
 		if client.IgnoreNotFound(err) == nil {
-			l.Error(err, fmt.Sprintf("the API object %s was not found", req.NamespacedName))
-			return ctrl.Result{}, err
+			l.Info(fmt.Sprintf("the API object %s was not found, skipping the processing", req.NamespacedName))
+			return ctrl.Result{}, nil
 		}
 		// Other errors, fail with retry
 		l.Error(err, fmt.Sprintf("Failed to reconcile API, will retry in %d seconds", reconcilerFastRetrySeconds))
@@ -103,8 +103,8 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 	if apiObj.Spec.Fleet == nil {
 		err := fmt.Errorf("API object %s.%s - fleet field is empty", apiObj.Name, apiObj.Namespace)
-		l.Error(err, "Failed to reconcile API")
-		return ctrl.Result{}, err
+		l.Error(err, "Failed to reconcile API", "changed", req.NamespacedName)
+		return ctrl.Result{}, nil
 	}
 	// Finally call ConfigManager to update the configuration with this fleet ID
 	if err := r.ConfigManager.UpdateConfiguration(ctx, *apiObj.Spec.Fleet); err != nil {

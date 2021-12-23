@@ -64,15 +64,15 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	l.Info("Started updating configuration for the fleet", "fleetID", fleetID.String())
-	defer l.Info("Finished updating configuration for the fleet", "fleetID", fleetID.String())
+	l.Info("Started updating configuration", "fleet", fleetID.String())
+	defer l.Info("Finished updating configuration", "fleet", fleetID.String())
 
 	envoyConfig := config.New()
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
-	l.Info("Getting APIs for fleet", "fleetID", fleetID)
+	l.Info("Getting APIs for the fleet", "fleet", fleetID.String())
 
 	var apis gateway.APIList
-	// Get all API objects with this fleet id field set
+	// Get all API objects with this fleet field set
 	if err := c.Client.List(ctx, &apis,
 		&client.ListOptions{
 			FieldSelector: client.MatchingFieldsSelector{
@@ -85,7 +85,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	parser := spec.NewParser(nil)
 	for _, api := range apis.Items {
-		l.Info("Processing API configuration", "api", api)
+		l.Info("Processing API configuration", "fleet", fleetID.String(), "api", api)
 		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
 		if err != nil {
 			return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
@@ -103,11 +103,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		if err = UpdateConfigFromAPIOpts(envoyConfig, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
-		l.Info("API route configuration processed", "api", api)
+		l.Info("API route configuration processed", "fleet", fleetID.String(), "api", api)
 	}
 
-	l.Info("Succesfully processed APIs for the fleet", "fleetID", fleetID.String())
-	l.Info("Getting Static Routes for the fleet", "fleetID", fleetID.String())
+	l.Info("Succesfully processed APIs", "fleet", fleetID.String())
+	l.Info("Getting Static Routes", "fleet", fleetID.String())
 	var staticRoutes gateway.StaticRouteList
 	if err := c.Client.List(ctx, &staticRoutes,
 		&client.ListOptions{
@@ -119,7 +119,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return err
 	}
 	for _, sr := range staticRoutes.Items {
-		l.Info("Processing static routes", "route", sr)
+		l.Info("Processing static routes", "fleet", fleetID.String(), "route", sr)
 		opts, err := sr.Spec.GetOptionsFromSpec()
 		if err != nil {
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
@@ -130,12 +130,12 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 	}
 
-	l.Info("Succesfully processed Static Routes")
+	l.Info("Succesfully processed Static Routes", "fleet", fleetID.String())
 
-	l.Info("Processing EnvoyFleet configuration")
+	l.Info("Processing EnvoyFleet configuration", "fleet", fleetID.String())
 	var fleet gateway.EnvoyFleet
 	if err := c.Client.Get(ctx, types.NamespacedName{Name: fleetID.Name, Namespace: fleetID.Namespace}, &fleet); err != nil {
-		l.Error(err, "Failed to get Envoy Fleet", "fleetID", fleetID.String())
+		l.Error(err, "Failed to get Envoy Fleet", "fleet", fleetID.String())
 		return fmt.Errorf("failed to get Envoy Fleet %s: %w", fleetID.String(), err)
 	}
 	httpConnectionManagerBuilder := config.NewHCMBuilder()
@@ -147,46 +147,45 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		case config.AccessLogFormatText:
 			accessLogBuilder, err = config.NewTextAccessLog(fleet.Spec.AccessLog.TextTemplate)
 			if err != nil {
-				l.Error(err, "Failure creating new text access log builder")
+				l.Error(err, "Failure creating new text access log builder", "fleet", fleetID.String())
 				return fmt.Errorf("failure creating new text access log builder: %w", err)
 			}
 		case config.AccessLogFormatJson:
 			accessLogBuilder, err = config.NewJSONAccessLog(fleet.Spec.AccessLog.JsonTemplate)
 			if err != nil {
-				l.Error(err, "Failure creating new JSON access log builder")
+				l.Error(err, "Failure creating new JSON access log builder", "fleet", fleetID.String())
 				return fmt.Errorf("failure creating new JSON access log builder: %w", err)
 			}
 		default:
 			err := fmt.Errorf("unknown access log format %s", fleet.Spec.AccessLog.Format)
-			l.Error(err, "Failure adding access logger to Envoy configuration")
+			l.Error(err, "Failure adding access logger to Envoy configuration", "fleet", fleetID.String())
 			return err
 		}
 		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
 	}
 	if err := httpConnectionManagerBuilder.Validate(); err != nil {
-		l.Error(err, "Failed validation for HttpConnectionManager")
+		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetID.String())
 		return fmt.Errorf("failed validation for HttpConnectionManager")
 	}
 	listenerBuilder := config.NewListenerBuilder()
 	listenerBuilder.AddHTTPManagerFilterChain(httpConnectionManagerBuilder.GetHTTPConnectionManager())
 	if err := listenerBuilder.Validate(); err != nil {
-		l.Error(err, "Failed validation for the Listener")
+		l.Error(err, "Failed validation for the Listener", "fleet", fleetID.String())
 		return fmt.Errorf("failed validation for Listener")
 
 	}
 	envoyConfig.AddListener(listenerBuilder.GetListener())
-	l.Info("Generating configuration snapshot")
+	l.Info("Generating configuration snapshot", "fleet", fleetID.String())
 	snapshot, err := envoyConfig.GenerateSnapshot()
 	if err != nil {
-		l.Error(err, "Envoy configuration snapshot is invalid")
+		l.Error(err, "Envoy configuration snapshot is invalid", "fleet", fleetID.String())
 		return fmt.Errorf("failed to generate snapshot: %w", err)
 	}
 
-	l.Info("Configuration snapshot generated for the fleet", "fleetID", fleetID.String())
+	l.Info("Configuration snapshot generated for the fleet", "fleet", fleetID.String())
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetID.String(), snapshot); err != nil {
-		l.Error(err, "Envoy configuration failed to apply")
+		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetID.String())
 		return fmt.Errorf("failed to apply snapshot: %w", err)
 	}
-
 	return nil
 }

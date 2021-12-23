@@ -28,6 +28,7 @@ import (
 	"context"
 	"flag"
 	"os"
+
 	// +kubebuilder:scaffold:imports
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/controllers"
@@ -146,10 +148,10 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&gateway.API{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "API")
-			os.Exit(1)
-		}
+		hookServer := mgr.GetWebhookServer()
+		setupLog.Info("registering API mutating and validating webhooks to the webhook server")
+		hookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
+		hookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
 	}
 	if err = (&controllers.StaticRouteReconciler{
 		Client:        mgr.GetClient(),
@@ -159,7 +161,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "StaticRoute")
 		os.Exit(1)
 	}
-
 	// Setup client caching index by StaticRoute objects spec.Fleet field
 	if err := mgr.GetFieldIndexer().IndexField(
 		context.TODO(),
@@ -175,10 +176,10 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&gateway.StaticRoute{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "StaticRoute")
-			os.Exit(1)
-		}
+		setupLog.Info("registering StaticRoute mutating and validating webhooks to the webhook server")
+		hookServer := mgr.GetWebhookServer()
+		hookServer.Register(gateway.StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteMutator{Client: mgr.GetClient()}})
+		hookServer.Register(gateway.StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteValidator{}})
 	}
 	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

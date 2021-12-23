@@ -60,8 +60,8 @@ type StaticRouteReconciler struct {
 func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 
-	l.Info("Reconciling updated API resource", "changed", req.NamespacedName)
-	defer l.Info("Finished reconciling updated API resource", "changed", req.NamespacedName)
+	l.Info("Reconciling changed StaticRoute resource", "changed", req.NamespacedName)
+	defer l.Info("Finished reconciling changed StaticRoute resource", "changed", req.NamespacedName)
 
 	var srObj gateway.StaticRoute
 	// In order to get fleet ID we MUST find the object.
@@ -69,10 +69,10 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// If it is in the state of deletion - we get the object and remove the finalizer to allow K8s to finally delete it.
 	// If it is present and without the finalizer - we add it.
 	if err := r.Client.Get(ctx, req.NamespacedName, &srObj); err != nil {
-		// Object not found, return error but not retry
+		// Object not found, log the error but do not retry (not returning the error to the caller)
 		if client.IgnoreNotFound(err) == nil {
-			l.Error(err, fmt.Sprintf("the StaticRoute object %s was not found", req.NamespacedName))
-			return ctrl.Result{}, err
+			l.Error(err, fmt.Sprintf("the StaticRoute object %s was not found, skipping the processing", req.NamespacedName))
+			return ctrl.Result{}, nil
 		}
 		// Other errors, fail with retry
 		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
@@ -105,7 +105,7 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	if srObj.Spec.Fleet == nil {
 		err := fmt.Errorf("StaticRoute object %s.%s - fleet field is empty", srObj.Name, srObj.Namespace)
-		l.Error(err, "Failed to reconcile API")
+		l.Error(err, "Failed to reconcile StaticRoute", "changed", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 	// Finally call ConfigManager to update the configuration with this fleet ID
