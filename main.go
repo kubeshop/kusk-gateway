@@ -36,7 +36,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -133,45 +132,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup client caching index by API objects spec.Fleet field
-	if err := mgr.GetFieldIndexer().IndexField(
-		context.TODO(),
-		&gateway.API{},
-		"spec.fleet",
-		func(rawObj client.Object) []string {
-			api := rawObj.(*gateway.API)
-			return []string{api.Spec.Fleet.String()}
-		},
-	); err != nil {
-		setupLog.Error(err, "unable to add API filed indexer to the cache")
-		os.Exit(1)
-	}
-
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		hookServer := mgr.GetWebhookServer()
 		setupLog.Info("registering API mutating and validating webhooks to the webhook server")
 		hookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
 		hookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
 	}
+
 	if err = (&controllers.StaticRouteReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "StaticRoute")
-		os.Exit(1)
-	}
-	// Setup client caching index by StaticRoute objects spec.Fleet field
-	if err := mgr.GetFieldIndexer().IndexField(
-		context.TODO(),
-		&gateway.StaticRoute{},
-		"spec.fleet",
-		func(rawObj client.Object) []string {
-			api := rawObj.(*gateway.StaticRoute)
-			return []string{api.Spec.Fleet.String()}
-		},
-	); err != nil {
-		setupLog.Error(err, "unable to add StaticRoute field indexer to the cache")
 		os.Exit(1)
 	}
 

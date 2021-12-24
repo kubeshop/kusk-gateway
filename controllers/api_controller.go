@@ -116,6 +116,18 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *APIReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Setup client caching index by API objects spec.Fleet field
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.TODO(),
+		&gateway.API{},
+		"spec.fleet",
+		func(rawObj client.Object) []string {
+			api := rawObj.(*gateway.API)
+			return []string{api.Spec.Fleet.String()}
+		},
+	); err != nil {
+		return fmt.Errorf("unable to add API filed indexer to the cache %w", err)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gateway.API{}).
 		Complete(r)

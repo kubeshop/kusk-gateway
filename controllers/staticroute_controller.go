@@ -118,6 +118,19 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StaticRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Setup client caching index by StaticRoute objects spec.Fleet field
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.TODO(),
+		&gateway.StaticRoute{},
+		"spec.fleet",
+		func(rawObj client.Object) []string {
+			api := rawObj.(*gateway.StaticRoute)
+			return []string{api.Spec.Fleet.String()}
+		},
+	); err != nil {
+		return fmt.Errorf("unable to add StaticRoute field indexer to the cache: %w", err)
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gateway.StaticRoute{}).
 		Complete(r)
