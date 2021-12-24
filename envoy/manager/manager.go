@@ -72,22 +72,32 @@ type cacheManager struct {
 	mu            sync.RWMutex
 }
 
-func (cm *cacheManager) IsNodeExist(nodeId string) bool {
-	if status := cm.GetStatusInfo(nodeId); status != nil {
+func (cm *cacheManager) IsNodeExist(nodeID string) bool {
+	if status := cm.GetStatusInfo(nodeID); status != nil {
 		return true
 	}
 	return false
 }
 
+func (cm *cacheManager) getNodesWithCluster(cluster string) []string {
+	var nodesIDs []string
+	for _, nodeID := range cm.GetStatusKeys() {
+		if cm.GetStatusInfo(nodeID).GetNode().Cluster == cluster {
+			nodesIDs = append(nodesIDs, nodeID)
+		}
+	}
+	return nodesIDs
+}
+
 // setNodeSnapshot sets new node snapshot from active fleet configuration snapshot
-func (cm *cacheManager) setNodeSnapshot(nodeId string, fleet string) error {
+func (cm *cacheManager) setNodeSnapshot(nodeID string, fleet string) error {
 	cm.mu.RLock()
-	defer cm.mu.RUnlock()
 	snapshot, ok := cm.fleetSnapshot[fleet]
+	cm.mu.RUnlock()
 	if !ok {
 		return fmt.Errorf("no such %s Envoy fleet (cluster) configuration exist", fleet)
 	}
-	return cm.SetSnapshot(context.Background(), nodeId, *snapshot)
+	return cm.SetSnapshot(context.Background(), nodeID, *snapshot)
 }
 
 // applyNewFleetSnapshot assigns active snapshot and updates all nodes with it
@@ -96,12 +106,12 @@ func (cm *cacheManager) applyNewFleetSnapshot(fleet string, newSnapshot *cache.S
 		return fmt.Errorf("inconsistent snapshot %v", newSnapshot)
 	}
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
 	cm.fleetSnapshot[fleet] = newSnapshot
+	cm.mu.Unlock()
 	errs := []error{}
-	for _, nodeId := range cm.GetStatusKeys() {
-		err := cm.SetSnapshot(context.Background(), nodeId, *newSnapshot)
-		if err != nil {
+	// Update caches for existing nodes with only this fleet
+	for _, nodeID := range cm.getNodesWithCluster(fleet) {
+		if err := cm.setNodeSnapshot(nodeID, fleet); err != nil {
 			errs = append(errs, err)
 		}
 	}

@@ -70,7 +70,7 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	if err := r.Client.Get(ctx, req.NamespacedName, &apiObj); err != nil {
 		// Object not found, log the error but do not retry (not returning the error to the caller)
 		if client.IgnoreNotFound(err) == nil {
-			l.Info(fmt.Sprintf("the API object %s was not found, skipping the processing", req.NamespacedName))
+			l.Info(fmt.Sprintf("the API object %s.%s was not found, it was likely deleted previously , skipping the processing", req.Name, req.Namespace))
 			return ctrl.Result{}, nil
 		}
 		// Other errors, fail with retry

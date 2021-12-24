@@ -23,7 +23,7 @@ x-kusk:
       name: todo-backend
       port: 3000
   path:
-    base: /
+    prefix: /
 paths:
   /todos/{id}:
     get:

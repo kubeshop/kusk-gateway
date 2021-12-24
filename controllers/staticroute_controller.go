@@ -71,7 +71,7 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err := r.Client.Get(ctx, req.NamespacedName, &srObj); err != nil {
 		// Object not found, log the error but do not retry (not returning the error to the caller)
 		if client.IgnoreNotFound(err) == nil {
-			l.Error(err, fmt.Sprintf("the StaticRoute object %s was not found, skipping the processing", req.NamespacedName))
+			l.Error(err, fmt.Sprintf("the StaticRoute object %s.%s was not found, it was likely deleted previously, skipping the processing", req.NamespacedName))
 			return ctrl.Result{}, nil
 		}
 		// Other errors, fail with retry
