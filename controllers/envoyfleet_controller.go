@@ -40,8 +40,6 @@ import (
 )
 
 const (
-	reconcilerDefaultRetrySeconds int = 30
-
 	// Used to set the State field in the Status
 	envoyFleetStateSuccess string = "Deployed"
 	envoyFleetStateFailure string = "Failed"
@@ -101,19 +99,22 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		if err := r.Client.Status().Update(ctx, ef); err != nil {
 			l.Error(err, "Unable to update Envoy Fleet status")
 		}
+
 		return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)},
 			fmt.Errorf("failed to create or update EnvoyFleet: %w", err)
 	}
 	// Call Envoy configuration manager to update Envoy fleet configuration when applicable
+	// This could be extended for any field that belongs to EnvoyFleet CRD but is used to configure Envoy proxy.
 	if efResources.fleet.Spec.AccessLog != nil {
-		l.Info("Calling Config Manager due to change in resource", "changed", req.NamespacedName)
-		if err := r.ConfigManager.UpdateConfiguration(ctx); err != nil {
+		l.Info("Calling Config Manager due to change in Envoy Fleet resource", "changed", req.NamespacedName)
+		if err := r.ConfigManager.UpdateConfiguration(ctx, gatewayv1alpha1.EnvoyFleetID{Name: req.Name, Namespace: req.Namespace}); err != nil {
 			ef.Status.State = envoyFleetStateFailure
 			if err := r.Client.Status().Update(ctx, ef); err != nil {
 				l.Error(err, "Unable to update Envoy Fleet status")
 			}
+			l.Error(err, fmt.Sprintf("Failed to reconcile Envoy Fleet, will retry in %d seconds", reconcilerDefaultRetrySeconds))
 			return ctrl.Result{RequeueAfter: time.Duration(time.Duration(reconcilerDefaultRetrySeconds) * time.Second)},
-				fmt.Errorf("failed to update Envoy fleet %s configuration: %w", ef.Name, err)
+				fmt.Errorf("failed to update Envoy Fleet %s configuration: %w", ef.Name, err)
 		}
 	}
 	l.Info(fmt.Sprintf("Reconciled EnvoyFleet '%s' resources", ef.Name))

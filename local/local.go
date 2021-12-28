@@ -98,7 +98,7 @@ func parseAndApply(apiSpecPath string, envoyMgr *envoyConfigManager.EnvoyConfigM
 	if err != nil {
 		return err
 	}
-	if err = envoyMgr.ApplyNewFleetSnapshot(envoyConfigManager.DefaultFleetName, snapshot); err != nil {
+	if err = envoyMgr.ApplyNewFleetSnapshot("default", snapshot); err != nil {
 		return err
 	}
 	return nil

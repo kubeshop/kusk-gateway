@@ -8,7 +8,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 )
 
-// TODO: move to params
 const (
 	RouteName string = "local_route"
 )
