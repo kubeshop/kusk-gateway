@@ -36,7 +36,12 @@ type APISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Spec represents OpenAPI spec
+	// +optional
+	// Fleet represents EnvoyFleet ID, which is deployed EnvoyFleet CustomResource name and namespace
+	// Optional, if missing will be automatically added by the Kusk Gateway with the discovery of the single fleet in the cluster (MutatingWebhookConfiguration for the API resource must be enabled).
+	Fleet *EnvoyFleetID `json:"fleet,omitempty"`
+
+	// Spec represents OpenAPI spec as an embedded string.
 	Spec string `json:"spec"`
 }
 

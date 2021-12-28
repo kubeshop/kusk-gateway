@@ -71,7 +71,15 @@ func (e *EnvoyConfiguration) GetVirtualHosts() map[string]*types.VirtualHost {
 	return e.vHosts
 }
 
+func (e *EnvoyConfiguration) GetVirtualHost(name string) *types.VirtualHost {
+	return e.vHosts[name]
+}
+
 func (e *EnvoyConfiguration) AddVirtualHost(vh *types.VirtualHost) {
+	// Don't add if already present
+	if _, ok := e.vHosts[vh.Name]; ok {
+		return
+	}
 	e.vHosts[vh.Name] = vh
 }
 

@@ -40,6 +40,11 @@ type StaticRouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// +optional
+	// Fleet represents EnvoyFleet ID, which is deployed EnvoyFleet CustomResource name and namespace
+	// Optional, if missing will be automatically added by the Kusk Gateway with the discovery of the single fleet in the cluster (MutatingWebhookConfiguration for the API resource must be enabled).
+	Fleet *EnvoyFleetID `json:"fleet,omitempty"`
+
 	// Hosts is a collection of vhosts the rules apply to.
 	// Defaults to "*" - vhost that matches all domain names.
 	// +optional

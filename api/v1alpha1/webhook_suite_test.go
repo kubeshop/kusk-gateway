@@ -46,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -108,11 +109,12 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&API{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
+	hookServer := mgr.GetWebhookServer()
+	hookServer.Register(APIMutatingWebhookPath, &webhook.Admission{Handler: &APIMutator{Client: mgr.GetClient()}})
+	hookServer.Register(APIValidatingWebhookPath, &webhook.Admission{Handler: &APIValidator{}})
 
-	err = (&StaticRoute{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
+	hookServer.Register(StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &StaticRouteMutator{Client: mgr.GetClient()}})
+	hookServer.Register(StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &StaticRouteValidator{}})
 
 	//+kubebuilder:scaffold:webhook
 

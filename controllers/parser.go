@@ -39,9 +39,14 @@ Domain search order:
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
 func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.Options, spec *openapi3.T) error {
+	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
-		vh := types.NewVirtualHost(string(vhost))
-		envoyConfiguration.AddVirtualHost(vh)
+		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
+			vh := types.NewVirtualHost(string(vhost))
+			// Add the same domain as virtual host
+			vh.AddDomain(string(vhost))
+			envoyConfiguration.AddVirtualHost(vh)
+		}
 	}
 
 	// Iterate on all paths and build routes
@@ -111,9 +116,10 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 				rt.Action = routeRoute
 			}
 
-			for _, vh := range envoyConfiguration.GetVirtualHosts() {
-				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
-					return fmt.Errorf("failure adding the route: %w", err)
+			// For the list of vhosts that we create exactly THIS configuration for, update the routes
+			for _, vh := range opts.Hosts {
+				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
 			}
 		}
@@ -151,9 +157,14 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
 func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
+	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
-		vh := types.NewVirtualHost(string(vhost))
-		envoyConfiguration.AddVirtualHost(vh)
+		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
+			vh := types.NewVirtualHost(string(vhost))
+			// Add the same domain as virtual host
+			vh.AddDomain(string(vhost))
+			envoyConfiguration.AddVirtualHost(vh)
+		}
 	}
 
 	// Iterate on all paths and build routes
@@ -210,10 +221,10 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRoute
 			}
-
-			for _, vh := range envoyConfiguration.GetVirtualHosts() {
-				if err := envoyConfiguration.AddRouteToVHost(vh.Name, rt); err != nil {
-					return fmt.Errorf("failure adding the route: %w", err)
+			// For the list of vhosts that we create exactly THIS configuration for, update the routes
+			for _, vh := range opts.Hosts {
+				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
 			}
 		}

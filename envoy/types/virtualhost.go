@@ -20,6 +20,12 @@ func NewVirtualHost(name string) *VirtualHost {
 }
 
 func (v *VirtualHost) AddDomain(domain string) {
+	// return early if present in the list
+	for _, d := range v.Domains {
+		if d == domain {
+			return
+		}
+	}
 	v.Domains = append(v.Domains, domain)
 }
 
