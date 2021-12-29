@@ -324,32 +324,32 @@ spec:
               name: api0
               namespace: legacy
               port: 80
-        path:
-          # removes /api/v0 from the path when proxying to upstream
-          rewrite:
-            pattern: "^/api/v0"
-            substitution: ""
-        # Old API is slow and unreliable
-        qos:
-          request_timeout: 30
-          idle_timeout: 60
-          retries: 5
-        cors:
-          origins:
-          - "*"
-          methods:
-          - GET
-          - POST
-          - PUT
-          - PATCH
-          - HEAD
-          headers:
-          - Content-Type
-          - Content-Encoding
-          credentials: false
-          expose_headers:
-          - X-API-VERSION
-          max_age: 8600
+          path:
+            # removes /api/v0 from the path when proxying to upstream
+            rewrite:
+              pattern: "^/api/v0"
+              substitution: ""
+          # Old API is slow and unreliable
+          qos:
+            request_timeout: 30
+            idle_timeout: 60
+            retries: 5
+          cors:
+            origins:
+            - "*"
+            methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - HEAD
+            headers:
+            - Content-Type
+            - Content-Encoding
+            credentials: false
+            expose_headers:
+            - X-API-VERSION
+            max_age: 8600
       post: *old_api_route
       put: *old_api_route
       patch: *old_api_route
