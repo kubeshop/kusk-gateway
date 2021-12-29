@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/k8sutils"
 )
 
@@ -22,7 +22,7 @@ const (
 // EnvoyFleetResources is a collection of related Envoy Fleet K8s resources
 type EnvoyFleetResources struct {
 	client       client.Client
-	fleet        *gatewayv1alpha1.EnvoyFleet
+	fleet        *gateway.EnvoyFleet
 	fleetID      string
 	configMap    *corev1.ConfigMap
 	deployment   *appsv1.Deployment
@@ -30,8 +30,8 @@ type EnvoyFleetResources struct {
 	sharedLabels map[string]string
 }
 
-func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gatewayv1alpha1.EnvoyFleet) (*EnvoyFleetResources, error) {
-	fleetID := fmt.Sprint(ef.Name, ".", ef.Namespace)
+func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gateway.EnvoyFleet) (*EnvoyFleetResources, error) {
+	fleetID := gateway.EnvoyFleetID{Name: ef.Name, Namespace: ef.Namespace}.String()
 	f := &EnvoyFleetResources{
 		client:  client,
 		fleet:   ef,
@@ -80,7 +80,7 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 		labels[key] = value
 	}
 
-	configMapName := "kusk-gateway-envoy-config-" + e.fleet.Name
+	configMapName := "kgw-envoy-" + e.fleet.Name
 
 	xdsLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "xds-service"}
 	xdsServices, err := k8sutils.GetServicesByLabels(ctx, e.client, xdsLabels)
@@ -126,7 +126,7 @@ func (e *EnvoyFleetResources) generateDeployment() {
 		labels[key] = value
 	}
 
-	deploymentName := "kusk-gateway-envoy-" + e.fleet.Name
+	deploymentName := "kgw-envoy-" + e.fleet.Name
 
 	configMapName := e.configMap.Name
 
@@ -190,7 +190,6 @@ func (e *EnvoyFleetResources) generateDeployment() {
 			Name:            deploymentName,
 			Namespace:       e.fleet.Namespace,
 			Labels:          labels,
-			Annotations:     e.fleet.Spec.Annotations,
 			OwnerReferences: []metav1.OwnerReference{envoyFleetAsOwner(e.fleet)},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -198,7 +197,8 @@ func (e *EnvoyFleetResources) generateDeployment() {
 			Selector: labelSelectors(labels),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels:      labels,
+					Annotations: e.fleet.Spec.Annotations,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -236,7 +236,7 @@ func (e *EnvoyFleetResources) generateService() {
 	for key, value := range e.sharedLabels {
 		labels[key] = value
 	}
-	serviceName := "kusk-gateway-envoy-svc-" + e.fleet.Name
+	serviceName := "kgw-envoy-" + e.fleet.Name
 	e.service = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -262,7 +262,7 @@ func (e *EnvoyFleetResources) generateService() {
 
 	return
 }
-func envoyFleetAsOwner(cr *gatewayv1alpha1.EnvoyFleet) metav1.OwnerReference {
+func envoyFleetAsOwner(cr *gateway.EnvoyFleet) metav1.OwnerReference {
 	trueVar := true
 	return metav1.OwnerReference{
 		APIVersion: cr.APIVersion,
