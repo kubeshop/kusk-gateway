@@ -19,6 +19,10 @@ spec:
     - name: https
       port: 443
       targetPort: https
+    # To preserve clients real ip addresses choose Local.
+    # Note that this can make load balancing worse.
+    #externalTrafficPolicy: Cluster|Local
+    #externalTrafficPolicy: Local
   resources:
     # limits:
     #   cpu: 1

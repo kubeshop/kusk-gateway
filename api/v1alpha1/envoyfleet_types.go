@@ -94,6 +94,18 @@ type ServiceConfig struct {
 	// Static ip address for the LoadBalancer type if available
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
+
+	// externalTrafficPolicy denotes if this Service desires to route external
+	// traffic to node-local or cluster-wide endpoints. "Local" preserves the
+	// client source IP and avoids a second hop for LoadBalancer and Nodeport
+	// type services, but risks potentially imbalanced traffic spreading.
+	// "Cluster" obscures the client source IP and may cause a second hop to
+	// another node, but should have good overall load-spreading.
+	// +optional
+	// For the preservation of the real client ip in access logs chose "Local"
+	// +optional
+	// +kubebuilder:validation:Enum=Cluster;Local
+	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
 }
 
 // AccessLoggingConfig defines the access logs Envoy logging settings
