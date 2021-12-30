@@ -259,6 +259,9 @@ func (e *EnvoyFleetResources) generateService() {
 	if e.fleet.Spec.Service.Type == corev1.ServiceTypeLoadBalancer && e.fleet.Spec.Service.LoadBalancerIP != "" {
 		e.service.Spec.LoadBalancerIP = e.fleet.Spec.Service.LoadBalancerIP
 	}
+	if e.fleet.Spec.Service.ExternalTrafficPolicy != "" {
+		e.service.Spec.ExternalTrafficPolicy = e.fleet.Spec.Service.ExternalTrafficPolicy
+	}
 
 	return
 }
