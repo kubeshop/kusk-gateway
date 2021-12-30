@@ -28,6 +28,7 @@ Currently supported parameters:
 * spec.service.**ports** - expose TCP ports (80, 443 or any other), routed to the ports names that Deployment exposes (http, https) - ports that Envoy Proxy listener binds to.
 * spec.service.**annotations** - add annotations to the Service that will control load balancer configuration in the specific cloud providers implementations (e.g. to setup the internal Google Cloud Platform load balancer in Google Cloud Engine we annotate Service with the related annotation).
 * spec.service.**loadBalancerIP** can be used to specify the pre-allocated Load Balancer IP address, so it won't be deleted in case the Service is deleted.
+* spec.service.**externalTrafficPolicy** optional parameter denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints. "Local" preserves the client source IP and avoids a second hop for LoadBalancer and Nodeport type services, but risks potentially imbalanced traffic spreading. "Cluster" obscures the client source IP and may cause a second hop to another node, but should have good overall load-spreading. For the preservation of the real client ip in access logs chose "Local"
 
 * spec.**size** optional parameter is the number of Envoy Proxy pods in the K8s deployment, defaults to 1 if not specified.
 
@@ -64,6 +65,7 @@ spec:
     - name: https
       port: 443
       targetPort: http
+  # externalTrafficPolicy: Cluster|Local
   resources:
     # limits:
     #   cpu: 1
