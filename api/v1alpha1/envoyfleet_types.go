@@ -101,7 +101,6 @@ type ServiceConfig struct {
 	// type services, but risks potentially imbalanced traffic spreading.
 	// "Cluster" obscures the client source IP and may cause a second hop to
 	// another node, but should have good overall load-spreading.
-	// +optional
 	// For the preservation of the real client ip in access logs chose "Local"
 	// +optional
 	// +kubebuilder:validation:Enum=Cluster;Local
