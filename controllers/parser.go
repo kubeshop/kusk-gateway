@@ -107,7 +107,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 					clusterName,
 					corsPolicy,
 					rewriteOpts,
-					opts.QoS,
+					finalOpts.QoS,
+					finalOpts.Websocket,
 				)
 				if err != nil {
 					return err
@@ -214,6 +215,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 					corsPolicy,
 					rewriteOpts,
 					methodOpts.QoS,
+					methodOpts.Websocket,
 				)
 				if err != nil {
 					return err
@@ -310,6 +312,7 @@ func generateRoute(
 	corsPolicy *route.CorsPolicy,
 	rewriteRegex *options.RewriteRegex,
 	QoS *options.QoSOptions,
+	websocket *bool,
 ) (*route.Route_Route, error) {
 
 	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
@@ -355,7 +358,9 @@ func generateRoute(
 			NumRetries: &wrapperspb.UInt32Value{Value: retries},
 		}
 	}
-
+	if websocket != nil && *websocket {
+		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
+	}
 	if err := routeRoute.Route.Validate(); err != nil {
 		return nil, fmt.Errorf("incorrect Route Action: %w", err)
 	}

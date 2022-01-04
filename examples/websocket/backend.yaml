@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ws-server
+  template:
+    metadata:
+      labels:
+        app: ws-server
+    spec:
+      containers:
+      - name: ws-server
+        image: solsson/websocat
+        args: [ "-E", "ws-listen:0.0.0.0:80", "--text", "literalreply:'[ws] HELO'"]
+        ports:
+        - containerPort: 80
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ws-server
+spec:
+  type: ClusterIP
+  selector:
+    app: ws-server
+  ports:
+    - port: 80
+      targetPort: http
