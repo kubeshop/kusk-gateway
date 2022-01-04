@@ -15,13 +15,13 @@ To test:
 // endpoint from the StaticRoute definition
 docker run --rm -ti --network=host solsson/websocat ws://ExternalIPAddress>:80/staticwebsocket
 
-BBB
+blablabla
 '[ws] HELO'
 
 // endpoint from the API definition
 docker run --rm -ti --network=host solsson/websocat ws://ExternalIPAddress>:80/apiwebsocket
 
-BBB
+blablabla
 '[ws] HELO'
 
 // endpoint from the API definition, this one must fail
