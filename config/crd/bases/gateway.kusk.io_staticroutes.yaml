@@ -211,8 +211,8 @@ spec:
                                 type: object
                             type: object
                           websocket:
-                            description: Enable establishing websocket connections,
-                              true or by default false.
+                            description: Enable establishing Websocket connections,
+                              by default disabled
                             type: boolean
                         required:
                         - upstream

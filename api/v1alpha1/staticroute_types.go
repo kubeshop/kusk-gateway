@@ -121,7 +121,7 @@ type Route struct {
 	// +optional
 	Path *options.StaticPathOptions `json:"path,omitempty"`
 	// +optional
-	// Enable establishing websocket connections, true or by default false.
+	// Enable establishing Websocket connections, by default disabled
 	Websocket *bool `json:"websocket,omitempty"`
 }
 
