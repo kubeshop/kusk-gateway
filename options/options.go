@@ -43,9 +43,10 @@ type SubOptions struct {
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path *PathOptions `yaml:"path,omitempty" json:"path,omitempty"`
-	QoS  *QoSOptions  `yaml:"qos,omitempty" json:"qos,omitempty"`
-	CORS *CORSOptions `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Path      *PathOptions `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS       *QoSOptions  `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS      *CORSOptions `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Websocket *bool        `json:"websocket,omitempty" yaml:"websocket,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -110,6 +111,11 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	// CORS - we don't merge CORS params, we override them completely since CORS must be treated as complete entity
 	if o.CORS == nil && in.CORS != nil {
 		o.CORS = in.CORS
+	}
+
+	// Websockets
+	if o.Websocket == nil && in.Websocket != nil {
+		o.Websocket = in.Websocket
 	}
 	return
 }

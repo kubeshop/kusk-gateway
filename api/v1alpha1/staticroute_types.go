@@ -87,6 +87,9 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 				if specRouteAction.Route.Path != nil {
 					methodOpts.Path = specRouteAction.Route.Path
 				}
+				if specRouteAction.Route.Websocket != nil {
+					methodOpts.Websocket = specRouteAction.Route.Websocket
+				}
 			}
 		}
 	}
@@ -117,6 +120,9 @@ type Route struct {
 	QoS *options.QoSOptions `json:"qos,omitempty"`
 	// +optional
 	Path *options.StaticPathOptions `json:"path,omitempty"`
+	// +optional
+	// Enable establishing websocket connections, true or by default false.
+	Websocket *bool `json:"websocket,omitempty"`
 }
 
 // StaticRouteStatus defines the observed state of StaticRoute

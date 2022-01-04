@@ -9,10 +9,11 @@ type StaticSubOptions struct {
 	// Upstream defines where trafic is proxied to
 	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
 	// Redirect specifies redirect option, mutually exlusive with the backend option
-	Redirect *RedirectOptions   `yaml:"redirect,omitempty" json:"redirect,omitempty"`
-	CORS     *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
-	QoS      *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
-	Path     *StaticPathOptions `yaml:"path,omitempty" json:"path,omitempty"`
+	Redirect  *RedirectOptions   `yaml:"redirect,omitempty" json:"redirect,omitempty"`
+	CORS      *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	QoS       *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	Path      *StaticPathOptions `yaml:"path,omitempty" json:"path,omitempty"`
+	Websocket *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
 }
 
 func (s StaticSubOptions) Validate() error {

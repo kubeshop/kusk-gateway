@@ -8,11 +8,12 @@ spec:
   hosts: [ "localhost", "*"]
   paths:
   # Root goes to frontend service
-    /somewebsocket: 
+    /staticwebsocket: 
        get:
         route:
-         upstream:
-            service:
-              namespace: default
-              name: ws-server
-              port: 80
+          websocket: true
+          upstream:
+              service:
+                namespace: default
+                name: ws-server
+                port: 80
