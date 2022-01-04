@@ -27,6 +27,11 @@ func NewHCMBuilder() *hcmBuilder {
 					RouteConfigName: RouteName,
 				},
 			},
+			UpgradeConfigs: []*hcm.HttpConnectionManager_UpgradeConfig{
+				{
+					UpgradeType: "websocket",
+				},
+			},
 			HttpFilters: []*hcm.HttpFilter{
 				{
 					Name: wellknown.CORS,

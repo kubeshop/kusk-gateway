@@ -54,3 +54,6 @@ eval $(minikube docker-env --profile "kgw")
 make docker-build deploy
 
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
+
+echo "========> Deploying default Envoy Fleet"
+make deploy-envoyfleet

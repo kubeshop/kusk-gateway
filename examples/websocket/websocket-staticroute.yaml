@@ -1,0 +1,18 @@
+---
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: websocket-backend
+spec:
+  # should work with localhost, example.org
+  hosts: [ "localhost", "*"]
+  paths:
+  # Root goes to frontend service
+    /somewebsocket: 
+       get:
+        route:
+         upstream:
+            service:
+              namespace: default
+              name: ws-server
+              port: 80
