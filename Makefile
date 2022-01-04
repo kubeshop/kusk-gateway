@@ -48,6 +48,10 @@ create-env: ## Spin up a local development cluster with Minikube and install kus
 create-cluster: ## Spin up a local minikube cluster with metallb and cert manager installed
 	./development/cluster/create-cluster.sh
 
+.PHONY: deploy-envoyfleet
+deploy-envoyfleet: ## Deploy k8s resources for the single Envoy Fleet
+	kubectl apply -f config/samples/gateway_v1_envoyfleet.yaml
+
 .PHONY: delete-env
 delete-env: ## Destroy the local development k3d cluster
 	./development/cluster/delete-env.sh

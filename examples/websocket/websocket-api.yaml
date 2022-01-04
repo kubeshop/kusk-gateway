@@ -1,0 +1,84 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: ws-server
+spec:
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: Websocket test
+      version: 1.0.0
+    x-kusk:
+      hosts: [ "localhost", "*"]
+      # Enable websocket globally
+      websocket: true
+      upstream:
+        service:
+          namespace: default
+          name: ws-server
+          port: 80
+    paths:
+      /apiwebsocket:
+        get:
+          responses:
+            '200':
+              description: ''
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      test:
+                        type: string
+                        description: Description of test endpoint
+                    # required:
+                    #   - test
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+      /disabledapiwebsocket:
+        x-kusk:
+          websocket: false
+        get:
+          responses:
+            '200':
+              description: ''
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      test:
+                        type: string
+                        description: Description of test endpoint
+                    # required:
+                    #   - test
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Test websocket
+    components:
+      schemas:
+        endpoints.Errors:
+          type: array
+          items:
+            type: string

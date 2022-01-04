@@ -210,6 +210,10 @@ spec:
                                 - port
                                 type: object
                             type: object
+                          websocket:
+                            description: Enable establishing Websocket connections,
+                              by default disabled
+                            type: boolean
                         required:
                         - upstream
                         type: object
