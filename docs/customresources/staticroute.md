@@ -96,6 +96,8 @@ spec:
             - X-Custom-Header2
             # how long to cache this CORS information for the browser, returned with Access-Control-Max-Age.
             max_age: <int>
+          # Enable establishing Websockets connections
+          websocket: <true|false>
         # "redirect" creates HTTP redirect to other endpoint. Mutually exclusive with "route".
         redirect:
           # redirect to http or https
@@ -254,9 +256,10 @@ route:
     - X-Custom-Header2
     # how long to cache this CORS information for the browser in seconds, returned with Access-Control-Max-Age header
     max_age: <int>
+  # Enable establishing Websockets connections
+  websocket: <true|false>
 
 ```
-
 
 *route*.**upstream** is a required field that defines the upstream host parameters.
 We proxy using DNS hostname or local cluster K8s service parameters, which are further resolved to DNS hostname. Either *upstream*.**host** or *upstream*.**service** must be specified inside.
@@ -266,9 +269,9 @@ We proxy using DNS hostname or local cluster K8s service parameters, which are f
 *route*.**qos** optional field is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
 
 *route*.**cors** optional field is the container for [Cross-Origin Resource Sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers parameters. If this field is specified, route will be augmented with CORS preflight OPTIONS HTTP method matching. This will allow Envoy to return the response to OPTIONS request with the specified here CORS headers to the user without proxying to upstream. It is advised to read [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) before trying to configure this.
-
 Note: the structure for CORS specified above is an example, i.e. one should write its own set of methods and headers.
 
+*route*.**websocket** optional boolean field defines whether to enable handling of "Upgrade: websocket" and related Websocket HTTP headers in the request to create a Websocket tunnel to the backend. By default false, don't handle Websockets.
 
 ## Example
 
@@ -365,6 +368,7 @@ spec:
             expose_headers:
             - X-API-VERSION
             max_age: 8600
+          websocket: true
       post: *old_api_route
       put: *old_api_route
       patch: *old_api_route

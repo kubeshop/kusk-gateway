@@ -61,9 +61,12 @@ x-kusk:
       - X-Custom-Header1
       - X-Custom-Header2
     max_age: 86200
+
+  websocket: true
 ```
 
 ## Properties Overview
+
 `x-kusk` extension can be applied at (not exclusively):
 1. Top level of an OpenAPI spec:
 ```yaml
@@ -80,6 +83,7 @@ x-kusk:
 ```
 
 2. Path level:
+
 ```yaml
 openapi: 3.0.2
 info:
@@ -91,7 +95,9 @@ paths:
     post:
       ...
 ```
+
 3. Method (operation) level:
+
 ```yaml
   openapi: 3.0.2
   info:
@@ -154,6 +160,10 @@ Options for configuring QoS settings, such as retries and timeouts.
 | `retries` | maximum number of retries (0 by default)
 | `request_timeout` | total request timeout (in seconds)
 | `idle_timeout` | timeout for idle connections (in seconds)
+
+### websocket
+
+An optional boolean field defines whether to enable handling of "Upgrade: websocket" and other related to Websocket HTTP headers in the request to create a Websocket tunnel to the backend. By default false, don't handle Websockets.
 
 ### upstream
 
