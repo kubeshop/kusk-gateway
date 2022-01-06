@@ -1048,6 +1048,22 @@ spec:
                   cleanup time for your process. Defaults to 30 seconds.
                 format: int64
                 type: integer
+              tls:
+                description: TLSSecrets certificate references
+                items:
+                  properties:
+                    namespace:
+                      description: Namespace where the Kubernetes certificate resides
+                      type: string
+                    secretRef:
+                      description: Name of the Kuberenetes secret containing the TLS
+                        certificate
+                      type: string
+                  required:
+                  - namespace
+                  - secretRef
+                  type: object
+                type: array
               tolerations:
                 description: Tolerations allow pod to be scheduled to the nodes that
                   has specific toleration labels, optional

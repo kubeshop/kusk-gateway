@@ -78,6 +78,10 @@ type EnvoyFleetSpec struct {
 
 	// Access logging settings for the Envoy
 	AccessLog *AccessLoggingConfig `json:"accesslog,omitempty"`
+
+	// TLSSecrets certificate references
+	//+optional
+	TLSSecrets []TLSConfig `json:"tls,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -126,6 +130,14 @@ type AccessLoggingConfig struct {
 	// Uses Kusk Gateway defaults if not specified.
 	// +optional
 	JsonTemplate map[string]string `json:"json_template,omitempty"`
+}
+
+type TLSConfig struct {
+	// Name of the Kuberenetes secret containing the TLS certificate
+	SecretRef string `json:"secretRef"`
+
+	// Namespace where the Kubernetes certificate resides
+	Namespace string `json:"namespace"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet
