@@ -79,9 +79,9 @@ type EnvoyFleetSpec struct {
 	// Access logging settings for the Envoy
 	AccessLog *AccessLoggingConfig `json:"accesslog,omitempty"`
 
-	// TLSSecrets certificate references
+	// TLS configuration
 	//+optional
-	TLSSecrets []TLSConfig `json:"tls,omitempty"`
+	TLS TLS `json:"tls,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -130,6 +130,13 @@ type AccessLoggingConfig struct {
 	// Uses Kusk Gateway defaults if not specified.
 	// +optional
 	JsonTemplate map[string]string `json:"json_template,omitempty"`
+}
+
+type TLS struct {
+	CipherSuite               string      `json:"cipherSuite,omitempty"`
+	TlsMinimumProtocolVersion string      `json:"tlsMinimumProtocolVersion,omitempty"`
+	TlsMaximumProtocolVersion string      `json:"tlsMaximumProtocolVersion,omitempty"`
+	TlsSecrets                []TLSConfig `json:"tlsSecrets"`
 }
 
 type TLSConfig struct {

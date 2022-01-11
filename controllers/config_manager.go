@@ -164,9 +164,13 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return fmt.Errorf("failed validation for HttpConnectionManager")
 	}
 
-	certs := make([]config.Certificate, len(fleet.Spec.TLSSecrets))
+	tlsConfig := config.TLS{
+		CipherSuite:               fleet.Spec.TLS.CipherSuite,
+		TlsMinimumProtocolVersion: fleet.Spec.TLS.TlsMinimumProtocolVersion,
+		TlsMaximumProtocolVersion: fleet.Spec.TLS.TlsMaximumProtocolVersion,
+	}
 
-	for i, cert := range fleet.Spec.TLSSecrets {
+	for _, cert := range fleet.Spec.TLS.TlsSecrets {
 		var secret v1.Secret
 		err := c.Client.Get(ctx, types.NamespacedName{Name: cert.SecretRef, Namespace: cert.Namespace}, &secret)
 		if err != nil {
@@ -183,14 +187,14 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("%s data not present in secret %s in namepspace %s", tlsCrt, cert.SecretRef, cert.Namespace)
 		}
 
-		certs[i] = config.Certificate{
+		tlsConfig.Certificates = append(tlsConfig.Certificates, config.Certificate{
 			Cert: string(crt),
 			Key:  string(key),
-		}
+		})
 	}
 
 	listenerBuilder := config.NewListenerBuilder()
-	if err := listenerBuilder.AddHTTPManagerFilterChains(httpConnectionManagerBuilder.GetHTTPConnectionManager(), certs); err != nil {
+	if err := listenerBuilder.AddHTTPManagerFilterChains(httpConnectionManagerBuilder.GetHTTPConnectionManager(), tlsConfig); err != nil {
 		return err
 	}
 

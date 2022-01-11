@@ -106,7 +106,7 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		l.Error(err, "Failed to reconcile API", "changed", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
-	// Finally call ConfigManager to update the configuration with this fleet ID
+	// Finally call ConfigManager to update the configuration with this fl	eet ID
 	if err := r.ConfigManager.UpdateConfiguration(ctx, *apiObj.Spec.Fleet); err != nil {
 		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
 		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err

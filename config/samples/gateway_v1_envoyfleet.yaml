@@ -4,8 +4,10 @@ metadata:
   name: default
 spec:
   tls:
-    - secretRef: selfsigned-cert-tls
-      namespace: default
+    tlsMaximumProtocolVersion: TLSv1_2
+    tlsSecrets:
+      - secretRef: selfsigned-cert-tls
+        namespace: default
   image: "envoyproxy/envoy-alpine:v1.20.0"
   service:
     # NodePort, ClusterIP, LoadBalancer

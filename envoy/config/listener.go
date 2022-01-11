@@ -56,6 +56,13 @@ func (l *listenerBuilder) addListenerFilter(f *listener.ListenerFilter) *listene
 	return l
 }
 
+type TLS struct {
+	CipherSuite               string
+	TlsMinimumProtocolVersion string
+	TlsMaximumProtocolVersion string
+	Certificates              []Certificate
+}
+
 type Certificate struct {
 	Cert string
 	Key  string
@@ -63,7 +70,7 @@ type Certificate struct {
 
 // AddHTTPManagerFilterChains inserts HTTP Manager as the listener filter chain(s)
 // If certificates are present an additional TLS-enabled filter chain is added and protocol type detection is enabled with TLS Inspector Listener filter.
-func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.HttpConnectionManager, certs []Certificate) error {
+func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.HttpConnectionManager, tlsConfig TLS) error {
 	anyHTTPManagerConfig, err := anypb.New(httpConnectionManager)
 	if err != nil {
 		return fmt.Errorf("failed to add http manager to the filter chain: cannot convert to Any message type: %w", err)
@@ -78,54 +85,96 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 	}
 	l.addListenerFilterChain(hcmPlainChain)
 
-	if len(certs) > 0 {
-		// When certificates are present, we add an additional Listener filter chain that is selected when the connection protocol type is tls.
-		// HTTP Manager configuration is the same.
-		// Enable TLS Inspector in the Listener to detect plain http or tls requests.
-		l.addListenerFilter(&listener.ListenerFilter{Name: wellknown.TLSInspector})
+	if len(tlsConfig.Certificates) == 0 {
+		return nil
+	}
 
-		// Make sure plain http manager filter chain is selected when protocol type is raw_buffer (not tls).
-		hcmPlainChain.FilterChainMatch = &listener.FilterChainMatch{TransportProtocol: "raw_buffer"}
+	// When certificates are present, we add an additional Listener filter chain that is selected when the connection protocol type is tls.
+	// HTTP Manager configuration is the same.
+	// Enable TLS Inspector in the Listener to detect plain http or tls requests.
+	l.addListenerFilter(&listener.ListenerFilter{Name: wellknown.TLSInspector})
 
-		// Secure (TLS) HTTP manager filter chain.
-		// Selected when the connection type is tls.
-		hcmSecureChain := &listener.FilterChain{
-			FilterChainMatch: &listener.FilterChainMatch{TransportProtocol: "tls"},
-			Filters:          []*listener.Filter{hcmFilter},
-		}
+	// Make sure plain http manager filter chain is selected when protocol type is raw_buffer (not tls).
+	hcmPlainChain.FilterChainMatch = &listener.FilterChainMatch{TransportProtocol: "raw_buffer"}
 
-		tlsCerts := make([]*tls.TlsCertificate, len(certs))
-		for _, cert := range certs {
-			tlsCerts = append(tlsCerts, &tls.TlsCertificate{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_InlineString{InlineString: cert.Cert},
-				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_InlineString{InlineString: cert.Key},
-				},
-			})
-		}
+	// Secure (TLS) HTTP manager filter chain.
+	// Selected when the connection type is tls.
+	hcmSecureChain := &listener.FilterChain{
+		FilterChainMatch: &listener.FilterChainMatch{TransportProtocol: "tls"},
+		Filters:          []*listener.Filter{hcmFilter},
+	}
 
-		tlsDownstreamContext := &tls.DownstreamTlsContext{
-			CommonTlsContext: &tls.CommonTlsContext{
-				TlsCertificates: tlsCerts,
-				// TODO: add cipher suites if specified
-				// TlsParams:
+	tlsCerts := make([]*tls.TlsCertificate, len(tlsConfig.Certificates))
+	for _, cert := range tlsConfig.Certificates {
+
+		tlsCert := &tls.TlsCertificate{
+			CertificateChain: &core.DataSource{
+				Specifier: &core.DataSource_InlineString{InlineString: cert.Cert},
+			},
+			PrivateKey: &core.DataSource{
+				Specifier: &core.DataSource_InlineString{InlineString: cert.Key},
 			},
 		}
 
-		anyTls, err := anypb.New(tlsDownstreamContext)
-		if err != nil {
-			return fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
+		if err := tlsCert.Validate(); err != nil {
+			return fmt.Errorf("invalid tls certificate: %w", err)
 		}
 
-		hcmSecureChain.TransportSocket = &core.TransportSocket{
-			Name:       wellknown.TransportSocketTLS,
-			ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
-		}
-
-		l.addListenerFilterChain(hcmSecureChain)
+		tlsCerts = append(tlsCerts, tlsCert)
 	}
+
+	tlsParams := &tls.TlsParameters{}
+
+	if tlsConfig.CipherSuite != "" {
+		tlsParams.CipherSuites = []string{tlsConfig.CipherSuite}
+	}
+
+	if tlsConfig.TlsMinimumProtocolVersion != "" {
+		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMinimumProtocolVersion]
+		if !ok {
+			return fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMinimumProtocolVersion)
+		}
+		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
+	}
+
+	if tlsConfig.TlsMaximumProtocolVersion != "" {
+		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMaximumProtocolVersion]
+		if !ok {
+			return fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMaximumProtocolVersion)
+		}
+		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
+	}
+
+	if err := tlsParams.Validate(); err != nil {
+		return fmt.Errorf("invalid tls parameters: %w", err)
+	}
+
+	tlsDownstreamContext := &tls.DownstreamTlsContext{
+		CommonTlsContext: &tls.CommonTlsContext{
+			TlsCertificates: tlsCerts,
+			TlsParams:       tlsParams,
+		},
+	}
+
+	if err := tlsDownstreamContext.Validate(); err != nil {
+		return fmt.Errorf("invalid tls downstream context: %w", err)
+	}
+
+	anyTls, err := anypb.New(tlsDownstreamContext)
+	if err != nil {
+		return fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
+	}
+
+	hcmSecureChain.TransportSocket = &core.TransportSocket{
+		Name:       wellknown.TransportSocketTLS,
+		ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
+	}
+
+	if err := hcmPlainChain.Validate(); err != nil {
+		return fmt.Errorf("invalid secure listener chain: %w", err)
+	}
+
+	l.addListenerFilterChain(hcmSecureChain)
 
 	return nil
 }
