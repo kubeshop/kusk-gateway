@@ -190,7 +190,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	listenerBuilder := config.NewListenerBuilder()
-	if err := listenerBuilder.AddHTTPManagerFilterChain(httpConnectionManagerBuilder.GetHTTPConnectionManager(), certs); err != nil {
+	if err := listenerBuilder.AddHTTPManagerFilterChains(httpConnectionManagerBuilder.GetHTTPConnectionManager(), certs); err != nil {
 		return err
 	}
 
