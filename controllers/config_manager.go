@@ -165,12 +165,12 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	tlsConfig := config.TLS{
-		CipherSuite:               fleet.Spec.TLS.CipherSuite,
+		CipherSuites:              fleet.Spec.TLS.CipherSuites,
 		TlsMinimumProtocolVersion: fleet.Spec.TLS.TlsMinimumProtocolVersion,
 		TlsMaximumProtocolVersion: fleet.Spec.TLS.TlsMaximumProtocolVersion,
 	}
 
-	for _, cert := range fleet.Spec.TLS.TlsSecrets {
+	for _, cert := range fleet.Spec.TLS.TlsSecretsConfig {
 		var secret v1.Secret
 		err := c.Client.Get(ctx, types.NamespacedName{Name: cert.SecretRef, Namespace: cert.Namespace}, &secret)
 		if err != nil {

@@ -1051,13 +1051,15 @@ spec:
               tls:
                 description: TLS configuration
                 properties:
-                  cipherSuite:
-                    type: string
+                  cipherSuites:
+                    items:
+                      type: string
+                    type: array
                   tlsMaximumProtocolVersion:
                     type: string
                   tlsMinimumProtocolVersion:
                     type: string
-                  tlsSecrets:
+                  tlsSecretsConfig:
                     items:
                       properties:
                         namespace:
@@ -1074,7 +1076,7 @@ spec:
                       type: object
                     type: array
                 required:
-                - tlsSecrets
+                - tlsSecretsConfig
                 type: object
               tolerations:
                 description: Tolerations allow pod to be scheduled to the nodes that

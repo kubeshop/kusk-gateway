@@ -57,7 +57,7 @@ func (l *listenerBuilder) addListenerFilter(f *listener.ListenerFilter) *listene
 }
 
 type TLS struct {
-	CipherSuite               string
+	CipherSuites              []string
 	TlsMinimumProtocolVersion string
 	TlsMaximumProtocolVersion string
 	Certificates              []Certificate
@@ -125,8 +125,8 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 
 	tlsParams := &tls.TlsParameters{}
 
-	if tlsConfig.CipherSuite != "" {
-		tlsParams.CipherSuites = []string{tlsConfig.CipherSuite}
+	if len(tlsConfig.CipherSuites) > 0 {
+		tlsParams.CipherSuites = tlsConfig.CipherSuites
 	}
 
 	if tlsConfig.TlsMinimumProtocolVersion != "" {
