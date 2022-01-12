@@ -1048,6 +1048,50 @@ spec:
                   cleanup time for your process. Defaults to 30 seconds.
                 format: int64
                 type: integer
+              tls:
+                description: TLS configuration
+                properties:
+                  cipherSuites:
+                    description: 'If specified, the TLS listener will only support
+                      the specified cipher list when negotiating TLS 1.0-1.2 (this
+                      setting has no effect when negotiating TLS 1.3). If not specified,
+                      a default list will be used. Defaults are different for server
+                      (downstream) and client (upstream) TLS configurations. For more
+                      information see: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto'
+                    items:
+                      type: string
+                    type: array
+                  tlsMaximumProtocolVersion:
+                    description: Maximum TLS protocol version. By default, it’s TLSv1_2
+                      for clients and TLSv1_3 for servers.
+                    type: string
+                  tlsMinimumProtocolVersion:
+                    description: Minimum TLS protocol version. By default, it’s TLSv1_2
+                      for clients and TLSv1_0 for servers.
+                    type: string
+                  tlsSecrets:
+                    description: 'SecretName and Namespace combinations for locating
+                      TLS secrets containing TLS certificates You can specify more
+                      than one For more information on how certificate selection works
+                      see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection'
+                    items:
+                      properties:
+                        namespace:
+                          description: Namespace where the Kubernetes certificate
+                            resides
+                          type: string
+                        secretRef:
+                          description: Name of the Kubernetes secret containing the
+                            TLS certificate
+                          type: string
+                      required:
+                      - namespace
+                      - secretRef
+                      type: object
+                    type: array
+                required:
+                - tlsSecrets
+                type: object
               tolerations:
                 description: Tolerations allow pod to be scheduled to the nodes that
                   has specific toleration labels, optional

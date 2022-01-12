@@ -30,6 +30,7 @@ import (
 	"strings"
 	"sync"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,6 +41,11 @@ import (
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
+)
+
+const (
+	tlsKey = "tls.key"
+	tlsCrt = "tls.crt"
 )
 
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
@@ -127,6 +133,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Error(err, "Failed to get Envoy Fleet", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to get Envoy Fleet %s: %w", fleetIDstr, err)
 	}
+
 	httpConnectionManagerBuilder := config.NewHCMBuilder()
 	if fleet.Spec.AccessLog != nil {
 		var accessLogBuilder *config.AccessLogBuilder
@@ -156,8 +163,41 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for HttpConnectionManager")
 	}
+
+	tlsConfig := config.TLS{
+		CipherSuites:              fleet.Spec.TLS.CipherSuites,
+		TlsMinimumProtocolVersion: fleet.Spec.TLS.TlsMinimumProtocolVersion,
+		TlsMaximumProtocolVersion: fleet.Spec.TLS.TlsMaximumProtocolVersion,
+	}
+
+	for _, cert := range fleet.Spec.TLS.TlsSecrets {
+		var secret v1.Secret
+		err := c.Client.Get(ctx, types.NamespacedName{Name: cert.SecretRef, Namespace: cert.Namespace}, &secret)
+		if err != nil {
+			return fmt.Errorf("failed to get secret %s in namespace %s: %w", cert.SecretRef, cert.Namespace, err)
+		}
+
+		key, ok := secret.Data[tlsKey]
+		if !ok {
+			return fmt.Errorf("%s data not present in secret %s in namepspace %s", key, cert.SecretRef, cert.Namespace)
+		}
+
+		crt, ok := secret.Data[tlsCrt]
+		if !ok {
+			return fmt.Errorf("%s data not present in secret %s in namepspace %s", tlsCrt, cert.SecretRef, cert.Namespace)
+		}
+
+		tlsConfig.Certificates = append(tlsConfig.Certificates, config.Certificate{
+			Cert: string(crt),
+			Key:  string(key),
+		})
+	}
+
 	listenerBuilder := config.NewListenerBuilder()
-	listenerBuilder.AddHTTPManagerFilterChain(httpConnectionManagerBuilder.GetHTTPConnectionManager())
+	if err := listenerBuilder.AddHTTPManagerFilterChains(httpConnectionManagerBuilder.GetHTTPConnectionManager(), tlsConfig); err != nil {
+		return err
+	}
+
 	if err := listenerBuilder.Validate(); err != nil {
 		l.Error(err, "Failed validation for the Listener", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for Listener")

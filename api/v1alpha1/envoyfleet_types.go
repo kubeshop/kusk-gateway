@@ -25,6 +25,8 @@ SOFTWARE.
 package v1alpha1
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -76,6 +78,10 @@ type EnvoyFleetSpec struct {
 
 	// Access logging settings for the Envoy
 	AccessLog *AccessLoggingConfig `json:"accesslog,omitempty"`
+
+	// TLS configuration
+	//+optional
+	TLS TLS `json:"tls,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -124,6 +130,35 @@ type AccessLoggingConfig struct {
 	// Uses Kusk Gateway defaults if not specified.
 	// +optional
 	JsonTemplate map[string]string `json:"json_template,omitempty"`
+}
+
+type TLS struct {
+	// +optional
+	// If specified, the TLS listener will only support the specified cipher list when negotiating TLS 1.0-1.2 (this setting has no effect when negotiating TLS 1.3).
+	// If not specified, a default list will be used. Defaults are different for server (downstream) and client (upstream) TLS configurations.
+	// For more information see: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto
+	CipherSuites []string `json:"cipherSuites,omitempty"`
+
+	// +optional
+	// Minimum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_0 for servers.
+	TlsMinimumProtocolVersion string `json:"tlsMinimumProtocolVersion,omitempty"`
+
+	// +optional
+	// Maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
+	TlsMaximumProtocolVersion string `json:"tlsMaximumProtocolVersion,omitempty"`
+
+	// SecretName and Namespace combinations for locating TLS secrets containing TLS certificates
+	// You can specify more than one
+	// For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection
+	TlsSecrets []TLSSecrets `json:"tlsSecrets"`
+}
+
+type TLSSecrets struct {
+	// Name of the Kubernetes secret containing the TLS certificate
+	SecretRef string `json:"secretRef"`
+
+	// Namespace where the Kubernetes certificate resides
+	Namespace string `json:"namespace"`
 }
 
 // EnvoyFleetStatus defines the observed state of EnvoyFleet
@@ -175,5 +210,5 @@ type EnvoyFleetID struct {
 }
 
 func (e EnvoyFleetID) String() string {
-	return string(e.Name + "." + e.Namespace)
+	return fmt.Sprintf("%s.%s", e.Name, e.Namespace)
 }

@@ -7,6 +7,15 @@ metadata:
   name: kusk-gateway-manager-role
 rules:
 - apiGroups:
+  - ""
+  - v1
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.kusk.io
   resources:
   - apis
