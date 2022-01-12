@@ -98,13 +98,13 @@ spec:
   # OPTIONAL - specify TLS options for HTTPS traffic
   # If TLS specified, only tlsSecrets is a mandatory field
   # For supported cipherSuites see https://github.com/envoyproxy/envoy/blob/d1e91ad35e791d3e37038403e2ca1c64a1054b3c/api/envoy/extensions/transport_sockets/tls/v3/common.proto#L55
-  tls:
+  # tls:
     # cipherSuites:
     #   - ECDHE-ECDSA-AES128-SHA
     #   - ECDHE-RSA-AES128-SHA
     #   - AES128-GCM-SHA256
     # tlsMinimumProtocolVersion: TLSv1_2
     # tlsMaximumProtocolVersion: TLSv1_3
-    tlsSecrets:
-      - secretRef: my-cert
-        namespace: default
+    # tlsSecrets:
+    #   - secretRef: my-cert
+    #     namespace: default
