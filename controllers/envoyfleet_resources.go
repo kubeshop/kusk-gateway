@@ -15,7 +15,6 @@ import (
 
 const (
 	envoyHTTPListenerPort  int32 = 8080
-	envoyHTTPSListenerPort int32 = 8443
 	envoyAdminListenerPort int32 = 19000
 )
 
@@ -160,10 +159,6 @@ func (e *EnvoyFleetResources) generateDeployment() {
 			{
 				Name:          "http",
 				ContainerPort: envoyHTTPListenerPort,
-			},
-			{
-				Name:          "https",
-				ContainerPort: envoyHTTPSListenerPort,
 			},
 			{
 				Name:          "admin",
