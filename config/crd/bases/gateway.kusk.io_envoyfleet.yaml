@@ -1059,7 +1059,7 @@ spec:
                     type: string
                   tlsMinimumProtocolVersion:
                     type: string
-                  tlsSecretsConfig:
+                  tlsSecrets:
                     items:
                       properties:
                         namespace:
@@ -1076,7 +1076,7 @@ spec:
                       type: object
                     type: array
                 required:
-                - tlsSecretsConfig
+                - tlsSecrets
                 type: object
               tolerations:
                 description: Tolerations allow pod to be scheduled to the nodes that

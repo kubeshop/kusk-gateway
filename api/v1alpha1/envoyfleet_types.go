@@ -133,13 +133,13 @@ type AccessLoggingConfig struct {
 }
 
 type TLS struct {
-	CipherSuites              []string           `json:"cipherSuites,omitempty"`
-	TlsMinimumProtocolVersion string             `json:"tlsMinimumProtocolVersion,omitempty"`
-	TlsMaximumProtocolVersion string             `json:"tlsMaximumProtocolVersion,omitempty"`
-	TlsSecretsConfig          []TLSSecretsConfig `json:"tlsSecretsConfig"`
+	CipherSuites              []string     `json:"cipherSuites,omitempty"`
+	TlsMinimumProtocolVersion string       `json:"tlsMinimumProtocolVersion,omitempty"`
+	TlsMaximumProtocolVersion string       `json:"tlsMaximumProtocolVersion,omitempty"`
+	TlsSecrets                []TLSSecrets `json:"tlsSecrets"`
 }
 
-type TLSSecretsConfig struct {
+type TLSSecrets struct {
 	// Name of the Kuberenetes secret containing the TLS certificate
 	SecretRef string `json:"secretRef"`
 

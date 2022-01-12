@@ -101,6 +101,6 @@ spec:
   #     - AES128-GCM-SHA256
   #   tlsMinimumProtocolVersion: TLSv1_2
   #   tlsMaximumProtocolVersion: TLSv1_3
-  #   tlsSecretsConfig:
+  #   tlsSecrets:
   #     - secretRef: my-cert
   #       namespace: default

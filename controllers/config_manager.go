@@ -170,7 +170,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		TlsMaximumProtocolVersion: fleet.Spec.TLS.TlsMaximumProtocolVersion,
 	}
 
-	for _, cert := range fleet.Spec.TLS.TlsSecretsConfig {
+	for _, cert := range fleet.Spec.TLS.TlsSecrets {
 		var secret v1.Secret
 		err := c.Client.Get(ctx, types.NamespacedName{Name: cert.SecretRef, Namespace: cert.Namespace}, &secret)
 		if err != nil {
