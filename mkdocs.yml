@@ -26,6 +26,7 @@ nav:
   - Architecture: arch.md
   - For Developers: development.md
   - Troubleshooting: troubleshooting.md
+  - Observability: observability.md
 
 extra:
   analytics:

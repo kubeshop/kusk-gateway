@@ -73,10 +73,12 @@ spec:
     requests:
       cpu: 10m
       memory: 100M
-  # Put annotations to scrape pods.
+  # Put any additional annotations to the Enovy pod.
+  # Here we add the annotations for the Prometheus service discovery to scrape Envoy pods for the Prometheus metrics.
   # annotations:
   #   prometheus.io/scrape: 'true'
-  #   prometheus.io/port: '9102'
+  #   prometheus.io/port: '19000'
+  #   prometheus.io/path: /stats/prometheus
 
   ##### Scheduling directives
   # Read https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ for the details.
