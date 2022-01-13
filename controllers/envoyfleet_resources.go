@@ -169,10 +169,10 @@ func (e *EnvoyFleetResources) generateDeployment() {
 	// Set Enovy Pod Resources if specified
 	if e.fleet.Spec.Resources != nil {
 		if e.fleet.Spec.Resources.Limits != nil {
-			envoyContainer.Resources.Limits = *&e.fleet.Spec.Resources.Limits
+			envoyContainer.Resources.Limits = e.fleet.Spec.Resources.Limits
 		}
 		if e.fleet.Spec.Resources.Requests != nil {
-			envoyContainer.Resources.Requests = *&e.fleet.Spec.Resources.Requests
+			envoyContainer.Resources.Requests = e.fleet.Spec.Resources.Requests
 		}
 	}
 	// Create deployment
@@ -257,9 +257,8 @@ func (e *EnvoyFleetResources) generateService() {
 	if e.fleet.Spec.Service.ExternalTrafficPolicy != "" {
 		e.service.Spec.ExternalTrafficPolicy = e.fleet.Spec.Service.ExternalTrafficPolicy
 	}
-
-	return
 }
+
 func envoyFleetAsOwner(cr *gateway.EnvoyFleet) metav1.OwnerReference {
 	trueVar := true
 	return metav1.OwnerReference{
