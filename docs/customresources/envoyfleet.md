@@ -42,6 +42,21 @@ Currently supported parameters:
 * spec.accesslog.**format** required parameter specifies the format of the output **json** (structured) or **text**. Note that json format doesn't preserve fields order.
 * spec.accesslog.**text_template**|**json_template** optional parameters could be used to specify what exactly available Envoy request data to log. See [Envoy's Access Logging](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-strings) for the details. If not specified any - use Kusk Gateway provided defaults.
 
+* spec.**tls** optional parameter defines TLS settings for the EnvoyFleet. If not specified, the EnvoyFleet will accept only HTTP traffic.
+
+* spec.tls.**cipherSuites** An optional field, if specified, the TLS listener will only support the specified cipher list when negotiating TLS 1.0-1.2 (this setting has no effect when negotiating TLS 1.3). If not specified, a default list will be used. Defaults are different for server (downstream) and client (upstream) TLS configurations. For more information see: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto
+
+* spec.tls.**tlsMinimumProtocolVersion** An optional field specifying the ,inimum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_0 for servers.
+
+* spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
+
+* spec.tls.**tlsSecrets** SecretName and Namespace combinations for locating TLS secrets containing TLS certificates. You can specify more than one. For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection
+
+* spec.tls.tlsSecrets.**secretRef** Name of the Kubernetes secret containing the TLS certificate
+
+* spec.tls.tlsSecrets.**namespace** Namespace where the Kubernetes certificate resides
+
+
 ```yaml EnvoyFleet.yaml
 apiVersion: gateway.kusk.io/v1alpha1
 kind: EnvoyFleet
@@ -140,4 +155,14 @@ spec:
       path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
       response_code: "%RESPONSE_CODE%"
       duration: "%DURATION%"
+  # tls:
+    # cipherSuites:
+    #   - ECDHE-ECDSA-AES128-SHA
+    #   - ECDHE-RSA-AES128-SHA
+    #   - AES128-GCM-SHA256
+    # tlsMinimumProtocolVersion: TLSv1_2
+    # tlsMaximumProtocolVersion: TLSv1_3
+    # tlsSecrets:
+    #   - secretRef: my-cert
+    #     namespace: default
 ```
