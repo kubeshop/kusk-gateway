@@ -46,16 +46,15 @@ Currently supported parameters:
 
 * spec.tls.**cipherSuites** An optional field, if specified, the TLS listener will only support the specified cipher list when negotiating TLS 1.0-1.2 (this setting has no effect when negotiating TLS 1.3). If not specified, a default list will be used. Defaults are different for server (downstream) and client (upstream) TLS configurations. For more information see: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto
 
-* spec.tls.**tlsMinimumProtocolVersion** An optional field specifying the ,inimum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_0 for servers.
+* spec.tls.**tlsMinimumProtocolVersion** An optional field specifying the minimum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_0 for servers.
 
 * spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
 
-* spec.tls.**tlsSecrets** SecretName and Namespace combinations for locating TLS secrets containing TLS certificates. You can specify more than one. For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection
+* spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates. You can specify more than one. For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection.
 
-* spec.tls.tlsSecrets.**secretRef** Name of the Kubernetes secret containing the TLS certificate
+* spec.tls.tlsSecrets.**secretRef** is the name of the Kubernetes secret containing the TLS certificate.
 
-* spec.tls.tlsSecrets.**namespace** Namespace where the Kubernetes certificate resides
-
+* spec.tls.tlsSecrets.**namespace** is the namespace where that Kubernetes secret resides.
 
 ```yaml EnvoyFleet.yaml
 apiVersion: gateway.kusk.io/v1alpha1
@@ -155,6 +154,8 @@ spec:
       path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
       response_code: "%RESPONSE_CODE%"
       duration: "%DURATION%"
+
+  # TLS configuration
   # tls:
     # cipherSuites:
     #   - ECDHE-ECDSA-AES128-SHA
