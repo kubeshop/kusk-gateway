@@ -10,44 +10,49 @@ In order to let the frontend communicate with the backend, modern browsers requi
 configured. Luckily, Kusk Gateway Manager allows you to do that right in your OpenAPI specification file using the **x-kusk** [extension](extension.md).
 
 ## Prerequisites
+
 - Kusk Gateway Manager [installed](installation.md) into the cluster
 - Envoy LoadBalancer IP is reachable from your browser - we will refer to it as `EXTERNAL_IP`
 
 ## Deploy services
 
 1. First, deploy the backend and frontend services:
-```shell
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/backend.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml
-```
+
+    ```shell
+    kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/backend.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml
+    ```
 
 2. Expose the backend API via Kusk Gateway:
-```shell
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-backend-api.yaml
-```
+
+    ```shell
+    kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-backend-api.yaml
+    ```
 
 3. Expose the frontend via Kusk Gateway:
-```shell
-kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml
-```
+
+    ```shell
+    kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml
+    ```
 
 4. Test access
 
-We assume that you have followed the [installation instructions](installation.md) and have determined the external IP of the EnvoyFleet Service:
+    We assume that you have followed the [installation instructions](installation.md) and have determined the external IP of the EnvoyFleet Service:
 
-```
-export EXTERNAL_IP=192.168.64.2 # this IP is example, yours will be different
-```
+    ```shell
+    export EXTERNAL_IP=192.168.64.2 # this IP is example, yours will be different
+    ```
 
-Now, open the frontend in your browser: (http://192.168.64.2:8080/) and put `http://192.168.64.2:8080/todos` as your backend endpoint:
-![todobackend url prompt](todobackend-prompt.png)
+    Now, open the frontend in your browser: (<http://192.168.64.2:8080/>) and put `http://192.168.64.2:8080/todos` as your backend endpoint:
+    ![todobackend url prompt](todobackend-prompt.png)
 
-You should now see the TodoMVC app running against your backend, with Kusk Gateway delivering traffic to it via the EnvoyFleet:
-![result](result.png)
+    You should now see the TodoMVC app running against your backend, with Kusk Gateway delivering traffic to it via the EnvoyFleet:
+    ![result](result.png)
 
 ## How it's done - backend
 
 Inside the `x-kusk` extension [upstream](extension.md#upstream) is specified so that Kusk knows where to route traffic to:
+
 ```yaml
 x-kusk:
   upstream:
@@ -58,6 +63,7 @@ x-kusk:
 ```
 
 Then, [CORS](extension.md#cors) is configured:
+
 ```yaml
 x-kusk:
   upstream:
@@ -83,6 +89,7 @@ x-kusk:
 
 Now, in order to apply it to our cluster, you need to envelope it in a [API](customresources/api.md) CRD.
 You can do it either manually:
+
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
@@ -92,20 +99,23 @@ spec:
   spec: |
     # your spec goes here - be careful about the indentation
 ```
+
 Or by using [kgw](https://github.com/kubeshop/kgw) CLI tool:
-```
-kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml --name todo > kusk-backend-api.yaml
+
+```shell
+kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/spec/todospec.yaml --name todo > kusk-backend-api.yaml
 ```
 
 Apply it to the cluster:
-```
+
+```shell
 kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-backend-api.yaml
 ```
 
 or pipe directly from **kgw** CLI - you can even do it in your CI/CD:
-```
-kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml --name todo | kubectl apply -f -
 
+```shell
+kgw api generate -i https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml --name todo | kubectl apply -f -
 ```
 
 ## How it's done - frontend
@@ -136,6 +146,7 @@ spec:
 ```
 
 And apply it to the cluster:
-```
+
+```shell
 kubectl apply -f https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/kusk-frontend-route.yaml
 ```
