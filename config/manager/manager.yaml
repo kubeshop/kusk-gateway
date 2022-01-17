@@ -45,10 +45,10 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 100m
-            memory: 30Mi
+            cpu: 2000m
+            memory: 1024Mi
           requests:
-            cpu: 100m
-            memory: 20Mi
+            cpu: 500m
+            memory: 256Mi
       serviceAccountName: kusk-gateway-manager
       terminationGracePeriodSeconds: 10

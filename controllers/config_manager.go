@@ -41,6 +41,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/spec"
+	"github.com/kubeshop/kusk-gateway/validation"
 )
 
 const (
@@ -53,6 +54,7 @@ type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	EnvoyManager *manager.EnvoyConfigManager
+	Validator    *validation.Proxy
 	m            sync.Mutex
 }
 
@@ -100,7 +102,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api)

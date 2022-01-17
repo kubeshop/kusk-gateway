@@ -18,9 +18,8 @@ x-kusk:
     credentials: true
     max_age: 86200
   upstream:
-    service:
-      namespace: default
-      name: todo-backend
+    host:
+      hostname: host.docker.internal
       port: 3000
   path:
     prefix: /
@@ -97,6 +96,10 @@ paths:
       tags:
         - Todo
     patch:
+      x-kusk:
+        validation:
+          request:
+            enabled: true
       responses:
         '200':
           description: ''

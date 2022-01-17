@@ -27,6 +27,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net/http"
 	"os"
 
 	// +kubebuilder:scaffold:imports
@@ -45,6 +46,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/controllers"
 	"github.com/kubeshop/kusk-gateway/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/local"
+	"github.com/kubeshop/kusk-gateway/validation"
 )
 
 var (
@@ -56,7 +58,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(gateway.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -110,10 +112,20 @@ func main() {
 		}
 	}()
 
+	proxy := validation.New()
+
+	go func() {
+		if err := http.ListenAndServe(":17000", proxy); err != nil {
+			setupLog.Error(err, "unable to start validation proxy")
+			os.Exit(1)
+		}
+	}()
+
 	controllerConfigManager := controllers.KubeEnvoyConfigManager{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
 		EnvoyManager: envoyManager,
+		Validator:    proxy,
 	}
 
 	if err = (&controllers.EnvoyFleetReconciler{
@@ -156,7 +168,7 @@ func main() {
 		hookServer.Register(gateway.StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteMutator{Client: mgr.GetClient()}})
 		hookServer.Register(gateway.StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteValidator{}})
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)

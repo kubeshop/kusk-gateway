@@ -89,11 +89,11 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} .
 
 .PHONY: docker-build-debug
 docker-build-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

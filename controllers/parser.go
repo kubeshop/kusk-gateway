@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -13,6 +16,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/types"
 	"github.com/kubeshop/kusk-gateway/options"
+	"github.com/kubeshop/kusk-gateway/validation"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
@@ -38,7 +42,7 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -48,6 +52,11 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 			envoyConfiguration.AddVirtualHost(vh)
 		}
 	}
+
+	// fetch validation service host and port once
+	// TODO: fetch kusk gateway validator service dynamically
+	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
+	var validatorPort uint32 = 17000
 
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -94,9 +103,47 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 				rt.Action = routeRedirect
 			} else {
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+
+				var clusterName string
+
+				if finalOpts.Validation != nil &&
+					finalOpts.Validation.Request != nil &&
+					finalOpts.Validation.Request.Enabled != nil &&
+					*finalOpts.Validation.Request.Enabled {
+
+					// attach service id and operation id headers so that validator will know which service should
+					// serve this request
+					serviceID := generateServiceID(upstreamHostname, upstreamPort)
+					operationID := generateOperationID(method, path)
+
+					proxy.Add(serviceID, upstreamHostname, upstreamPort, spec, opts)
+
+					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+						Header: &envoy_config_core_v3.HeaderValue{
+							Key:   "X-Kusk-Service-ID",
+							Value: serviceID,
+						},
+						Append: wrapperspb.Bool(false),
+					})
+
+					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+						Header: &envoy_config_core_v3.HeaderValue{
+							Key:   "X-Kusk-Operation-ID",
+							Value: operationID,
+						},
+						Append: wrapperspb.Bool(false),
+					})
+
+					clusterName = generateClusterName(validatorHostname, validatorPort)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
+					}
+
+				} else {
+					clusterName = generateClusterName(upstreamHostname, upstreamPort)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+					}
 				}
 
 				var rewriteOpts *options.RewriteRegex
@@ -282,6 +329,22 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 		corsOpts.MaxAge,
 		corsOpts.Credentials,
 	)
+}
+
+// generateServiceID generates a unique, deterministic ID for a given API service,
+// safe to be used in a HTTP header value.
+func generateServiceID(hostname string, port uint32) string {
+	hash := sha256.New()
+	hash.Write([]byte(fmt.Sprintf("%s:%d", hostname, port)))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// generateOperationID generates a unique, deterministic ID for a given API route,
+// safe to be used in a HTTP header value.
+func generateOperationID(method, path string) string {
+	hash := sha256.New()
+	hash.Write([]byte(fmt.Sprintf("%s:%s", method, path)))
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, port uint32) {
