@@ -5,6 +5,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -12,6 +13,8 @@ import (
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/kubeshop/kusk-gateway/cert"
 )
 
 const (
@@ -68,6 +71,140 @@ type Certificate struct {
 	Key  string
 }
 
+func makeHTTPSFilterChain(
+	certificates []Certificate,
+	tlsParams *tls.TlsParameters,
+	anyHttpConnectionManager *anypb.Any,
+) (*listener.FilterChain, error) {
+	tlsCerts := make([]*tls.TlsCertificate, len(certificates))
+	for _, cert := range certificates {
+
+		tlsCert := &tls.TlsCertificate{
+			CertificateChain: &core.DataSource{
+				Specifier: &core.DataSource_InlineString{InlineString: cert.Cert},
+			},
+			PrivateKey: &core.DataSource{
+				Specifier: &core.DataSource_InlineString{InlineString: cert.Key},
+			},
+		}
+
+		if err := tlsCert.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid tls certificate: %w", err)
+		}
+
+		tlsCerts = append(tlsCerts, tlsCert)
+	}
+
+	tlsDownstreamContext := &tls.DownstreamTlsContext{
+		CommonTlsContext: &tls.CommonTlsContext{
+			TlsCertificates: tlsCerts,
+			TlsParams:       tlsParams,
+		},
+	}
+
+	anyTls, err := anypb.New(tlsDownstreamContext)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
+	}
+
+	return &listener.FilterChain{
+		FilterChainMatch: &listener.FilterChainMatch{TransportProtocol: "tls"},
+		Filters: []*listener.Filter{
+			{
+				Name:       wellknown.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{TypedConfig: anyHttpConnectionManager},
+			},
+		},
+		TransportSocket: &core.TransportSocket{
+			Name:       wellknown.TransportSocketTLS,
+			ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
+		},
+	}, nil
+}
+
+func makeHTTPSFilterChainWithHosts(
+	certificate Certificate,
+	hosts []string,
+	tlsParams *tls.TlsParameters,
+	anyHttpConnectionManager *anypb.Any,
+) (*listener.FilterChain, error) {
+	tlsCert := &tls.TlsCertificate{
+		CertificateChain: &core.DataSource{
+			Specifier: &core.DataSource_InlineString{InlineString: certificate.Cert},
+		},
+		PrivateKey: &core.DataSource{
+			Specifier: &core.DataSource_InlineString{InlineString: certificate.Key},
+		},
+	}
+
+	if err := tlsCert.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid tls certificate: %w", err)
+	}
+
+	tlsDownstreamContext := &tls.DownstreamTlsContext{
+		CommonTlsContext: &tls.CommonTlsContext{
+			TlsCertificates: []*tls.TlsCertificate{tlsCert},
+			TlsParams:       tlsParams,
+		},
+	}
+
+	if err := tlsDownstreamContext.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid tls downstream context: %w", err)
+	}
+
+	anyTls, err := anypb.New(tlsDownstreamContext)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
+	}
+
+	return &listener.FilterChain{
+		FilterChainMatch: &listener.FilterChainMatch{
+			TransportProtocol: "tls",
+			ServerNames:       hosts,
+		},
+		Filters: []*listener.Filter{
+			{
+				Name:       wellknown.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{TypedConfig: anyHttpConnectionManager},
+			},
+		},
+		TransportSocket: &core.TransportSocket{
+			Name:       wellknown.TransportSocketTLS,
+			ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
+		},
+	}, nil
+}
+
+func getTLSParameters(tlsConfig TLS) (*tls.TlsParameters, error) {
+	tlsParams := &tls.TlsParameters{}
+
+	if len(tlsConfig.CipherSuites) > 0 {
+		tlsParams.CipherSuites = tlsConfig.CipherSuites
+	}
+
+	if tlsConfig.TlsMinimumProtocolVersion != "" {
+		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMinimumProtocolVersion]
+		if !ok {
+			return nil, fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMinimumProtocolVersion)
+		}
+		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
+	}
+
+	if tlsConfig.TlsMaximumProtocolVersion != "" {
+		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMaximumProtocolVersion]
+		if !ok {
+			return nil, fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMaximumProtocolVersion)
+		}
+		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
+	}
+
+	if err := tlsParams.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid tls parameters: %w", err)
+	}
+
+	return tlsParams, nil
+}
+
 // AddHTTPManagerFilterChains inserts HTTP Manager as the listener filter chain(s)
 // If certificates are present an additional TLS-enabled filter chain is added and protocol type detection is enabled with TLS Inspector Listener filter.
 func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.HttpConnectionManager, tlsConfig TLS) error {
@@ -97,84 +234,43 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 	// Make sure plain http manager filter chain is selected when protocol type is raw_buffer (not tls).
 	hcmPlainChain.FilterChainMatch = &listener.FilterChainMatch{TransportProtocol: "raw_buffer"}
 
+	tlsParams, err := getTLSParameters(tlsConfig)
+	if err != nil {
+		return fmt.Errorf("unable to get TLS Parameters: %w", err)
+	}
+
+	certsWithHost := map[string]Certificate{}
+	certsWithNoHost := []Certificate{}
+
+	for _, tlsCert := range tlsConfig.Certificates {
+		c, err := cert.FromBytes([]byte(tlsCert.Cert))
+		if err != nil {
+			return fmt.Errorf("unable to get certificate: %w", err)
+		}
+
+		if len(c.DNSNames) > 0 {
+			certsWithHost[strings.Join(c.DNSNames, ",")] = tlsCert
+		} else {
+			certsWithNoHost = append(certsWithNoHost, tlsCert)
+		}
+	}
+
+	for dnsNames, certificate := range certsWithHost {
+		filterChain, err := makeHTTPSFilterChainWithHosts(certificate, strings.Split(dnsNames, ","), tlsParams, anyHTTPManagerConfig)
+		if err != nil {
+			return fmt.Errorf("unable to make HTTPS filter chain with hosts: %w", err)
+		}
+		l.addListenerFilterChain(filterChain)
+	}
+
 	// Secure (TLS) HTTP manager filter chain.
 	// Selected when the connection type is tls.
-	hcmSecureChain := &listener.FilterChain{
-		FilterChainMatch: &listener.FilterChainMatch{TransportProtocol: "tls"},
-		Filters:          []*listener.Filter{hcmFilter},
-	}
-
-	tlsCerts := make([]*tls.TlsCertificate, len(tlsConfig.Certificates))
-	for _, cert := range tlsConfig.Certificates {
-
-		tlsCert := &tls.TlsCertificate{
-			CertificateChain: &core.DataSource{
-				Specifier: &core.DataSource_InlineString{InlineString: cert.Cert},
-			},
-			PrivateKey: &core.DataSource{
-				Specifier: &core.DataSource_InlineString{InlineString: cert.Key},
-			},
-		}
-
-		if err := tlsCert.Validate(); err != nil {
-			return fmt.Errorf("invalid tls certificate: %w", err)
-		}
-
-		tlsCerts = append(tlsCerts, tlsCert)
-	}
-
-	tlsParams := &tls.TlsParameters{}
-
-	if len(tlsConfig.CipherSuites) > 0 {
-		tlsParams.CipherSuites = tlsConfig.CipherSuites
-	}
-
-	if tlsConfig.TlsMinimumProtocolVersion != "" {
-		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMinimumProtocolVersion]
-		if !ok {
-			return fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMinimumProtocolVersion)
-		}
-		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
-	}
-
-	if tlsConfig.TlsMaximumProtocolVersion != "" {
-		tlsProtocolValue, ok := tls.TlsParameters_TlsProtocol_value[tlsConfig.TlsMaximumProtocolVersion]
-		if !ok {
-			return fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMaximumProtocolVersion)
-		}
-		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
-	}
-
-	if err := tlsParams.Validate(); err != nil {
-		return fmt.Errorf("invalid tls parameters: %w", err)
-	}
-
-	tlsDownstreamContext := &tls.DownstreamTlsContext{
-		CommonTlsContext: &tls.CommonTlsContext{
-			TlsCertificates: tlsCerts,
-			TlsParams:       tlsParams,
-		},
-	}
-
-	if err := tlsDownstreamContext.Validate(); err != nil {
-		return fmt.Errorf("invalid tls downstream context: %w", err)
-	}
-
-	anyTls, err := anypb.New(tlsDownstreamContext)
+	filterChain, err := makeHTTPSFilterChain(certsWithNoHost, tlsParams, anyHTTPManagerConfig)
 	if err != nil {
-		return fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
+		return fmt.Errorf("unable to make HTTPS filter chain: %w", err)
 	}
 
-	hcmSecureChain.TransportSocket = &core.TransportSocket{
-		Name:       wellknown.TransportSocketTLS,
-		ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
-	}
-
-	if err := hcmPlainChain.Validate(); err != nil {
-		return fmt.Errorf("invalid secure listener chain: %w", err)
-	}
-
-	l.addListenerFilterChain(hcmSecureChain)
+	l.addListenerFilterChain(filterChain)
 
 	return nil
 }
