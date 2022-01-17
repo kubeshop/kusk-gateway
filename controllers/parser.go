@@ -249,16 +249,19 @@ func generateRedirect(redirectOpts *options.RedirectOptions) (*route.Route_Redir
 		return nil, nil
 	}
 
-	redirect, err := types.NewRouteRedirectBuilder().
+	builder := types.NewRouteRedirectBuilder().
 		HostRedirect(redirectOpts.HostRedirect).
 		PortRedirect(redirectOpts.PortRedirect).
 		SchemeRedirect(redirectOpts.SchemeRedirect).
-		RegexRedirect(redirectOpts.RewriteRegex.Pattern, redirectOpts.RewriteRegex.Substitution).
 		PathRedirect(redirectOpts.PathRedirect).
 		ResponseCode(redirectOpts.ResponseCode).
-		StripQuery(redirectOpts.StripQuery).
-		ValidateAndReturn()
+		StripQuery(redirectOpts.StripQuery)
 
+	if redirectOpts.RewriteRegex != nil {
+		builder = builder.RegexRedirect(redirectOpts.RewriteRegex.Pattern, redirectOpts.RewriteRegex.Substitution)
+	}
+
+	redirect, err := builder.ValidateAndReturn()
 	if err != nil {
 		return nil, err
 	}
