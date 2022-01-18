@@ -5,16 +5,14 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/zakjan/cert-chain-resolver/certUtil"
 	"google.golang.org/protobuf/types/known/anypb"
-
-	"github.com/kubeshop/kusk-gateway/cert"
 )
 
 const (
@@ -72,57 +70,6 @@ type Certificate struct {
 }
 
 func makeHTTPSFilterChain(
-	certificates []Certificate,
-	tlsParams *tls.TlsParameters,
-	anyHttpConnectionManager *anypb.Any,
-) (*listener.FilterChain, error) {
-	tlsCerts := make([]*tls.TlsCertificate, len(certificates))
-	for _, cert := range certificates {
-
-		tlsCert := &tls.TlsCertificate{
-			CertificateChain: &core.DataSource{
-				Specifier: &core.DataSource_InlineString{InlineString: cert.Cert},
-			},
-			PrivateKey: &core.DataSource{
-				Specifier: &core.DataSource_InlineString{InlineString: cert.Key},
-			},
-		}
-
-		if err := tlsCert.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid tls certificate: %w", err)
-		}
-
-		tlsCerts = append(tlsCerts, tlsCert)
-	}
-
-	tlsDownstreamContext := &tls.DownstreamTlsContext{
-		CommonTlsContext: &tls.CommonTlsContext{
-			TlsCertificates: tlsCerts,
-			TlsParams:       tlsParams,
-		},
-	}
-
-	anyTls, err := anypb.New(tlsDownstreamContext)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal TLS config to typed struct: %w", err)
-	}
-
-	return &listener.FilterChain{
-		FilterChainMatch: &listener.FilterChainMatch{TransportProtocol: "tls"},
-		Filters: []*listener.Filter{
-			{
-				Name:       wellknown.HTTPConnectionManager,
-				ConfigType: &listener.Filter_TypedConfig{TypedConfig: anyHttpConnectionManager},
-			},
-		},
-		TransportSocket: &core.TransportSocket{
-			Name:       wellknown.TransportSocketTLS,
-			ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: anyTls},
-		},
-	}, nil
-}
-
-func makeHTTPSFilterChainWithHosts(
 	certificate Certificate,
 	hosts []string,
 	tlsParams *tls.TlsParameters,
@@ -239,38 +186,27 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 		return fmt.Errorf("unable to get TLS Parameters: %w", err)
 	}
 
-	certsWithHost := map[string]Certificate{}
-	certsWithNoHost := []Certificate{}
-
 	for _, tlsCert := range tlsConfig.Certificates {
-		c, err := cert.FromBytes([]byte(tlsCert.Cert))
+		certChain, err := certUtil.DecodeCertificates([]byte(tlsCert.Cert))
 		if err != nil {
-			return fmt.Errorf("unable to get certificate: %w", err)
+			return fmt.Errorf("unable to decode certificates: %w", err)
 		}
 
-		if len(c.DNSNames) > 0 {
-			certsWithHost[strings.Join(c.DNSNames, ",")] = tlsCert
-		} else {
-			certsWithNoHost = append(certsWithNoHost, tlsCert)
+		if len(certChain) == 0 {
+			return fmt.Errorf("resulting cert chain length was 0")
 		}
-	}
 
-	for dnsNames, certificate := range certsWithHost {
-		filterChain, err := makeHTTPSFilterChainWithHosts(certificate, strings.Split(dnsNames, ","), tlsParams, anyHTTPManagerConfig)
+		leafCert := certChain[0]
+		if len(leafCert.DNSNames) == 0 {
+			return fmt.Errorf("found certificate without SAN. All provided certificates must have at least one SAN")
+		}
+
+		filterChain, err := makeHTTPSFilterChain(tlsCert, leafCert.DNSNames, tlsParams, anyHTTPManagerConfig)
 		if err != nil {
 			return fmt.Errorf("unable to make HTTPS filter chain with hosts: %w", err)
 		}
 		l.addListenerFilterChain(filterChain)
 	}
-
-	// Secure (TLS) HTTP manager filter chain.
-	// Selected when the connection type is tls.
-	filterChain, err := makeHTTPSFilterChain(certsWithNoHost, tlsParams, anyHTTPManagerConfig)
-	if err != nil {
-		return fmt.Errorf("unable to make HTTPS filter chain: %w", err)
-	}
-
-	l.addListenerFilterChain(filterChain)
 
 	return nil
 }
