@@ -27,6 +27,8 @@ const (
 	HeaderOperationID = "X-Kusk-Operation-ID"
 )
 
+// operation holds original route parameters from spec
+// it is used to quickly access route parameters by OperationID (extracted from HeaderOperationID header)
 type operation struct {
 	method string
 	path   string
@@ -34,6 +36,8 @@ type operation struct {
 }
 
 type Service struct {
+	ID string
+
 	Host string
 	Port uint32
 
@@ -41,6 +45,52 @@ type Service struct {
 	Opts       *options.Options
 	Router     routers.Router
 	Operations map[string]*operation
+}
+
+func NewService(id string, host string, port uint32, s *openapi3.T, opts *options.Options) (*Service, error) {
+	specInt, err := copystructure.Copy(*s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy spec: %w", err)
+	}
+
+	spec := specInt.(openapi3.T)
+
+	// we will always use localhost and attach prefix, if any
+	spec.Servers = nil
+	if opts.Path != nil && opts.Path.Prefix != "" {
+		spec.Servers = []*openapi3.Server{{
+			URL: fmt.Sprintf("http://localhost%s", opts.Path.Prefix),
+		}}
+	}
+
+	router, err := gorillamux.NewRouter(&spec)
+	if err != nil {
+		if err != nil {
+			return nil, fmt.Errorf("failed to create router: %w", err)
+		}
+	}
+
+	operations := map[string]*operation{}
+
+	for path, pathItem := range spec.Paths {
+		for method, op := range pathItem.Operations() {
+			operations[GenerateOperationID(method, path)] = &operation{
+				method: method,
+				path:   path,
+				op:     op,
+			}
+		}
+	}
+
+	return &Service{
+		ID:         id,
+		Host:       host,
+		Port:       port,
+		Spec:       &spec,
+		Opts:       opts,
+		Router:     router,
+		Operations: operations,
+	}, nil
 }
 
 type Proxy struct {
@@ -152,63 +202,30 @@ func (p *Proxy) proxy(r *http.Request, service *Service, operation *operation) (
 	return resp, nil
 }
 
-func (p *Proxy) Add(serviceID string, host string, port uint32, s *openapi3.T, opts *options.Options) {
+func (p *Proxy) UpdateServices(services []*Service) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
-	specInt, err := copystructure.Copy(*s)
-	if err != nil {
-		panic(err)
-	}
+	// rebuild the services map
+	p.services = make(map[string]*Service, len(services))
 
-	spec := specInt.(openapi3.T)
-
-	spec.Servers = nil
-
-	if opts.Path != nil && opts.Path.Prefix != "" {
-		spec.Servers = []*openapi3.Server{{
-			URL: fmt.Sprintf("http://localhost%s", opts.Path.Prefix),
-		}}
-	}
-
-	router, err := gorillamux.NewRouter(&spec)
-	if err != nil {
-		panic(err)
-	}
-
-	operations := map[string]*operation{}
-
-	for path, pathItem := range spec.Paths {
-		for method, op := range pathItem.Operations() {
-			operations[generateOperationID(method, path)] = &operation{
-				method: method,
-				path:   path,
-				op:     op,
-			}
-		}
-	}
-
-	p.services[serviceID] = &Service{
-		Host:       host,
-		Port:       port,
-		Spec:       &spec,
-		Opts:       opts,
-		Router:     router,
-		Operations: operations,
+	for _, service := range services {
+		p.services[service.ID] = service
 	}
 }
 
-func (p *Proxy) Remove(serviceID string) {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	delete(p.services, serviceID)
-}
-
-// generateOperationID generates a unique, deterministic ID for a given API route,
+// GenerateOperationID generates a unique, deterministic ID for a given API route,
 // safe to be used in a HTTP header value.
-func generateOperationID(method, path string) string {
+func GenerateOperationID(method, path string) string {
 	hash := sha256.New()
 	hash.Write([]byte(fmt.Sprintf("%s:%s", method, path)))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// GenerateServiceID generates a unique, deterministic ID for a given API service,
+// safe to be used in a HTTP header value.
+func GenerateServiceID(hostname string, port uint32) string {
+	hash := sha256.New()
+	hash.Write([]byte(fmt.Sprintf("%s:%d", hostname, port)))
 	return hex.EncodeToString(hash.Sum(nil))
 }

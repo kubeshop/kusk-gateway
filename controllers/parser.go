@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -52,6 +50,9 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 			envoyConfiguration.AddVirtualHost(vh)
 		}
 	}
+
+	// store proxied services in map to de-duplicate
+	proxiedServices := map[string]*validation.Service{}
 
 	// fetch validation service host and port once
 	// TODO: fetch kusk gateway validator service dynamically
@@ -111,12 +112,20 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					finalOpts.Validation.Request.Enabled != nil &&
 					*finalOpts.Validation.Request.Enabled {
 
+					// create proxied service if needed
+					serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
+					if _, ok := proxiedServices[serviceID]; !ok {
+						proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
+						if err != nil {
+							return fmt.Errorf("failed to create proxied service: %w", err)
+						}
+
+						proxiedServices[serviceID] = proxiedService
+					}
+
 					// attach service id and operation id headers so that validator will know which service should
 					// serve this request
-					serviceID := generateServiceID(upstreamHostname, upstreamPort)
-					operationID := generateOperationID(method, path)
-
-					proxy.Add(serviceID, upstreamHostname, upstreamPort, spec, opts)
+					operationID := validation.GenerateOperationID(method, path)
 
 					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 						Header: &envoy_config_core_v3.HeaderValue{
@@ -172,6 +181,14 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 			}
 		}
 	}
+
+	// update validation proxy
+	proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
+	for _, service := range proxiedServices {
+		proxiedServicesArray = append(proxiedServicesArray, service)
+	}
+
+	proxy.UpdateServices(proxiedServicesArray)
 
 	return nil
 }
@@ -329,22 +346,6 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 		corsOpts.MaxAge,
 		corsOpts.Credentials,
 	)
-}
-
-// generateServiceID generates a unique, deterministic ID for a given API service,
-// safe to be used in a HTTP header value.
-func generateServiceID(hostname string, port uint32) string {
-	hash := sha256.New()
-	hash.Write([]byte(fmt.Sprintf("%s:%d", hostname, port)))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
-// generateOperationID generates a unique, deterministic ID for a given API route,
-// safe to be used in a HTTP header value.
-func generateOperationID(method, path string) string {
-	hash := sha256.New()
-	hash.Write([]byte(fmt.Sprintf("%s:%s", method, path)))
-	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, port uint32) {
