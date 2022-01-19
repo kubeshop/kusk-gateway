@@ -104,10 +104,6 @@ spec:
             - Todo
         patch:
           x-kusk:
-            path:
-              rewrite:
-                pattern: '/todos'
-                substitution: '/abgl'
             validation:
               request:
                 enabled: true
