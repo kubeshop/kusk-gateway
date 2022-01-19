@@ -3,6 +3,7 @@ package validation
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -130,8 +131,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Host = "localhost"
 
 	if err := p.validate(r, service, operation); err != nil {
-		// TODO: proper error handling
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+
+		if multiError, ok := err.(openapi3.MultiError); ok {
+			errs := make([]string, len(multiError))
+			for i := range multiError {
+				errs[i] = multiError[i].Error()
+			}
+
+			_ = json.NewEncoder(w).Encode(Error{errs})
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -159,7 +171,7 @@ func (p *Proxy) validate(r *http.Request, service *Service, operation *operation
 
 	route, pathParams, err := service.Router.FindRoute(r)
 	if err != nil {
-		return fmt.Errorf("failed to find route to validate against: %w", err)
+		return err
 	}
 
 	return openapi3filter.ValidateRequest(r.Context(), &openapi3filter.RequestValidationInput{
