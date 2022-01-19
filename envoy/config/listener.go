@@ -11,8 +11,9 @@ import (
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/zakjan/cert-chain-resolver/certUtil"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/kubeshop/kusk-gateway/cert"
 )
 
 const (
@@ -187,7 +188,7 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 	}
 
 	for _, tlsCert := range tlsConfig.Certificates {
-		certChain, err := certUtil.DecodeCertificates([]byte(tlsCert.Cert))
+		certChain, err := cert.DecodeCertificates([]byte(tlsCert.Cert))
 		if err != nil {
 			return fmt.Errorf("unable to decode certificates: %w", err)
 		}
