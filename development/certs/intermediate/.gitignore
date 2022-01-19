@@ -1,0 +1,12 @@
+dh
+*.der
+*.clr
+*.crl
+*.crt
+*.csr
+*.srl
+*.key
+*.p12
+*.pem
+index*
+serial*

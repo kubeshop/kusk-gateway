@@ -143,7 +143,7 @@ func getTLSParameters(tlsConfig TLS) (*tls.TlsParameters, error) {
 		if !ok {
 			return nil, fmt.Errorf("unsupported tls protocol version %s", tlsConfig.TlsMaximumProtocolVersion)
 		}
-		tlsParams.TlsMinimumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
+		tlsParams.TlsMaximumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
 	}
 
 	if err := tlsParams.Validate(); err != nil {
