@@ -25,8 +25,9 @@ spec:
         credentials: true
         max_age: 86200
       upstream:
-        host:
-          hostname: host.docker.internal
+        service:
+          namespace: default
+          name: todo-backend
           port: 3000
       path:
         prefix: /
