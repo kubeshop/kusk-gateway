@@ -11,6 +11,10 @@ x-kusk:
     - example.com
   
   disabled: false
+  
+  validation:
+    request:
+      enabled: true # enable automatic request validation using OpenAPI spec
 
   upstream: # upstream and redirect are mutually exclusive
     host: # host and service are mutually exclusive
@@ -248,3 +252,10 @@ The QoS objects contains the following properties to configure quality of servic
 | retries         | Total number of 5xx retries (default is 0) |
 | request_timeout | Total request timeout (seconds)            |
 | idle_timeout    | Idle connection timeout (seconds)          |
+
+### validation
+The validation objects contains the following properties to configure automatic request validation:
+
+| Name                       | Description                               |
+|----------------------------|-------------------------------------------|
+| validation.request.enabled | boolean flag to enable request validation |

@@ -84,6 +84,9 @@ spec:
       description: API Management facade for a very handy and free online HTTP tool.
       version: '1.0'
     x-kusk:
+      validation:
+        request:
+          enabled: true # enable automatic request validation using OpenAPI spec
       upstream:
         service:
           name: httpbin
