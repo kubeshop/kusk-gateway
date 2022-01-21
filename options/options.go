@@ -119,5 +119,11 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.Websocket == nil && in.Websocket != nil {
 		o.Websocket = in.Websocket
 	}
+
+	// Validation
+	if o.Validation == nil && in.Validation != nil {
+		o.Validation = in.Validation
+	}
+
 	return
 }
