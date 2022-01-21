@@ -1,0 +1,83 @@
+[ ca ]
+default_ca		= CA_default
+
+[ CA_default ]
+dir			= ./
+certs			= $dir
+crl_dir			= $dir/crl
+database		= $dir/index.txt
+new_certs_dir		= $dir
+certificate		= $dir/server.pem
+serial			= $dir/serial
+crl			= $dir/crl.pem
+private_key		= $dir/server.key
+RANDFILE		= $dir/.rand
+name_opt		= ca_default
+cert_opt		= ca_default
+default_days		= 60
+default_crl_days	= 30
+default_md		= sha256
+preserve		= no
+policy			= policy_anything
+
+[ policy_match ]
+countryName		= match
+stateOrProvinceName	= match
+organizationName	= match
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ policy_anything ]
+countryName		= optional
+stateOrProvinceName	= optional
+localityName		= optional
+organizationName	= optional
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ req ]
+prompt			= no
+distinguished_name	= server
+default_bits		= 2048
+input_password		= whatever
+output_password		= whatever
+req_extensions		= v3_req
+x509_extensions =  x509_extensions
+
+[server]
+countryName		= FR
+stateOrProvinceName	= Example
+localityName		= Somewhere
+organizationName	= Example Inc.
+emailAddress		= admin@example.org
+# Use a friendly name here because its presented to the user. The server's DNS
+#   names are placed in Subject Alternate Names. Plus, DNS names here is deprecated
+#   by both IETF and CA/Browser Forums. If you place a DNS name here, then you
+#   must include the DNS name in the SAN too (otherwise, Chrome and others that
+#   strictly follow the CA/Browser Baseline Requirements will fail).
+commonName		= "www.example2.com"
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[ x509_extensions ]
+subjectKeyIdentifier        = hash
+authorityKeyIdentifier  = keyid,issuer
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+# RFC 5280, Section 4.2.1.12 makes EKU optional
+#   CA/Browser Baseline Requirements, Appendix (B)(3)(G) makes me confused
+#   In either case, you probably only need serverAuth.
+# extendedKeyUsage  = serverAuth, clientAuth
+
+[alt_names]
+DNS.1 = www.example2.com
+DNS.2 = second2.example.com
+DNS.3 = localhost
+DNS.4 = localhost.localdomain
+DNS.5 = 127.0.0.1

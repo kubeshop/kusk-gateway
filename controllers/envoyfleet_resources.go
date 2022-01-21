@@ -219,7 +219,6 @@ func (e *EnvoyFleetResources) generateDeployment() {
 			},
 		},
 	}
-	return
 }
 
 func (e *EnvoyFleetResources) generateService() {
