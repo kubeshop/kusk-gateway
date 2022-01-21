@@ -134,6 +134,7 @@ When set to true at the top level all paths will be hidden; you will have to ove
 ### hosts
 
 This string array property configures hosts (i.e. `Host` HTTP header) list the Gateway will listen traffic for. Wildcard hosts are supported in the suffix or prefix form, exclusively, i.e.:
+
 - *.example.org
 - example.*
 

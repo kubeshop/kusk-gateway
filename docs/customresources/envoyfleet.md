@@ -50,7 +50,9 @@ Currently supported parameters:
 
 * spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
 
-* spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates. You can specify more than one. For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection.
+* spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates.
+You can specify more than one.
+Kusk Gateway Manager pulls the certificates from the secrets, extracts the matching hostnames from SubjectAlternativeNames (SAN) certificate field and configures Envoy to use that certificate for those hostnames.
 
 * spec.tls.tlsSecrets.**secretRef** is the name of the Kubernetes secret containing the TLS certificate.
 
