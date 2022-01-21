@@ -52,7 +52,7 @@ kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-ma
 
 # Install the "default" EnvoyFleet Custom Resource, which will be used by the Kusk Gateway
 # to create Envoy Fleet Deployment and Service with the type LoadBalancer
-helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
+helm install kusk-gateway-envoyfleet-default kubeshop/kusk-gateway-envoyfleet -n kusk-system
 
 ```
 
