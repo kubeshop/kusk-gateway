@@ -58,7 +58,7 @@ Kusk Gateway Manager pulls the certificates from the secrets, extracts the match
 
 * spec.tls.tlsSecrets.**namespace** is the namespace where that Kubernetes secret resides.
 
-```yaml EnvoyFleet.yaml
+```yaml
 apiVersion: gateway.kusk.io/v1alpha1
 kind: EnvoyFleet
 metadata:
