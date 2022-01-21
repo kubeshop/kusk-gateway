@@ -21,7 +21,6 @@ x-kusk:
     service:
       namespace: default
       name: todo-backend
-      port: 3000
   path:
     prefix: /
 paths:
@@ -97,6 +96,10 @@ paths:
       tags:
         - Todo
     patch:
+      x-kusk:
+        validation:
+          request:
+            enabled: true
       responses:
         '200':
           description: ''
