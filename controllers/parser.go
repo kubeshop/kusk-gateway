@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -13,6 +14,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/envoy/config"
 	"github.com/kubeshop/kusk-gateway/envoy/types"
 	"github.com/kubeshop/kusk-gateway/options"
+	"github.com/kubeshop/kusk-gateway/validation"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
@@ -38,7 +40,7 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -48,6 +50,14 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 			envoyConfiguration.AddVirtualHost(vh)
 		}
 	}
+
+	// store proxied services in map to de-duplicate
+	proxiedServices := map[string]*validation.Service{}
+
+	// fetch validation service host and port once
+	// TODO: fetch kusk gateway validator service dynamically
+	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
+	var validatorPort uint32 = 17000
 
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -94,9 +104,55 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 				rt.Action = routeRedirect
 			} else {
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+
+				var clusterName string
+
+				if finalOpts.Validation != nil &&
+					finalOpts.Validation.Request != nil &&
+					finalOpts.Validation.Request.Enabled != nil &&
+					*finalOpts.Validation.Request.Enabled {
+
+					// create proxied service if needed
+					serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
+					if _, ok := proxiedServices[serviceID]; !ok {
+						proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
+						if err != nil {
+							return fmt.Errorf("failed to create proxied service: %w", err)
+						}
+
+						proxiedServices[serviceID] = proxiedService
+					}
+
+					// attach service id and operation id headers so that validator will know which service should
+					// serve this request
+					operationID := validation.GenerateOperationID(method, path)
+
+					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+						Header: &envoy_config_core_v3.HeaderValue{
+							Key:   validation.HeaderServiceID,
+							Value: serviceID,
+						},
+						Append: wrapperspb.Bool(false),
+					})
+
+					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+						Header: &envoy_config_core_v3.HeaderValue{
+							Key:   validation.HeaderOperationID,
+							Value: operationID,
+						},
+						Append: wrapperspb.Bool(false),
+					})
+
+					clusterName = generateClusterName(validatorHostname, validatorPort)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
+					}
+
+				} else {
+					clusterName = generateClusterName(upstreamHostname, upstreamPort)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+					}
 				}
 
 				var rewriteOpts *options.RewriteRegex
@@ -125,6 +181,14 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, opts
 			}
 		}
 	}
+
+	// update validation proxy
+	proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
+	for _, service := range proxiedServices {
+		proxiedServicesArray = append(proxiedServicesArray, service)
+	}
+
+	proxy.UpdateServices(proxiedServicesArray)
 
 	return nil
 }

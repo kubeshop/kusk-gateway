@@ -43,10 +43,11 @@ type SubOptions struct {
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path      *PathOptions `yaml:"path,omitempty" json:"path,omitempty"`
-	QoS       *QoSOptions  `yaml:"qos,omitempty" json:"qos,omitempty"`
-	CORS      *CORSOptions `yaml:"cors,omitempty" json:"cors,omitempty"`
-	Websocket *bool        `json:"websocket,omitempty" yaml:"websocket,omitempty"`
+	Path       *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS        *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS       *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Websocket  *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
+	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -59,6 +60,7 @@ func (o SubOptions) Validate() error {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}
+
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),
 		v.Field(&o.Redirect),
@@ -117,5 +119,11 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.Websocket == nil && in.Websocket != nil {
 		o.Websocket = in.Websocket
 	}
+
+	// Validation
+	if o.Validation == nil && in.Validation != nil {
+		o.Validation = in.Validation
+	}
+
 	return
 }

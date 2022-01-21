@@ -104,6 +104,10 @@ spec:
           tags:
             - Todo
         patch:
+          x-kusk:
+            validation:
+              request:
+                enabled: true
           responses:
             '200':
               description: ''
