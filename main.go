@@ -112,7 +112,7 @@ func main() {
 		}
 	}()
 
-	proxy := validation.New()
+	proxy := validation.NewProxy()
 
 	go func() {
 		if err := http.ListenAndServe(":17000", proxy); err != nil {

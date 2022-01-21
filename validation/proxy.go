@@ -100,7 +100,7 @@ type Proxy struct {
 	m sync.RWMutex
 }
 
-func New() *Proxy {
+func NewProxy() *Proxy {
 	return &Proxy{
 		services: map[string]*Service{},
 	}

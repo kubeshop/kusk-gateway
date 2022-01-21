@@ -129,7 +129,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 
 					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 						Header: &envoy_config_core_v3.HeaderValue{
-							Key:   "X-Kusk-Service-ID",
+							Key:   validation.HeaderServiceID,
 							Value: serviceID,
 						},
 						Append: wrapperspb.Bool(false),
@@ -137,7 +137,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 
 					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 						Header: &envoy_config_core_v3.HeaderValue{
-							Key:   "X-Kusk-Operation-ID",
+							Key:   validation.HeaderOperationID,
 							Value: operationID,
 						},
 						Append: wrapperspb.Bool(false),
