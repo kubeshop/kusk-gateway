@@ -29,6 +29,11 @@ kind: StaticRoute
 metadata:
   name: staticroute-sample
 spec:
+  # Envoy Fleet (its name and namespace) to deploy the configuration to, here - deployed EnvoyFleet with the name "default" in the namespace "default".
+  # Optional, if not specified - single (default) fleet autodetection will be performed in the cluster.
+  fleet:
+    name: default
+    namespace: default
   hosts: [<string>, <string>, ...]
   paths:
     # Consists of path matchers with HTTP methods (lowercase), which in turn either:
@@ -91,6 +96,8 @@ spec:
             - X-Custom-Header2
             # how long to cache this CORS information for the browser, returned with Access-Control-Max-Age.
             max_age: <int>
+          # Enable establishing Websockets connections
+          websocket: <true|false>
         # "redirect" creates HTTP redirect to other endpoint. Mutually exclusive with "route".
         redirect:
           # redirect to http or https
@@ -113,6 +120,16 @@ spec:
       <http_method>:
         -- skipped --
 ```
+
+## Envoy Fleet
+
+spec.**fleet** optional field specifies to what Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies to.
+fleet.**name** and fleet.**namespace** reference the deployed EnvoyFleet Custom Resource name and namespace.
+
+You can deploy you StaticRoute configuration in any namespace with any name and it will be applied to the specific Envoy Fleet.
+If this option is missing, the autodetection will be performed to find the single deployed in the Kubernetes cluster fleet which is thus considered as the default fleet.
+The deployed StaticRoute custom resource will be changed to map to that fleet accordingly.
+If there are multiple fleets deployed, the spec.**fleet** is required to specify in the manifest.
 
 ## Request matching
 
@@ -239,9 +256,10 @@ route:
     - X-Custom-Header2
     # how long to cache this CORS information for the browser in seconds, returned with Access-Control-Max-Age header
     max_age: <int>
+  # Enable establishing Websockets connections
+  websocket: <true|false>
 
 ```
-
 
 *route*.**upstream** is a required field that defines the upstream host parameters.
 We proxy using DNS hostname or local cluster K8s service parameters, which are further resolved to DNS hostname. Either *upstream*.**host** or *upstream*.**service** must be specified inside.
@@ -251,9 +269,9 @@ We proxy using DNS hostname or local cluster K8s service parameters, which are f
 *route*.**qos** optional field is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
 
 *route*.**cors** optional field is the container for [Cross-Origin Resource Sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers parameters. If this field is specified, route will be augmented with CORS preflight OPTIONS HTTP method matching. This will allow Envoy to return the response to OPTIONS request with the specified here CORS headers to the user without proxying to upstream. It is advised to read [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) before trying to configure this.
-
 Note: the structure for CORS specified above is an example, i.e. one should write its own set of methods and headers.
 
+*route*.**websocket** optional boolean field defines whether to enable handling of "Upgrade: websocket" and related Websocket HTTP headers in the request to create a Websocket tunnel to the backend. By default false, don't handle Websockets.
 
 ## Example
 
@@ -350,6 +368,7 @@ spec:
             expose_headers:
             - X-API-VERSION
             max_age: 8600
+          websocket: true
       post: *old_api_route
       put: *old_api_route
       patch: *old_api_route

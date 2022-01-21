@@ -11,6 +11,10 @@ x-kusk:
     - example.com
   
   disabled: false
+  
+  validation:
+    request:
+      enabled: true # enable automatic request validation using OpenAPI spec
 
   upstream: # upstream and redirect are mutually exclusive
     host: # host and service are mutually exclusive
@@ -61,9 +65,12 @@ x-kusk:
       - X-Custom-Header1
       - X-Custom-Header2
     max_age: 86200
+
+  websocket: true
 ```
 
 ## Properties Overview
+
 `x-kusk` extension can be applied at (not exclusively):
 1. Top level of an OpenAPI spec:
 ```yaml
@@ -80,6 +87,7 @@ x-kusk:
 ```
 
 2. Path level:
+
 ```yaml
 openapi: 3.0.2
 info:
@@ -91,7 +99,9 @@ paths:
     post:
       ...
 ```
+
 3. Method (operation) level:
+
 ```yaml
   openapi: 3.0.2
   info:
@@ -128,6 +138,7 @@ When set to true at the top level all paths will be hidden; you will have to ove
 ### hosts
 
 This string array property configures hosts (i.e. `Host` HTTP header) list the Gateway will listen traffic for. Wildcard hosts are supported in the suffix or prefix form, exclusively, i.e.:
+
 - *.example.org
 - example.*
 
@@ -135,25 +146,28 @@ This string array property configures hosts (i.e. `Host` HTTP header) list the G
 
 The `cors` object sets properties for configuring [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for your API.
 
-| Name | Description |
-| :---: | :--- |
-| `origins` | list of HTTP origins accepted by the configured operations
-| `methods` | list of HTTP methods accepted by the configured operations
-| `headers` | list of HTTP headers accepted by the configured operations
-| `expose_headers` | list of HTTP headers exposed by the configured operations
-| `credentials` | boolean flag for requiring credentials
-| `max_age` | indicates how long results of a preflight request can be cached
-
+|       Name       | Description                                                     |
+|:----------------:|:----------------------------------------------------------------|
+|    `origins`     | list of HTTP origins accepted by the configured operations      |
+|    `methods`     | list of HTTP methods accepted by the configured operations      |
+|    `headers`     | list of HTTP headers accepted by the configured operations      |
+| `expose_headers` | list of HTTP headers exposed by the configured operations       |
+|  `credentials`   | boolean flag for requiring credentials                          |
+|    `max_age`     | indicates how long results of a preflight request can be cached |
 
 ### qos
 
 Options for configuring QoS settings, such as retries and timeouts.
 
-| Name | Description |
-| :---: | :--- |
-| `retries` | maximum number of retries (0 by default)
-| `request_timeout` | total request timeout (in seconds)
-| `idle_timeout` | timeout for idle connections (in seconds)
+|       Name        | Description                               |
+|:-----------------:|:------------------------------------------|
+|     `retries`     | maximum number of retries (0 by default)  |
+| `request_timeout` | total request timeout (in seconds)        |
+|  `idle_timeout`   | timeout for idle connections (in seconds) |
+
+### websocket
+
+An optional boolean field defines whether to enable handling of "Upgrade: websocket" and other related to Websocket HTTP headers in the request to create a Websocket tunnel to the backend. By default false, don't handle Websockets.
 
 ### upstream
 
@@ -167,20 +181,20 @@ outside the cluster.
 
 The service object sets the target service to receive traffic, it contains the following properties:
 
-| Name | Description |
-| :---: | :--- |
-| `namespace` | the namespace containing the upstream Service
-| `name` | the upstream Service's name
-| `port` | the upstream Service's port. Default value is 80
+|    Name     | Description                                      |
+|:-----------:|:-------------------------------------------------|
+| `namespace` | the namespace containing the upstream Service    |
+|   `name`    | the upstream Service's name                      |
+|   `port`    | the upstream Service's port. Default value is 80 |
 
 #### host
 
 The host object sets the target host to receive traffic, it contains the following properties:
 
-| Name | Description |
-| :---: | :--- |
-| `hostname` | the hostname to route traffic to
-| `port` | target port to route traffic to
+|    Name    | Description                      |
+|:----------:|:---------------------------------|
+| `hostname` | the hostname to route traffic to |
+|   `port`   | target port to route traffic to  |
 
 ### redirect
 Configures where to redirect request to. Redirect and upstream options are mutually exclusive.
@@ -238,3 +252,10 @@ The QoS objects contains the following properties to configure quality of servic
 | retries         | Total number of 5xx retries (default is 0) |
 | request_timeout | Total request timeout (seconds)            |
 | idle_timeout    | Idle connection timeout (seconds)          |
+
+### validation
+The validation objects contains the following properties to configure automatic request validation:
+
+| Name                       | Description                               |
+|----------------------------|-------------------------------------------|
+| validation.request.enabled | boolean flag to enable request validation |

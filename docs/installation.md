@@ -44,9 +44,9 @@ Tools needed for the installation:
 
 We provide 2 Helm [charts](https://github.com/kubeshop/helm-charts):
 
-- **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as the Kusk Gateway Manager (Operator) deployment.
+- **[kusk-gateway](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway)** chart provides Custom Resources Definitions as well as the Kusk Gateway Manager (Operator) deployment. You can install only one such chart into a cluster.
 
-- **[kusk-gateway-envoyfleet](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway-envoyfleet)** chart provides the EnvoyFleet Custom Resource installation, which is used to configure the gateway with KGW Manager.
+- **[kusk-gateway-envoyfleet](https://github.com/kubeshop/helm-charts/tree/main/charts/kusk-gateway-envoyfleet)** chart provides the EnvoyFleet Custom Resource installation, which is used to configure the gateway with KGW Manager. You can install multiple releases of fleets into a cluster.
 
 Container images are hosted on Docker Hub [Kusk-Gateway repository](https://hub.docker.com/r/kubeshop/kusk-gateway).
 
@@ -63,22 +63,23 @@ helm install kusk-gateway kubeshop/kusk-gateway -n kusk-system --create-namespac
 # We need to wait for the kusk-gateway-manager deployment to finish the setup for the next step.
 kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-manager  -n kusk-system
 
-# Install the "default" EnvoyFleet Custom Resource, which will be used by the Kusk Gateway
-# to create Envoy Fleet Deployment and Service with the type LoadBalancer
-helm install kusk-gateway-default-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
+# Install EnvoyFleet into kusk-system namespace. It will be used by the Kusk Gateway
+# to create Envoy Fleet Deployment and Service with the type LoadBalancer.
+helm install kusk-gateway-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
 ```
 
-This concludes the installation
+This concludes the installation.
 
-It may take a few seconds for the LoadBalancer IP to become available.
+This Envoy fleet will be used for all further deployed API and StaticRoutes unless you want to create multiple sites with different IP addresses.
+In such a case install another release with a different name and/or namespace. Beware that you'll have to specify the fleet to bind to in your API/StaticRoutes after that.
 
-Run this to find out the External IP address of EnvoyFleet Load balancer.
+To get the External IP address of the Load Balancer run the command below command. Note that it may take a few seconds for the LoadBalancer IP to become available.
 
 ```sh
-kubectl get svc -l "app=kusk-gateway,component=envoy-svc,fleet=default" --namespace kusk-system
+kubectl get svc -l "app.kubernetes.io/part-of=kusk-gateway,app.kubernetes.io/component=envoy-svc" --namespace kusk-system
 ```
 
-The output should contain the Service **kusk-envoy-svc-default** with the **External-IP** address field - use this address for your API endpoints querying.
+The output should contain the Envoy Fleet Service with the **External-IP** address field - use this address for your API endpoints querying.
 
 You can now deploy your API or Front applications to this cluster and configure access to them with [Custom Resources](customresources/index.md) or you can check the [ToDoMVC Example](todomvc.md) for the guidelines on how to do this.
 
@@ -86,11 +87,13 @@ In case of the problems please check the [Troubleshooting](troubleshooting.md) s
 
 ### Uninstallation
 
-The following command will uninstall Kusk Gateway with CRDs and the **default** Envoy Fleet with their namespace.
+The following command will uninstall Kusk Gateway with CRDs and the Envoy Fleet with their namespace.
 
 ```sh
 # Delete releases
-helm delete kusk-gateway-default-envoyfleet kusk-gateway -n kusk-system
+
+helm delete kusk-gateway-envoyfleet -n kusk-system
+helm delete kusk-gateway -n kusk-system
 
 # Delete namespace too
 kubectl delete namespace kusk-system

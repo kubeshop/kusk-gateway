@@ -32,3 +32,15 @@ curl http://localhost:19000/config_dump | jq '.configs[] | select(.["@type"] == 
 ```
 
 If the command hangs at all, cancel it and run it again
+
+## Webhooks timeouts during the deployment
+
+You may meet the error during the resources deployment with kubectl like:
+
+```shell
+Error from server (InternalError): error when creating "examples/todomvc/kusk-backend-api.yaml": Internal error occurred: failed calling webhook "mapi.kb.io": failed to call webhook: Post "https://kusk-gateway-webhooks-service.kusk-system.svc:443/mutate-gateway-kusk-io-v1alpha1-api?timeout=10s": context deadline exceeded
+```
+
+This means that K8s masters control plane can't call the webhooks service residing on Kusk Gateway Manager on TCP port 9443. This problem is not specific to Kusk Gateway Manager itself and is related to the configuration of you cluster and the firewall rules.
+
+In your firewall settings you will need to add port 9443 to the rule containing the list of ports, allowed to be accessed by K8s masters control plane.
