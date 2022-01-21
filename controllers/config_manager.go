@@ -85,7 +85,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	parser := spec.NewParser(nil)
 	for _, api := range apis {
-		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api)
+		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api.Name)
 		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
 		if err != nil {
 			return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
@@ -103,7 +103,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		if err = UpdateConfigFromAPIOpts(envoyConfig, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
-		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api)
+		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
 	}
 
 	l.Info("Succesfully processed APIs", "fleet", fleetIDstr)
@@ -114,7 +114,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return err
 	}
 	for _, sr := range staticRoutes {
-		l.Info("Processing static routes", "fleet", fleetIDstr, "route", sr)
+		l.Info("Processing static routes", "fleet", fleetIDstr, "route", sr.Name)
 		opts, err := sr.Spec.GetOptionsFromSpec()
 		if err != nil {
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
