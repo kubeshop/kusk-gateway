@@ -67,12 +67,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
       -
-        name: Check if we have modified CRDs or RBAC between 2 last tags
+        name: Check if we have modified CRDs or RBAC between the 2 last tags
         id: check_modified_resources
         run: |
-          CHANGED_FILES_STATS=$(git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac | tail -1)
+          CHANGED_FILES_STATS=$(git diff $(git log --tags --no-walk --pretty="format:%D" | sed -nr '3q;s;^.*(tag: )([^,]*).*;\2;p') --stat config/crd config/rbac |tail -1)
           echo "Changed CRD or RBAC files: ${CHANGED_FILES_STATS}"
-          git diff  $(git rev-list --tags --max-count=2) --stat config/crd config/rbac
+          git diff $(git log --tags --no-walk --pretty="format:%D" | sed -nr '3q;s;^.*(tag: )([^,]*).*;\2;p') --stat config/crd config/rbac
+
           # Pass version (git tag name) to other jobs
           echo "::set-output name=release_version::${{ github.ref_name }}"
 
