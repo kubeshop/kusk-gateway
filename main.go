@@ -113,7 +113,7 @@ func main() {
 
 	logger, err := initLogger(development, logLevel)
 	if err != nil {
-		fmt.Errorf("unable to init logger: %w", err)
+		_ = fmt.Errorf("unable to init logger: %w", err)
 		os.Exit(1)
 	}
 
