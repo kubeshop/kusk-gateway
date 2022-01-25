@@ -4,24 +4,28 @@
 
 <!-- Add buttons here -->
 
-Kusk Gateway is a self-service API gateway powered by [OpenAPI](https://www.openapis.org/) and [Envoy](https://www.envoyproxy.io/)!
+Kusk Gateway is a self-service API gateway powered by [OpenAPI](https://www.openapis.org/) and [Envoy](https://www.envoyproxy.io/).
 
 Kusk Gateway is for you if:
-- You or your team develop REST APIs running in Kubernetes
-- Embrace a contract-first approach to developing your APIs using OpenAPI or Swagger
-- You don't want to spend lots of time configuring hard-to-work-with ingress controllers that require a dedicated Ops Engineer
 
-Kusk Gateway configures itself through the metadata defined in your OpenAPI or Swagger document.
+- You or your team develop REST APIs running in Kubernetes
+- You embrace a contract-first approach to developing your APIs using OpenAPI or Swagger
+- You want to ramp-up time when deploying a new REST api to a cluster and you don't want to spend lots of time configuring ingress controllers that require a dedicated Ops Engineer
+- You want your REST API endpoints traffic to be observable and controllable with the easy to use settings
+
+Kusk Gateway has a unique way to the configuration among other API gateways as it configures itself through the metadata defined in your OpenAPI or Swagger document.
 
 You can apply your API definition like any other Kubernetes resource using our custom-made Kusk API CustomResourceDefinition.
 
 # Table of contents
+
 - [Get Started](#get-started)
   - [Installation](#installation)
   - [Installation to the Local Kubernetes cluster with Minikube](#installation)
   - [Usage](#usage)
   - [Troubleshooting](#troubleshooting)
   - [Custom Resources](#custom-resources)
+- [Roadmap](#roadmap)
 - [Development](#development)
 - [Contribute](#contribute)
 - [License](#license)
@@ -33,6 +37,8 @@ See the [architecture document](docs/arch.md) for an overview of the Kusk Gatewa
 ## Installation
 
 [(Back to top)](#table-of-contents)
+
+Kusk Gateway can be installed on any cloud or bare metal Kubernetes cluster.
 
 If you want to quickly setup and evaluate the Kusk Gateway, then please use the [local installation instructions with Minikube](docs/local-installation.md).
 
@@ -127,6 +133,12 @@ spec:
 [(Back to top)](#table-of-contents)
 
 See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for more information on the Custom Resources that Kusk Gateway supports.
+
+## Roadmap
+
+[(Back to top)](#table-of-contents)
+
+For the list of the currently supported and planned features please check the [Roadmap](https://kubeshop.github.io/kusk-gateway/roadmap/).
 
 ## Troubleshooting
 

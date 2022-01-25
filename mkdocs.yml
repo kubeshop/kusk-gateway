@@ -24,6 +24,7 @@ nav:
     - 'API': customresources/api.md
     - 'Static Route': customresources/staticroute.md
   - Architecture: arch.md
+  - Roadmap: roadmap.md
   - For Developers: development.md
   - Troubleshooting: troubleshooting.md
   - Observability: observability.md
