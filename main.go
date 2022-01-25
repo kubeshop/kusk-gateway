@@ -27,11 +27,15 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 
 	// +kubebuilder:scaffold:imports
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -39,7 +43,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -50,8 +53,7 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme = runtime.NewScheme()
 )
 
 func init() {
@@ -61,33 +63,67 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
+func initLogger(development bool, level string) (logr.Logger, error) {
+	var l zapcore.Level
+	if err := l.UnmarshalText([]byte(level)); err != nil {
+		return logr.Logger{}, fmt.Errorf("unable to determine log level: %w", err)
+	}
+
+	var config zap.Config
+
+	if development {
+		config = zap.NewDevelopmentConfig()
+	} else {
+		config = zap.NewProductionConfig()
+	}
+
+	config.Level = zap.NewAtomicLevelAt(l)
+	config.Development = development
+
+	zapLogger, err := config.Build()
+	if err != nil {
+		return logr.Logger{}, fmt.Errorf("cannot create zap logger: %w", err)
+	}
+
+	return zapr.NewLogger(zapLogger), nil
+}
+
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	var envoyControlPlaneAddr string
-	var openAPIspec string
+	var (
+		metricsAddr           string
+		enableLeaderElection  bool
+		probeAddr             string
+		envoyControlPlaneAddr string
+		openAPISpec           string
+		logLevel              string
+		development           bool
+	)
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&envoyControlPlaneAddr, "envoy-control-plane-bind-address", ":18000", "The address Envoy control plane XDS server binds to.")
-	flag.StringVar(&openAPIspec, "in", "", "OpenAPI file with x-kusk extension to start gateway locally, without Kubernetes")
+	flag.StringVar(&openAPISpec, "in", "", "OpenAPI file with x-kusk extension to start gateway locally, without Kubernetes")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
-		TimeEncoder: zapcore.ISO8601TimeEncoder,
-	}
-	opts.BindFlags(flag.CommandLine)
+	flag.StringVar(&logLevel, "log-level", "INFO", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
+	flag.BoolVar(&development, "development", false, "enable development mode")
+
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logger, err := initLogger(development, logLevel)
+	if err != nil {
+		_ = fmt.Errorf("unable to init logger: %w", err)
+		os.Exit(1)
+	}
+
+	setupLog := logger.WithName("setup")
 
 	// If -in is specified, use its parameter as OpenAPI file and switch to local startup
 	// This will never return
-	if openAPIspec != "" {
-		setupLog.Info("Specified ", openAPIspec, "file will be consumed locally, skipping K8s initialisation")
-		local.RunLocalService(openAPIspec, envoyControlPlaneAddr)
+	if openAPISpec != "" {
+		setupLog.Info("open API spec file specified - skipping K8s initialisation", "file", openAPISpec)
+		local.RunLocalService(openAPISpec, envoyControlPlaneAddr)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -133,7 +169,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "EnvoyFleet")
+		setupLog.
+			WithValues("controller", "EnvoyFleet").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
@@ -142,7 +180,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "API")
+		setupLog.
+			WithValues("controller", "API").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
@@ -158,7 +198,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "StaticRoute")
+		setupLog.
+			WithValues("controller", "StaticRoute").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
