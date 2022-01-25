@@ -1,6 +1,6 @@
 # Architecture
 
-Under the hood, Kusk Gateway consists of an Operator (Kusk Gateway Manager) and k8s resources, created by that operator.
+Under the hood, Kusk Gateway consists of an Operator (Kusk Gateway Manager) and k8s resources, created and managed by the operator. e.g. APIs, StaticRoutes and EnvoyFleets
 
 Envoy Proxy is deployed by Kusk Gateway Manager as part of [**EnvoyFleet**](customresources/envoyfleet.md) Custom Resource configuration that describes K8s Envoy Proxy deployment and its K8s service.
 Usually this service is of type LoadBalancer, thus exposing the service to the world.
