@@ -27,6 +27,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --log-level=INFO
         image: kusk-gateway:latest
         name: manager
         securityContext:

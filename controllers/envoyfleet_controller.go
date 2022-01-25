@@ -62,7 +62,7 @@ type EnvoyFleetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	l := ctrl.LoggerFrom(ctx)
+	l := ctrl.LoggerFrom(ctx).WithName("envoy-fleet-controller")
 	l.Info("EnvoyFleet changed", "changed", req.NamespacedName)
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}

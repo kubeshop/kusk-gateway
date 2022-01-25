@@ -33,6 +33,8 @@ import (
 
 	// +kubebuilder:scaffold:imports
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,10 +64,10 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-func initLogger(development bool, level string) (*zap.Logger, error) {
+func initLogger(development bool, level string) (logr.Logger, error) {
 	var l zapcore.Level
 	if err := l.UnmarshalText([]byte(level)); err != nil {
-		return nil, fmt.Errorf("unable to determine log level: %w", err)
+		return logr.Logger{}, fmt.Errorf("unable to determine log level: %w", err)
 	}
 
 	var config zap.Config
@@ -78,7 +80,13 @@ func initLogger(development bool, level string) (*zap.Logger, error) {
 
 	config.Level = zap.NewAtomicLevelAt(l)
 	config.Development = development
-	return config.Build()
+
+	zapLogger, err := config.Build()
+	if err != nil {
+		return logr.Logger{}, fmt.Errorf("cannot create zap logger: %w", err)
+	}
+
+	return zapr.NewLogger(zapLogger), nil
 }
 
 func main() {
@@ -110,15 +118,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog := logger.Named("setup")
+	setupLog := logger.WithName("setup")
 
 	// If -in is specified, use its parameter as OpenAPI file and switch to local startup
 	// This will never return
 	if openAPISpec != "" {
-		setupLog.Info("open API spec file specified - skipping K8s initialisation", zap.Field{
-			Key:    "file",
-			String: openAPISpec,
-		})
+		setupLog.Info("open API spec file specified - skipping K8s initialisation", "file", openAPISpec)
 		local.RunLocalService(openAPISpec, envoyControlPlaneAddr)
 	}
 
@@ -131,10 +136,7 @@ func main() {
 		LeaderElectionID:       "cd734a2d.kusk.io",
 	})
 	if err != nil {
-		setupLog.Error("unable to start manager", zap.Field{
-			Key:       "error",
-			Interface: err,
-		})
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 	// TODO: setup logger correctly
@@ -142,10 +144,7 @@ func main() {
 
 	go func() {
 		if err := envoyManager.Start(); err != nil {
-			setupLog.Error("unable to start Envoy xDS API Server", zap.Field{
-				Key:       "error",
-				Interface: err,
-			})
+			setupLog.Error(err, "unable to start Envoy xDS API Server")
 			os.Exit(1)
 		}
 	}()
@@ -154,10 +153,7 @@ func main() {
 
 	go func() {
 		if err := http.ListenAndServe(":17000", proxy); err != nil {
-			setupLog.Error("unable to start validation proxy", zap.Field{
-				Key:       "error",
-				Interface: err,
-			})
+			setupLog.Error(err, "unable to start validation proxy")
 			os.Exit(1)
 		}
 	}()
@@ -174,16 +170,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.With(
-			zap.Field{
-				Key:       "error",
-				Interface: err,
-			},
-			zap.Field{
-				Key:    "controller",
-				String: "EnvoyFleet",
-			},
-		).Error("unable to create controller")
+		setupLog.
+			WithValues("controller", "EnvoyFleet").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
@@ -192,16 +181,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.With(
-			zap.Field{
-				Key:       "error",
-				Interface: err,
-			},
-			zap.Field{
-				Key:    "controller",
-				String: "API",
-			},
-		).Error("unable to create controller")
+		setupLog.
+			WithValues("controller", "API").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
@@ -217,16 +199,9 @@ func main() {
 		Scheme:        mgr.GetScheme(),
 		ConfigManager: &controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.With(
-			zap.Field{
-				Key:       "error",
-				Interface: err,
-			},
-			zap.Field{
-				Key:    "controller",
-				String: "StaticRoute",
-			},
-		).Error("unable to create controller")
+		setupLog.
+			WithValues("controller", "StaticRoute").
+			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
@@ -238,26 +213,17 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error("unable to set up health check", zap.Field{
-			Key:       "error",
-			Interface: err,
-		})
+		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error("unable to set up ready check", zap.Field{
-			Key:       "error",
-			Interface: err,
-		})
+		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error("problem running manager", zap.Field{
-			Key:       "error",
-			Interface: err,
-		})
+		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
