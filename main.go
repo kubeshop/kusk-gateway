@@ -117,6 +117,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctrl.SetLogger(logger)
+
 	setupLog := logger.WithName("setup")
 
 	// If -in is specified, use its parameter as OpenAPI file and switch to local startup
