@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/kubeshop/kusk-gateway/options"
 )
@@ -67,7 +67,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{}) (bool, error) {
 	if extension, ok := extensionProps.Extensions[kuskExtensionKey]; ok {
 		if kuskExtension, ok := extension.(json.RawMessage); ok {
-			err := yaml.Unmarshal(kuskExtension, target)
+			err := yaml.UnmarshalStrict(kuskExtension, target)
 			if err != nil {
 				return false, fmt.Errorf("failed to parse extension: %w", err)
 			}
