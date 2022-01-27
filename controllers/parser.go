@@ -156,8 +156,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				}
 
 				var rewriteOpts *options.RewriteRegex
-				if opts.Path != nil {
-					rewriteOpts = &opts.Path.Rewrite
+				if finalOpts.Path != nil {
+					rewriteOpts = &finalOpts.Path.Rewrite
 				}
 				routeRoute, err := generateRoute(
 					clusterName,
