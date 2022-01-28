@@ -91,6 +91,9 @@ var _ = BeforeSuite(func() {
 	err = admissionv1beta1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = admissionv1beta1.AddToScheme(scheme)
+	Expect(err).NotTo(HaveOccurred())
+
 	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
@@ -115,6 +118,9 @@ var _ = BeforeSuite(func() {
 
 	hookServer.Register(StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &StaticRouteMutator{Client: mgr.GetClient()}})
 	hookServer.Register(StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &StaticRouteValidator{}})
+
+	err = (&EnvoyFleet{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
 
