@@ -1,0 +1,111 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: EnvoyFleet
+metadata:
+  name: testing
+  namespace: testing
+spec:
+  image: "envoyproxy/envoy-alpine:v1.20.0"
+  service:
+    # NodePort, ClusterIP, LoadBalancer
+    type: LoadBalancer
+    # Specify annotations to modify service behaviour, e.g. for GCP to create internal load balancer:
+    # annotations:
+    #   networking.gke.io/load-balancer-type: "Internal"
+    # Specify predefined static load balancer IP address if present
+    #loadBalancerIP: 10.10.10.10
+    ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: http
+    # To preserve clients real ip addresses choose Local.
+    # Note that this can make load balancing worse.
+    #externalTrafficPolicy: Cluster|Local
+    #externalTrafficPolicy: Local
+  resources:
+    # limits:
+    #   cpu: 1
+    #   memory: 100M
+    requests:
+      cpu: 10m
+      memory: 100M
+  # Put annotations to scrape pods.
+  # annotations:
+  #   prometheus.io/scrape: 'true'
+  #   prometheus.io/port: '9102'
+  # Scheduling directives
+  # Read https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/ for the details.
+
+  # Optional - schedule Envoy pods to the node with the label "disktype=ssd".
+  # nodeSelector:
+  #   disktype: "ssd"
+
+  # Optional - allow to be scheduled on the "tainted" node. Taint with "kubectl taint nodes node1 key1=value1:NoSchedule".
+  # Taints will repel the pods from the node unless the pods have the specific toleration.
+  # The line below will allow this specific Envoy pod to be scheduled there (but scheduler decideds where to put it anyway).
+  # tolerations:
+  # - key: "key1"
+  #   operator: "Exists"
+  #   effect: "NoSchedule"
+
+  # Optional - provide pods affinity and anti-affinity settings.
+  # This is more flexible than nodeSelector scheme but they can be specified together.
+  # For the scalability and fault tolerance we prefer to put all Envoy pods onto different nodes - in a case one node fails we survive on others.
+  # The block below will search for all matching labels of THIS "default" envoy fleet pods and will try to schedule pods
+  # on different nodes.
+  # Other fleets (if present) are not taken into consideration. You can specify nodeAffinity and podAffinity as well.
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: app.kubernetes.io/name
+  #           operator: In
+  #           values:
+  #           - kusk-gateway-envoy-fleet
+  #         - key: fleet
+  #           operator: In
+  #           values:
+  #           - default
+  #       topologyKey: kubernetes.io/hostname
+
+  # optional
+  size: 1
+
+  # Access logging to stdout
+  # If the entry is missing no access logging will be done
+  accesslog:
+    # json|text
+    format: text
+    # Depending on format we can specify our own log template or if template is not specified - default Kusk Gateway will be used
+    # Below are specified the examples of similar and minimalistic formats for both text and json format types.
+    # Text format fields order is preserved.
+    # The output example:
+    # "[2021-12-15T16:50:50.217Z]" "GET" "/" "200" "1"
+    text_template: |
+      "[%START_TIME%]" "%REQ(:METHOD)%" "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "%RESPONSE_CODE%" "%DURATION%"
+    # Json format fields order isn't preserved
+    # The output example:
+    # {"start_time":"2021-12-15T16:46:52.135Z","path":"/","response_code":200,"method":"GET","duration":1}
+    json_template:
+      start_time: "%START_TIME%"
+      method: "%REQ(:METHOD)%"
+      path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+      response_code: "%RESPONSE_CODE%"
+      duration: "%DURATION%"
+
+  # OPTIONAL - specify TLS options for HTTPS traffic
+  # If TLS specified, only tlsSecrets is a mandatory field
+  # For supported cipherSuites see https://github.com/envoyproxy/envoy/blob/d1e91ad35e791d3e37038403e2ca1c64a1054b3c/api/envoy/extensions/transport_sockets/tls/v3/common.proto#L55
+  # tls:
+    # cipherSuites:
+    #   - ECDHE-ECDSA-AES128-SHA
+    #   - ECDHE-RSA-AES128-SHA
+    #   - AES128-GCM-SHA256
+    # tlsMinimumProtocolVersion: TLSv1_2
+    # tlsMaximumProtocolVersion: TLSv1_3
+    # tlsSecrets:
+    #   - secretRef: my-cert
+    #     namespace: default

@@ -1,0 +1,305 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: todo
+  namespace: testing
+spec:
+  fleet:
+    name: testing
+    namespace: testing
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: Todo-Backend API
+      version: 1.0.0
+    x-kusk:
+      hosts: [ "example.org", "example.com"]
+      cors:
+        origins:
+          - 'http://example.org'
+          - 'http://example.com'
+        methods:
+          - POST
+          - PATCH
+          - DELETE
+          - PUT
+          - GET
+          - OPTIONS
+        headers:
+          - Content-Type
+        credentials: true
+        max_age: 86200
+      upstream:
+        service:
+          namespace: testing
+          name: todo-backend
+          port: 3000
+      path:
+        prefix: /testing
+        rewrite:
+          pattern: "^/testing/"
+          substitution: "/"
+    paths:
+      /todos/{id}:
+        get:
+          responses:
+            '200':
+              description: ''
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Shows a single Todo
+          parameters:
+            - name: id
+              in: path
+              schema:
+                type: integer
+              required: true
+          tags:
+            - Todo
+        delete:
+          responses:
+            '200':
+              description: ''
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Deletes this Todo
+          parameters:
+            - name: id
+              in: path
+              schema:
+                type: integer
+              required: true
+          tags:
+            - Todo
+        patch:
+          responses:
+            '200':
+              description: ''
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Modifies this Todo
+          parameters:
+            - name: id
+              in: path
+              schema:
+                type: integer
+              required: true
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    completed:
+                      type: boolean
+                    order:
+                      type: integer
+                      format: int32
+          tags:
+            - Todo
+      /todos:
+        x-kusk:
+          cors:
+            origins:
+              - 'http://example.org'
+              - 'http://example.com'
+            methods:
+              - POST
+              - DELETE
+              - GET
+            headers:
+              - Content-Type
+            credentials: false
+            max_age: 10200
+        get:
+          responses:
+            '200':
+              description: The full list of todos
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          description: Description of what to do
+                        completed:
+                          type: boolean
+                        order:
+                          type: integer
+                          format: int32
+                        url:
+                          type: string
+                      required:
+                        - title
+                        - completed
+                        - order
+                        - url
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Lists all Todos
+          description: The returned Todos are ordered by 'order' and then 'title'
+          tags:
+            - Todo
+        post:
+          responses:
+            '201':
+              description: ''
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Creates a new, uncompleted Todo
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                      description: Description of what to do
+                    order:
+                      type: integer
+                      format: int32
+                  required:
+                    - title
+          tags:
+            - Todo
+        delete:
+          responses:
+            '200':
+              description: ''
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Deletes all Todos
+          tags:
+            - Todo
+    components:
+      schemas:
+        endpoints.Errors:
+          type: array
+          items:
+            type: string

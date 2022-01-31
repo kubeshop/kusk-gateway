@@ -1,0 +1,808 @@
+{
+	"info": {
+		"_postman_id": "8a57002f-81e2-45ce-b319-9827359030cb",
+		"name": "api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Prefix and Rewrite",
+			"item": [
+				{
+					"name": "/testing/todos - check GET",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos - check POST Test #1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Response is expected JSON\", function() {",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"object\");",
+									"    pm.expect(jsonData.title).to.eql(\"Test #1\");",
+									"    pm.expect(jsonData.order).to.eql(1);",
+									"    pm.expect(jsonData.completed).to.eql(false);",
+									"    // Set url field from the response to use further",
+									"    pm.environment.set(\"test_1_id\", jsonData.id);",
+									"}",
+									");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":\"Test #1\",\"order\":1,\"completed\":false}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos/ID - GET published item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is expected JSON\", function() {",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"object\");",
+									"    pm.expect(jsonData.title).to.eql(\"Test #1\");",
+									"    pm.expect(jsonData.order).to.eql(1);",
+									"    pm.expect(jsonData.completed).to.eql(false);",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos/{{test_1_id}}",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos",
+								"{{test_1_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. CORS",
+			"item": [
+				{
+					"name": "/testing/1 - check GET and CORS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Expected CORS Headers are present\", function() {",
+									"    pm.response.to.have.header(\"access-control-allow-origin\");",
+									"    pm.expect(pm.response.headers.get('access-control-allow-origin')).to.eql('http://example.com');",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default"
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/1 - check preflight CORS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Expected CORS Headers are present\", function() {",
+									"    pm.response.to.have.header(\"access-control-allow-origin\");",
+									"    pm.expect(pm.response.headers.get('access-control-allow-origin')).to.eql('http://example.com');",
+									"    pm.expect(pm.response.headers.get('access-control-allow-methods')).to.eql('POST,PATCH,DELETE,PUT,GET,OPTIONS');",
+									"    pm.expect(pm.response.headers.get('access-control-allow-headers')).to.eql('Content-Type');",
+									"    pm.expect(pm.response.headers.get('access-control-allow-credentials')).to.eql('true');",
+									"    pm.expect(pm.response.headers.get('access-control-max-age')).to.eql('86200');",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default"
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "GET",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"value": "origin",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos - check GET and CORS header",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Expected CORS Headers are present\", function() {",
+									"    pm.response.to.have.header(\"access-control-allow-origin\");",
+									"    pm.expect(pm.response.headers.get('access-control-allow-origin')).to.eql('http://example.com');",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default"
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos - check preflight CORS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Expected CORS Headers are present\", function() {",
+									"    pm.response.to.have.header(\"access-control-allow-origin\");",
+									"    pm.expect(pm.response.headers.get('access-control-allow-origin')).to.eql('http://example.com');",
+									"    pm.expect(pm.response.headers.get('access-control-allow-methods')).to.eql('POST,DELETE,GET');",
+									"    pm.expect(pm.response.headers.get('access-control-allow-headers')).to.eql('Content-Type');",
+									"    pm.expect(pm.response.headers.get('access-control-max-age')).to.eql('10200');",
+									"",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							},
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "GET",
+								"type": "default"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"value": "origin",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Hosts",
+			"item": [
+				{
+					"name": "/testing/todos - check GET on example.com",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos - check GET on example.org",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.org",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/todos - check missing GET on example.net",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.net",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Disabled",
+			"item": [
+				{
+					"name": "/second/todos - check GET on example.org second",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json; charset=UTF-8');",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.org",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/second/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"second",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/second/todos - check POST doesn't exist on example.org second",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.org",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":\"Test #1\",\"order\":1,\"completed\":false}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/second/todos",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"second",
+								"todos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Redirect",
+			"item": [
+				{
+					"name": "/second/todos/1 - check GET redirects on example.org second",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 301 and expected location\", function () {",
+									"    pm.response.to.have.status(301);",
+									"    pm.expect(pm.response.headers.get('location')).to.eql('http://example.com/testing/todos/1');",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						},
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.org",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/second/todos/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"second",
+								"todos",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "EXTERNAL_IP",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test_1_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

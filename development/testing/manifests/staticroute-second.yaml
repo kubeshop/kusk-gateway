@@ -1,0 +1,23 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: todo-frontend-second
+  namespace: testing
+spec:
+  fleet:
+    name: testing
+    namespace: testing
+  hosts: [ "example.org"]
+  paths:
+    /testing/staticroute/second/:
+       get:
+        route:
+         path:
+           rewrite:
+             pattern: "^/testing/staticroute/second/"
+             substitution: "/"
+         upstream:
+            service:
+              namespace: testing
+              name: todo-backend
+              port: 3000
