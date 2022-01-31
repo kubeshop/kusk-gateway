@@ -88,14 +88,14 @@ func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFle
 
 func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context, secrets []TLSSecrets) error {
 	getSecret := func(tlsSecret TLSSecrets) (*v1.Secret, error) {
-		var secret *v1.Secret
+		var secret v1.Secret
 		if err := e.Client.Get(
 			ctx,
 			types.NamespacedName{
 				Name:      tlsSecret.SecretRef,
 				Namespace: tlsSecret.Namespace,
 			},
-			secret,
+			&secret,
 		); err != nil {
 			return nil, fmt.Errorf(
 				"unable to query secret %s in namespace %s: %w",
@@ -105,7 +105,7 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 			)
 		}
 
-		return secret, nil
+		return &secret, nil
 	}
 
 	getDNSNamesFromCert := func(crt []byte) ([]string, error) {
@@ -126,8 +126,8 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 		return leafCert.DNSNames, nil
 	}
 
-	// map of sans pointing to the name of the secret they already associate with
-	sanSet := map[string]string{}
+	// map of sans pointing to the secret they already associate with
+	sanSet := map[string]*v1.Secret{}
 
 	for _, tlsSecret := range secrets {
 		envoyfleetlog.Info("processing secret", "secret", tlsSecret.SecretRef, "namespace", tlsSecret.Namespace)
@@ -147,11 +147,20 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 		}
 
 		for _, dnsName := range dnsNames {
-			if secretName, ok := sanSet[dnsName]; ok {
-				return fmt.Errorf("%s already found to be associated with the secret %s", dnsName, secretName)
+			if associatedSecret, ok := sanSet[dnsName]; ok {
+				return fmt.Errorf(
+					"conflicting SAN %s found in secret %s in namespace %s. "+
+						"%s already associated with secret %s in %s",
+					dnsName,
+					secret.Name,
+					secret.Namespace,
+					dnsName,
+					associatedSecret.Name,
+					associatedSecret.Namespace,
+				)
 			}
 
-			sanSet[dnsName] = secret.Name
+			sanSet[dnsName] = secret
 		}
 
 	}
