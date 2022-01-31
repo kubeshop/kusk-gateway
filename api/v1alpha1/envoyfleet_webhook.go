@@ -87,12 +87,9 @@ func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFle
 }
 
 func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context, secrets []TLSSecrets) error {
-	// map of sans pointing to the name of the secret they already associate with
-	sanSet := map[string]string{}
-
-	getSecret := func(reader client.Reader, tlsSecret TLSSecrets) (*v1.Secret, error) {
+	getSecret := func(tlsSecret TLSSecrets) (*v1.Secret, error) {
 		var secret *v1.Secret
-		if err := reader.Get(
+		if err := e.Client.Get(
 			ctx,
 			types.NamespacedName{
 				Name:      tlsSecret.SecretRef,
@@ -129,9 +126,12 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 		return leafCert.DNSNames, nil
 	}
 
+	// map of sans pointing to the name of the secret they already associate with
+	sanSet := map[string]string{}
+
 	for _, tlsSecret := range secrets {
 		envoyfleetlog.Info("processing secret", "secret", tlsSecret.SecretRef, "namespace", tlsSecret.Namespace)
-		secret, err := getSecret(e.Client, tlsSecret)
+		secret, err := getSecret(tlsSecret)
 		if err != nil {
 			return err
 		}
