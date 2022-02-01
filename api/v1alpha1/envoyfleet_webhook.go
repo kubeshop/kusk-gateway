@@ -39,10 +39,14 @@ import (
 )
 
 // log is for logging in this package.
-var envoyfleetlog = logf.Log.WithName("envoyfleet-resource")
+var (
+	envoyfleetlog = logf.Log.WithName("envoyfleet-resource")
+)
 
 const (
 	EnvoyFleetValidatingWebhookPath = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
+
+	EnvoyResourceNamePrefix = "kgw-envoy-"
 )
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -79,10 +83,26 @@ func (e *EnvoyFleetValidator) Handle(ctx context.Context, req admission.Request)
 }
 
 func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFleet) error {
+
+	if err := e.validateNameWithinSizeBound(envoyFleet.Name); err != nil {
+		return err
+	}
+
 	if err := e.validateNoOverlappingSANSInTLS(ctx, envoyFleet.Spec.TLS.TlsSecrets); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (e *EnvoyFleetValidator) validateNameWithinSizeBound(name string) error {
+	if kubernetesMaxNameLength := 64; len(EnvoyResourceNamePrefix+name) > kubernetesMaxNameLength {
+		return fmt.Errorf(
+			"resulting name of envoy resources (%s) is larger than the kubernetes max allowed name of %d",
+			name,
+			kubernetesMaxNameLength,
+		)
+	}
 	return nil
 }
 
