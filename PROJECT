@@ -13,6 +13,10 @@ resources:
   kind: EnvoyFleet
   path: github.com/kubeshop/kusk-gateway/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    defaulting: false
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
