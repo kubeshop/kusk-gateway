@@ -30,6 +30,7 @@ import (
 	"net/http"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -75,38 +76,37 @@ func (e *EnvoyFleetValidator) Handle(ctx context.Context, req admission.Request)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if err := e.validate(ctx, envoyFleetObj); err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+
+	return e.validate(ctx, envoyFleetObj)
+}
+
+func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFleet) admission.Response {
+
+	if resp := e.validateNameWithinSizeBound(envoyFleet.Name); !resp.Allowed {
+		return resp
+	}
+
+	if resp := e.validateNoOverlappingSANSInTLS(ctx, envoyFleet.Spec.TLS.TlsSecrets); !resp.Allowed {
+		return resp
 	}
 
 	return admission.Allowed("")
 }
 
-func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFleet) error {
-
-	if err := e.validateNameWithinSizeBound(envoyFleet.Name); err != nil {
-		return err
-	}
-
-	if err := e.validateNoOverlappingSANSInTLS(ctx, envoyFleet.Spec.TLS.TlsSecrets); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *EnvoyFleetValidator) validateNameWithinSizeBound(name string) error {
+func (e *EnvoyFleetValidator) validateNameWithinSizeBound(name string) admission.Response {
 	if kubernetesMaxNameLength := 64; len(EnvoyResourceNamePrefix+name) > kubernetesMaxNameLength {
-		return fmt.Errorf(
+		err := fmt.Errorf(
 			"resulting name of envoy resources (%s) is larger than the kubernetes max allowed name of %d",
 			name,
 			kubernetesMaxNameLength,
 		)
+		return admission.Errored(http.StatusBadRequest, err)
 	}
-	return nil
+
+	return admission.Allowed("")
 }
 
-func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context, secrets []TLSSecrets) error {
+func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context, secrets []TLSSecrets) admission.Response {
 	getSecret := func(tlsSecret TLSSecrets) (*v1.Secret, error) {
 		var secret v1.Secret
 		if err := e.Client.Get(
@@ -117,12 +117,7 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 			},
 			&secret,
 		); err != nil {
-			return nil, fmt.Errorf(
-				"unable to query secret %s in namespace %s: %w",
-				tlsSecret.SecretRef,
-				tlsSecret.Namespace,
-				err,
-			)
+			return nil, err
 		}
 
 		return &secret, nil
@@ -153,30 +148,50 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 		envoyfleetlog.Info("processing secret", "secret", tlsSecret.SecretRef, "namespace", tlsSecret.Namespace)
 		secret, err := getSecret(tlsSecret)
 		if err != nil {
-			return err
+			wrappedErr := fmt.Errorf(
+				"unable to query secret %s in namespace %s: %w",
+				tlsSecret.SecretRef,
+				tlsSecret.Namespace,
+				err,
+			)
+
+			var statusCode int32 = http.StatusInternalServerError
+			if errors.IsNotFound(err) {
+				statusCode = http.StatusNotFound
+			} else if errors.IsBadRequest(err) {
+				statusCode = http.StatusBadRequest
+			}
+
+			return admission.Errored(statusCode, wrappedErr)
 		}
 
 		crt, ok := secret.Data["tls.crt"]
 		if !ok {
-			return fmt.Errorf("tls.crt field not found in secret %s in namespace %s", secret.Name, secret.Namespace)
+			return admission.Errored(
+				http.StatusBadRequest,
+				fmt.Errorf("tls.crt field not found in secret %s in namespace %s", secret.Name, secret.Namespace),
+			)
 		}
 
 		dnsNames, err := getDNSNamesFromCert(crt)
 		if err != nil {
-			return err
+			return admission.Errored(http.StatusBadRequest, err)
 		}
 
 		for _, dnsName := range dnsNames {
 			if associatedSecret, ok := sanSet[dnsName]; ok {
-				return fmt.Errorf(
-					"conflicting SAN %s found in secret %s in namespace %s. "+
-						"%s already associated with secret %s in %s",
-					dnsName,
-					secret.Name,
-					secret.Namespace,
-					dnsName,
-					associatedSecret.Name,
-					associatedSecret.Namespace,
+				return admission.Errored(
+					http.StatusBadRequest,
+					fmt.Errorf(
+						"conflicting SAN %s found in secret %s in namespace %s. "+
+							"%s already associated with secret %s in %s",
+						dnsName,
+						secret.Name,
+						secret.Namespace,
+						dnsName,
+						associatedSecret.Name,
+						associatedSecret.Namespace,
+					),
 				)
 			}
 
@@ -185,5 +200,5 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 
 	}
 
-	return nil
+	return admission.Allowed("")
 }
