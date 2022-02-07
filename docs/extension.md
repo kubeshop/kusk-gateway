@@ -259,3 +259,30 @@ The validation objects contains the following properties to configure automatic 
 | Name                       | Description                               |
 |----------------------------|-------------------------------------------|
 | validation.request.enabled | boolean flag to enable request validation |
+
+#### strict validation of request bodies
+Strict validation means that the request body must conform exactly to the schema specified in your openapi spec
+To enable this, please add the following field to your schema block if the request body is of type `object`
+
+```yaml
+paths:
+  /todos/{id}:
+    ...
+    patch:
+      ...
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              # if you want strict validation of request bodies, please enable this option in your OpenAPI file
+              additionalProperties: false
+              properties:
+                title:
+                  type: string
+                completed:
+                  type: boolean
+                order:
+                  type: integer
+                  format: int32l
+```

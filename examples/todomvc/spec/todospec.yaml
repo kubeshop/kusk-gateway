@@ -147,6 +147,7 @@ paths:
           application/json:
             schema:
               type: object
+              # if you want strict validation of request bodies, please enable this option in your OpenAPI file
               additionalProperties: false
               properties:
                 title:
