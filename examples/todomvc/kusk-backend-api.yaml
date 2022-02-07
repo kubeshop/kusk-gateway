@@ -155,6 +155,7 @@ spec:
               application/json:
                 schema:
                   type: object
+                  additionalProperties: false
                   properties:
                     title:
                       type: string
