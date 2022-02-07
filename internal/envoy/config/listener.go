@@ -13,7 +13,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/kubeshop/kusk-gateway/cert"
+	"github.com/kubeshop/kusk-gateway/internal/cert"
 )
 
 const (

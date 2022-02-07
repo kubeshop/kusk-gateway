@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/k8sutils"
+	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 )
 
 const (

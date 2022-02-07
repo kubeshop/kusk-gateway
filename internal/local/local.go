@@ -11,10 +11,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/kubeshop/kusk-gateway/controllers"
-	"github.com/kubeshop/kusk-gateway/envoy/config"
-	envoyConfigManager "github.com/kubeshop/kusk-gateway/envoy/manager"
-	"github.com/kubeshop/kusk-gateway/spec"
+	"github.com/kubeshop/kusk-gateway/internal/controllers"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	envoyConfigManager "github.com/kubeshop/kusk-gateway/internal/envoy/manager"
+	"github.com/kubeshop/kusk-gateway/internal/spec"
 )
 
 func RunLocalService(apiSpecPath string, envoyControlPlaneAddr string) {

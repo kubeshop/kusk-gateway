@@ -66,11 +66,11 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
-	go fmt $(go list ./... | grep -v /examples/)
+	go fmt $(shell go list ./... | grep -v /examples/)
 
 .PHONY: vet
 vet: ## Run go vet against code.
-	go vet $(go list ./... | grep -v /examples/)
+	go vet $(shell go list ./... | grep -v /examples/)
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
@@ -84,20 +84,20 @@ testing: ## Run the integration tests from development/testing and then delete t
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/manager/main.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/manager/main.go
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-debug
 docker-build-debug: ## Build docker image with the manager and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
