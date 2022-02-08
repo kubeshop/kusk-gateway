@@ -11,10 +11,10 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/kubeshop/kusk-gateway/envoy/config"
-	"github.com/kubeshop/kusk-gateway/envoy/types"
-	"github.com/kubeshop/kusk-gateway/options"
-	"github.com/kubeshop/kusk-gateway/validation"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/options"
+	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.

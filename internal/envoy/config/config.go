@@ -15,7 +15,7 @@ import (
 	"github.com/gofrs/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/kubeshop/kusk-gateway/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 )
 
 // Simplified objects hierarchy configuration as for the static Envoy config
