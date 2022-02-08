@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/envoyproxy/go-control-plane v0.10.1
-	github.com/fsnotify/fsnotify v1.5.1
 	github.com/getkin/kin-openapi v0.76.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -22,6 +21,7 @@ require (
 )
 
 require (
+	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 )
