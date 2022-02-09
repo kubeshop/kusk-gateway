@@ -13,6 +13,8 @@ import (
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/mocking/mockserver"
 	"github.com/kubeshop/kusk-gateway/internal/options"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
@@ -40,7 +42,7 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mockingConfiguration *mocking.MockConfig, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -91,70 +93,106 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					corsPolicy,
 				),
 			}
-
-			// This block creates redirect route
-			// We either create the redirect or the route with proxy to upstream
-			// Redirect takes a precedence.
-			if finalOpts.Redirect != nil {
+			// Create the decision what to do with the request, in order.
+			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
+			// Redirect -> Validate and Mock -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
+			switch {
+			// Redirect
+			case finalOpts.Redirect != nil:
 				routeRedirect, err := generateRedirect(finalOpts.Redirect)
 				if err != nil {
-					return err
+					return fmt.Errorf("cannot generate redirect: %w", err)
+				}
+				rt.Action = routeRedirect
+
+			// Validate and Mock
+			// case (finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled) &&
+			// 	(finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled):
+
+			// Mock
+			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
+
+				clusterName := "MockingService"
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, mockserver.ServerHostname, mockserver.ServerPort)
 				}
 
-				rt.Action = routeRedirect
-			} else {
+				var rewriteOpts *options.RewriteRegex
+				if finalOpts.Path != nil {
+					rewriteOpts = &finalOpts.Path.Rewrite
+				}
+				// We don't support websocket during mocking, disable it if inherited.
+				websocketEnabled := false
+				routeRoute, err := generateRoute(
+					clusterName,
+					corsPolicy,
+					rewriteOpts,
+					finalOpts.QoS,
+					&websocketEnabled,
+				)
+				if err != nil {
+					return fmt.Errorf("cannot generage route for path %s operation %s: %w", path, method, err)
+				}
+				rt.Action = routeRoute
+
+				// Create MockingID.
+				// Note that this is not unique - 2 and more API files can declare the same path/method/OperationID but with the different vhosts.
+				mockID := generateMockID(path, method, operation.OperationID)
+				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   mockserver.HeaderMockID,
+						Value: mockID,
+					},
+					Append: wrapperspb.Bool(false),
+				})
+				mockResponse, err := mockingConfiguration.GenerateMockResponse(operation)
+				if err != nil {
+					return fmt.Errorf("cannot generate mock response for path %s operation %s: %w", path, method, err)
+				}
+				// Finally, add the mock response to the whole mock configuration with the mockID
+				if err := mockingConfiguration.SetMockResponse(mockID, mockResponse); err != nil {
+					return fmt.Errorf("failure setting mock with ID %s: %w", mockID, err)
+				}
+
+			// Validate and Proxy to the upstream
+			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
 
-				var clusterName string
-
-				if finalOpts.Validation != nil &&
-					finalOpts.Validation.Request != nil &&
-					finalOpts.Validation.Request.Enabled != nil &&
-					*finalOpts.Validation.Request.Enabled {
-
-					// create proxied service if needed
-					serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
-					if _, ok := proxiedServices[serviceID]; !ok {
-						proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
-						if err != nil {
-							return fmt.Errorf("failed to create proxied service: %w", err)
-						}
-
-						proxiedServices[serviceID] = proxiedService
+				// create proxied service if needed
+				serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
+				if _, ok := proxiedServices[serviceID]; !ok {
+					proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
+					if err != nil {
+						return fmt.Errorf("failed to create proxied service: %w", err)
 					}
 
-					// attach service id and operation id headers so that validator will know which service should
-					// serve this request
-					operationID := validation.GenerateOperationID(method, path)
-
-					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-						Header: &envoy_config_core_v3.HeaderValue{
-							Key:   validation.HeaderServiceID,
-							Value: serviceID,
-						},
-						Append: wrapperspb.Bool(false),
-					})
-
-					rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-						Header: &envoy_config_core_v3.HeaderValue{
-							Key:   validation.HeaderOperationID,
-							Value: operationID,
-						},
-						Append: wrapperspb.Bool(false),
-					})
-
-					clusterName = generateClusterName(validatorHostname, validatorPort)
-					if !envoyConfiguration.ClusterExist(clusterName) {
-						envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
-					}
-
-				} else {
-					clusterName = generateClusterName(upstreamHostname, upstreamPort)
-					if !envoyConfiguration.ClusterExist(clusterName) {
-						envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
-					}
+					proxiedServices[serviceID] = proxiedService
 				}
 
+				// attach service id and operation id headers so that validator will know which service should
+				// serve this request
+				operationID := validation.GenerateOperationID(method, path)
+
+				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   validation.HeaderServiceID,
+						Value: serviceID,
+					},
+					Append: wrapperspb.Bool(false),
+				})
+
+				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   validation.HeaderOperationID,
+						Value: operationID,
+					},
+					Append: wrapperspb.Bool(false),
+				})
+
+				clusterName := generateClusterName(validatorHostname, validatorPort)
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
+				}
 				var rewriteOpts *options.RewriteRegex
 				if finalOpts.Path != nil {
 					rewriteOpts = &finalOpts.Path.Rewrite
@@ -171,6 +209,31 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				}
 
 				rt.Action = routeRoute
+
+			// Default - proxy to the upstream
+			default:
+				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
+
+				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+				}
+
+				var rewriteOpts *options.RewriteRegex
+				if finalOpts.Path != nil {
+					rewriteOpts = &finalOpts.Path.Rewrite
+				}
+				routeRoute, err := generateRoute(
+					clusterName,
+					corsPolicy,
+					rewriteOpts,
+					finalOpts.QoS,
+					finalOpts.Websocket,
+				)
+				if err != nil {
+					return err
+				}
+				rt.Action = routeRoute
 			}
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
@@ -181,14 +244,14 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 			}
 		}
 	}
-
-	// update validation proxy
-	proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
-	for _, service := range proxiedServices {
-		proxiedServicesArray = append(proxiedServicesArray, service)
+	// update the validation proxy in the end
+	if len(proxiedServices) > 0 {
+		proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
+		for _, service := range proxiedServices {
+			proxiedServicesArray = append(proxiedServicesArray, service)
+		}
+		proxy.UpdateServices(proxiedServicesArray)
 	}
-
-	proxy.UpdateServices(proxiedServicesArray)
 
 	return nil
 }
@@ -358,6 +421,10 @@ func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, po
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 func generateClusterName(name string, port uint32) string {
 	return fmt.Sprintf("%s-%d", name, port)
+}
+
+func generateMockID(path string, method string, operationID string) string {
+	return fmt.Sprintf("%s-%s-%s", path, method, operationID)
 }
 
 // Can be moved to operationID, but generally we just need unique string

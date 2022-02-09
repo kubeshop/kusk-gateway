@@ -48,6 +48,7 @@ type SubOptions struct {
 	CORS       *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
 	Websocket  *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
 	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
+	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -123,6 +124,11 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	// Validation
 	if o.Validation == nil && in.Validation != nil {
 		o.Validation = in.Validation
+	}
+
+	// Mocking
+	if o.Mocking == nil && in.Mocking != nil {
+		o.Mocking = in.Mocking
 	}
 
 	return

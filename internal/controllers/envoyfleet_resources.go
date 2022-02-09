@@ -175,6 +175,36 @@ func (e *EnvoyFleetResources) generateDeployment() {
 			envoyContainer.Resources.Requests = e.fleet.Spec.Resources.Requests
 		}
 	}
+
+	// Mockserver container (sidecar)
+	mockserverContainer := corev1.Container{
+		Name:            "mockserver",
+		Image:           "kusk-gateway-mockserver:dev",
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		// Command:         []string{"/bin/sh", "-c"},
+		Args: []string{
+			"-fleetID",
+			"blablabla",
+			"-manager-mocking-config-service",
+			"blabla:80",
+		},
+		// Env: []corev1.EnvVar{
+		// 	{
+		// 		Name: "POD_NAME",
+		// 		ValueFrom: &corev1.EnvVarSource{
+		// 			FieldRef: &corev1.ObjectFieldSelector{
+		// 				FieldPath: "metadata.name",
+		// 			},
+		// 		},
+		// 	},
+		// },
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "http",
+				ContainerPort: 8090,
+			},
+		},
+	}
 	// Create deployment
 	e.deployment = &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -198,6 +228,7 @@ func (e *EnvoyFleetResources) generateDeployment() {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						envoyContainer,
+						mockserverContainer,
 					},
 					Volumes: []corev1.Volume{
 						{

@@ -42,6 +42,9 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/spec"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+
+	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	mockingManager "github.com/kubeshop/kusk-gateway/internal/mocking/manager"
 )
 
 const (
@@ -52,10 +55,11 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	EnvoyManager *manager.EnvoyConfigManager
-	Validator    *validation.Proxy
-	m            sync.Mutex
+	Scheme         *runtime.Scheme
+	EnvoyManager   *manager.EnvoyConfigManager
+	MockingManager *mockingManager.MockingConfigManager
+	Validator      *validation.Proxy
+	m              sync.Mutex
 }
 
 var (
@@ -76,6 +80,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	defer l.Info("Finished updating configuration", "fleet", fleetIDstr)
 
 	envoyConfig := config.New()
+
+	mockingConfig := mocking.NewMockConfig()
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs for the fleet", "fleet", fleetIDstr)
 
@@ -102,13 +108,13 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, mockingConfig, c.Validator, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
 	}
-
 	l.Info("Succesfully processed APIs", "fleet", fleetIDstr)
+
 	l.Info("Getting Static Routes", "fleet", fleetIDstr)
 	staticRoutes, err := c.getDeployedStaticRoutes(ctx, fleetIDstr)
 	if err != nil {
@@ -212,7 +218,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Error(err, "Envoy configuration snapshot is invalid", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to generate snapshot: %w", err)
 	}
-
+	// TODO: create mocking config
 	l.Info("Configuration snapshot generated for the fleet", "fleet", fleetIDstr)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)

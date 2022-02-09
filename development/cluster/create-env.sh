@@ -2,10 +2,9 @@
 
 set -e
 
-if ! command -v jq &> /dev/null
-then
-    echo "jq could not be found"
-    exit
+if ! command -v jq &>/dev/null; then
+  echo "jq could not be found"
+  exit
 fi
 
 echo "========> creating cluster..."
@@ -45,7 +44,6 @@ kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-we
 
 echo "========> installing CRDs"
 make install
-
 
 echo "========> building control-plane docker image and installing into cluster"
 

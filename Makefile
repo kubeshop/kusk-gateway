@@ -1,6 +1,7 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= kusk-gateway:dev
+MANAGER_IMG ?= kusk-gateway:dev
+MOCKSERVER_IMG ?= kusk-gateway-mockserver:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
@@ -83,25 +84,33 @@ testing: ## Run the integration tests from development/testing and then delete t
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate fmt vet ## Build manager and mockserver binary.
 	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/mockserver cmd/manager/mockserver.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
 	go build -o bin/manager cmd/manager/main.go
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
+.PHONY: docker-build-manager
+docker-build-manager: ## Build docker image with the manager.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+
+.PHONY: docker-build-mockserver
+docker-build-mockserver: ## Build docker image with the mockserver.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MOCKSERVER_IMG} -f ./build/mockserver/Dockerfile .
+
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} -f ./build/manager/Dockerfile .
+docker-build: docker-build-manager docker-build-mockserver ## Build docker images for all apps
 
 .PHONY: docker-build-debug
 docker-build-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./build/manager/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: docker-build-debug-mockserver
+docker-build-debug-mockserver: ## Build docker image with the mockserver and debugger.
+	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MOCKSERVER_IMG}-debug" -f ./build/mockserver/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -140,10 +149,10 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: update
-update: docker-build deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: update-debug
-update-debug: docker-build-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
