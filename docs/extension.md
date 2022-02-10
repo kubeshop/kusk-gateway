@@ -244,15 +244,6 @@ path:
     substitution: ""
 ```
 
-### qos
-The QoS objects contains the following properties to configure quality of service for endpoints:
-
-| Name            | Description                                |
-|-----------------|--------------------------------------------|
-| retries         | Total number of 5xx retries (default is 0) |
-| request_timeout | Total request timeout (seconds)            |
-| idle_timeout    | Idle connection timeout (seconds)          |
-
 ### validation
 The validation objects contains the following properties to configure automatic request validation:
 
