@@ -4,7 +4,7 @@ This example will show you how to deploy a famous [TodoMVC](https://todomvc.com/
 We chose the [TodoBackend](http://www.todobackend.com/) implementation for an example. The website consists of a Go-powered
 [backend](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/backend.yaml) and a NodeJS [SPA frontend](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/frontend.yaml) that talks to the backend.
 
-The backend application comes with an OpenAPI [specification](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/todospec.yaml), which we will use to configure the Kusk Gateway.
+The backend application comes with an OpenAPI [specification](https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/examples/todomvc/spec/todospec.yaml), which we will use to configure the Kusk Gateway.
 
 In order to let the frontend communicate with the backend, modern browsers require [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) to be properly
 configured. Luckily, Kusk Gateway Manager allows you to do that right in your OpenAPI specification file using the **x-kusk** [extension](extension.md).
