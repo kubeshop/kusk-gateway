@@ -1,0 +1,210 @@
+---
+openapi: 3.0.0
+info:
+  title: Kusk Gateway API
+  description: ""
+  version: 1.0.0
+servers:
+- url: /
+paths:
+  /apis:
+    get:
+      description: gets a list of APIs
+      operationId: getApis
+      parameters:
+      - name: fleet
+        in: query
+        description: optional filter on fleet
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: a list of apis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiItem'
+  /apis/{apiId}/openapispec:
+    get:
+      description: gets the OpenAPI spec for this api id
+      operationId: getApiOpenApiSpec
+      parameters:
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OpenAPI spec object
+          content:
+            application/json:
+              schema:
+                type: object
+  /services:
+    get:
+      description: list all services
+      operationId: getServices
+      parameters:
+      - name: namespace
+        in: query
+        description: optional filter on namespace
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: list of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceItem'
+  /services/{namespace}/{name}:
+    get:
+      description: get details for a single service
+      operationId: getService
+      parameters:
+      - name: namespace
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: name
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: service details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceItem'
+  /fleets:
+    get:
+      description: list all envoy fleets
+      operationId: getEnvoyFleets
+      parameters:
+      - name: namespace
+        in: query
+        description: optional filter on namespace
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: list of envoy fleets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnvoyFleetItem'
+  /fleets/{namespace}/{name}:
+    get:
+      description: get details for a single envoy fleet
+      operationId: getEnvoyFleet
+      parameters:
+      - name: namespace
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: name
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: envoy fleet details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvoyFleetItem'
+components:
+  schemas:
+    ApiItem:
+      required:
+      - fleet
+      - id
+      - name
+      - service
+      - status
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - published
+          - unpublished
+        fleet:
+          $ref: '#/components/schemas/ApiItem_fleet'
+        service:
+          $ref: '#/components/schemas/ApiItem_fleet'
+    ServiceItem:
+      required:
+      - id
+      - name
+      - status
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - available
+          - unavailable
+    EnvoyFleetItem:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+    ApiItem_fleet:
+      required:
+      - name
+      - namespace
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
