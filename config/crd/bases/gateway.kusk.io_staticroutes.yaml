@@ -130,9 +130,11 @@ spec:
                                 type: array
                             type: object
                           path:
-                            description: StaticPathOptions differ from PathOptions
-                              since we don't use Prefix in static routes
                             properties:
+                              prefix:
+                                description: Prefix is the preceding prefix for the
+                                  route (i.e. /your-prefix/here/rest/of/the/route).
+                                type: string
                               rewrite:
                                 description: Rewrite is the pattern (regex) and a
                                   substitution string that will change URL when request
