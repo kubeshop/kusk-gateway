@@ -376,11 +376,6 @@ func (in *Route) DeepCopyInto(out *Route) {
 		*out = new(options.QoSOptions)
 		**out = **in
 	}
-	if in.Path != nil {
-		in, out := &in.Path, &out.Path
-		*out = new(options.PathOptions)
-		**out = **in
-	}
 	if in.Websocket != nil {
 		in, out := &in.Websocket, &out.Websocket
 		*out = new(bool)

@@ -84,9 +84,6 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 				if specRouteAction.Route.QoS != nil {
 					methodOpts.QoS = specRouteAction.Route.QoS
 				}
-				if specRouteAction.Route.Path != nil {
-					methodOpts.Path = specRouteAction.Route.Path
-				}
 				if specRouteAction.Route.Websocket != nil {
 					methodOpts.Websocket = specRouteAction.Route.Websocket
 				}
@@ -118,8 +115,6 @@ type Route struct {
 	CORS *options.CORSOptions `json:"cors,omitempty"`
 	// +optional
 	QoS *options.QoSOptions `json:"qos,omitempty"`
-	// +optional
-	Path *options.PathOptions `json:"path,omitempty"`
 	// +optional
 	// Enable establishing Websocket connections, by default disabled
 	Websocket *bool `json:"websocket,omitempty"`

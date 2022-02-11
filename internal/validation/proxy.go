@@ -188,10 +188,10 @@ func (p *Proxy) validate(r *http.Request, service *Service, operation *operation
 func (p *Proxy) applyRewriteOptions(r *http.Request, service *Service, operation *operation) {
 	subOptions, ok := service.Opts.OperationFinalSubOptions[operation.method+operation.path]
 	if ok && subOptions.Path != nil {
-		if subOptions.Path.Rewrite.Pattern != "" {
-			substitution := reAdjustSubstitutions.ReplaceAllString(subOptions.Path.Rewrite.Substitution, "$$1")
+		if subOptions.Upstream.Rewrite.Pattern != "" {
+			substitution := reAdjustSubstitutions.ReplaceAllString(subOptions.Upstream.Rewrite.Substitution, "$$1")
 
-			r.URL.Path = regexp.MustCompile(subOptions.Path.Rewrite.Pattern).ReplaceAllString(r.URL.Path, substitution)
+			r.URL.Path = regexp.MustCompile(subOptions.Upstream.Rewrite.Pattern).ReplaceAllString(r.URL.Path, substitution)
 		}
 	}
 
