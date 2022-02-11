@@ -1,3 +1,5 @@
+# Add bin to the PATH
+export PATH := $(shell pwd)/bin:$(PATH)
 
 # Image URL to use all building/pushing image targets
 MANAGER_IMG ?= kusk-gateway:dev
@@ -62,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen mocking-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -167,10 +169,43 @@ controller-gen: ## Download controller-gen locally if necessary.
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 .PHONY: kustomize
-
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
+# Protoc and friends installation and generation
+PROTOC := $(shell which protoc)
+PROTOC_GEN_GO := $(shell pwd)/bin/protoc-gen-go
+
+# If protoc isn't on the path, set it to a target that's never up to date, so
+# the install command always runs.
+ifeq ($(PROTOC),)
+	PROTOC = must-rebuild
+endif
+# Figure out which machine we're running on.
+UNAME := $(shell uname)
+
+$(PROTOC):
+# Run the right installation command for the operating system.
+ifeq ($(UNAME), Darwin)
+	brew install protobuf
+endif
+ifeq ($(UNAME), Linux)
+	@echo "[INFO]: Installing protobuf-compiler, input your password for sudo."
+	sudo apt-get install protobuf-compiler -y
+endif
+$(PROTOC_GEN_GO):
+	@echo "[INFO]: Installing protobuf go generation plugin."
+	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1)
+
+
+	# $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative $(notdir $(PROTOFILE))
+	echo $(dirname $@)
+
+.PHONY: mocking-management-compile
+mocking-management-compile: $(PROTOC) $(PROTOC_GEN_GO) # Compile protoc files for mocking/management
+	cd "internal/mocking/management";$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+
+# Envtest
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.

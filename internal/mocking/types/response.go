@@ -1,4 +1,4 @@
-package mocking
+package types
 
 type MockResponse struct {
 	// 200, 201

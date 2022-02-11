@@ -1,4 +1,4 @@
-package mocking
+package types
 
 import (
 	"encoding/json"
@@ -9,34 +9,32 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-type MockConfig struct {
-	mockResponses map[string]*MockResponse
-}
+// Mapping of Mock ID to MockResponses
+type MockConfig map[string]*MockResponse
 
 func NewMockConfig() *MockConfig {
-	return &MockConfig{
-		mockResponses: make(map[string]*MockResponse),
-	}
+	return &MockConfig{}
 }
 
-func (m *MockConfig) GetMockResponse(mockID string) *MockResponse {
-	return m.mockResponses[mockID]
+func (m MockConfig) GetMockResponse(mockID string) *MockResponse {
+	return m[mockID]
 }
 
-func (m *MockConfig) SetMockResponse(mockID string, resp *MockResponse) error {
-	if _, ok := m.mockResponses[mockID]; ok {
+func (m MockConfig) SetMockResponse(mockID string, resp *MockResponse) error {
+	if _, ok := m[mockID]; ok {
 		return fmt.Errorf("mock response with ID %s already exists", mockID)
 	}
-	m.mockResponses[mockID] = resp
+	m[mockID] = resp
 	return nil
 }
 
-func (m *MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse, error) {
+func (m MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse, error) {
 
 	// https://swagger.io/docs/specification/describing-responses/
 	// We iterate over each response until found only ONE candidate for the mocking:
-	// * if there is the single success (2xx) code without the schema and example - use it to return that simple code in the mocked response.
-	// * if there is success code with the example - use this to create the mocked response body.
+	// if there is the single success (2xx) code without the schema and example - use it to return that simple code in the mocked response.
+	// if there is success code with the example - use this to create the mocked response body.
+	// otherwise if none found - fail, this operation must be excluded from the mocking specifically.
 	mockResp := NewMockResponse()
 	for respCode, respRef := range op.Responses {
 		// We don't handle non 2xx codes, skip if found
@@ -46,7 +44,7 @@ func (m *MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse
 		// Note that we don't handle wildcards, e.g. '2xx' - this is allowed in OpenAPI, but we need the exact status code.
 		statusCode, err := strconv.Atoi(respCode)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot convert the response code to int: %w", err)
 		}
 		mockResp.StatusCode = statusCode
 

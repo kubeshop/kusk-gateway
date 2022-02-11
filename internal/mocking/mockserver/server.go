@@ -3,7 +3,7 @@ package mockserver
 import (
 	"net/http"
 
-	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	mt "github.com/kubeshop/kusk-gateway/internal/mocking/types"
 )
 
 const (
@@ -15,14 +15,14 @@ const (
 )
 
 type MockResponses struct {
-	responses map[string]*mocking.MockResponse
+	responses map[string]*mt.MockResponse
 }
 
 func NewMockResponses() *MockResponses {
-	return &MockResponses{responses: make(map[string]*mocking.MockResponse)}
+	return &MockResponses{responses: make(map[string]*mt.MockResponse)}
 }
 
-func (m *MockResponses) GetResponse(mockID string) *mocking.MockResponse {
+func (m *MockResponses) GetResponse(mockID string) *mt.MockResponse {
 	return m.responses[mockID]
 }
 

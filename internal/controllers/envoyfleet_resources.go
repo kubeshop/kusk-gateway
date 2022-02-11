@@ -182,22 +182,13 @@ func (e *EnvoyFleetResources) generateDeployment() {
 		Image:           "kusk-gateway-mockserver:dev",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		// Command:         []string{"/bin/sh", "-c"},
+		// FIXME: pass fleet id and mocking service endpoint
 		Args: []string{
 			"-fleetID",
 			"blablabla",
 			"-manager-mocking-config-service",
 			"blabla:80",
 		},
-		// Env: []corev1.EnvVar{
-		// 	{
-		// 		Name: "POD_NAME",
-		// 		ValueFrom: &corev1.EnvVarSource{
-		// 			FieldRef: &corev1.ObjectFieldSelector{
-		// 				FieldPath: "metadata.name",
-		// 			},
-		// 		},
-		// 	},
-		// },
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          "http",
