@@ -13,13 +13,13 @@ RUN go mod download
 COPY . .
 
 # Build
-RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o mockserver cmd/mockserver/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o helper cmd/helper/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/mockserver .
+COPY --from=builder /workspace/helper .
 USER 65532:65532
 
-ENTRYPOINT ["/mockserver"]
+ENTRYPOINT ["/helper"]

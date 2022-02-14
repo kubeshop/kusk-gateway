@@ -176,17 +176,17 @@ func (e *EnvoyFleetResources) generateDeployment() {
 		}
 	}
 
-	// Mockserver container (sidecar)
-	mockserverContainer := corev1.Container{
-		Name:            "mockserver",
-		Image:           "kusk-gateway-mockserver:dev",
+	// Helper container (sidecar)
+	helperContainer := corev1.Container{
+		Name:            "hehlper",
+		Image:           "kusk-gateway-helper:dev",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		// Command:         []string{"/bin/sh", "-c"},
-		// FIXME: pass fleet id and mocking service endpoint
+		// FIXME: pass fleet id and helper management service endpoint
 		Args: []string{
 			"-fleetID",
 			"blablabla",
-			"-manager-mocking-config-service",
+			"-helper-config-manager-service-address",
 			"blabla:80",
 		},
 		Ports: []corev1.ContainerPort{
@@ -219,7 +219,7 @@ func (e *EnvoyFleetResources) generateDeployment() {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						envoyContainer,
-						mockserverContainer,
+						helperContainer,
 					},
 					Volumes: []corev1.Volume{
 						{

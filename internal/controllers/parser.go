@@ -13,8 +13,8 @@ import (
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
-	"github.com/kubeshop/kusk-gateway/internal/mocking"
-	"github.com/kubeshop/kusk-gateway/internal/mocking/mockserver"
+	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
+	helperServer "github.com/kubeshop/kusk-gateway/internal/helper/server"
 	"github.com/kubeshop/kusk-gateway/internal/options"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
@@ -114,7 +114,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 
 				clusterName := "MockingService"
 				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, mockserver.ServerHostname, mockserver.ServerPort)
+					envoyConfiguration.AddCluster(clusterName, helperServer.ServerHostname, helperServer.ServerPort)
 				}
 
 				var rewriteOpts *options.RewriteRegex
@@ -140,7 +140,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				mockID := generateMockID(path, method, operation.OperationID)
 				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
-						Key:   mockserver.HeaderMockID,
+						Key:   helperServer.HeaderMockID,
 						Value: mockID,
 					},
 					Append: wrapperspb.Bool(false),

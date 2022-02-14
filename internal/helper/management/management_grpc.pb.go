@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConfigManagerClient interface {
-	GetMockSnapshot(ctx context.Context, in *ClientParams, opts ...grpc.CallOption) (ConfigManager_GetMockSnapshotClient, error)
+	GetSnapshot(ctx context.Context, in *ClientParams, opts ...grpc.CallOption) (*Snapshot, error)
 }
 
 type configManagerClient struct {
@@ -29,43 +29,20 @@ func NewConfigManagerClient(cc grpc.ClientConnInterface) ConfigManagerClient {
 	return &configManagerClient{cc}
 }
 
-func (c *configManagerClient) GetMockSnapshot(ctx context.Context, in *ClientParams, opts ...grpc.CallOption) (ConfigManager_GetMockSnapshotClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ConfigManager_ServiceDesc.Streams[0], "/grpc.ConfigManager/GetMockSnapshot", opts...)
+func (c *configManagerClient) GetSnapshot(ctx context.Context, in *ClientParams, opts ...grpc.CallOption) (*Snapshot, error) {
+	out := new(Snapshot)
+	err := c.cc.Invoke(ctx, "/grpc.ConfigManager/GetSnapshot", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &configManagerGetMockSnapshotClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type ConfigManager_GetMockSnapshotClient interface {
-	Recv() (*Snapshot, error)
-	grpc.ClientStream
-}
-
-type configManagerGetMockSnapshotClient struct {
-	grpc.ClientStream
-}
-
-func (x *configManagerGetMockSnapshotClient) Recv() (*Snapshot, error) {
-	m := new(Snapshot)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // ConfigManagerServer is the server API for ConfigManager service.
 // All implementations must embed UnimplementedConfigManagerServer
 // for forward compatibility
 type ConfigManagerServer interface {
-	GetMockSnapshot(*ClientParams, ConfigManager_GetMockSnapshotServer) error
+	GetSnapshot(context.Context, *ClientParams) (*Snapshot, error)
 	mustEmbedUnimplementedConfigManagerServer()
 }
 
@@ -73,8 +50,8 @@ type ConfigManagerServer interface {
 type UnimplementedConfigManagerServer struct {
 }
 
-func (UnimplementedConfigManagerServer) GetMockSnapshot(*ClientParams, ConfigManager_GetMockSnapshotServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetMockSnapshot not implemented")
+func (UnimplementedConfigManagerServer) GetSnapshot(context.Context, *ClientParams) (*Snapshot, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSnapshot not implemented")
 }
 func (UnimplementedConfigManagerServer) mustEmbedUnimplementedConfigManagerServer() {}
 
@@ -89,25 +66,22 @@ func RegisterConfigManagerServer(s grpc.ServiceRegistrar, srv ConfigManagerServe
 	s.RegisterService(&ConfigManager_ServiceDesc, srv)
 }
 
-func _ConfigManager_GetMockSnapshot_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ClientParams)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _ConfigManager_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientParams)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(ConfigManagerServer).GetMockSnapshot(m, &configManagerGetMockSnapshotServer{stream})
-}
-
-type ConfigManager_GetMockSnapshotServer interface {
-	Send(*Snapshot) error
-	grpc.ServerStream
-}
-
-type configManagerGetMockSnapshotServer struct {
-	grpc.ServerStream
-}
-
-func (x *configManagerGetMockSnapshotServer) Send(m *Snapshot) error {
-	return x.ServerStream.SendMsg(m)
+	if interceptor == nil {
+		return srv.(ConfigManagerServer).GetSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.ConfigManager/GetSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigManagerServer).GetSnapshot(ctx, req.(*ClientParams))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // ConfigManager_ServiceDesc is the grpc.ServiceDesc for ConfigManager service.
@@ -116,13 +90,12 @@ func (x *configManagerGetMockSnapshotServer) Send(m *Snapshot) error {
 var ConfigManager_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "grpc.ConfigManager",
 	HandlerType: (*ConfigManagerServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "GetMockSnapshot",
-			Handler:       _ConfigManager_GetMockSnapshot_Handler,
-			ServerStreams: true,
+			MethodName: "GetSnapshot",
+			Handler:    _ConfigManager_GetSnapshot_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "management.proto",
 }

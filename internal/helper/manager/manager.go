@@ -1,9 +1,9 @@
-// package manager provide GRPC server configuration and configuration cache manager.
+// package manager provides manager that starts GRPC server with the configuration cache.
 package manager
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -11,54 +11,92 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	pb "github.com/kubeshop/kusk-gateway/internal/mocking/management"
-	mt "github.com/kubeshop/kusk-gateway/internal/mocking/types"
+	"github.com/go-logr/logr"
+	pb "github.com/kubeshop/kusk-gateway/internal/helper/management"
+	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 )
 
-func New(ctx context.Context, address string, log Logger) *MockingConfigManager {
-	// snapshotCache := cache.NewSnapshotCache(true, cache.IDHash{}, log)
-	mockingCacheManager := &cacheManager{fleetSnapshot: make(map[string]*mt.MockConfig)}
+func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
+	cacheManager := &cacheManager{fleetMockConfigs: make(map[string]*mocking.MockConfig), mu: &sync.RWMutex{}}
+	logger := log.WithName("helper-config-manager")
 	// callbacks := Callbacks{cacheMgr: &cacheManager, log: log}
-	// server := server.NewServer(ctx, &cacheManager, &callbacks)
-	return &MockingConfigManager{
-		// XDSServer:    &server,
-		// cacheManager: &cacheManager,
-		mockingCacheManager: mockingCacheManager,
-		log:                 log,
-		address:             address,
+	return &ConfigManager{
+		cacheManager: cacheManager,
+		l:            logger,
+		address:      address,
 	}
 }
 
-// cacheManager provides the Mocking snapshots cache and the methods to update it with new mocking configuration for the specific Envoy fleet
+// cacheManager provides the snapshots cache and the methods to update it with the new configuration for the specific Envoy fleet
 type cacheManager struct {
 	// active cache snapshot per fleet
-	fleetSnapshot map[string]*mt.MockConfig
-	mu            sync.RWMutex
+	fleetMockConfigs map[string]*mocking.MockConfig
+	mu               *sync.RWMutex
 	// need to embed this to implement the interface
 	pb.UnimplementedConfigManagerServer
 }
 
-func (cm *cacheManager) GetMockSnapshot(*pb.ClientParams, ConfigManager_GetMockSnapshotServer) error
-
-// MockingConfigManager manages Mocking service configuration for the fleets
-type MockingConfigManager struct {
-	// MockingServer    *server.Server
-	mockingCacheManager *cacheManager
-	address             string
-	log                 Logger
+// SetFleetSnapshot creates the new fleet configuration snapshot and updates the related internal cache
+func (c *cacheManager) UpdateFleetConfigSnapshot(fleetID string, mockConfig *mocking.MockConfig) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.fleetMockConfigs[fleetID] = mockConfig
 }
 
-func (m *MockingConfigManager) Start() error {
+// GetSnapshot is a server side function to return the protobuf encoded snapshot to the client.
+func (c cacheManager) GetSnapshot(ctx context.Context, clientParams *pb.ClientParams) (*pb.Snapshot, error) {
+	snapshot := &pb.Snapshot{}
+	// Retrieve mocking configuration and fill it in if found
+	if fleetMockConfig, ok := c.fleetMockConfigs[clientParams.FleetID]; ok {
+		snapshot.MockConfig = &pb.MockConfig{
+			MockResponses: make(map[string]*pb.MockResponse, len(*fleetMockConfig)),
+		}
+		for mockID, mockResponse := range *fleetMockConfig {
+			// Create protobuf MockResponses with the status code
+			snapshot.MockConfig.MockResponses[mockID] = &pb.MockResponse{
+				StatusCode:    uint32(mockResponse.StatusCode),
+				MediaTypeData: make(map[string][]byte, len(mockResponse.MediaTypeData)),
+			}
+			// Fill its MediaTypeData mapping
+			for mediaType, mediaTypeData := range mockResponse.MediaTypeData {
+				snapshot.MockConfig.MockResponses[mockID].MediaTypeData[mediaType] = mediaTypeData
+			}
+		}
+	}
+	return snapshot, nil
+}
+
+// ConfigManager manages Mocking service configuration for the fleets
+type ConfigManager struct {
+	// MockingServer    *server.Server
+	cacheManager *cacheManager
+	address      string
+	l            logr.Logger
+}
+
+func (m *ConfigManager) UpdateFleetNodes(fleetID string) {
+	// TODO: write me
+	return
+}
+
+// ApplyNewFleetConfig adds new mocking configuration to the cache manager and triggers helpers update
+func (m *ConfigManager) ApplyNewFleetConfig(fleetID string, mockConfig *mocking.MockConfig) {
+	m.cacheManager.UpdateFleetConfigSnapshot(fleetID, mockConfig)
+	m.UpdateFleetNodes(fleetID)
+	m.l.Info("Applied new fleet config", "fleet", fleetID, "config", mockConfig)
+	return
+}
+
+func (m *ConfigManager) Start() error {
 	// Starts GRPC service
 	grpcServer := newGRPCServer()
+	m.l.Info(fmt.Sprintf("Starting Helper Configuration Management service on %s", m.address))
 	listener, err := net.Listen("tcp", m.address)
 	if err != nil {
 		return err
 	}
+	pb.RegisterConfigManagerServer(grpcServer, *m.cacheManager)
 
-	// registerServer(grpcServer, *em.XDSServer)
-
-	log.Printf("control plane server listening on %s\n", m.address)
 	return grpcServer.Serve(listener)
 }
 

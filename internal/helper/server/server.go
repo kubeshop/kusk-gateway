@@ -1,9 +1,10 @@
-package mockserver
+// package server provides the Helper HTTP server, which is the service, configured with the Helper Management Service.
+package server
 
 import (
 	"net/http"
 
-	mt "github.com/kubeshop/kusk-gateway/internal/mocking/types"
+	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 )
 
 const (
@@ -14,33 +15,21 @@ const (
 	HeaderMockResponseInsert        = "X-Kusk-Mocked"
 )
 
-type MockResponses struct {
-	responses map[string]*mt.MockResponse
-}
-
-func NewMockResponses() *MockResponses {
-	return &MockResponses{responses: make(map[string]*mt.MockResponse)}
-}
-
-func (m *MockResponses) GetResponse(mockID string) *mt.MockResponse {
-	return m.responses[mockID]
-}
-
 // HTTP Handler to pass to the mux
-type MockHTTPHandler struct {
-	mockResponses *MockResponses
+type HTTPHandler struct {
+	mockConfig *mocking.MockConfig
 }
 
-func NewMockHTTPHandler() *MockHTTPHandler {
-	return &MockHTTPHandler{mockResponses: NewMockResponses()}
+func NewHTTPHandler() *HTTPHandler {
+	return &HTTPHandler{mockConfig: mocking.NewMockConfig()}
 }
 
 // ServerHTTP implements the standard net/http handler interface
-func (m *MockHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO: fail if the header is missing
 	mockID := r.Header.Get(HeaderMockID)
 	// TODO: Fail if the response is missing
-	mockResponse := m.mockResponses.GetResponse(mockID)
+	mockResponse := m.mockConfig.GetMockResponse(mockID)
 
 	// TODO: detect content type for the user using its request Accept Header
 	mediaType := "application/json"

@@ -3,7 +3,7 @@ export PATH := $(shell pwd)/bin:$(PATH)
 
 # Image URL to use all building/pushing image targets
 MANAGER_IMG ?= kusk-gateway:dev
-MOCKSERVER_IMG ?= kusk-gateway-mockserver:dev
+HELPER_IMG ?= kusk-gateway-helper:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
@@ -64,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen mocking-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen helper-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -86,9 +86,9 @@ testing: ## Run the integration tests from development/testing and then delete t
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager and mockserver binary.
+build: generate fmt vet ## Build manager and helper binary.
 	go build -o bin/manager cmd/manager/main.go
-	go build -o bin/mockserver cmd/manager/mockserver.go
+	go build -o bin/helper cmd/helper/main.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
@@ -99,20 +99,20 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 docker-build-manager: ## Build docker image with the manager.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
-.PHONY: docker-build-mockserver
-docker-build-mockserver: ## Build docker image with the mockserver.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MOCKSERVER_IMG} -f ./build/mockserver/Dockerfile .
+.PHONY: docker-build-helper
+docker-build-helper: ## Build docker image with the helper.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${HELPER_IMG} -f ./build/helper/Dockerfile .
 
 .PHONY: docker-build
-docker-build: docker-build-manager docker-build-mockserver ## Build docker images for all apps
+docker-build: docker-build-manager docker-build-helper ## Build docker images for all apps
 
 .PHONY: docker-build-debug
 docker-build-debug: ## Build docker image with the manager and debugger.
 	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
-.PHONY: docker-build-debug-mockserver
-docker-build-debug-mockserver: ## Build docker image with the mockserver and debugger.
-	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MOCKSERVER_IMG}-debug" -f ./build/mockserver/Dockerfile-debug .
+.PHONY: docker-build-debug-helper
+docker-build-debug-helper: ## Build docker image with the helper and debugger.
+	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -201,9 +201,9 @@ $(PROTOC_GEN_GO):
 	# $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative $(notdir $(PROTOFILE))
 	echo $(dirname $@)
 
-.PHONY: mocking-management-compile
-mocking-management-compile: $(PROTOC) $(PROTOC_GEN_GO) # Compile protoc files for mocking/management
-	cd "internal/mocking/management";$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+.PHONY: helper-management-compile
+helper-management-compile: $(PROTOC) $(PROTOC_GEN_GO) # Compile protoc files for helper/management
+	cd "internal/helper/management";$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
 
 # Envtest
 ENVTEST = $(shell pwd)/bin/setup-envtest

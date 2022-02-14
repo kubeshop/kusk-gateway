@@ -1,4 +1,4 @@
-package types
+package mocking
 
 import (
 	"encoding/json"

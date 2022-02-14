@@ -43,8 +43,8 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/spec"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 
-	"github.com/kubeshop/kusk-gateway/internal/mocking"
-	mockingManager "github.com/kubeshop/kusk-gateway/internal/mocking/manager"
+	helperManager "github.com/kubeshop/kusk-gateway/internal/helper/manager"
+	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 )
 
 const (
@@ -55,11 +55,11 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme         *runtime.Scheme
-	EnvoyManager   *manager.EnvoyConfigManager
-	MockingManager *mockingManager.MockingConfigManager
-	Validator      *validation.Proxy
-	m              sync.Mutex
+	Scheme        *runtime.Scheme
+	EnvoyManager  *manager.EnvoyConfigManager
+	HelperManager *helperManager.ConfigManager
+	Validator     *validation.Proxy
+	m             sync.Mutex
 }
 
 var (
@@ -218,8 +218,10 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Error(err, "Envoy configuration snapshot is invalid", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to generate snapshot: %w", err)
 	}
-	// TODO: create mocking config
-	l.Info("Configuration snapshot generated for the fleet", "fleet", fleetIDstr)
+	l.Info("Mocking configuration was generated for the fleet", "fleet", fleetIDstr, "mocking entries", len(*mockingConfig))
+	c.HelperManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
+
+	l.Info("Configuration snapshot was generated for the fleet", "fleet", fleetIDstr)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to apply snapshot: %w", err)
