@@ -1,5 +1,5 @@
 // package server provides the Helper HTTP server, which is the service, configured with the Helper Management Service.
-package server
+package httpserver
 
 import (
 	"net/http"

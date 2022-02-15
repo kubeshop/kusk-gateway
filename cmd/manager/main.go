@@ -48,7 +48,7 @@ import (
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
-	helperManager "github.com/kubeshop/kusk-gateway/internal/helper/manager"
+	helperManagement "github.com/kubeshop/kusk-gateway/internal/helper/management"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
 
@@ -153,7 +153,7 @@ func main() {
 		}
 	}()
 
-	helperManager := helperManager.New(context.Background(), helperManagerAddr, logger)
+	helperManager := helperManagement.New(context.Background(), helperManagerAddr, logger)
 
 	go func() {
 		if err := helperManager.Start(); err != nil {

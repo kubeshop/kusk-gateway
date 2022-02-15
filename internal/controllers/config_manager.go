@@ -43,7 +43,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/spec"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 
-	helperManager "github.com/kubeshop/kusk-gateway/internal/helper/manager"
+	helperManagement "github.com/kubeshop/kusk-gateway/internal/helper/management"
 	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 )
 
@@ -57,7 +57,7 @@ type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	EnvoyManager  *manager.EnvoyConfigManager
-	HelperManager *helperManager.ConfigManager
+	HelperManager *helperManagement.ConfigManager
 	Validator     *validation.Proxy
 	m             sync.Mutex
 }
