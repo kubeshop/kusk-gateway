@@ -34,11 +34,11 @@ spec:
           namespace: testing
           name: todo-backend
           port: 3000
-      path:
-        prefix: /testing
         rewrite:
           pattern: "^/testing/"
           substitution: "/"
+      path:
+        prefix: /testing
     paths:
       /todos/{id}:
         get:

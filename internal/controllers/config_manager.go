@@ -108,7 +108,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
 	}
 
-	l.Info("Succesfully processed APIs", "fleet", fleetIDstr)
+	l.Info("Successfully processed APIs", "fleet", fleetIDstr)
 	l.Info("Getting Static Routes", "fleet", fleetIDstr)
 	staticRoutes, err := c.getDeployedStaticRoutes(ctx, fleetIDstr)
 	if err != nil {
@@ -127,7 +127,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 	}
 
-	l.Info("Succesfully processed Static Routes", "fleet", fleetIDstr)
+	l.Info("Successfully processed Static Routes", "fleet", fleetIDstr)
 
 	l.Info("Processing EnvoyFleet configuration", "fleet", fleetIDstr)
 	var fleet gateway.EnvoyFleet

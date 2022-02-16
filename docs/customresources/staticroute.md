@@ -57,6 +57,10 @@ spec:
               name: <string>
               namespace: <string>
               port: 8080
+            # rewrites path with the regex and substitution patterns. 
+            rewrite:
+              pattern: <string> # path regex pattern
+              substitution: <string> # path substitution pattern.
           # Optional
           qos:
             # the timeout for the upstream connection, seconds. 0 means forever, if unspecified - 15 seconds.
@@ -65,12 +69,6 @@ spec:
             idle_timeout: <int>
             # retres define how many retries to upstream with failed (50x code) requests, number. Default 1.
             retries: <int>
-          # Optional
-          path:
-            # Rewrites path with the regex and substitution patterns. 
-            rewrite:
-              pattern: <string> # path regex pattern
-              substitution: <string> # path substitution pattern.
           # Optional
           cors:
             # allowed origins returned in Access-Control-Allow-Origin header
@@ -214,6 +212,10 @@ route:
       namespace: <string>
       # service port
       port: <int>
+    # rewrites path with the regex and substitution patterns. 
+    rewrite:
+      pattern: <string> # path regex pattern
+      substitution: <string> # path substitution pattern.
   # Quality of Service for the request
   # Optional
   qos:
@@ -223,13 +225,6 @@ route:
     idle_timeout: <int>
     # retres define how many retries to upstream with failed (50x code) requests, number. Default 1.
     retries: <int>
-  # What to do with the path when proxying to the upstream.
-  # Optional
-  path:
-    # Rewrites path with the regex and substitution patterns. 
-    rewrite:
-      pattern: <string> # path regex pattern
-      substitution: <string> # path substitution pattern.
   # Optional
   cors:
     # allowed origins returned in Access-Control-Allow-Origin header
@@ -264,7 +259,7 @@ route:
 *route*.**upstream** is a required field that defines the upstream host parameters.
 We proxy using DNS hostname or local cluster K8s service parameters, which are further resolved to DNS hostname. Either *upstream*.**host** or *upstream*.**service** must be specified inside.
 
-*route*.**path** is an optional field that specifies what to do with the URL path when proxying to the upstream - possible values right now is to rewrite it. See the rewrite_regex section in redirect action above for the explanation.
+*route*.**upstream**.**rewrite** is an optional field that specifies what to do with the URL path when proxying to the upstream - possible values right now is to rewrite it. See the rewrite_regex section in redirect action above for the explanation.
 
 *route*.**qos** optional field is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
 
@@ -342,7 +337,6 @@ spec:
               name: api0
               namespace: legacy
               port: 80
-          path:
             # removes /api/v0 from the path when proxying to upstream
             rewrite:
               pattern: "^/api/v0"

@@ -194,7 +194,6 @@ spec:
               namespace: testing
               name: todo-backend
               port: 3000
-          path:
             rewrite:
               pattern: "^/second/"
               substitution: "/"

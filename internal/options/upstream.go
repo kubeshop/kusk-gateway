@@ -12,6 +12,14 @@ import (
 type UpstreamOptions struct {
 	Host    *UpstreamHost    `yaml:"host,omitempty" json:"host,omitempty"`
 	Service *UpstreamService `yaml:"service,omitempty" json:"service,omitempty"`
+
+	// Rewrite is the pattern (regex) and a substitution string that will change URL when request is being forwarded
+	// to the upstream service.
+	// e.g. given that Prefix is set to "/petstore/api/v3", and with
+	// Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution is set to ""
+	// path that would be generated is "/petstore/api/v3/pets", URL that the upstream service would receive
+	// is "/api/v3/pets".
+	Rewrite RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
 }
 
 // UpstreamHost defines any DNS hostname with port that we can proxy to, even outside of the cluster
@@ -59,6 +67,7 @@ func (o UpstreamOptions) Validate() error {
 	return v.ValidateStruct(&o,
 		v.Field(&o.Host),
 		v.Field(&o.Service),
+		v.Field(&o.Rewrite),
 	)
 }
 

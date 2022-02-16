@@ -70,7 +70,7 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 		opts.Paths[path] = make(options.StaticOperationSubOptions)
 		pathMethods := opts.Paths[path]
 		for specMethod, specRouteAction := range specMethods {
-			methodOpts := &options.StaticSubOptions{}
+			methodOpts := &options.SubOptions{}
 			pathMethods[specMethod] = methodOpts
 			if specRouteAction.Redirect != nil {
 				methodOpts.Redirect = specRouteAction.Redirect
@@ -83,9 +83,6 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 				}
 				if specRouteAction.Route.QoS != nil {
 					methodOpts.QoS = specRouteAction.Route.QoS
-				}
-				if specRouteAction.Route.Path != nil {
-					methodOpts.Path = specRouteAction.Route.Path
 				}
 				if specRouteAction.Route.Websocket != nil {
 					methodOpts.Websocket = specRouteAction.Route.Websocket
@@ -119,8 +116,6 @@ type Route struct {
 	// +optional
 	QoS *options.QoSOptions `json:"qos,omitempty"`
 	// +optional
-	Path *options.StaticPathOptions `json:"path,omitempty"`
-	// +optional
 	// Enable establishing Websocket connections, by default disabled
 	Websocket *bool `json:"websocket,omitempty"`
 }
@@ -131,8 +126,8 @@ type StaticRouteStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // StaticRoute is the Schema for the staticroutes API
 type StaticRoute struct {
@@ -143,7 +138,7 @@ type StaticRoute struct {
 	Status StaticRouteStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // StaticRouteList contains a list of StaticRoute
 type StaticRouteList struct {

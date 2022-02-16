@@ -249,16 +249,15 @@ spec:
             - X-Custom-PathLevel1
             - X-Custom-PathLevel2
             max_age: 86200
-          path:
-            # /oldAPI/stream/{number} -> to upstream: /stream/{number}
-            rewrite:
-              pattern: "^/oldAPI"
-              substitution: ""
           # Since at the top we specify upstream.service, this one should replace it as upstream.host
           upstream:
             host:
               hostname: httpbin
               port: 8080
+            # /oldAPI/stream/{number} -> to upstream: /stream/{number}
+            rewrite:
+              pattern: "^/oldAPI"
+              substitution: ""
         get:
           x-kusk:
             cors:

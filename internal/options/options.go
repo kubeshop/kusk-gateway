@@ -91,9 +91,6 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 		if o.Path.Prefix == "" && in.Path.Prefix != "" {
 			o.Path.Prefix = in.Path.Prefix
 		}
-		if o.Path.Rewrite.Pattern == "" && in.Path.Rewrite.Pattern != "" {
-			o.Path.Rewrite = in.Path.Rewrite
-		}
 	}
 	// QoS params merging
 	switch {
