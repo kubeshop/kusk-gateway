@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -54,18 +55,18 @@ func main() {
 	go func() {
 		log.Fatal(helperHTTPServer.ListenAndServe())
 	}()
-
-	log.Info("Dialing to the management service")
-	dialAndWaitForManagerCommand(helperConfigurationManagerServiceAddress)
+	dialAndWaitForUpdates(helperConfigurationManagerServiceAddress)
 	// Should never come to this
 	log.Fatal("The application exited too early")
 }
 
-func dialAndWaitForManagerCommand(helperManagerAddress string) {
+func dialAndWaitForUpdates(helperManagerAddress string) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	// Creates the connection, wait for the commands and respond
+	// Using closure since this respawns if failed and we defer a lot of closing operations.
 	connection := func() {
+		log.Info("Dialing to the management service")
 		conn, err := grpc.Dial(helperManagerAddress, opts...)
 		defer conn.Close()
 		if err != nil {
@@ -73,11 +74,23 @@ func dialAndWaitForManagerCommand(helperManagerAddress string) {
 			return
 		}
 		client := management.NewConfigManagerClient(conn)
-		// snap, err := getSnapshot(client)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		stream, err := client.GetSnapshot(ctx, &management.ClientParams{NodeName: nodeName, FleetID: fleetID})
 		if err != nil {
-			log.Error("Got error: ", err)
-		} else {
-			log.Infow("Retrieved snapshot: ", "snapshot", snap)
+			log.Errorf("Got error during the connection to the management service: %s", err)
+			return
+		}
+		for {
+			snapshot, err := stream.Recv()
+			if err == io.EOF {
+				log.Error("Got EOF during the receiving")
+				break
+			} else if err != nil {
+				log.Errorf("Got error when receiving from the stream: %s", err)
+				return
+			}
+			log.Infow("Retrieved the configuration snapshot: ", "snapshot", snapshot)
 		}
 	}
 	// Endless loop while waiting for commands from the management server
@@ -88,16 +101,6 @@ func dialAndWaitForManagerCommand(helperManagerAddress string) {
 		time.Sleep(1 * time.Second)
 	}
 }
-
-// func getSnapshot(client management.ConfigManagerClient) (*management.Snapshot, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
-// 	snap, err := client.GetSnapshot(ctx, &management.ClientParams{NodeName: nodeName, FleetID: fleetID})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return snap, nil
-// }
 
 func initLogger() *zap.Logger {
 	// encoding: console, json

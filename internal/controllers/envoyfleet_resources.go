@@ -178,16 +178,16 @@ func (e *EnvoyFleetResources) generateDeployment() {
 
 	// Helper container (sidecar)
 	helperContainer := corev1.Container{
-		Name:            "hehlper",
+		Name:            "helper",
 		Image:           "kusk-gateway-helper:dev",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		// Command:         []string{"/bin/sh", "-c"},
 		// FIXME: pass fleet id and helper management service endpoint
 		Args: []string{
 			"-fleetID",
-			"blablabla",
+			"testing.testing",
 			"-helper-config-manager-service-address",
-			"blabla:80",
+			"kusk-gateway-helper-service.kusk-system.svc.cluster.local.:18010",
 		},
 		Ports: []corev1.ContainerPort{
 			{
