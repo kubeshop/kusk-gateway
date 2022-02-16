@@ -24,6 +24,10 @@ x-kusk:
       namespace: default
       service: petstore
       port: 8000
+    rewrite:
+      rewrite_regex:
+        pattern: 'regular_expression'
+        substituion: 'substitution'
       
   redirect: # upstream and redirect are mutually exclusive
     scheme_redirect: https
@@ -41,10 +45,6 @@ x-kusk:
         
   path:
     prefix: /api
-    rewrite:
-      rewrite_regex:
-        pattern: 'regular_expression'
-        substituion: 'substitution'
           
   qos:
     retries: 10

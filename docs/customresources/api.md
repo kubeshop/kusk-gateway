@@ -64,12 +64,12 @@ spec:
           name: oldapi
           namespace: default
           port: 80
-      path:
-        prefix: /api
         # Strips prefix when forwarding to upstream
         rewrite:
           pattern: "^/api"
           substitution: ""
+      path:
+        prefix: /api
     paths:
       /pet:
         x-kusk:
