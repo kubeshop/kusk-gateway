@@ -259,7 +259,7 @@ route:
 *route*.**upstream** is a required field that defines the upstream host parameters.
 We proxy using DNS hostname or local cluster K8s service parameters, which are further resolved to DNS hostname. Either *upstream*.**host** or *upstream*.**service** must be specified inside.
 
-*route*.**upstream**.**path** is an optional field that specifies what to do with the URL path when proxying to the upstream - possible values right now is to rewrite it. See the rewrite_regex section in redirect action above for the explanation.
+*route*.**upstream**.**rewrite** is an optional field that specifies what to do with the URL path when proxying to the upstream - possible values right now is to rewrite it. See the rewrite_regex section in redirect action above for the explanation.
 
 *route*.**qos** optional field is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
 

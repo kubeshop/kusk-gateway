@@ -220,7 +220,8 @@ The path object contains the following properties to configure service endpoints
 |--------|------------------------------------------------------------------------------------------|
 | prefix | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
 
-If a rewrite isn't specified then the upstream service will receive the request as is with any path still appended.
+If `upstream.rewrite` option is not specified then the upstream service will receive the request "as is" with any prefix
+still appended to the URL.
 
 #### service
 
