@@ -114,7 +114,7 @@ func initSecretsInformer(
 
 	dynamicConfig := dynamic.NewForConfigOrDie(config)
 	resource := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicConfig, time.Minute, corev1.NamespaceAll, nil)
+	factory := dynamicinformer.NewDynamicSharedInformerFactory(dynamicConfig, time.Minute)
 	informer := factory.ForResource(resource).Informer()
 
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -135,6 +135,7 @@ func initSecretsInformer(
 			oldSecret, err := parseSecret(oldU)
 			if err != nil {
 				log.Error(err, "unable to parse old secret")
+				return
 			}
 
 			if reflect.DeepEqual(oldSecret.Data, newSecret.Data) {
