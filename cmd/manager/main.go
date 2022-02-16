@@ -30,6 +30,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"reflect"
+	"time"
 
 	// +kubebuilder:scaffold:imports
 
@@ -37,10 +40,17 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -87,6 +97,58 @@ func initLogger(development bool, level string) (logr.Logger, error) {
 	return zapr.NewLogger(zapLogger), nil
 }
 
+func initSecretsInformer(
+	log logr.Logger,
+	config *rest.Config,
+	secretsChan chan *corev1.Secret,
+) cache.SharedIndexInformer {
+	parseSecret := func(u *unstructured.Unstructured) (*corev1.Secret, error) {
+		var secret corev1.Secret
+		if err := runtime.DefaultUnstructuredConverter.
+			FromUnstructured(u.UnstructuredContent(), &secret); err != nil {
+			return nil, err
+		}
+
+		return &secret, nil
+	}
+
+	dynamicConfig := dynamic.NewForConfigOrDie(config)
+	resource := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicConfig, time.Minute, corev1.NamespaceAll, nil)
+	informer := factory.ForResource(resource).Informer()
+
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			u := newObj.(*unstructured.Unstructured)
+
+			newSecret, err := parseSecret(u)
+			if err != nil {
+				log.Error(err, "unable to parse updated secret")
+			}
+
+			if newSecret.Type != corev1.SecretTypeTLS {
+				return
+			}
+
+			oldU := oldObj.(*unstructured.Unstructured)
+			oldSecret, err := parseSecret(oldU)
+			if err != nil {
+				log.Error(err, "unable to parse old secret")
+			}
+
+			if reflect.DeepEqual(oldSecret.Data, newSecret.Data) {
+				return
+			}
+
+			secretsChan <- newSecret
+		},
+		DeleteFunc: func(obj interface{}) {},
+	})
+
+	return informer
+}
+
 func main() {
 	var (
 		metricsAddr           string
@@ -118,7 +180,9 @@ func main() {
 
 	setupLog := logger.WithName("setup")
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	restConfig := ctrl.GetConfigOrDie()
+
+	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
@@ -149,11 +213,14 @@ func main() {
 		}
 	}()
 
+	secretsChan := make(chan *corev1.Secret)
+
 	controllerConfigManager := controllers.KubeEnvoyConfigManager{
 		Client:       mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
 		EnvoyManager: envoyManager,
 		Validator:    proxy,
+		SecretsChan:  secretsChan,
 	}
 
 	if err = (&controllers.EnvoyFleetReconciler{
@@ -166,6 +233,18 @@ func main() {
 			Error(err, "unable to create controller")
 		os.Exit(1)
 	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	go func() {
+		initSecretsInformer(logger, restConfig, secretsChan).Run(ctx.Done())
+	}()
+
+	go func() {
+		// start process for listening to secrets
+		controllerConfigManager.WatchSecrets(ctx.Done())
+	}()
 
 	if err = (&controllers.APIReconciler{
 		Client:        mgr.GetClient(),
