@@ -20,7 +20,7 @@ func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
 		fleetConfigs:                make(map[string]*Snapshot),
 		fleetConfigsMutex:           &sync.RWMutex{},
 		fleetNodesConnections:       make(map[string]map[string]chan *Snapshot),
-		fleetNodesMutex:             &sync.RWMutex{},
+		fleetNodesConnectionsMutex:  &sync.RWMutex{},
 		randomNodeStreamIDGenerator: rand.New(rand.NewSource(100)),
 	}
 	logger := log.WithName("helper-config-manager")
@@ -38,15 +38,15 @@ type cacheManager struct {
 	fleetConfigs map[string]*Snapshot
 	// Map of [fleets] to the map of [node connection id] and their connection channels
 	fleetNodesConnections       map[string]map[string]chan *Snapshot
-	fleetNodesMutex             *sync.RWMutex
+	fleetNodesConnectionsMutex  *sync.RWMutex
 	fleetConfigsMutex           *sync.RWMutex
 	randomNodeStreamIDGenerator *rand.Rand
 	// need to embed this to implement the interface for GRPC types
 	UnimplementedConfigManagerServer
 }
 
-// UpdateFleetConfigSnapshot creates the new fleet configuration snapshot and updates the related internal cache
-func (c *cacheManager) UpdateFleetConfigSnapshot(fleetID string, mockConfig *mocking.MockConfig) {
+// updateFleetConfigSnapshot creates the new fleet configuration snapshot and updates the related internal cache
+func (c *cacheManager) updateFleetConfigSnapshot(fleetID string, mockConfig *mocking.MockConfig) {
 	pbMockConfig := MockConfigToProtoMockConfig(mockConfig)
 	snapshot := &Snapshot{
 		MockConfig: pbMockConfig,
@@ -55,21 +55,16 @@ func (c *cacheManager) UpdateFleetConfigSnapshot(fleetID string, mockConfig *moc
 	c.fleetConfigs[fleetID] = snapshot
 	c.fleetConfigsMutex.Unlock()
 	// Trigger update to all fleet nodes
-	c.sendUpdateToFleetNodes(fleetID)
-}
-
-func (c *cacheManager) sendUpdateToFleetNodes(fleetID string) {
-	snapshot := c.getOrSetSnapshot(fleetID)
 	nodeConnections, ok := c.fleetNodesConnections[fleetID]
 	// No fleet nodes connections are registered
 	if !ok {
 		return
 	}
-	c.fleetNodesMutex.RLock()
+	c.fleetNodesConnectionsMutex.RLock()
 	for _, ch := range nodeConnections {
 		ch <- snapshot
 	}
-	c.fleetNodesMutex.RUnlock()
+	c.fleetNodesConnectionsMutex.RUnlock()
 }
 
 // getOrSetSnapshot returns snapshot for the fleet or creates one empty if the fleet entry is missing.
@@ -89,11 +84,10 @@ func (c *cacheManager) getOrSetSnapshot(fleetID string) *Snapshot {
 
 func (c *cacheManager) registerClientConnection(fleetID string, nodeStreamID string) <-chan *Snapshot {
 	ch := make(chan *Snapshot)
-	c.fleetNodesMutex.Lock()
-	defer c.fleetNodesMutex.Unlock()
+	c.fleetNodesConnectionsMutex.Lock()
+	defer c.fleetNodesConnectionsMutex.Unlock()
 	// Create nodes connections map if missing
-	_, ok := c.fleetNodesConnections[fleetID]
-	if !ok {
+	if _, ok := c.fleetNodesConnections[fleetID]; !ok {
 		c.fleetNodesConnections[fleetID] = make(map[string]chan *Snapshot)
 	}
 	// register node connection in the connections map
@@ -102,8 +96,8 @@ func (c *cacheManager) registerClientConnection(fleetID string, nodeStreamID str
 }
 
 func (c *cacheManager) unregisterClientConnection(fleetID string, nodeStreamID string) {
-	c.fleetNodesMutex.Lock()
-	defer c.fleetNodesMutex.Unlock()
+	c.fleetNodesConnectionsMutex.Lock()
+	defer c.fleetNodesConnectionsMutex.Unlock()
 	// Remove this node stream from the fleet's streams
 	nodesConnections, ok := c.fleetNodesConnections[fleetID]
 	if ok {
@@ -119,16 +113,20 @@ func (c *cacheManager) unregisterClientConnection(fleetID string, nodeStreamID s
 // GetSnapshot is a server side function to return the protobuf encoded snapshot to the client.
 // It will run in its own goroutine for the each call (client).
 func (c cacheManager) GetSnapshot(clientParams *ClientParams, stream ConfigManager_GetSnapshotServer) error {
-	// Get snapshot and send it once at the start
+
+	// Get snapshot and send to the client once on the start
 	snapshot := c.getOrSetSnapshot(clientParams.FleetID)
 	if err := stream.Send(snapshot); err != nil {
 		return err
 	}
-	// On success we register in the connections array and permanently wait for the channel message with the Snapshot to send id to the client.
-	// Generate a random stream ID to avoid the situations when the client reconnects faster than this goroutine is terminated to avoid races.
+
+	// We register in the connections map and permanently wait for the channel message with the new Snapshot to send id to the client.
+	// Generate a random stream ID to avoid the races when the client reconnects faster than this goroutine is terminated.
+	// Node new connection will have the different stream ID in the map while the older is removed.
 	nodeStreamID := fmt.Sprintf("%s:%d", clientParams.NodeName, c.randomNodeStreamIDGenerator.Uint32())
 	receiveChan := c.registerClientConnection(clientParams.FleetID, nodeStreamID)
 	defer c.unregisterClientConnection(clientParams.FleetID, nodeStreamID)
+
 	// Endlessly stream Snapshots to the client until it closes the connection or returns error.
 	for {
 		select {
@@ -144,22 +142,16 @@ func (c cacheManager) GetSnapshot(clientParams *ClientParams, stream ConfigManag
 
 // ###############################  Config Manager ########################################################
 // ConfigManager manages all fleet configuration for the fleets
-// It contains cacheManager for the data and runs GRPC service to updates helper nodes
+// It contains cacheManager for the data and runs GRPC service for updates to helper nodes
 type ConfigManager struct {
 	cacheManager *cacheManager
 	address      string
 	l            logr.Logger
 }
 
-func (m *ConfigManager) UpdateFleetNodes(fleetID string) {
-	// TODO: write me
-	return
-}
-
 // ApplyNewFleetConfig adds new configuration to the cache manager and triggers helpers update
 func (m *ConfigManager) ApplyNewFleetConfig(fleetID string, mockConfig *mocking.MockConfig) {
-	m.cacheManager.UpdateFleetConfigSnapshot(fleetID, mockConfig)
-	m.UpdateFleetNodes(fleetID)
+	m.cacheManager.updateFleetConfigSnapshot(fleetID, mockConfig)
 	m.l.Info("Applied new fleet config", "fleet", fleetID, "config", mockConfig)
 	return
 }

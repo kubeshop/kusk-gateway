@@ -3,6 +3,7 @@ package httpserver
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 )
@@ -15,28 +16,75 @@ const (
 	HeaderMockResponseInsert        = "X-Kusk-Mocked"
 )
 
-// HTTP Handler to pass to the mux
+// HTTP Handler is the main server handler
 type HTTPHandler struct {
 	mockConfig *mocking.MockConfig
+	mu         *sync.RWMutex
+}
+
+func (h *HTTPHandler) SetMockConfig(mockConfig *mocking.MockConfig) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.mockConfig = mockConfig
 }
 
 func NewHTTPHandler() *HTTPHandler {
-	return &HTTPHandler{mockConfig: mocking.NewMockConfig()}
+	return &HTTPHandler{mockConfig: mocking.NewMockConfig(), mu: &sync.RWMutex{}}
 }
 
 // ServerHTTP implements the standard net/http handler interface
 func (m *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: fail if the header is missing
 	mockID := r.Header.Get(HeaderMockID)
-	// TODO: Fail if the response is missing
+	// Fail if no mockID header in the request
+	if mockID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	mockResponse := m.mockConfig.GetMockResponse(mockID)
+	// Fail if no mockID found in the MockResponses cache
+	if mockResponse == nil {
+		// Add Mocked header with "false" to show that we didn't find the response
+		w.Header().Set(HeaderMockResponseInsert, "false")
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
+	// Add Mocked header to show that we mocked the response
+	w.Header().Set(HeaderMockResponseInsert, "true")
 	// TODO: detect content type for the user using its request Accept Header
 	mediaType := "application/json"
-	// TODO: fail if missing media type
-	data := mockResponse.MediaTypeData[mediaType]
+	data, ok := mockResponse.MediaTypeData[mediaType]
+	// If no media type data (example) found - this is the simple http code in the response, write it and return
+	if !ok {
+		w.WriteHeader(mockResponse.StatusCode)
+		return
+	}
+	// otherwise, set Content-Type and write the body
 	w.Header().Set("Content-Type", mediaType)
-	w.Header().Set(HeaderMockResponseInsert, "true")
 	w.WriteHeader(mockResponse.StatusCode)
 	w.Write(data)
+}
+
+// HealthcheckHTTPHandler handles healthcheck
+type HealthcheckHTTPHandler struct {
+	// Once we have everything needed to serve, set this to true
+	ready bool
+}
+
+func NewHealthcheckHTTPHandler() *HealthcheckHTTPHandler {
+	return &HealthcheckHTTPHandler{ready: false}
+}
+
+// Enable makes healtcheck healthy
+func (h *HealthcheckHTTPHandler) Enable() {
+	h.ready = true
+}
+
+// ServerHTTP implements the standard net/http handler interface
+func (h *HealthcheckHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.ready {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

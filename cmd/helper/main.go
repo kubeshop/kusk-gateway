@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 )
 
 var (
@@ -26,9 +27,8 @@ var (
 
 func main() {
 
-	var (
-		helperConfigurationManagerServiceAddress string
-	)
+	var helperConfigurationManagerServiceAddress string
+
 	flag.StringVar(&helperConfigurationManagerServiceAddress, "helper-config-manager-service-address", "", "The address (hostname:port) of Kusk Gateway Helper Configuration Manager Service")
 	flag.StringVar(&fleetID, "fleetID", "", "The Envoy Fleet ID this Helper server is deployed for.")
 	flag.Parse()
@@ -43,7 +43,10 @@ func main() {
 	log.Infof("Local node name: %s", nodeName)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", httpserver.NewHTTPHandler())
+	serverHttpHandler := httpserver.NewHTTPHandler()
+	mux.Handle("/", serverHttpHandler)
+	healthcheckHTTPHandler := httpserver.NewHealthcheckHTTPHandler()
+	mux.Handle("/healthz", healthcheckHTTPHandler)
 	helperHTTPServer := &http.Server{
 		Addr:           fmt.Sprintf("%s:%d", httpserver.ServerHostname, httpserver.ServerPort),
 		Handler:        mux,
@@ -55,42 +58,51 @@ func main() {
 	go func() {
 		log.Fatal(helperHTTPServer.ListenAndServe())
 	}()
-	dialAndWaitForUpdates(helperConfigurationManagerServiceAddress)
-	// Should never come to this
-	log.Fatal("The application exited too early")
-}
 
-func dialAndWaitForUpdates(helperManagerAddress string) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithKeepaliveParams(
+			keepalive.ClientParameters{Time: 10 * time.Second, Timeout: 20 * time.Second, PermitWithoutStream: true},
+		),
+	}
 	// Creates the connection, wait for the commands and respond
 	// Using closure since this respawns if failed and we defer a lot of closing operations.
 	connection := func() {
-		log.Info("Dialing to the management service")
-		conn, err := grpc.Dial(helperManagerAddress, opts...)
+		log.Info("Dialing to the management service at: ", helperConfigurationManagerServiceAddress)
+		conn, err := grpc.Dial(helperConfigurationManagerServiceAddress, grpcOpts...)
 		defer conn.Close()
 		if err != nil {
 			log.Errorf("failed to dial: %v", err)
 			return
 		}
 		client := management.NewConfigManagerClient(conn)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		// After 30 minutes the connection will restart with Error
+		// TODO: how to handle this in the logs?
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		defer cancel()
 		stream, err := client.GetSnapshot(ctx, &management.ClientParams{NodeName: nodeName, FleetID: fleetID})
 		if err != nil {
 			log.Errorf("Got error during the connection to the management service: %s", err)
 			return
 		}
+		// Receive snapshots and use them to update the configuration
 		for {
 			snapshot, err := stream.Recv()
 			if err == io.EOF {
-				log.Error("Got EOF during the receiving")
-				break
+				log.Error("Got EOF during the receiving from the stream")
+				return
 			} else if err != nil {
 				log.Errorf("Got error when receiving from the stream: %s", err)
 				return
 			}
 			log.Infow("Retrieved the configuration snapshot: ", "snapshot", snapshot)
+			// Update HTTP Handler with the new mock config
+			mockConfig := management.ProtoMockConfigToMockConfig(snapshot.GetMockConfig())
+			serverHttpHandler.SetMockConfig(mockConfig)
+
+			// Enable the service /healthz endpoint (make healthcheck pass) once the snapshot is applied.
+			// This needs to be run once but is safe to run multiple times.
+			healthcheckHTTPHandler.Enable()
 		}
 	}
 	// Endless loop while waiting for commands from the management server

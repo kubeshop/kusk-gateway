@@ -106,8 +106,8 @@ docker-build-helper: ## Build docker image with the helper.
 .PHONY: docker-build
 docker-build: docker-build-manager docker-build-helper ## Build docker images for all apps
 
-.PHONY: docker-build-debug
-docker-build-debug: ## Build docker image with the manager and debugger.
+.PHONY: docker-build-manager-debug
+docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-debug-helper
@@ -153,6 +153,9 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 .PHONY: update
 update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
+.PHONY: update-helper
+update-helper: docker-build-helper cycle-envoy
+
 .PHONY: update-debug
 update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
@@ -161,6 +164,11 @@ cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up th
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
 	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=30s
+
+.PHONY: cycle-envoy
+cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
+	kubectl rollout restart deployment/kgw-envoy-default -n default
+	-kubectl rollout restart deployment/kgw-envoy-testing -n testing
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
