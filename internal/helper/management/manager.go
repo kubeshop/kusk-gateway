@@ -45,41 +45,34 @@ type cacheManager struct {
 	UnimplementedConfigManagerServer
 }
 
-// updateFleetConfigSnapshot creates the new fleet configuration snapshot and updates the related internal cache
-func (c *cacheManager) updateFleetConfigSnapshot(fleetID string, mockConfig *mocking.MockConfig) {
-	pbMockConfig := MockConfigToProtoMockConfig(mockConfig)
-	snapshot := &Snapshot{
-		MockConfig: pbMockConfig,
-	}
+// getSnapshot returns a snapshot for the fleet
+func (c *cacheManager) getSnapshot(fleetID string) *Snapshot {
+	c.fleetConfigsMutex.RLock()
+	defer c.fleetConfigsMutex.RUnlock()
+	return c.fleetConfigs[fleetID]
+}
+
+// createAndSetSnapshot creates snapshot from mockingConfig and adds snapshot to the fleet mapping
+func (c *cacheManager) createAndSetSnapshot(fleetID string, mockConfig *mocking.MockConfig) {
 	c.fleetConfigsMutex.Lock()
-	c.fleetConfigs[fleetID] = snapshot
-	c.fleetConfigsMutex.Unlock()
-	// Trigger update to all fleet nodes
+	defer c.fleetConfigsMutex.Unlock()
+	c.fleetConfigs[fleetID] = &Snapshot{
+		MockConfig: MockConfigToProtoMockConfig(mockConfig),
+	}
+}
+
+func (c *cacheManager) updateNodes(fleetID string) {
 	nodeConnections, ok := c.fleetNodesConnections[fleetID]
 	// No fleet nodes connections are registered
 	if !ok {
 		return
 	}
+	snapshot := c.getSnapshot(fleetID)
 	c.fleetNodesConnectionsMutex.RLock()
+	defer c.fleetNodesConnectionsMutex.RUnlock()
 	for _, ch := range nodeConnections {
 		ch <- snapshot
 	}
-	c.fleetNodesConnectionsMutex.RUnlock()
-}
-
-// getOrSetSnapshot returns snapshot for the fleet or creates one empty if the fleet entry is missing.
-func (c *cacheManager) getOrSetSnapshot(fleetID string) *Snapshot {
-	var snapshot *Snapshot
-	var ok bool
-	c.fleetConfigsMutex.Lock()
-	defer c.fleetConfigsMutex.Unlock()
-	// Fleet exists (found snapshot)
-	if snapshot, ok = c.fleetConfigs[fleetID]; !ok {
-		// Not found fleet snapshot in the cache - return empty snapshot and create it
-		snapshot = &Snapshot{}
-		c.fleetConfigs[fleetID] = snapshot
-	}
-	return snapshot
 }
 
 func (c *cacheManager) registerClientConnection(fleetID string, nodeStreamID string) <-chan *Snapshot {
@@ -114,8 +107,13 @@ func (c *cacheManager) unregisterClientConnection(fleetID string, nodeStreamID s
 // It will run in its own goroutine for the each call (client).
 func (c cacheManager) GetSnapshot(clientParams *ClientParams, stream ConfigManager_GetSnapshotServer) error {
 
-	// Get snapshot and send to the client once on the start
-	snapshot := c.getOrSetSnapshot(clientParams.FleetID)
+	// Get snapshot and send to the client once on the start of client connection
+	snapshot := c.getSnapshot(clientParams.FleetID)
+	// If no snapshot found - break it, manager could be restarting so no snapshots yet.
+	if snapshot == nil {
+		return fmt.Errorf("no snapshot found for the fleet %s", clientParams.FleetID)
+	}
+	// Otherwise send it
 	if err := stream.Send(snapshot); err != nil {
 		return err
 	}
@@ -151,8 +149,10 @@ type ConfigManager struct {
 
 // ApplyNewFleetConfig adds new configuration to the cache manager and triggers helpers update
 func (m *ConfigManager) ApplyNewFleetConfig(fleetID string, mockConfig *mocking.MockConfig) {
-	m.cacheManager.updateFleetConfigSnapshot(fleetID, mockConfig)
-	m.l.Info("Applied new fleet config", "fleet", fleetID, "config", mockConfig)
+	m.cacheManager.createAndSetSnapshot(fleetID, mockConfig)
+	// Trigger update to all fleet nodes
+	m.cacheManager.updateNodes(fleetID)
+	m.l.Info("Applied new Helper fleet config", "fleet", fleetID)
 	return
 }
 

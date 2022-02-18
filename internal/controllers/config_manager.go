@@ -218,14 +218,15 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		l.Error(err, "Envoy configuration snapshot is invalid", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to generate snapshot: %w", err)
 	}
-	l.Info("Mocking configuration was generated for the fleet", "fleet", fleetIDstr, "mocking entries", len(*mockingConfig))
-	c.HelperManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
 
 	l.Info("Configuration snapshot was generated for the fleet", "fleet", fleetIDstr)
+	// Helper config is applied first to make Helper ready for the new Envoy routes
+	c.HelperManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to apply snapshot: %w", err)
 	}
+
 	l.Info("Configuration snapshot deployed for the fleet", "fleet", fleetIDstr)
 	return nil
 }

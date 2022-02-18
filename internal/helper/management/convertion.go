@@ -33,7 +33,7 @@ func ProtoMockConfigToMockConfig(pbMockConfig *MockConfig) *mocking.MockConfig {
 		for mediaType, mediaTypeData := range mockResponse.MediaTypeData {
 			newResponse.MediaTypeData[mediaType] = mediaTypeData
 		}
-		newMockConfig.SetMockResponse(mockID, newResponse)
+		newMockConfig.AddMockResponse(mockID, newResponse)
 	}
 	return newMockConfig
 }

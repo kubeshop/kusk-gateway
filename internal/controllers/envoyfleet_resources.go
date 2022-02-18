@@ -240,15 +240,15 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 		deployment := kuskGatewayManagerDeployments[0]
 		for _, container := range deployment.Spec.Template.Spec.Containers {
 			// Skip if not the right container
-			if !strings.Contains(container.Image, kuskGatewayManagerImageName) {
+			if container.Name != "manager" {
 				continue
 			}
 			managerImageTag := strings.Split(container.Image, ":")
 			if len(managerImageTag) != 2 {
-				return fmt.Errorf("cannot create Envoy Fleet %s: failed Kusk Gateway Manager's version autodetection - container tag %s doesn't match repository:tag pattern", e.fleet.Name, container.Image)
+				return fmt.Errorf("cannot create Envoy Fleet %s: failed Kusk Gateway Manager's version autodetection - container image tag %s doesn't match the imageName:version pattern", e.fleet.Name, container.Image)
 			}
 			containerRepositoryURL := strings.TrimSuffix(managerImageTag[0], kuskGatewayManagerImageName)
-			// Form and set helper container image tag
+			// Form and set helper server container image tag
 			helperContainer.Image = fmt.Sprintf("%s%s:%s", containerRepositoryURL, helperImageName, managerImageTag[1])
 			break
 		}

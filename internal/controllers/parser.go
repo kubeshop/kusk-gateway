@@ -105,10 +105,6 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				}
 				rt.Action = routeRedirect
 
-			// Validate and Mock
-			// case (finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled) &&
-			// 	(finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled):
-
 			// Mock
 			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
 
@@ -121,7 +117,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				if finalOpts.Path != nil {
 					rewriteOpts = &finalOpts.Path.Rewrite
 				}
-				// We don't support websocket during mocking, disable it if inherited.
+				// We don't support websockets during mocking, disable it if inherited.
 				websocketEnabled := false
 				routeRoute, err := generateRoute(
 					clusterName,
@@ -136,7 +132,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				rt.Action = routeRoute
 
 				// Create MockingID.
-				// Note that this is not unique - 2 and more API files can declare the same path/method/OperationID but with the different vhosts.
+				// Note: this is not unique - 2 and more API files can declare the same path/method/OperationID but with the different vhosts.
 				mockID := generateMockID(path, method, operation.OperationID)
 				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
@@ -150,7 +146,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					return fmt.Errorf("cannot generate mock response for path %s operation %s: %w", path, method, err)
 				}
 				// Finally, add the mock response to the whole mock configuration with the mockID
-				if err := mockingConfiguration.SetMockResponse(mockID, mockResponse); err != nil {
+				if err := mockingConfiguration.AddMockResponse(mockID, mockResponse); err != nil {
 					return fmt.Errorf("failure setting mock with ID %s: %w", mockID, err)
 				}
 

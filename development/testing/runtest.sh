@@ -44,10 +44,14 @@ function wait_for_deployed() {
     done
 }
 
+function get_external_ip() {
+    kubectl get svc -l "app.kubernetes.io/component=envoy-svc" -n $NAMESPACE -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
+}
+
 function wait_for_eip() {
     CHECK_TIMES=10
     while true; do
-        TESTING_EXTERNAL_IP=$(kubectl get svc -l "app.kubernetes.io/component=envoy-svc" -n $NAMESPACE -o=jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}')
+        TESTING_EXTERNAL_IP=$(get_external_ip)
         if [[ -z "${TESTING_EXTERNAL_IP}" ]]; then
             warn "Haven't found Envoy service External IP yet"
         else
@@ -64,12 +68,14 @@ function wait_for_eip() {
 
 function test_api() {
     info "Testing API"
+    TESTING_EXTERNAL_IP=$(get_external_ip)
     docker run --network host --rm -v "${TESTING_DIRECTORY}/postman":/tests -t postman/newman run /tests/api.postman_collection.json --env-var EXTERNAL_IP="${TESTING_EXTERNAL_IP}"
     info "SUCCESS Testing API"
 }
 
 function test_staticroute() {
     info "Testing StaticRoutes"
+    TESTING_EXTERNAL_IP=$(get_external_ip)
     docker run --network host --rm -v "${TESTING_DIRECTORY}/postman":/tests -t postman/newman run /tests/staticroute.postman_collection.json --env-var EXTERNAL_IP="${TESTING_EXTERNAL_IP}"
     info "SUCCESS Testing StaticRoutes"
 }
@@ -81,7 +87,9 @@ function get_manager_logs() {
 
 function get_envoy_logs() {
     info "Retrieving Envoy logs for you with filtered out [info] to check for any errors"
-    kubectl logs -l app.kubernetes.io/component=envoy -n ${NAMESPACE} --tail=100 | sed '/\[info\]/d'
+    kubectl logs -l app.kubernetes.io/component=envoy -n ${NAMESPACE} -c envoy --tail=100 | sed '/\[info\]/d'
+    info "Retrieving Envoy POD Helper logs for you with filtered out INFO to check for any errors"
+    kubectl logs -l app.kubernetes.io/component=envoy -n ${NAMESPACE} -c helper --tail=100 | sed '/INFO/d'
 }
 
 function delete() {

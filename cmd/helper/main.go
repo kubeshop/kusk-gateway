@@ -8,8 +8,6 @@ import (
 	"os"
 	"time"
 
-	"net/http"
-
 	"github.com/kubeshop/kusk-gateway/internal/helper/httpserver"
 	"github.com/kubeshop/kusk-gateway/internal/helper/management"
 	"go.uber.org/zap"
@@ -19,16 +17,16 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-var (
-	log      *zap.SugaredLogger
-	fleetID  string
-	nodeName string
-)
+// Making these global
 
 func main() {
 
-	var helperConfigurationManagerServiceAddress string
-
+	var (
+		helperConfigurationManagerServiceAddress string
+		log                                      *zap.SugaredLogger
+		fleetID                                  string
+		nodeName                                 string
+	)
 	flag.StringVar(&helperConfigurationManagerServiceAddress, "helper-config-manager-service-address", "", "The address (hostname:port) of Kusk Gateway Helper Configuration Manager Service")
 	flag.StringVar(&fleetID, "fleetID", "", "The Envoy Fleet ID this Helper server is deployed for.")
 	flag.Parse()
@@ -42,21 +40,11 @@ func main() {
 	}
 	log.Infof("Local node name: %s", nodeName)
 
-	mux := http.NewServeMux()
-	serverHttpHandler := httpserver.NewHTTPHandler()
-	mux.Handle("/", serverHttpHandler)
-	healthcheckHTTPHandler := httpserver.NewHealthcheckHTTPHandler()
-	mux.Handle("/healthz", healthcheckHTTPHandler)
-	helperHTTPServer := &http.Server{
-		Addr:           fmt.Sprintf("%s:%d", httpserver.ServerHostname, httpserver.ServerPort),
-		Handler:        mux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
-	log.Infof("Starting the HTTP server on %s", helperHTTPServer.Addr)
+	mainHandler := httpserver.NewMainHandler()
+	httpServer := httpserver.NewHTTPServer(log.Desugar(), mainHandler)
+	log.Infof("Starting the HTTP server on %s", httpServer.Addr)
 	go func() {
-		log.Fatal(helperHTTPServer.ListenAndServe())
+		log.Fatal(httpServer.ListenAndServe())
 	}()
 
 	grpcOpts := []grpc.DialOption{
@@ -76,8 +64,8 @@ func main() {
 			return
 		}
 		client := management.NewConfigManagerClient(conn)
-		// After 30 minutes the connection will restart with Error
-		// TODO: how to handle this in the logs?
+		// After 30 minutes the connection will restart
+		// TODO: need to hide Error in the logs
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		defer cancel()
 		stream, err := client.GetSnapshot(ctx, &management.ClientParams{NodeName: nodeName, FleetID: fleetID})
@@ -90,19 +78,15 @@ func main() {
 			snapshot, err := stream.Recv()
 			if err == io.EOF {
 				log.Error("Got EOF during the receiving from the stream")
-				return
+				break
 			} else if err != nil {
 				log.Errorf("Got error when receiving from the stream: %s", err)
 				return
 			}
-			log.Infow("Retrieved the configuration snapshot: ", "snapshot", snapshot)
+			log.Info("Retrieved the configuration snapshot: ", snapshot)
 			// Update HTTP Handler with the new mock config
 			mockConfig := management.ProtoMockConfigToMockConfig(snapshot.GetMockConfig())
-			serverHttpHandler.SetMockConfig(mockConfig)
-
-			// Enable the service /healthz endpoint (make healthcheck pass) once the snapshot is applied.
-			// This needs to be run once but is safe to run multiple times.
-			healthcheckHTTPHandler.Enable()
+			mainHandler.SetMockConfig(mockConfig)
 		}
 	}
 	// Endless loop while waiting for commands from the management server

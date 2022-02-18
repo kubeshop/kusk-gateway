@@ -170,6 +170,70 @@ spec:
           tags:
             - Todo
       # Mocked
+      # In "responses" there are multiple examples
+      /mocked/multiple/{id}:
+        # Enable mocking with x-kusk
+        x-kusk:
+          mocking:
+            enabled: true
+        get:
+          responses:
+            '200':
+              description: 'Mocked ToDos'
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+                  # This example is the must for the response body mocking
+                  examples:
+                    first:
+                      title: "Mocked title #1"
+                      completed: true
+                      order: 12
+                      url: "http://mockedURL.com"
+                    second:
+                      title: "Mocked title #2"
+                      completed: true
+                      order: 13
+                      url: "http://mockedURL.com"
+            '400':
+              description: Client error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+            '500':
+              description: Server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/endpoints.Errors'
+          summary: Shows a single Todo
+          parameters:
+            - name: id
+              in: path
+              schema:
+                type: integer
+              required: true
+          tags:
+            - Todo
+      # In "responses" here is only one example
       /mocked/{id}:
         # Enable mocking with x-kusk
         x-kusk:
@@ -203,7 +267,7 @@ spec:
                   example:
                     title: "Mocked title"
                     completed: true
-                    order: 12
+                    order: 13
                     url: "http://mockedURL.com"
             '400':
               description: Client error

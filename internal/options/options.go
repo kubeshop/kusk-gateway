@@ -68,6 +68,7 @@ func (o SubOptions) Validate() error {
 		v.Field(&o.Path),
 		v.Field(&o.QoS),
 		v.Field(&o.CORS),
+		v.Field(&o.Mocking),
 	)
 }
 
