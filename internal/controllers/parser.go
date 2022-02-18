@@ -113,16 +113,12 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					envoyConfiguration.AddCluster(clusterName, helperHTTPServer.ServerHostname, helperHTTPServer.ServerPort)
 				}
 
-				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Path != nil {
-					rewriteOpts = &finalOpts.Path.Rewrite
-				}
 				// We don't support websockets during mocking, disable it if inherited.
 				websocketEnabled := false
 				routeRoute, err := generateRoute(
 					clusterName,
 					corsPolicy,
-					rewriteOpts,
+					nil,
 					finalOpts.QoS,
 					&websocketEnabled,
 				)
@@ -216,8 +212,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				}
 
 				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Path != nil {
-					rewriteOpts = &finalOpts.Path.Rewrite
+				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+					rewriteOpts = &finalOpts.Upstream.Rewrite
 				}
 				routeRoute, err := generateRoute(
 					clusterName,
