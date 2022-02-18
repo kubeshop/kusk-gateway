@@ -95,7 +95,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 			}
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
-			// Redirect -> Validate and Mock -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
+			// Redirect -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
 			switch {
 			// Redirect
 			case finalOpts.Redirect != nil:

@@ -88,7 +88,7 @@ function get_manager_logs() {
 function get_envoy_logs() {
     info "Retrieving Envoy logs for you with filtered out [info] to check for any errors"
     kubectl logs -l app.kubernetes.io/component=envoy -n ${NAMESPACE} -c envoy --tail=100 | sed '/\[info\]/d'
-    info "Retrieving Envoy POD Helper logs for you with filtered out INFO to check for any errors"
+    info "Retrieving Envoy pod Helper logs for you with filtered out INFO to check for any errors"
     kubectl logs -l app.kubernetes.io/component=envoy -n ${NAMESPACE} -c helper --tail=100 | sed '/INFO/d'
 }
 

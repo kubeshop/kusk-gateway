@@ -25,4 +25,4 @@ COPY --from=builder /workspace/mockserve .
 COPY --from=builder /go/bin/dlv .
 USER 65532:65532
 
-ENTRYPOINT ["/dlv", "--listen=:40001", "--api-version=2", "exec", "--accept-multiclient", "--continue", "/helper"]
+ENTRYPOINT ["/dlv", "--listen=:40001", "--api-version=2", "--headless", "exec", "--accept-multiclient", "--continue", "/helper", "--"]
