@@ -60,6 +60,9 @@ type KubeEnvoyConfigManager struct {
 	HelperManager *helperManagement.ConfigManager
 	Validator     *validation.Proxy
 	m             sync.Mutex
+
+	WatchedSecretsChan chan *v1.Secret
+	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
 }
 
 var (
@@ -185,6 +188,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to get secret %s in namespace %s: %w", cert.SecretRef, cert.Namespace, err)
 		}
 
+		c.SecretToEnvoyFleet[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)] = fleetID
+
 		key, ok := secret.Data[tlsKey]
 		if !ok {
 			return fmt.Errorf("%s data not present in secret %s in namepspace %s", key, cert.SecretRef, cert.Namespace)
@@ -274,4 +279,27 @@ func (c *KubeEnvoyConfigManager) getDeployedStaticRoutes(ctx context.Context, fl
 		}
 	}
 	return staticRoutes, nil
+}
+
+func (c *KubeEnvoyConfigManager) WatchSecrets(stopCh <-chan struct{}) {
+	for {
+		select {
+		case secret := <-c.WatchedSecretsChan:
+			envoyFleet, ok := c.SecretToEnvoyFleet[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)]
+			if !ok {
+				continue
+			}
+
+			if err := c.UpdateConfiguration(context.Background(), envoyFleet); err != nil {
+				configManagerLogger.Error(
+					err,
+					"unable to update envoy configuration after secrets update",
+					"envoyfleet", fmt.Sprintf("%s.%s", envoyFleet.Name, envoyFleet.Namespace),
+					"secret", fmt.Sprintf("%s.%s", secret.Name, secret.Namespace),
+				)
+			}
+		case <-stopCh:
+			return
+		}
+	}
 }
