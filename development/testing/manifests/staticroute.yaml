@@ -16,15 +16,14 @@ spec:
     /testing/:
        get:
         route:
-         path:
-           rewrite:
-             pattern: "^/testing/"
-             substitution: "/"
          upstream: &upstream
             service:
               namespace: testing
               name: todo-frontend
               port: 3000
+            rewrite:
+              pattern: "^/testing/"
+              substitution: "/"
     # Testing API
     # Note that this route covers /testing/staticroute/todos (exact), unless there is other exact.
     /testing/staticroute/:
@@ -41,15 +40,14 @@ spec:
               - Content-Type
             credentials: true
             max_age: 86200
-          path:
-           rewrite:
-             pattern: "^/testing/staticroute/"
-             substitution: "/"
           upstream:
             service:
               namespace: testing
               name: todo-backend
               port: 3000
+            rewrite:
+              pattern: "^/testing/staticroute/"
+              substitution: "/"
        post: *sr
     # Todos Get and POST on separate path
     # Note that this route doesn't cover /testing/staticroute/todos (exact)
@@ -69,15 +67,14 @@ spec:
               - Content-Type
             credentials: false
             max_age: 1000
-          path:
-           rewrite:
-             pattern: "^/testing/staticroute/"
-             substitution: "/"
           upstream:
             service:
               namespace: testing
               name: todo-backend
               port: 3000
+            rewrite:
+              pattern: "^/testing/staticroute/"
+              substitution: "/"
        post: *todos
     # Testing redirects
     /non-existent: 

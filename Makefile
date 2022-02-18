@@ -108,11 +108,11 @@ docker-build: docker-build-manager docker-build-helper ## Build docker images fo
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-debug-helper
 docker-build-debug-helper: ## Build docker image with the helper and debugger.
-	@eval $$(minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
 

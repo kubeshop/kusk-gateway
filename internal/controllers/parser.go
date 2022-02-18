@@ -190,8 +190,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
 				}
 				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Path != nil {
-					rewriteOpts = &finalOpts.Path.Rewrite
+				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+					rewriteOpts = &finalOpts.Upstream.Rewrite
 				}
 				routeRoute, err := generateRoute(
 					clusterName,
@@ -330,8 +330,8 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 				}
 
 				var rewriteOpts *options.RewriteRegex
-				if methodOpts.Path != nil {
-					rewriteOpts = &methodOpts.Path.Rewrite
+				if methodOpts.Upstream.Rewrite.Pattern != "" {
+					rewriteOpts = &methodOpts.Upstream.Rewrite
 				}
 				routeRoute, err := generateRoute(
 					clusterName,
