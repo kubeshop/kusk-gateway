@@ -64,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen helper-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -100,7 +100,7 @@ docker-build-manager: ## Build docker image with the manager.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-helper
-docker-build-helper: ## Build docker image with the helper.
+docker-build-helper: helper-management-compile ## Build docker image with the helper.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${HELPER_IMG} -f ./build/helper/Dockerfile .
 
 .PHONY: docker-build
@@ -111,7 +111,7 @@ docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-debug-helper
-docker-build-debug-helper: ## Build docker image with the helper and debugger.
+docker-build-debug-helper: helper-management-compile ## Build docker image with the helper and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
@@ -193,14 +193,14 @@ endif
 UNAME := $(shell uname)
 
 $(PROTOC):
-# Run the right installation command for the operating system.
-ifeq ($(UNAME), Darwin)
-	brew install protobuf
-endif
-ifeq ($(UNAME), Linux)
-	@echo "[INFO]: Installing protobuf-compiler, input your password for sudo."
-	sudo apt-get install protobuf-compiler -y
-endif
+	# Run the right installation command for the operating system.
+	ifeq ($(UNAME), Darwin)
+		brew install protobuf
+	endif
+	ifeq ($(UNAME), Linux)
+		@echo "[INFO]: Installing protobuf-compiler, input your password for sudo."
+		sudo apt-get install protobuf-compiler -y
+	endif
 $(PROTOC_GEN_GO):
 	@echo "[INFO]: Installing protobuf go generation plugin."
 	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1)
