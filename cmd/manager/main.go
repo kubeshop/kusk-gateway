@@ -217,11 +217,12 @@ func main() {
 	secretsChan := make(chan *corev1.Secret)
 
 	controllerConfigManager := controllers.KubeEnvoyConfigManager{
-		Client:       mgr.GetClient(),
-		Scheme:       mgr.GetScheme(),
-		EnvoyManager: envoyManager,
-		Validator:    proxy,
-		SecretsChan:  secretsChan,
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		EnvoyManager:       envoyManager,
+		Validator:          proxy,
+		WatchedSecretsChan: secretsChan,
+		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 	}
 
 	if err = (&controllers.EnvoyFleetReconciler{

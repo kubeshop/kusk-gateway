@@ -57,9 +57,9 @@ type KubeEnvoyConfigManager struct {
 	Validator    *validation.Proxy
 	m            sync.Mutex
 
-	SecretsChan chan *v1.Secret
+	WatchedSecretsChan chan *v1.Secret
 
-	SecretToEnvoy map[string]gateway.EnvoyFleetID
+	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
 }
 
 var (
@@ -183,10 +183,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to get secret %s in namespace %s: %w", cert.SecretRef, cert.Namespace, err)
 		}
 
-		if c.SecretToEnvoy == nil {
-			c.SecretToEnvoy = map[string]gateway.EnvoyFleetID{}
-		}
-		c.SecretToEnvoy[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)] = fleetID
+		c.SecretToEnvoyFleet[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)] = fleetID
 
 		key, ok := secret.Data[tlsKey]
 		if !ok {
@@ -279,8 +276,8 @@ func (c *KubeEnvoyConfigManager) getDeployedStaticRoutes(ctx context.Context, fl
 func (c *KubeEnvoyConfigManager) WatchSecrets(stopCh <-chan struct{}) {
 	for {
 		select {
-		case secret := <-c.SecretsChan:
-			envoyFleet, ok := c.SecretToEnvoy[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)]
+		case secret := <-c.WatchedSecretsChan:
+			envoyFleet, ok := c.SecretToEnvoyFleet[fmt.Sprintf("%s-%s", secret.Name, secret.Namespace)]
 			if !ok {
 				continue
 			}
