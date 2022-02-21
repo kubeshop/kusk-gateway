@@ -30,11 +30,10 @@ func NewHTTPServer(log *zap.Logger, mainHandler *mainHandler) *httpServer {
 	muxWithMiddlewares := LoggerMiddleware(log, mux)
 	mux.Handle("/", server.mainHandler)
 	server.Server = &http.Server{
-		Addr:           fmt.Sprintf("%s:%d", ServerHostname, ServerPort),
-		Handler:        muxWithMiddlewares,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		Addr:         fmt.Sprintf("%s:%d", ServerHostname, ServerPort),
+		Handler:      muxWithMiddlewares,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	return server
 }

@@ -17,15 +17,12 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// Making these global
-
 func main() {
 
 	var (
 		helperConfigurationManagerServiceAddress string
 		log                                      *zap.SugaredLogger
 		fleetID                                  string
-		nodeName                                 string
 	)
 	flag.StringVar(&helperConfigurationManagerServiceAddress, "helper-config-manager-service-address", "", "The address (hostname:port) of Kusk Gateway Helper Configuration Manager Service")
 	flag.StringVar(&fleetID, "fleetID", "", "The Envoy Fleet ID this Helper server is deployed for.")
@@ -33,8 +30,7 @@ func main() {
 	log = initLogger().Sugar()
 	defer log.Sync()
 
-	var err error
-	nodeName, err = os.Hostname()
+	nodeName, err := os.Hostname()
 	if err != nil {
 		log.Fatal("Cannot find out the local hostname")
 	}
