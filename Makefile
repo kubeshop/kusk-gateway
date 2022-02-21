@@ -64,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen helper-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -100,7 +100,7 @@ docker-build-manager: ## Build docker image with the manager.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-helper
-docker-build-helper: helper-management-compile ## Build docker image with the helper.
+docker-build-helper: ## Build docker image with the helper.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${HELPER_IMG} -f ./build/helper/Dockerfile .
 
 .PHONY: docker-build
@@ -111,7 +111,7 @@ docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-debug-helper
-docker-build-debug-helper: helper-management-compile ## Build docker image with the helper and debugger.
+docker-build-debug-helper:  ## Build docker image with the helper and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
@@ -181,37 +181,24 @@ kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
 # Protoc and friends installation and generation
-PROTOC := $(shell which protoc)
 PROTOC_GEN_GO := $(shell pwd)/bin/protoc-gen-go
+PROTOC_GEN_GO_GRPC := $(shell pwd)/bin/protoc-gen-go-grpc
 
-# If protoc isn't on the path, set it to a target that's never up to date, so
-# the install command always runs.
-ifeq ($(PROTOC),)
-	PROTOC = must-rebuild
-endif
-# Figure out which machine we're running on.
-UNAME := $(shell uname)
-
+PROTOC := $(shell pwd)/bin/protoc/bin/protoc
 $(PROTOC):
-	# Run the right installation command for the operating system.
-	ifeq ($(UNAME), Darwin)
-		brew install protobuf
-	endif
-	ifeq ($(UNAME), Linux)
-		@echo "[INFO]: Installing protobuf-compiler, input your password for sudo."
-		sudo apt-get install protobuf-compiler -y
-	endif
+	$(call install-protoc)
+
 $(PROTOC_GEN_GO):
 	@echo "[INFO]: Installing protobuf go generation plugin."
 	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1)
 
-
-	# $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative $(notdir $(PROTOFILE))
-	echo $(dirname $@)
+$(PROTOC_GEN_GO_GRPC):
+	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
+	$(call go-get-tool,$(PROTOC_GEN_GO_GRPC),google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0)
 
 .PHONY: helper-management-compile
-helper-management-compile: $(PROTOC) $(PROTOC_GEN_GO) # Compile protoc files for helper/management
-	cd "internal/helper/management";$(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+helper-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for helper/management
+	cd "internal/helper/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
 
 # Envtest
 ENVTEST = $(shell pwd)/bin/setup-envtest
@@ -230,5 +217,21 @@ go mod init tmp ;\
 echo "Downloading $(2)" ;\
 GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
+}
+endef
+
+define install-protoc
+@[ -f "${PROTOC}" ] || { \
+set -e ;\
+echo "[INFO] Installing protoc compiler to ${PROJECT_DIR}/bin/protoc" ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+PB_REL="https://github.com/protocolbuffers/protobuf/releases" ;\
+VERSION=3.19.4 ;\
+if [ "$$(uname)" == "Darwin" ];then FILENAME=protoc-$${VERSION}-osx-x86_64.zip ;fi ;\
+if [ "$$(uname)" == "Linux" ];then FILENAME=protoc-$${VERSION}-linux-x86_64.zip;fi ;\
+echo "Downloading $${FILENAME} to $${TMP_DIR}" ;\
+curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d ${PROJECT_DIR}/bin/protoc ; \
+rm -rf $${TMP_DIR} ;\
 }
 endef
