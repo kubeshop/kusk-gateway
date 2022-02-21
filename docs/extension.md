@@ -16,6 +16,9 @@ x-kusk:
     request:
       enabled: true # enable automatic request validation using OpenAPI spec
 
+  mocking:
+    enabled: true # Enables mocking of the responses using examples in OpenAPI responses definition.
+
   upstream: # upstream and redirect are mutually exclusive
     host: # host and service are mutually exclusive
       hostname: example.com
@@ -72,18 +75,19 @@ x-kusk:
 ## Properties Overview
 
 `x-kusk` extension can be applied at (not exclusively):
-1. Top level of an OpenAPI spec:
-```yaml
-openapi: 3.0.2
-info:
-  title: Swagger Petstore - OpenAPI 3.0
-x-kusk:
-  hosts: 
-  - "example.org"
-  disabled: false
-  cors:
-    ...
 
+1. Top level of an OpenAPI spec:
+
+```yaml
+  openapi: 3.0.2
+  info:
+    title: Swagger Petstore - OpenAPI 3.0
+  x-kusk:
+    hosts:
+    - "example.org"
+    disabled: false
+    cors:
+      ...
 ```
 
 2. Path level:
@@ -177,55 +181,19 @@ The `upstream` settings is mutually exclusive with `redirect` setting.
 `service` is a reference to a Kubernetes Service inside the cluster, while `host` can reference any hostname, even
 outside the cluster.
 
-### upstream.rewrite
+#### rewrite
 
 Additionally, `upstream` has an optional object `rewrite`. It allows to modify the URL of the request before forwarding
 it to the upstream service.
-
 
 | Name                 | Description                     |
 |----------------------|---------------------------------|
 | rewrite.pattern      | regular expression              |
 | rewrite.substitution | regular expression substitution |
 
-#### Example
-
-We have a service `foo` with a single endpoint `/bar`.
-
-We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
-
-![path rewrite example](img/rewrite-path-example.png)
-
-If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
-
-Therefore we must rewrite the path from `/foo/bar` to `/bar` before sending it onto the `foo` service.
-
-The following config extract will allow us to do this
-```
-upstream:
-  service: 
-    ...
-  # /foo/bar/... -> to upstream: /bar/...
-  rewrite:
-    pattern: "^/foo"
-    substitution: ""
-```
-
-
-### path
-
-The path object contains the following properties to configure service endpoints paths:
-
-| Name   | Description                                                                              |
-|--------|------------------------------------------------------------------------------------------|
-| prefix | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
-
-If `upstream.rewrite` option is not specified then the upstream service will receive the request "as is" with any prefix
-still appended to the URL.
-
 #### service
 
-The service object sets the target service to receive traffic, it contains the following properties:
+The service object sets the target Kubernetes service to receive traffic, it contains the following properties:
 
 |    Name     | Description                                      |
 |:-----------:|:-------------------------------------------------|
@@ -242,7 +210,45 @@ The host object sets the target host to receive traffic, it contains the followi
 | `hostname` | the hostname to route traffic to |
 |   `port`   | target port to route traffic to  |
 
+Note: `service` and `host` are mutually exlusive since they define the same thing (the upstream host to route to).
+
+#### Example
+
+We have a service `foo` with a single endpoint `/bar`.
+
+We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
+
+![path rewrite example](img/rewrite-path-example.png)
+
+If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
+
+Therefore we must rewrite the path from `/foo/bar` to `/bar` before sending it onto the `foo` service.
+
+The following config extract will allow us to do this
+
+```yaml
+upstream:
+  service: 
+    ...
+  # /foo/bar/... -> to upstream: /bar/...
+  rewrite:
+    pattern: "^/foo"
+    substitution: ""
+```
+
+### path
+
+The path object contains the following properties to configure service endpoints paths:
+
+| Name   | Description                                                                              |
+|--------|------------------------------------------------------------------------------------------|
+| prefix | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
+
+If `upstream.rewrite` option is not specified then the upstream service will receive the request "as is" with this prefix
+still appended to the URL. If the upstream application doesn't know about this path, usually `404` is returned.
+
 ### redirect
+
 Configures where to redirect request to. Redirect and upstream options are mutually exclusive.
 
 | Name                       | Description                                                                 |
@@ -256,8 +262,8 @@ Configures where to redirect request to. Redirect and upstream options are mutua
 | strip_query                | boolean, configures whether to strip the query from the URL (default false) |
 | response_code              | redirect response code (301, 302, 303, 307, 308)                            |
 
-
 ### validation
+
 The validation objects contains the following properties to configure automatic request validation:
 
 | Name                       | Description                               |
@@ -265,7 +271,8 @@ The validation objects contains the following properties to configure automatic 
 | validation.request.enabled | boolean flag to enable request validation |
 
 #### strict validation of request bodies
-Strict validation means that the request body must conform exactly to the schema specified in your openapi spec
+Strict validation means that the request body must conform exactly to the schema specified in your openapi spec.
+Any fields not in schema will cause the validation to fail the request/response.
 To enable this, please add the following field to your schema block if the request body is of type `object`
 
 ```yaml
@@ -290,3 +297,97 @@ paths:
                   type: integer
                   format: int32l
 ```
+
+Note: currently `mocking` is incompatible with the `validation` option. If `mocking` is enabled, the validation will be silently disabled.
+
+### mocking
+
+`mocking` option enables the mocking of request responses using the provided in OpenAPI spec response definition [examples object](https://swagger.io/specification/#example-object).
+
+Either `example:` (singular) or `examples:` (plural) are supported, however with multiple objects in `examples`, the response will include only one from that object map.
+If both are specified, singular (`example`) has the priority over plural.
+
+Examples are defined as a part of the response HTTP code and its contents media-type (e.g. `application/json`) and could be different for the different media types.
+
+As part of the mocked response the related HTTP code is returned, but only succes codes are supported for the mocking. I.e. 200, 201, but not 400, 404, 500.
+Though the OpenAPI standard allows the response code to be a range or being a wildcard (e.g. "2xx"), we need to know exactly what code to return, so this should be specified exactly as integer compatible ("200").
+In case the response doesn't have the response schema, only the single http code is used to mock the response, i.e. the body is not returned.
+This is useful to test, e.g. DELETE or PATCH operations that don't produce the body.
+
+`mocking` is inheritable, i.e. if it is specified on the path or root level it will include every operation below it.
+In case there are responses without the response schema but without the examples, these must be explicitly disabled with `mocking.enabled: false`, otherwise the configuration submission will fail.
+
+Note: currently `mocking` is incompatible with the `validation` option. If `mocking` enabled, the validation will be silently disabled.
+
+```yaml
+      /mocked/{id}:
+        # Enable mocking with x-kusk
+        # Will enable mocking for all HTTP operations below
+        x-kusk:
+          mocking:
+            enabled: true
+        get:
+          responses:
+            # This HTTP code will be returned.
+            '200':
+              description: 'Mocked ToDos'
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+                  # Singular example has the priority over other examples.
+                  example:
+                    title: "Mocked title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                  examples:
+                    first:
+                      title: "Mocked title #1"
+                      completed: true
+                      order: 12
+                      url: "http://mockedURL.com"
+                    second:
+                      title: "Mocked title #2"
+                      completed: true
+                      order: 13
+                      url: "http://mockedURL.com"
+        patch:
+          # Disable for patch
+          x-kusk:
+            mocking:
+              enabled: true
+        ...
+```
+
+With the example above the response to GET request will be:
+
+```shell
+< HTTP/1.1 200 OK
+< content-type: application/json
+< x-kusk-mocked: true
+< date: Mon, 21 Feb 2022 14:36:52 GMT
+< content-length: 81
+< x-envoy-upstream-service-time: 0
+< server: envoy
+< 
+{"completed":true,"order":13,"title":"Mocked title","url":"http://mockedURL.com"}
+```
+
+The response includes the `x-kusk-mocked: true` header indicating mocking.
