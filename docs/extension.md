@@ -298,7 +298,7 @@ paths:
                   format: int32l
 ```
 
-Note: currently `mocking` is incompatible with the `validation` option. If `mocking` is enabled, the validation will be silently disabled.
+Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
 
 ### mocking
 
@@ -317,7 +317,7 @@ This is useful to test, e.g. DELETE or PATCH operations that don't produce the b
 `mocking` is inheritable, i.e. if it is specified on the path or root level it will include every operation below it.
 In case there are responses without the response schema but without the examples, these must be explicitly disabled with `mocking.enabled: false`, otherwise the configuration submission will fail.
 
-Note: currently `mocking` is incompatible with the `validation` option. If `mocking` enabled, the validation will be silently disabled.
+Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
 
 ```yaml
       /mocked/{id}:
