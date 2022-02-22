@@ -166,6 +166,16 @@ type TLS struct {
 	// You can specify more than one
 	// For more information on how certificate selection works see: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl#certificate-selection
 	TlsSecrets []TLSSecrets `json:"tlsSecrets"`
+
+	// +optional
+	// TLS requirement for hosts managed by EnvoyFleet
+	// NONE - No TLS requirement for the virtual hosts
+	// EXTERNAL_ONLY - External requests must use TLS. If a request is external and it is not
+	//	using TLS, a 301 redirect will be sent telling the client to use HTTPS.
+	// ALL - All requests must use TLS. If a request is not using TLS, a 301 redirect
+	//	will be sent telling the client to use HTTPS.
+	// Defaults to NONE
+	Requirement string `json:"requirement"`
 }
 
 type TLSSecrets struct {
