@@ -55,6 +55,14 @@ This is the minimal setup to do the simple integration testing:
 
     - Enabled example.org/second/todos/{id} GET to redirect to example.com/testing/todos/{id}. This tests the regex as well.
 
+6. Mocking
+
+   Mocking is done using Helper sidecar.
+    - Enabled example.com/testing/mocking/{id} GET to respond with mocked payload from "example" OpenAPI field.
+    - Enabled example.com/testing/mocking/{id} DELETE to respond with mocked HTTP status code, without the body.
+    - Enabled example.com/testing/mocking/multiple/{id} GET to respond with mocked payload from "examples" OpenAPI field.
+    - Disabled example.com/testing/mocking/multiple/{id} PATCH to respond with mocked payload from "examples" OpenAPI field.
+
 ### StaticRoute
 
 1. Prefix and Rewrite

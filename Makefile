@@ -1,6 +1,9 @@
+# Add bin to the PATH
+export PATH := $(shell pwd)/bin:$(PATH)
 
 # Image URL to use all building/pushing image targets
-IMG ?= kusk-gateway:dev
+MANAGER_IMG ?= kusk-gateway:dev
+HELPER_IMG ?= kusk-gateway-helper:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
@@ -61,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen helper-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -83,25 +86,33 @@ testing: ## Run the integration tests from development/testing and then delete t
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate fmt vet ## Build manager and helper binary.
 	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/helper cmd/helper/main.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
 	go build -o bin/manager cmd/manager/main.go
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
+.PHONY: docker-build-manager
+docker-build-manager: ## Build docker image with the manager.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+
+.PHONY: docker-build-helper
+docker-build-helper: ## Build docker image with the helper.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${HELPER_IMG} -f ./build/helper/Dockerfile .
+
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${IMG} -f ./build/manager/Dockerfile .
+docker-build: docker-build-manager docker-build-helper ## Build docker images for all apps
 
-.PHONY: docker-build-debug
-docker-build-debug: ## Build docker image with the manager and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${IMG}-debug" -f ./build/manager/Dockerfile-debug .
+.PHONY: docker-build-manager-debug
+docker-build-manager-debug: ## Build docker image with the manager and debugger.
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: docker-build-helper-debug
+docker-build-helper-debug:  ## Build docker image with the helper and debugger.
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -140,16 +151,24 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: update
-update: docker-build deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+
+.PHONY: update-helper
+update-helper: docker-build-helper cycle-envoy
 
 .PHONY: update-debug
-update-debug: docker-build-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-manager-debug docker-build-helper-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
 	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=30s
+
+.PHONY: cycle-envoy
+cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
+	kubectl rollout restart deployment/kgw-envoy-default -n default
+	-kubectl rollout restart deployment/kgw-envoy-testing -n testing
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
@@ -158,10 +177,30 @@ controller-gen: ## Download controller-gen locally if necessary.
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 .PHONY: kustomize
-
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
+# Protoc and friends installation and generation
+PROTOC_GEN_GO := $(shell pwd)/bin/protoc-gen-go
+PROTOC_GEN_GO_GRPC := $(shell pwd)/bin/protoc-gen-go-grpc
+
+PROTOC := $(shell pwd)/bin/protoc/bin/protoc
+$(PROTOC):
+	$(call install-protoc)
+
+$(PROTOC_GEN_GO):
+	@echo "[INFO]: Installing protobuf go generation plugin."
+	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1)
+
+$(PROTOC_GEN_GO_GRPC):
+	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
+	$(call go-get-tool,$(PROTOC_GEN_GO_GRPC),google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0)
+
+.PHONY: helper-management-compile
+helper-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for helper/management
+	cd "internal/helper/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+
+# Envtest
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
@@ -178,5 +217,21 @@ go mod init tmp ;\
 echo "Downloading $(2)" ;\
 GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
+}
+endef
+
+define install-protoc
+@[ -f "${PROTOC}" ] || { \
+set -e ;\
+echo "[INFO] Installing protoc compiler to ${PROJECT_DIR}/bin/protoc" ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+PB_REL="https://github.com/protocolbuffers/protobuf/releases" ;\
+VERSION=3.19.4 ;\
+if [ "$$(uname)" == "Darwin" ];then FILENAME=protoc-$${VERSION}-osx-x86_64.zip ;fi ;\
+if [ "$$(uname)" == "Linux" ];then FILENAME=protoc-$${VERSION}-linux-x86_64.zip;fi ;\
+echo "Downloading $${FILENAME} to $${TMP_DIR}" ;\
+curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d ${PROJECT_DIR}/bin/protoc ; \
+rm -rf $${TMP_DIR} ;\
 }
 endef

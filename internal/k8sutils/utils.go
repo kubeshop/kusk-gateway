@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -51,4 +52,15 @@ func GetServicesByLabels(ctx context.Context, client clientPkg.Client, labels ma
 	}
 
 	return servicesList.Items, nil
+}
+
+func GetDeploymentsByLabels(ctx context.Context, client clientPkg.Client, labels map[string]string) ([]appsv1.Deployment, error) {
+	labelSelector := clientPkg.MatchingLabels(labels)
+
+	deployList := &appsv1.DeploymentList{}
+	if err := client.List(ctx, deployList, labelSelector); err != nil {
+		return []appsv1.Deployment{}, fmt.Errorf("failed getting deployments from the cluster: %w", err)
+	}
+
+	return deployList.Items, nil
 }

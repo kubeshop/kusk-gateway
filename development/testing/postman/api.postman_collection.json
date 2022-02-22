@@ -771,6 +771,237 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "6. Mocking",
+			"item": [
+				{
+					"name": "/testing/mocked/1 - check GET",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"object\");",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json');",
+									"    pm.expect(pm.response.headers.get('x-kusk-mocked')).to.eql('true');",
+									"    pm.expect(jsonData.title).to.eql(\"Mocked title\");",
+									"    pm.expect(jsonData.order).to.eql(13);",
+									"    pm.expect(jsonData.completed).to.eql(true);",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/mocked/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"mocked",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/mocked/1 - check mocked DELETE and simple response code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response body is empty but mocked header exist\", function() {",
+									"    pm.response.to.not.have.body;",
+									"    pm.expect(pm.response.headers.get('x-kusk-mocked')).to.eql('true');",
+									"    }",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/mocked/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"mocked",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/mocked/1 - check disabled mocked PATCH",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"completed\": true,\n    \"order\": 12,\n    \"title\": \"Mocked title patched\",\n    \"url\": \"http://mockedURL.com\"\n}"
+						},
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/mocked/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"mocked",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/testing/mocked/multiple/1 - check mocked GET from multiple examples field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is JSON\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"object\");",
+									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json');",
+									"    pm.expect(jsonData.title).to.be.oneOf([\"Mocked title #1\", \"Mocked title #2\"]);",
+									"    pm.expect(jsonData.order).to.be.oneOf([12, 13]);",
+									"    pm.expect(jsonData.completed).to.eql(true);",
+									"}",
+									");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"host": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://example.com",
+								"type": "default",
+								"disabled": true
+							},
+							{
+								"key": "Host",
+								"value": "example.com",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{EXTERNAL_IP}}/testing/mocked/multiple/1",
+							"host": [
+								"{{EXTERNAL_IP}}"
+							],
+							"path": [
+								"testing",
+								"mocked",
+								"multiple",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

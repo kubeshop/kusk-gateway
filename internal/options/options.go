@@ -48,6 +48,7 @@ type SubOptions struct {
 	CORS       *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
 	Websocket  *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
 	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
+	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -60,6 +61,12 @@ func (o SubOptions) Validate() error {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}
+	// TODO: make it work together
+	if o.Validation != nil && o.Mocking != nil {
+		if *o.Validation.Request.Enabled && *o.Mocking.Enabled {
+			return fmt.Errorf("validation and mocking are mutually exclusive")
+		}
+	}
 
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),
@@ -67,6 +74,7 @@ func (o SubOptions) Validate() error {
 		v.Field(&o.Path),
 		v.Field(&o.QoS),
 		v.Field(&o.CORS),
+		v.Field(&o.Mocking),
 	)
 }
 
@@ -120,6 +128,11 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	// Validation
 	if o.Validation == nil && in.Validation != nil {
 		o.Validation = in.Validation
+	}
+
+	// Mocking
+	if o.Mocking == nil && in.Mocking != nil {
+		o.Mocking = in.Mocking
 	}
 
 	return

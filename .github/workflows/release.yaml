@@ -40,7 +40,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Docker metadata for Kusk Gateway
-        id: meta
+        id: meta-kusk-gateway
         uses: docker/metadata-action@v3
         with:
           images: kubeshop/kusk-gateway
@@ -50,14 +50,34 @@ jobs:
           flavor: |
             latest=true
       -
-        name: Build and push
+        name: Build and push Kusk Gateway
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: build/Dockerfile
+          file: build/manager/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
+          labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
+      -
+        name: Docker metadata for Kusk Gateway Helper
+        id: meta-kusk-gateway-helper
+        uses: docker/metadata-action@v3
+        with:
+          images: kubeshop/kusk-gateway-helper
+          tags: |
+            type=match,pattern=v(.*)
+            type=sha
+          flavor: |
+            latest=true
+      -
+        name: Build and push Kusk Gateway Helper
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: build/helper/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-kusk-gateway-helper.outputs.tags }}
+          labels: ${{ steps.meta-kusk-gateway-helper.outputs.labels }}
       -
         name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2

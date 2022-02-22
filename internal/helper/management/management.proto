@@ -1,0 +1,39 @@
+// The definition of the communication service between mocking service and manager
+
+syntax = "proto3";
+
+option go_package = "github.com/kubeshop/kusk-gateway/internal/helper/management";
+
+package grpc;
+
+// ConfigManager service continuously streams the snapshots of configuration to the client.
+service ConfigManager {
+  rpc GetSnapshot(ClientParams) returns (stream Snapshot) {}
+}
+
+// This client request message provides the node name and fleet ID.
+message ClientParams {
+  // Client node name
+  string nodeName = 1;
+  string fleetID = 2;
+}
+
+// Snapshot response message provides the snapshot of the configurations.
+message Snapshot {
+  MockConfig mockConfig = 1;
+}
+
+// MockConfig is the mapping of mockID to MockResponse struct
+message MockConfig {
+  map<string,MockResponse> MockResponses = 1;
+}
+
+// MockResponse is the mocking.MockResponse struct
+message MockResponse {
+	// HTTP Status Code
+	uint32 StatusCode = 1;
+  // Mapping of Media type to Media data
+	// application/json -> []byte
+	// application/xml -> []byte
+	map <string, bytes> MediaTypeData = 2;
+}
