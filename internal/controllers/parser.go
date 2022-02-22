@@ -107,6 +107,10 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 
 			// Mock
 			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
+				// TODO: make them compatible
+				if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil {
+					return fmt.Errorf("mocking and validation are enabled but are mutually exclusive")
+				}
 
 				clusterName := "MockingService"
 				if !envoyConfiguration.ClusterExist(clusterName) {
