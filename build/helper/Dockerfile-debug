@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/r
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/mockserve .
+COPY --from=builder /workspace/helper .
 COPY --from=builder /go/bin/dlv .
 USER 65532:65532
 

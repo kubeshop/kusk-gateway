@@ -110,8 +110,8 @@ docker-build: docker-build-manager docker-build-helper ## Build docker images fo
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
-.PHONY: docker-build-debug-helper
-docker-build-debug-helper:  ## Build docker image with the helper and debugger.
+.PHONY: docker-build-helper-debug
+docker-build-helper-debug:  ## Build docker image with the helper and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
 
 ##@ Deployment
@@ -157,7 +157,7 @@ update: docker-build-manager deploy cycle ## Runs deploy, docker build and resta
 update-helper: docker-build-helper cycle-envoy
 
 .PHONY: update-debug
-update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-manager-debug docker-build-helper-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
