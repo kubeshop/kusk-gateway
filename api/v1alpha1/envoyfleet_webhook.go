@@ -68,6 +68,10 @@ func (e *EnvoyFleetMutator) Handle(ctx context.Context, req admission.Request) a
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if efObject.Spec.TLS.TlsSecrets == nil {
+		efObject.Spec.TLS.TlsSecrets = []TLSSecrets{}
+	}
+
 	if efObject.Spec.TLS.Requirement == "" {
 		envoyfleetlog.Info("TLS requirement is empty - setting it to NONE")
 		efObject.Spec.TLS.Requirement = "NONE"
