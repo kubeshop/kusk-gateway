@@ -118,6 +118,7 @@ var _ = BeforeSuite(func() {
 
 	hookServer.Register(StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &StaticRouteMutator{Client: mgr.GetClient()}})
 	hookServer.Register(StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &StaticRouteValidator{}})
+	hookServer.Register(EnvoyFleetMutatingWebhookPath, &webhook.Admission{Handler: &EnvoyFleetMutator{}})
 	hookServer.Register(EnvoyFleetValidatingWebhookPath, &webhook.Admission{Handler: &EnvoyFleetValidator{}})
 	Expect(err).NotTo(HaveOccurred())
 
