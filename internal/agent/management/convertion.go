@@ -1,6 +1,6 @@
 package management
 
-import "github.com/kubeshop/kusk-gateway/internal/helper/mocking"
+import "github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 
 // MockConfigToProtoMockConfig is needed to do the convertion of mocking MockConfig type to protobuf generated one
 func MockConfigToProtoMockConfig(mockConfig *mocking.MockConfig) *MockConfig {

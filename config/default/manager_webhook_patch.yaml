@@ -19,7 +19,7 @@ spec:
           name: validator
           protocol: TCP
         - containerPort: 18010
-          name: helper-config
+          name: agent-config
           protocol: TCP
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs

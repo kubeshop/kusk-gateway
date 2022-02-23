@@ -43,8 +43,8 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/spec"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 
-	helperManagement "github.com/kubeshop/kusk-gateway/internal/helper/management"
-	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
+	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
+	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 )
 
 const (
@@ -55,11 +55,11 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	EnvoyManager  *manager.EnvoyConfigManager
-	HelperManager *helperManagement.ConfigManager
-	Validator     *validation.Proxy
-	m             sync.Mutex
+	Scheme       *runtime.Scheme
+	EnvoyManager *manager.EnvoyConfigManager
+	AgentManager *agentManagement.ConfigManager
+	Validator    *validation.Proxy
+	m            sync.Mutex
 
 	WatchedSecretsChan chan *v1.Secret
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
@@ -225,8 +225,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	l.Info("Configuration snapshot was generated for the fleet", "fleet", fleetIDstr)
-	// Helper config is applied first to make Helper ready for the new Envoy routes
-	c.HelperManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
+	// Agent config is applied first to make Agent ready for the new Envoy routes
+	c.AgentManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to apply snapshot: %w", err)

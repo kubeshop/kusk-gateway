@@ -3,7 +3,7 @@ export PATH := $(shell pwd)/bin:$(PATH)
 
 # Image URL to use all building/pushing image targets
 MANAGER_IMG ?= kusk-gateway:dev
-HELPER_IMG ?= kusk-gateway-helper:dev
+AGENT_IMG ?= kusk-gateway-agent:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
@@ -64,7 +64,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen helper-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen agent-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -86,9 +86,9 @@ testing: ## Run the integration tests from development/testing and then delete t
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager and helper binary.
+build: generate fmt vet ## Build manager and agent binary.
 	go build -o bin/manager cmd/manager/main.go
-	go build -o bin/helper cmd/helper/main.go
+	go build -o bin/agent cmd/agent/main.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
@@ -99,20 +99,20 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 docker-build-manager: ## Build docker image with the manager.
 	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
-.PHONY: docker-build-helper
-docker-build-helper: ## Build docker image with the helper.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${HELPER_IMG} -f ./build/helper/Dockerfile .
+.PHONY: docker-build-agent
+docker-build-agent: ## Build docker image with the agent.
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${AGENT_IMG} -f ./build/agent/Dockerfile .
 
 .PHONY: docker-build
-docker-build: docker-build-manager docker-build-helper ## Build docker images for all apps
+docker-build: docker-build-manager docker-build-agent ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
-.PHONY: docker-build-helper-debug
-docker-build-helper-debug:  ## Build docker image with the helper and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${HELPER_IMG}-debug" -f ./build/helper/Dockerfile-debug .
+.PHONY: docker-build-agent-debug
+docker-build-agent-debug:  ## Build docker image with the agent and debugger.
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" -f ./build/agent/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -153,11 +153,11 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 .PHONY: update
 update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
-.PHONY: update-helper
-update-helper: docker-build-helper cycle-envoy
+.PHONY: update-agent
+update-agent: docker-build-agent cycle-envoy
 
 .PHONY: update-debug
-update-debug: docker-build-manager-debug docker-build-helper-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-manager-debug docker-build-agent-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
@@ -196,9 +196,9 @@ $(PROTOC_GEN_GO_GRPC):
 	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
 	$(call go-get-tool,$(PROTOC_GEN_GO_GRPC),google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0)
 
-.PHONY: helper-management-compile
-helper-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for helper/management
-	cd "internal/helper/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+.PHONY: agent-management-compile
+agent-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for agent/management
+	cd "internal/agent/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
 
 # Envtest
 ENVTEST = $(shell pwd)/bin/setup-envtest

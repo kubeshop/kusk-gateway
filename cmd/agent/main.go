@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/kubeshop/kusk-gateway/internal/helper/httpserver"
-	"github.com/kubeshop/kusk-gateway/internal/helper/management"
+	"github.com/kubeshop/kusk-gateway/internal/agent/httpserver"
+	"github.com/kubeshop/kusk-gateway/internal/agent/management"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -20,12 +20,12 @@ import (
 func main() {
 
 	var (
-		helperConfigurationManagerServiceAddress string
-		log                                      *zap.SugaredLogger
-		fleetID                                  string
+		agentConfigurationManagerServiceAddress string
+		log                                     *zap.SugaredLogger
+		fleetID                                 string
 	)
-	flag.StringVar(&helperConfigurationManagerServiceAddress, "helper-config-manager-service-address", "", "The address (hostname:port) of Kusk Gateway Helper Configuration Manager Service")
-	flag.StringVar(&fleetID, "fleetID", "", "The Envoy Fleet ID this Helper server is deployed for.")
+	flag.StringVar(&agentConfigurationManagerServiceAddress, "agent-config-manager-service-address", "", "The address (hostname:port) of Kusk Gateway Agent Configuration Manager Service")
+	flag.StringVar(&fleetID, "fleetID", "", "The Envoy Fleet ID this Agent server is deployed for.")
 	flag.Parse()
 	log = initLogger().Sugar()
 	defer log.Sync()
@@ -52,8 +52,8 @@ func main() {
 	// Creates the connection, wait for the commands and respond
 	// Using closure since this respawns if failed and we defer a lot of closing operations.
 	connection := func() {
-		log.Info("Dialing to the management service at: ", helperConfigurationManagerServiceAddress)
-		conn, err := grpc.Dial(helperConfigurationManagerServiceAddress, grpcOpts...)
+		log.Info("Dialing to the management service at: ", agentConfigurationManagerServiceAddress)
+		conn, err := grpc.Dial(agentConfigurationManagerServiceAddress, grpcOpts...)
 		defer conn.Close()
 		if err != nil {
 			log.Errorf("failed to dial: %v", err)

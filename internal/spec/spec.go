@@ -15,7 +15,7 @@ import (
 
 // isSwagger tries to decode the spec header
 func isSwagger(spec []byte) bool {
-	// internal helper struct to help us differentiate
+	// internal agent struct to help us differentiate
 	// between openapi spec 2.0 (swagger) and openapi 3+
 	var header struct {
 		Swagger string `json:"swagger"`

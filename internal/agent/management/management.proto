@@ -2,7 +2,7 @@
 
 syntax = "proto3";
 
-option go_package = "github.com/kubeshop/kusk-gateway/internal/helper/management";
+option go_package = "github.com/kubeshop/kusk-gateway/internal/agent/management";
 
 package grpc;
 

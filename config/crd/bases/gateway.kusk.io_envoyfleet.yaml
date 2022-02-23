@@ -891,22 +891,17 @@ spec:
                         type: array
                     type: object
                 type: object
-              annotations:
-                additionalProperties:
-                  type: string
-                description: Additional Envoy Deployment annotations, optional
-                type: object
-              helper:
-                description: Helper sidecar configuration
+              agent:
+                description: Agent sidecar configuration
                 properties:
                   image:
-                    description: Helper sidecar image tag. If empty (most of the cases)
+                    description: Agent sidecar image tag. If empty (most of the cases)
                       - will be detected from the Kusk Gateway Manager version and
                       default Kubeshop container repository
                     type: string
                   resources:
-                    description: Helper sidecar CPU and Memory resources requests
-                      and limits
+                    description: Agent sidecar CPU and Memory resources requests and
+                      limits
                     properties:
                       limits:
                         additionalProperties:
@@ -931,6 +926,11 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                type: object
+              annotations:
+                additionalProperties:
+                  type: string
+                description: Additional Envoy Deployment annotations, optional
                 type: object
               image:
                 description: Envoy image tag
