@@ -17,7 +17,7 @@ import (
 const (
 	envoyHTTPListenerPort       int32  = 8080
 	envoyAdminListenerPort      int32  = 19000
-	helperImageName             string = "kusk-gateway-helper"
+	agentImageName              string = "kusk-gateway-agent"
 	kuskGatewayManagerImageName        = "kusk-gateway"
 )
 
@@ -180,51 +180,51 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 			envoyContainer.Resources.Requests = e.fleet.Spec.Resources.Requests
 		}
 	}
-	// Creation of the helper sidecar requires passing the parameter with Kusk Gateway Helper management service.
+	// Creation of the agent sidecar requires passing the parameter with Kusk Gateway Agent management service.
 	// We do the service detection dynamically.
-	helperServiceLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "helper-service"}
-	helperServices, err := k8sutils.GetServicesByLabels(ctx, e.client, helperServiceLabels)
+	agentServiceLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "agent-service"}
+	agentServices, err := k8sutils.GetServicesByLabels(ctx, e.client, agentServiceLabels)
 	if err != nil {
 		return fmt.Errorf("cannot create Envoy Fleet %s: %w", e.fleet.Name, err)
 	}
-	switch svcs := len(helperServices); {
+	switch svcs := len(agentServices); {
 	case svcs == 0:
-		return fmt.Errorf("cannot create Envoy Fleet %s: no Helper management services were detected in the cluster when searching with the labels %s", e.fleet.Name, helperServiceLabels)
+		return fmt.Errorf("cannot create Envoy Fleet %s: no Agent management services were detected in the cluster when searching with the labels %s", e.fleet.Name, agentServiceLabels)
 	case svcs > 1:
-		return fmt.Errorf("cannot create Envoy Fleet %s: multiple Helper management services were detected in the cluster when searching with the labels %s", e.fleet.Name, helperServiceLabels)
+		return fmt.Errorf("cannot create Envoy Fleet %s: multiple Agent management services were detected in the cluster when searching with the labels %s", e.fleet.Name, agentServiceLabels)
 	}
 	// At this point - we have exactly one service with (we ASSUME!) one port
-	helperServiceHostname := fmt.Sprintf("%s.%s.svc.cluster.local.", helperServices[0].Name, helperServices[0].Namespace)
-	helperServicePort := helperServices[0].Spec.Ports[0].Port
+	agentServiceHostname := fmt.Sprintf("%s.%s.svc.cluster.local.", agentServices[0].Name, agentServices[0].Namespace)
+	agentServicePort := agentServices[0].Spec.Ports[0].Port
 
-	// Helper container (sidecar)
-	helperContainer := corev1.Container{
-		Name:            "helper",
+	// Agent container (sidecar)
+	agentContainer := corev1.Container{
+		Name:            "agent",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		// Command:         []string{"/bin/sh", "-c"},
 		Args: []string{
 			"-fleetID",
 			e.fleetID,
-			"-helper-config-manager-service-address",
-			fmt.Sprintf("%s:%d", helperServiceHostname, helperServicePort),
+			"-agent-config-manager-service-address",
+			fmt.Sprintf("%s:%d", agentServiceHostname, agentServicePort),
 		},
 	}
-	// Additional parameters for the helper service
-	if e.fleet.Spec.Helper != nil {
-		if e.fleet.Spec.Helper.Image != "" {
-			helperContainer.Image = e.fleet.Spec.Helper.Image
+	// Additional parameters for the agent service
+	if e.fleet.Spec.Agent != nil {
+		if e.fleet.Spec.Agent.Image != "" {
+			agentContainer.Image = e.fleet.Spec.Agent.Image
 		}
-		if e.fleet.Spec.Helper.Resources != nil {
-			if e.fleet.Spec.Helper.Resources.Limits != nil {
-				helperContainer.Resources.Limits = e.fleet.Spec.Helper.Resources.Limits
+		if e.fleet.Spec.Agent.Resources != nil {
+			if e.fleet.Spec.Agent.Resources.Limits != nil {
+				agentContainer.Resources.Limits = e.fleet.Spec.Agent.Resources.Limits
 			}
-			if e.fleet.Spec.Helper.Resources.Requests != nil {
-				helperContainer.Resources.Requests = e.fleet.Spec.Helper.Resources.Requests
+			if e.fleet.Spec.Agent.Resources.Requests != nil {
+				agentContainer.Resources.Requests = e.fleet.Spec.Agent.Resources.Requests
 			}
 		}
 	}
-	// Image for the helper container was not set, do the autodetection based on Kusk Gateway Manager Image
-	if helperContainer.Image == "" {
+	// Image for the agent container was not set, do the autodetection based on Kusk Gateway Manager Image
+	if agentContainer.Image == "" {
 
 		kuskGatewayManagerLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "kusk-gateway-manager"}
 		kuskGatewayManagerDeployments, err := k8sutils.GetDeploymentsByLabels(ctx, e.client, kuskGatewayManagerLabels)
@@ -248,8 +248,8 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 				return fmt.Errorf("cannot create Envoy Fleet %s: failed Kusk Gateway Manager's version autodetection - container image tag %s doesn't match the imageName:version pattern", e.fleet.Name, container.Image)
 			}
 			containerRepositoryURL := strings.TrimSuffix(managerImageTag[0], kuskGatewayManagerImageName)
-			// Form and set helper server container image tag
-			helperContainer.Image = fmt.Sprintf("%s%s:%s", containerRepositoryURL, helperImageName, managerImageTag[1])
+			// Form and set agent server container image tag
+			agentContainer.Image = fmt.Sprintf("%s%s:%s", containerRepositoryURL, agentImageName, managerImageTag[1])
 			break
 		}
 	}
@@ -276,7 +276,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						envoyContainer,
-						helperContainer,
+						agentContainer,
 					},
 					Volumes: []corev1.Volume{
 						{

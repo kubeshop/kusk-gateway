@@ -56,9 +56,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
-	helperManagement "github.com/kubeshop/kusk-gateway/internal/helper/management"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
 
@@ -157,7 +157,7 @@ func main() {
 		enableLeaderElection  bool
 		probeAddr             string
 		envoyControlPlaneAddr string
-		helperManagerAddr     string
+		agentManagerAddr      string
 		logLevel              string
 		development           bool
 	)
@@ -165,7 +165,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&envoyControlPlaneAddr, "envoy-control-plane-bind-address", ":18000", "The address Envoy control plane XDS server binds to.")
-	flag.StringVar(&helperManagerAddr, "helper-manager-bind-address", ":18010", "The address Helper Manager service binds to.")
+	flag.StringVar(&agentManagerAddr, "agent-manager-bind-address", ":18010", "The address Agent Manager service binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -218,11 +218,11 @@ func main() {
 		}
 	}()
 
-	helperManager := helperManagement.New(context.Background(), helperManagerAddr, logger)
+	agentManager := agentManagement.New(context.Background(), agentManagerAddr, logger)
 
 	go func() {
-		if err := helperManager.Start(); err != nil {
-			setupLog.Error(err, "unable to start Helper Manager Server")
+		if err := agentManager.Start(); err != nil {
+			setupLog.Error(err, "unable to start Agent Manager Server")
 			os.Exit(1)
 		}
 	}()
@@ -233,7 +233,7 @@ func main() {
 		Scheme:             mgr.GetScheme(),
 		EnvoyManager:       envoyManager,
 		Validator:          proxy,
-		HelperManager:      helperManager,
+		AgentManager:       agentManager,
 		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 		WatchedSecretsChan: secretsChan,
 	}

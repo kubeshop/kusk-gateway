@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/go-logr/logr"
-	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 )
 
 func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
@@ -23,7 +23,7 @@ func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
 		fleetNodesConnectionsMutex:  &sync.RWMutex{},
 		randomNodeStreamIDGenerator: rand.New(rand.NewSource(100)),
 	}
-	logger := log.WithName("helper-config-manager")
+	logger := log.WithName("agent-config-manager")
 	return &ConfigManager{
 		cacheManager: cacheManager,
 		l:            logger,
@@ -32,7 +32,7 @@ func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
 }
 
 // ###############################  Cache Manager ########################################################
-// cacheManager provides the snapshots cache and the methods to update it with the new configuration for the helpers in the fleet
+// cacheManager provides the snapshots cache and the methods to update it with the new configuration for the agents in the fleet
 type cacheManager struct {
 	// active cache snapshot per fleet, the key - fleetID
 	fleetConfigs map[string]*Snapshot
@@ -140,26 +140,26 @@ func (c cacheManager) GetSnapshot(clientParams *ClientParams, stream ConfigManag
 
 // ###############################  Config Manager ########################################################
 // ConfigManager manages all fleet configuration for the fleets
-// It contains cacheManager for the data and runs GRPC service for updates to helper nodes
+// It contains cacheManager for the data and runs GRPC service for updates to agent nodes
 type ConfigManager struct {
 	cacheManager *cacheManager
 	address      string
 	l            logr.Logger
 }
 
-// ApplyNewFleetConfig adds new configuration to the cache manager and triggers helpers update
+// ApplyNewFleetConfig adds new configuration to the cache manager and triggers agents update
 func (m *ConfigManager) ApplyNewFleetConfig(fleetID string, mockConfig *mocking.MockConfig) {
 	m.cacheManager.createAndSetSnapshot(fleetID, mockConfig)
 	// Trigger update to all fleet nodes
 	m.cacheManager.updateNodes(fleetID)
-	m.l.Info("Applied new Helper fleet config", "fleet", fleetID)
+	m.l.Info("Applied new Agent fleet config", "fleet", fleetID)
 	return
 }
 
 func (m *ConfigManager) Start() error {
 	// Starts GRPC service
 	grpcServer := newGRPCServer()
-	m.l.Info(fmt.Sprintf("Starting Helper Configuration Management service on %s", m.address))
+	m.l.Info(fmt.Sprintf("Starting Agent Configuration Management service on %s", m.address))
 	listener, err := net.Listen("tcp", m.address)
 	if err != nil {
 		return err

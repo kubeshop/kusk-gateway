@@ -11,10 +11,10 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	agentHTTPServer "github.com/kubeshop/kusk-gateway/internal/agent/httpserver"
+	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
-	helperHTTPServer "github.com/kubeshop/kusk-gateway/internal/helper/httpserver"
-	"github.com/kubeshop/kusk-gateway/internal/helper/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/options"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 )
@@ -114,7 +114,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 
 				clusterName := "MockingService"
 				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, helperHTTPServer.ServerHostname, helperHTTPServer.ServerPort)
+					envoyConfiguration.AddCluster(clusterName, agentHTTPServer.ServerHostname, agentHTTPServer.ServerPort)
 				}
 
 				// We don't support websockets during mocking, disable it if inherited.
@@ -136,7 +136,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				mockID := generateMockID(path, method, operation.OperationID)
 				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
-						Key:   helperHTTPServer.HeaderMockID,
+						Key:   agentHTTPServer.HeaderMockID,
 						Value: mockID,
 					},
 					Append: wrapperspb.Bool(false),

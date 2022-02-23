@@ -9,20 +9,17 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-RUN CGO_ENABLED=0 go get github.com/go-delve/delve/cmd/dlv@v1.8.0
-
 # Copy the go source
 COPY . .
 
 # Build
-RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux go build -gcflags "all=-N -l" -v -o helper cmd/helper/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o agent cmd/agent/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/helper .
-COPY --from=builder /go/bin/dlv .
+COPY --from=builder /workspace/agent .
 USER 65532:65532
 
-ENTRYPOINT ["/dlv", "--listen=:40001", "--api-version=2", "--headless", "exec", "--accept-multiclient", "--continue", "/helper", "--"]
+ENTRYPOINT ["/agent"]

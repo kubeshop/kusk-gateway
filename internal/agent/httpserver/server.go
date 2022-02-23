@@ -1,4 +1,4 @@
-// package server provides the Helper HTTP server, which is the service, configured with the Helper Management Service.
+// package server provides the Agent HTTP server, which is the service, configured with the Agent Management Service.
 package httpserver
 
 import (

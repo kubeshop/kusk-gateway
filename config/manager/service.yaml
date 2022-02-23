@@ -32,14 +32,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kusk-gateway-helper-service
+  name: kusk-gateway-agent-service
   namespace: system
   labels:
-    app.kubernetes.io/component: helper-service
+    app.kubernetes.io/component: agent-service
 spec:
   ports:
     - port: 18010
-      name: helper-config
-      targetPort: helper-config
+      name: agent-config
+      targetPort: agent-config
   selector:
     app.kubernetes.io/component: kusk-gateway-manager
