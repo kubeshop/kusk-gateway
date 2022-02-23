@@ -1097,15 +1097,13 @@ spec:
                     items:
                       type: string
                     type: array
-                  requirement:
-                    description: "TLS requirement for hosts managed by EnvoyFleet
-                      NONE - No TLS requirement for the virtual hosts EXTERNAL_ONLY
-                      - External requests must use TLS. If a request is external and
-                      it is not \tusing TLS, a 301 redirect will be sent telling the
-                      client to use HTTPS. ALL - All requests must use TLS. If a request
-                      is not using TLS, a 301 redirect \twill be sent telling the
-                      client to use HTTPS. Defaults to NONE"
-                    type: string
+                  https_redirect_hosts:
+                    description: List of host names to enforce HTTPS redirect for.
+                      That is if a HTTP request is received on a host in this list
+                      a 301 redirect will be sent telling the client to use HTTPS
+                    items:
+                      type: string
+                    type: array
                   tlsMaximumProtocolVersion:
                     description: Maximum TLS protocol version. By default, it’s TLSv1_2
                       for clients and TLSv1_3 for servers.

@@ -30,7 +30,6 @@ import (
 	"fmt"
 	"net/http"
 
-	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -70,11 +69,6 @@ func (e *EnvoyFleetMutator) Handle(ctx context.Context, req admission.Request) a
 
 	if efObject.Spec.TLS.TlsSecrets == nil {
 		efObject.Spec.TLS.TlsSecrets = []TLSSecrets{}
-	}
-
-	if efObject.Spec.TLS.Requirement == "" {
-		envoyfleetlog.Info("TLS requirement is empty - setting it to NONE")
-		efObject.Spec.TLS.Requirement = "NONE"
 	}
 
 	marshaledObj, err := json.Marshal(efObject)
@@ -131,10 +125,6 @@ func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFle
 	}
 
 	if resp := e.validateNoOverlappingSANSInTLS(ctx, envoyFleet.Spec.TLS.TlsSecrets); !resp.Allowed {
-		return resp
-	}
-
-	if resp := e.validateTLSRequirement(envoyFleet.Spec.TLS.Requirement); !resp.Allowed {
 		return resp
 	}
 
@@ -246,15 +236,6 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 			sanSet[dnsName] = secret
 		}
 
-	}
-
-	return admission.Allowed("")
-}
-
-func (e *EnvoyFleetValidator) validateTLSRequirement(requirement string) admission.Response {
-	if _, ok := envoy_config_route_v3.VirtualHost_TlsRequirementType_value[requirement]; requirement != "" && !ok {
-		err := fmt.Errorf("unsupported TLS requirement value: %s. Must be NONE, EXTERNAL_ONLY, or ALL", requirement)
-		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	return admission.Allowed("")
