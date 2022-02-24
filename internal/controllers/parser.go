@@ -112,7 +112,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					return fmt.Errorf("mocking and validation are enabled but are mutually exclusive")
 				}
 
-				clusterName := "MockingService"
+				clusterName := "AgentHTTPService"
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, agentHTTPServer.ServerHostname, agentHTTPServer.ServerPort)
 				}

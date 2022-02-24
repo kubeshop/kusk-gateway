@@ -271,6 +271,7 @@ The validation objects contains the following properties to configure automatic 
 | validation.request.enabled | boolean flag to enable request validation |
 
 #### strict validation of request bodies
+
 Strict validation means that the request body must conform exactly to the schema specified in your openapi spec.
 Any fields not in schema will cause the validation to fail the request/response.
 To enable this, please add the following field to your schema block if the request body is of type `object`
@@ -368,6 +369,18 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
                       completed: true
                       order: 13
                       url: "http://mockedURL.com"
+                application/xml:
+                  example:
+                    title: "Mocked XML title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                text/plain:
+                  example: |
+                    title: "Mocked Text title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
         patch:
           # Disable for patch
           x-kusk:
@@ -378,7 +391,10 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
 
 With the example above the response to GET request will be:
 
+1. Curl call without specifying Accept header - uses the first media type specified in the spec (application/json):
+
 ```shell
+
 < HTTP/1.1 200 OK
 < content-type: application/json
 < x-kusk-mocked: true
@@ -391,3 +407,5 @@ With the example above the response to GET request will be:
 ```
 
 The response includes the `x-kusk-mocked: true` header indicating mocking.
+
+2. With Accept header:

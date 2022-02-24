@@ -3,10 +3,18 @@ package mocking
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/clbanning/mxj"
 	"github.com/getkin/kin-openapi/openapi3"
+)
+
+var (
+	JsonMediaTypePattern = regexp.MustCompile("^application/.*json$")
+	XmlMediaTypePattern  = regexp.MustCompile("^application/.*xml$")
+	TextMediaTypePattern = regexp.MustCompile("^text/.*$")
 )
 
 // Mapping of Mock ID to MockResponses
@@ -72,21 +80,11 @@ func (m MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse,
 				continue
 			}
 			if exampleContent != nil {
-				switch mediaType {
-				// TODO: case for other json variants
-				case "application/json":
-					examplebytes, err := json.Marshal(exampleContent)
-					if err != nil {
-						return nil, fmt.Errorf("failure marshalling example content: %w", err)
-					}
-					mockResp.MediaTypeData[mediaType] = examplebytes
-				//TODO
-				case "application/xml":
-				case "text/html":
-				case "text/plain":
-				default:
-					return nil, fmt.Errorf("unsupported media type %s", mediaType)
+				examplebytes, err := marshallExampleContent(mediaType, exampleContent)
+				if err != nil {
+					return nil, fmt.Errorf("failure marshaling example content: %w", err)
 				}
+				mockResp.MediaTypeData[mediaType] = examplebytes
 			}
 		}
 	}
@@ -95,4 +93,32 @@ func (m MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse,
 		return nil, fmt.Errorf("neither the body example nor a simple success (e.g. 200) code is present for mocking generation")
 	}
 	return mockResp, nil
+}
+
+func marshallExampleContent(format string, exampleContent interface{}) ([]byte, error) {
+	switch {
+	case JsonMediaTypePattern.MatchString(format):
+		return json.Marshal(exampleContent)
+	case XmlMediaTypePattern.MatchString(format):
+		if object, isObject := exampleContent.(map[string]interface{}); isObject {
+			xml := mxj.Map(object)
+			return xml.Xml()
+		} else {
+			return mxj.AnyXml(exampleContent, "root")
+		}
+	case TextMediaTypePattern.MatchString(format):
+		if bytes, ok := exampleContent.([]byte); ok {
+			return bytes, nil
+		}
+		if s, ok := exampleContent.(string); ok {
+			return []byte(s), nil
+		}
+		// If it can't just be converted to string explicitly, call String method for that type if present.
+		if s, ok := exampleContent.(fmt.Stringer); ok {
+			return []byte(s.String()), nil
+		}
+		return nil, fmt.Errorf("cannot serialise %s into string", format)
+
+	}
+	return nil, fmt.Errorf("unsupported format type %s", format)
 }

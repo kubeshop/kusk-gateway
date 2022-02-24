@@ -212,6 +212,18 @@ spec:
                       completed: true
                       order: 13
                       url: "http://mockedURL.com"
+                text/plain:
+                  example: |
+                    title: "Mocked title with text example
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                application/xml:
+                  example:
+                    title: "Mocked title with XML example"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
             '400':
               description: Client error
               content:

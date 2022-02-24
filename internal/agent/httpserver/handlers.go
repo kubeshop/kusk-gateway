@@ -48,16 +48,41 @@ func (h *mainHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Add Mocked header to show that we mocked the response
 	w.Header().Set(HeaderMockResponseInsert, "true")
-	// TODO: detect content type for the user using its request Accept Header
-	mediaType := "application/json"
-	data, ok := mockResponse.MediaTypeData[mediaType]
 	// If no media type data (example) found - this is the simple http code in the response, write it and return
-	if !ok {
+	if len(mockResponse.MediaTypeData) == 0 {
 		w.WriteHeader(mockResponse.StatusCode)
 		return
 	}
-	// otherwise, set Content-Type and write the body
-	w.Header().Set("Content-Type", mediaType)
+	mediaTypes := getMediaTypes(mockResponse.MediaTypeData)
+	defaultMediaType := getDefaultMediaType(mediaTypes)
+	// Get media type from the request Accept header parsing and matching to the existing media content type.
+	// If missing or not matched - use the first entry in the media content map.
+	chosenMediaType := NegotiateContentType(r, mediaTypes, defaultMediaType)
+	data := mockResponse.MediaTypeData[chosenMediaType]
+	w.Header().Set("Content-Type", chosenMediaType)
 	w.WriteHeader(mockResponse.StatusCode)
 	w.Write(data)
+}
+
+func getMediaTypes(mediaTypesData map[string][]byte) []string {
+	mediaTypes := make([]string, 0, len(mediaTypesData))
+	for contentType := range mediaTypesData {
+		mediaTypes = append(mediaTypes, contentType)
+	}
+
+	return mediaTypes
+}
+
+func getDefaultMediaType(mediaTypes []string) string {
+	if len(mediaTypes) == 1 {
+		return mediaTypes[0]
+	}
+	// Return any json-based mediaType as default
+	for _, mediaType := range mediaTypes {
+		if mocking.JsonMediaTypePattern.Match([]byte(mediaType)) {
+			return mediaType
+		}
+	}
+	// Otherwise return the first found
+	return mediaTypes[0]
 }
