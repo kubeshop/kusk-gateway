@@ -389,7 +389,7 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
         ...
 ```
 
-With the example above the response to GET request will be different depending on the client's preffered media type when using the Accept header.
+With the example above, the response to GET request will be different depending on the client's preferred media type when using the `Accept` header.
 
 Below we're using the example.com setup from the development/testing directory.
 
