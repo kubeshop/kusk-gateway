@@ -1,5 +1,6 @@
 // This file was copied from go-ozzo/ozzo-routing
-// The goal is to do the Accept header parsing for the ContentType negotiation.
+// The goal is to do the Accept header parsing to choose the correct media type response and set the related Content-Type header.
+// Read https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept for more details on how it works.
 
 package httpserver
 
@@ -125,7 +126,7 @@ func compareParams(params1 map[string]string, params2 map[string]string) (count 
 	return count
 }
 
-// NegotiateContentType negotiates the content types based on the given request and allowed types.
+// NegotiateContentType negotiates the content types based on the given request data (with possible Accept Header) and offered by http server (e.g. present for mocking) media types.
 func NegotiateContentType(r *http.Request, offers []string, defaultOffer string) string {
 	accepts := AcceptMediaTypes(r)
 	offerRanges := []AcceptRange{}
@@ -136,6 +137,8 @@ func NegotiateContentType(r *http.Request, offers []string, defaultOffer string)
 	return negotiateContentType(accepts, offerRanges, ParseAcceptRange(defaultOffer))
 }
 
+// Compares the Accept header possibly weighted params with the offered by the http server media types and returns the best suitable offer.
+// If there is no better match (or there is "Accept: */*") returns the defaultOffer that we supply.
 func negotiateContentType(accepts []AcceptRange, offers []AcceptRange, defaultOffer AcceptRange) string {
 	best := defaultOffer.RawString()
 	bestWeight := float64(0)
@@ -156,7 +159,7 @@ func negotiateContentType(accepts []AcceptRange, offers []AcceptRange, defaultOf
 			if bestWeight > (accept.Weight + booster) {
 				continue // we already have something better..
 			} else if accept.Type == "*" && accept.Subtype == "*" {
-				// If no preference specified - skip to use the default
+				// If no better preference specified - skip to use the best currently offer or defaultOffer later
 				continue
 			} else if accept.Subtype == "*" && offer.Type == accept.Type {
 				best = offer.RawString()
