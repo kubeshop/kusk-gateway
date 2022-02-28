@@ -277,7 +277,19 @@ spec:
                       - url
                   # This example is the must for the response body mocking
                   example:
-                    title: "Mocked title"
+                    title: "Mocked JSON title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                application/xml:
+                  example:
+                    title: "Mocked XML title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                text/plain:
+                  example: |
+                    title: "Mocked Text title"
                     completed: true
                     order: 13
                     url: "http://mockedURL.com"

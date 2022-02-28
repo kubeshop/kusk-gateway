@@ -354,18 +354,18 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
                       - url
                   # Singular example has the priority over other examples.
                   example:
-                    title: "Mocked title"
+                    title: "Mocked JSON title"
                     completed: true
                     order: 13
                     url: "http://mockedURL.com"
                   examples:
                     first:
-                      title: "Mocked title #1"
+                      title: "Mocked JSON title #1"
                       completed: true
                       order: 12
                       url: "http://mockedURL.com"
                     second:
-                      title: "Mocked title #2"
+                      title: "Mocked JSON title #2"
                       completed: true
                       order: 13
                       url: "http://mockedURL.com"
@@ -389,23 +389,57 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
         ...
 ```
 
-With the example above the response to GET request will be:
+With the example above the response to GET request will be different depending on the client's preffered media type when using the Accept header.
 
-1. Curl call without specifying Accept header - uses the first media type specified in the spec (application/json):
+Below we're using the example.com setup from the development/testing directory.
 
-```shell
+1. Curl call without specifying the Accept header. From the list of specified media types (application/json, plain/text, application/xml) - uses our default Mocking media type - application/json:
 
-< HTTP/1.1 200 OK
-< content-type: application/json
-< x-kusk-mocked: true
-< date: Mon, 21 Feb 2022 14:36:52 GMT
-< content-length: 81
-< x-envoy-upstream-service-time: 0
-< server: envoy
-< 
-{"completed":true,"order":13,"title":"Mocked title","url":"http://mockedURL.com"}
-```
+    ```shell
+    curl -v -H "Host: example.com" http://192.168.49.3/testing/mocked/multiple/1
 
-The response includes the `x-kusk-mocked: true` header indicating mocking.
+    < HTTP/1.1 200 OK
+    < content-type: application/json
+    < x-kusk-mocked: true
+    < date: Mon, 21 Feb 2022 14:36:52 GMT
+    < content-length: 81
+    < x-envoy-upstream-service-time: 0
+    < server: envoy
+    < 
+    {"completed":true,"order":13,"title":"Mocked JSON title","url":"http://mockedURL.com"}
+    ```
 
-2. With Accept header:
+    The response includes the `x-kusk-mocked: true` header indicating mocking.
+
+2. With the Accept header, that has application/xml as the preffered type:
+
+    ```shell
+    curl -v -H "Host: example.com" -H "Accept: application/xml"  http://192.168.49.3/testing/mocked/1
+    < HTTP/1.1 200 OK
+    < content-type: application/xml
+    < x-kusk-mocked: true
+    < date: Mon, 28 Feb 2022 08:56:46 GMT
+    < content-length: 117
+    < x-envoy-upstream-service-time: 0
+    < server: envoy
+
+    <doc><completed>true</completed><order>13</order><title>Mocked XML title</title><url>http://mockedURL.com</url></doc>
+    ```
+
+3. With the Accept header specifying multiple weighted preffered media types, text/plain with more weight.
+
+    ```shell
+    curl -v -H "Host: example.com" -H "Accept: application/json;q=0.8,text/plain;q=0.9"  http://192.168.49.3/testing/mocked/1
+    < content-type: text/plain
+    < x-kusk-mocked: true
+    < date: Mon, 28 Feb 2022 08:56:00 GMT
+    < content-length: 81
+    < x-envoy-upstream-service-time: 0
+    < server: envoy
+    < 
+    title: "Mocked Text title"
+    completed: true
+    order: 13
+    url: "http://mockedURL.com"
+
+    ```

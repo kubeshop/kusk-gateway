@@ -156,8 +156,8 @@ func negotiateContentType(accepts []AcceptRange, offers []AcceptRange, defaultOf
 			if bestWeight > (accept.Weight + booster) {
 				continue // we already have something better..
 			} else if accept.Type == "*" && accept.Subtype == "*" {
-				best = offer.RawString()
-				bestWeight = accept.Weight + booster
+				// If no preference specified - skip to use the default
+				continue
 			} else if accept.Subtype == "*" && offer.Type == accept.Type {
 				best = offer.RawString()
 				bestWeight = accept.Weight + booster
