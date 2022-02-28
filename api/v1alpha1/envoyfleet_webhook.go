@@ -26,6 +26,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -45,10 +46,47 @@ var (
 )
 
 const (
-	EnvoyFleetValidatingWebhookPath = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetMutatingWebhookPath   string = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetValidatingWebhookPath        = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
 
 	EnvoyResourceNamePrefix = "kgw-envoy-"
 )
+
+//+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=menvoyfleet.kb.io,admissionReviewVersions=v1
+
+// EnvoyFleetMutator handles EnvoyFleet objects defaulting and any additional mutation
+//+kubebuilder:object:generate:=false
+type EnvoyFleetMutator struct {
+	decoder *admission.Decoder
+}
+
+func (e *EnvoyFleetMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	efObject := &EnvoyFleet{}
+
+	if err := e.decoder.Decode(req, efObject); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if efObject.Spec.TLS.TlsSecrets == nil {
+		efObject.Spec.TLS.TlsSecrets = []TLSSecrets{}
+	}
+
+	marshaledObj, err := json.Marshal(efObject)
+	if err != nil {
+		admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledObj)
+}
+
+// EnvoyFleetMutator implements admission.DecoderInjector.
+// A decoder will be automatically injected.
+
+// InjectDecoder injects the decoder.
+func (e *EnvoyFleetMutator) InjectDecoder(d *admission.Decoder) error {
+	e.decoder = d
+	return nil
+}
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=venvoyfleet.kb.io,admissionReviewVersions=v1

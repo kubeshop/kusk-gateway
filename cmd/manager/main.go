@@ -295,6 +295,7 @@ func main() {
 		hookServer := mgr.GetWebhookServer()
 		hookServer.Register(gateway.StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteMutator{Client: mgr.GetClient()}})
 		hookServer.Register(gateway.StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteValidator{}})
+		hookServer.Register(gateway.EnvoyFleetMutatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetMutator{}})
 		hookServer.Register(gateway.EnvoyFleetValidatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetValidator{Client: mgr.GetClient()}})
 	}
 	// +kubebuilder:scaffold:builder

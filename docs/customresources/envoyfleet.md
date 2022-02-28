@@ -50,6 +50,8 @@ Currently supported parameters:
 
 * spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
 
+* spec.tls.**https_redirect_hosts** An optional field specifying the domain names to force use of HTTPS with. Non secure (HTTP) requests with the matched Host header will be automatically redirected to secure HTTPS with the "301 Moved Permanently" code.
+
 * spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates.
 You can specify more than one.
 Kusk Gateway Manager pulls the certificates from the secrets, extracts the matching hostnames from SubjectAlternativeNames (SAN) certificate field and configures Envoy to use that certificate for those hostnames.
@@ -165,6 +167,9 @@ spec:
     #   - AES128-GCM-SHA256
     # tlsMinimumProtocolVersion: TLSv1_2
     # tlsMaximumProtocolVersion: TLSv1_3
+    # https_redirect_hosts:
+    #     - "example.com"
+    #     - "my-other-example.com"
     # tlsSecrets:
     #   - secretRef: my-cert
     #     namespace: default

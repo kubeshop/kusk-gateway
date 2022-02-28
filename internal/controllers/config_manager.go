@@ -30,6 +30,7 @@ import (
 	"strings"
 	"sync"
 
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -143,6 +144,15 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	if err := c.Client.Get(ctx, types.NamespacedName{Name: fleetID.Name, Namespace: fleetID.Namespace}, &fleet); err != nil {
 		l.Error(err, "Failed to get Envoy Fleet", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to get Envoy Fleet %s: %w", fleetIDstr, err)
+	}
+
+	// For enforcing TLS we need to go through all the of the virtual hosts
+	// managed by the given EnvoyFleet and set RequireTLS for each virtual host whose name
+	// appears in the EnvoyFleet HTTPSRedirectHosts list
+	for _, host := range fleet.Spec.TLS.HTTPSRedirectHosts {
+		if vh, ok := envoyConfig.GetVirtualHosts()[host]; ok {
+			vh.RequireTls = envoy_config_route_v3.VirtualHost_ALL
+		}
 	}
 
 	httpConnectionManagerBuilder := config.NewHCMBuilder()
