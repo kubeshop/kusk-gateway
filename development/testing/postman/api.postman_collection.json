@@ -790,7 +790,7 @@
 									"    pm.expect(jsonData).to.be.an(\"object\");",
 									"    pm.expect(pm.response.headers.get('content-type')).to.eql('application/json');",
 									"    pm.expect(pm.response.headers.get('x-kusk-mocked')).to.eql('true');",
-									"    pm.expect(jsonData.title).to.eql(\"Mocked title\");",
+									"    pm.expect(jsonData.title).to.eql(\"Mocked JSON title\");",
 									"    pm.expect(jsonData.order).to.eql(13);",
 									"    pm.expect(jsonData.completed).to.eql(true);",
 									"}",
