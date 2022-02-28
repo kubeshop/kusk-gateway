@@ -50,7 +50,7 @@ Currently supported parameters:
 
 * spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
 
-* spec.tls.**https_redirect_hosts** An optional field specifying the host names to force use of HTTPS with.
+* spec.tls.**https_redirect_hosts** An optional field specifying the domain names to force use of HTTPS with. Non secure (HTTP) requests with the matched Host header will be automatically redirected to secure HTTPS with the "301 Moved Permanently" code.
 
 * spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates.
 You can specify more than one.
