@@ -48,7 +48,7 @@ create-env: ## Spin up a local development cluster with Minikube and install kus
 	./development/cluster/create-env.sh
 
 .PHONY: create-cluster
-create-cluster: ## Spin up a local minikube cluster with metallb and cert manager installed
+create-cluster: ## Spin up a local minikube cluster with metallb
 	./development/cluster/create-cluster.sh
 
 .PHONY: deploy-envoyfleet

@@ -10,11 +10,13 @@ If you're looking for the quick way to try Kusk Gateway in a locally setup Kuber
 ---
 
 # Table of contents
-- [Prerequsities](#prerequsities)
-  - [Cluster requirements](#cluster-requirements)
-  - [Install requirements](#install-requirements)
-- [Installation](#installation)
-- [Uninstallation](#uninstallation)
+- [Installing Kusk Gateway](#installing-kusk-gateway)
+- [Table of contents](#table-of-contents)
+  - [Prerequsities](#prerequsities)
+    - [Cluster requirements](#cluster-requirements)
+    - [Installation requirements](#installation-requirements)
+    - [Installation](#installation)
+    - [Uninstallation](#uninstallation)
 
 During the setup we'll deploy Kusk Gateway Custom Resources Definitions, Kusk Gateway Manager and Envoy Fleet with Helm.
 
@@ -27,8 +29,6 @@ For the architectural overview of the components please check the [Architecture]
 - Kubernetes v1.16+
 
 - Kubernetes cluster administration rights are required - we install CRDs, service account with ClusterRoles and RoleBindings.
-
-- If you don't have Jetstack Cert-Manager installed in your cluster, then please follow the official [instructions](https://cert-manager.io/docs/installation/) to setup it. We use Cert-Manager for the webhooks configuration.
 
 - If you have the managed cluster (GCP, EKS, etc) then you can skip to the next section.
 If you have the baremetal or locally setup cluster, then you should have the controller that manages load balancing setup when a Service with the type **LoadBalancer** is setup. Otherwise when the Manager creates the Envoy Fleet Service, it will have stuck ExternalIP address in a Pending state forever. [MetalLB](https://metallb.universe.tf/installation/) provides such functionality, so we advise to setup it if you haven't already.

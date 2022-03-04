@@ -36,12 +36,6 @@ data:
       - $ingress_range
 EOF
 
-echo "========> installing cert manager"
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
-
-echo "========> waiting for cert manager to become ready"
-kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-webhook -n cert-manager
-
 echo "========> installing CRDs"
 make install
 

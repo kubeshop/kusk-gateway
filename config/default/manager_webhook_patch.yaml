@@ -21,12 +21,3 @@ spec:
         - containerPort: 18010
           name: agent-config
           protocol: TCP
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-cert

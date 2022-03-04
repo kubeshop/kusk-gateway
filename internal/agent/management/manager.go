@@ -1,7 +1,6 @@
 package management
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -15,7 +14,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 )
 
-func New(ctx context.Context, address string, log logr.Logger) *ConfigManager {
+func New(address string, log logr.Logger) *ConfigManager {
 	cacheManager := &cacheManager{
 		fleetConfigs:                make(map[string]*Snapshot),
 		fleetConfigsMutex:           &sync.RWMutex{},
