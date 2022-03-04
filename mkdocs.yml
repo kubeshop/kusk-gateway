@@ -24,6 +24,8 @@ nav:
     - 'API': customresources/api.md
     - 'Static Route': customresources/staticroute.md
   - Architecture: arch.md
+  - 'Guides':
+      - 'Using Cert Manager with Kusk Gateway': cert-manager.md
   - Roadmap: roadmap.md
   - For Developers: development.md
   - Troubleshooting: troubleshooting.md
