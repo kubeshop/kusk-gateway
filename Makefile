@@ -44,20 +44,16 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: create-env
-create-env: ## Spin up a local development cluster with Minikube and install kusk-gateway for debugging
+create-env: ## Spin up a local development cluster with Minikube and install kusk Gateway
 	./development/cluster/create-env.sh
-
-.PHONY: create-cluster
-create-cluster: ## Spin up a local minikube cluster with metallb
-	./development/cluster/create-cluster.sh
 
 .PHONY: deploy-envoyfleet
 deploy-envoyfleet: ## Deploy k8s resources for the single Envoy Fleet
 	kubectl apply -f config/samples/gateway_v1_envoyfleet.yaml
 
 .PHONY: delete-env
-delete-env: ## Destroy the local development k3d cluster
-	./development/cluster/delete-env.sh
+delete-env: ## Destroy the local development Minikube cluster
+	minikube delete --profile kgw	
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -82,6 +78,16 @@ test: manifests generate fmt vet envtest ## Run tests.
 .PHONY: testing
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
+.PHONY: goproxy
+goproxy: ## Starts local goproxy docker instance for the faster builds. Make sure to set your shell environment variable (e.g. put into .bashrc "export GOPROXY=http://<your_ip_address>:8085".
+	cd development/goproxy && docker-compose up --detach
+
+.PHONY: docker-images-cache
+docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
+	docker pull gcr.io/distroless/static:nonroot
+	docker pull golang:1.17
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true golang:1.17
 
 ##@ Build
 
@@ -97,22 +103,22 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1  docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-agent
 docker-build-agent: ## Build docker image with the agent.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${AGENT_IMG} -f ./build/agent/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${AGENT_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager docker-build-agent ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY}  -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-agent-debug
 docker-build-agent-debug:  ## Build docker image with the agent and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" -f ./build/agent/Dockerfile-debug .
+	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY}  -f ./build/agent/Dockerfile-debug .
 
 ##@ Deployment
 
