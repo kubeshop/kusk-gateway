@@ -47,6 +47,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -60,6 +61,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 )
 
 var (
@@ -151,6 +153,27 @@ func initSecretsInformer(
 	return informer
 }
 
+// initWebhookCerts creates the Admission webhooks server certificates in the predefined location during each manager start
+// and patches the K8s Kusk Gateway Validating and Mutating Admission webhooks configurations with the generated self-signed CA.
+func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer *webhook.Server, clientSet *kubernetes.Clientset) error {
+	webhookServer.CertDir = webhookCertsDir
+	webhookServer.CertName = "tls.crt"
+	webhookServer.KeyName = "tls.key"
+	webhooksServiceDNSNames, err := webhooks.GetWebhookServiceDNSNames(ctx, clientSet)
+	if err != nil {
+		return fmt.Errorf("failure looking up the webhooks service: %w", err)
+	}
+
+	caCert, err := webhooks.CreateCertificates(webhooksServiceDNSNames, webhookServer.CertDir, webhookServer.CertName, webhookServer.KeyName)
+	if err != nil {
+		return fmt.Errorf("failure creating webhooks certificates: %w", err)
+	}
+	if err := webhooks.UpdateWebhookConfiguration(ctx, clientSet, caCert); err != nil {
+		return fmt.Errorf("failure patching webhooks configuration: %w", err)
+	}
+	return nil
+}
+
 func main() {
 	var (
 		metricsAddr           string
@@ -160,6 +183,7 @@ func main() {
 		agentManagerAddr      string
 		logLevel              string
 		development           bool
+		webhookCertsDir       string
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -169,20 +193,24 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&logLevel, "log-level", "INFO", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
 	flag.BoolVar(&development, "development", false, "enable development mode")
+	flag.StringVar(&logLevel, "log-level", "INFO", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
+	// This one is configurable for the local development
+	flag.StringVar(&webhookCertsDir, "webhook-certs-dir", "/opt/manager/webhook/certs", "The directory where webhook certificates will be generated.")
 
 	flag.Parse()
 
 	logger, err := initLogger(development, logLevel)
 	if err != nil {
-		_ = fmt.Errorf("unable to init logger: %w", err)
+		_ = fmt.Errorf("Unable to init logger: %w", err)
 		os.Exit(1)
 	}
-
 	ctrl.SetLogger(logger)
-
 	setupLog := logger.WithName("setup")
+
+	// Create the context obj with the signal to manage the subroutines termination
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
 
 	restConfig := ctrl.GetConfigOrDie()
 
@@ -195,34 +223,33 @@ func main() {
 		LeaderElectionID:       "cd734a2d.kusk.io",
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Unable to create controller manager")
 		os.Exit(1)
 	}
-
-	envoyManager := manager.New(context.Background(), envoyControlPlaneAddr, nil)
-
+	// Envoy configuration manager (XDS service)
+	envoyManager := manager.New(ctx, envoyControlPlaneAddr, nil)
 	go func() {
 		setupLog.Info("Starting Envoy xDS API Server")
 		if err := envoyManager.Start(); err != nil {
-			setupLog.Error(err, "unable to start Envoy xDS API Server")
+			setupLog.Error(err, "Unable to start Envoy xDS API Server")
 			os.Exit(1)
 		}
 	}()
 
+	// Validation proxy
 	proxy := validation.NewProxy()
-
 	go func() {
 		if err := http.ListenAndServe(":17000", proxy); err != nil {
-			setupLog.Error(err, "unable to start validation proxy")
+			setupLog.Error(err, "Unable to start validation proxy")
 			os.Exit(1)
 		}
 	}()
 
-	agentManager := agentManagement.New(context.Background(), agentManagerAddr, logger)
-
+	// Agent (Envoy sidecar) configuration management service
+	agentManager := agentManagement.New(agentManagerAddr, logger)
 	go func() {
 		if err := agentManager.Start(); err != nil {
-			setupLog.Error(err, "unable to start Agent Manager Server")
+			setupLog.Error(err, "Unable to start Agent Manager Server")
 			os.Exit(1)
 		}
 	}()
@@ -238,6 +265,17 @@ func main() {
 		WatchedSecretsChan: secretsChan,
 	}
 
+	// The watcher for k8s secrets to trigger the refresh of configuration in case certificates secrets change.
+	go func() {
+		initSecretsInformer(logger, restConfig, secretsChan).Run(ctx.Done())
+	}()
+	go func() {
+		// start process for listening to secrets
+		setupLog.Info("Starting K8s secrets watch for the TLS certificates renewal events")
+		controllerConfigManager.WatchSecrets(ctx.Done())
+	}()
+
+	// EnvoyFleet obj controller
 	if err = (&controllers.EnvoyFleetReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
@@ -245,22 +283,21 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "EnvoyFleet").
-			Error(err, "unable to create controller")
+			Error(err, "Unable to create controller")
 		os.Exit(1)
 	}
+	webhookServer := mgr.GetWebhookServer()
+	if err := initWebhookCerts(ctx, webhookCertsDir, webhookServer, kubernetes.NewForConfigOrDie(restConfig)); err != nil {
+		setupLog.Error(err, "Failure initializing admission webhook server certs")
+		os.Exit(1)
+	}
+	setupLog.Info("Created admission webhook server certificates and updated K8s Manager's Admission configs with the generated CA certificate")
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
+	setupLog.Info("Registering EnvoyFleet mutating and validating webhooks to the webhook server")
+	webhookServer.Register(gateway.EnvoyFleetMutatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetMutator{}})
+	webhookServer.Register(gateway.EnvoyFleetValidatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetValidator{Client: mgr.GetClient()}})
 
-	go func() {
-		initSecretsInformer(logger, restConfig, secretsChan).Run(ctx.Done())
-	}()
-
-	go func() {
-		// start process for listening to secrets
-		controllerConfigManager.WatchSecrets(ctx.Done())
-	}()
-
+	// API obj controller
 	if err = (&controllers.APIReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
@@ -268,17 +305,15 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "API").
-			Error(err, "unable to create controller")
+			Error(err, "Unable to create controller")
 		os.Exit(1)
 	}
 
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		hookServer := mgr.GetWebhookServer()
-		setupLog.Info("registering API mutating and validating webhooks to the webhook server")
-		hookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
-		hookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
-	}
+	setupLog.Info("Registering API mutating and validating webhooks to the webhook server")
+	webhookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
+	webhookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
 
+	// StaticRoute obj controller
 	if err = (&controllers.StaticRouteReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
@@ -286,31 +321,27 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "StaticRoute").
-			Error(err, "unable to create controller")
+			Error(err, "Unable to create controller")
 		os.Exit(1)
 	}
 
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		setupLog.Info("registering StaticRoute mutating and validating webhooks to the webhook server")
-		hookServer := mgr.GetWebhookServer()
-		hookServer.Register(gateway.StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteMutator{Client: mgr.GetClient()}})
-		hookServer.Register(gateway.StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteValidator{}})
-		hookServer.Register(gateway.EnvoyFleetMutatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetMutator{}})
-		hookServer.Register(gateway.EnvoyFleetValidatingWebhookPath, &webhook.Admission{Handler: &gateway.EnvoyFleetValidator{Client: mgr.GetClient()}})
-	}
+	setupLog.Info("Registering StaticRoute mutating and validating webhooks to the webhook server")
+	webhookServer.Register(gateway.StaticRouteMutatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteMutator{Client: mgr.GetClient()}})
+	webhookServer.Register(gateway.StaticRouteValidatingWebhookPath, &webhook.Admission{Handler: &gateway.StaticRouteValidator{}})
+
 	// +kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "Unable to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "Unable to set up ready check")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "Problem running manager")
 		os.Exit(1)
 	}
 }

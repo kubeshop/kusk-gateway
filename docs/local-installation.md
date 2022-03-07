@@ -43,7 +43,7 @@ minikube start --profile kgw
 
 Next we setup all components and Kusk Gateway
 
-Commands below will configure necessary cluster component such as Jetstack Cert-Manager for webhooks configuration and MetalLB that is needed to finish the configuration of the Service with the type **LoadBalancer**.
+Commands below will configure necessary cluster component such as MetalLB that is needed to finish the configuration of the Service with the type **LoadBalancer**.
 
 After that we'll install the Kusk Gateway and the "default" Envoy Fleet (LoadBalancer) in the recommended **kusk-system** namespace with Helm.
 
@@ -83,10 +83,6 @@ data:
       addresses:
       - $ingress_range
 EOF
-
-# Install Jetstack Cert Manager and wait for it to be ready
-kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml &&\
-kubectl wait --for=condition=available --timeout=600s deployment/cert-manager-webhook -n cert-manager
 
 # Install Kubeshop Helm repo and update it
 helm repo add kubeshop https://kubeshop.github.io/helm-charts && helm repo update

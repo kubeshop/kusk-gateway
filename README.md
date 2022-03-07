@@ -19,13 +19,15 @@ You can apply your API definition like any other Kubernetes resource using our c
 
 # Table of contents
 
+- [Kusk Gateway](#kusk-gateway)
+- [Table of contents](#table-of-contents)
 - [Get Started](#get-started)
   - [Installation](#installation)
-  - [Installation to the Local Kubernetes cluster with Minikube](#installation)
   - [Usage](#usage)
-  - [Troubleshooting](#troubleshooting)
+    - [API CRD Example](#api-crd-example)
   - [Custom Resources](#custom-resources)
-- [Roadmap](#roadmap)
+  - [Roadmap](#roadmap)
+  - [Troubleshooting](#troubleshooting)
 - [Development](#development)
 - [Contribute](#contribute)
 - [License](#license)
@@ -44,7 +46,7 @@ If you want to quickly setup and evaluate the Kusk Gateway, then please use the 
 
 Otherwise see our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install the Kusk Gateway to Kubernetes.
 
-For the quick and impatient, [Jetstack Cert-Manager](https://cert-manager.io/docs/installation/) must be installed in the cluster and then:
+For the quick and impatient:
 
 ```sh
 
