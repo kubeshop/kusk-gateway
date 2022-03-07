@@ -104,9 +104,13 @@ We defined the hostname in the certificate as example.com, therefore your API wi
 to make use of the secret.
 
 We can confirm the details of the certificate using openssl.
-`openssl s_client -showcerts -servername example.com -connect example.com:443`
+```shell
+echo | \
+    openssl s_client -servername example.com -connect example.com:443 2>/dev/null | \
+    openssl x509 -text
+```
 
-For this example, you will need to add example.com to your /etc/hosts file pointing at the envoy service running in the cluster.
+For this example, you will need to add example.com to your `/etc/hosts` file pointing at the envoy service public IP running in the cluster.
 
 ## Rotating secrets
 Kusk Gateway will watch for updates to your secrets using in any of its EnvoyFleets and update the config to use them
@@ -126,9 +130,9 @@ Manually triggered issuance of Certificate default/selfsigned-cert
 
 This will mark the named secret for manual renewal by cert-manager and it should do so relatively quickly.
 
-Now we can check the Kusk Gateway Manager logs to see that it has processed this update and reloaded the config
-
+Use openssl again to check the updated certificate
 ```shell
-❯ kubectl logs deployments/kusk-gateway-manager -n kusk-system -c manager
-...
+echo | \
+    openssl s_client -servername example.com -connect example.com:443 2>/dev/null | \
+    openssl x509 -text
 ```
