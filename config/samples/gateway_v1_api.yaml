@@ -3,6 +3,9 @@ kind: API
 metadata:
   name: api-sample
 spec:
+  fleet:
+    name: default
+    namespace: default
   # service name and port should be specified inside x-kusk annotation
   spec: |
     openapi: 3.0.2
