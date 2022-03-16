@@ -35,7 +35,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/kubeshop/kusk-gateway/internal/spec"
+	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 // log is for logging in this package.

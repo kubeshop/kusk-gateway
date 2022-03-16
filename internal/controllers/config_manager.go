@@ -41,8 +41,8 @@ import (
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
-	"github.com/kubeshop/kusk-gateway/internal/spec"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	"github.com/kubeshop/kusk-gateway/pkg/spec"
 
 	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
 	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
