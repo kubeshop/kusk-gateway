@@ -31,6 +31,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"time"
 
 	// +kubebuilder:scaffold:imports
@@ -70,13 +71,26 @@ var (
 )
 
 type managerConfig struct {
-	MetricsAddr           string `envconfig:"METRICS_BIND_ADDR"`
-	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR"`
-	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR"`
-	AgentManagerAddr      string `envconfig:"AGENT_MANAGER_BIND_ADDR"`
-	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION"`
-	LogLevel              string `envconfig:"LOG_LEVEL"`
-	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR"`
+	MetricsAddr           string `envconfig:"METRICS_BIND_ADDR" default:":8080"`
+	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR" default:":8081"`
+	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:"18000"`
+	AgentManagerAddr      string `envconfig:"AGENT_MANAGER_BIND_ADDR" default:"18010"`
+	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
+	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
+	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR" default:"/opt/manager/webhook/certs"`
+}
+
+func (m managerConfig) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("METRICS_BIND_ADDR=%s\n", m.MetricsAddr))
+	b.WriteString(fmt.Sprintf("HEALTH_PROBE_BIND_ADDR=%s\n", m.ProbeAddr))
+	b.WriteString(fmt.Sprintf("ENVOY_CONTROL_PLANE_BIND_ADDR=%s\n", m.EnvoyControlPlaneAddr))
+	b.WriteString(fmt.Sprintf("AGENT_MANAGER_BIND_ADDR=%s\n", m.AgentManagerAddr))
+	b.WriteString(fmt.Sprintf("ENABLE_LEADER_ELECTION=%t\n", m.EnableLeaderElection))
+	b.WriteString(fmt.Sprintf("LOG_LEVEL=%s\n", m.LogLevel))
+	b.WriteString(fmt.Sprintf("WEBHOOK_CERTS_DIR=%s\n", m.WebhookCertsDir))
+
+	return b.String()
 }
 
 func init() {
@@ -85,7 +99,11 @@ func init() {
 	utilruntime.Must(gateway.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 
-	envconfig.Process("manager", &config)
+	if err := envconfig.Process("manager", &config); err != nil {
+		panic(fmt.Errorf("unable to process config %w", err))
+	}
+
+	fmt.Println(config)
 }
 
 func initLogger(development bool, level string) (logr.Logger, error) {
@@ -188,7 +206,6 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 }
 
 func main() {
-	fmt.Printf("%+v\n", config)
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
 		_ = fmt.Errorf("unable to init logger: %w", err)
