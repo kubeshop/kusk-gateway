@@ -28,6 +28,7 @@ nav:
       - 'Using Cert Manager with Kusk Gateway': cert-manager.md
   - Roadmap: roadmap.md
   - For Developers: development.md
+  - KGW CLI: kgw-cli.md
   - Troubleshooting: troubleshooting.md
   - Observability: observability.md
 
