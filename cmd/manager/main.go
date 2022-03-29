@@ -73,7 +73,7 @@ var (
 type managerConfig struct {
 	MetricsAddr           string `envconfig:"METRICS_BIND_ADDR" default:":8080"`
 	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR" default:":8081"`
-	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:"18000"`
+	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:":18000"`
 	AgentManagerAddr      string `envconfig:"AGENT_MANAGER_BIND_ADDR" default:"18010"`
 	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
 	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
