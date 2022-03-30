@@ -18,8 +18,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
@@ -58,6 +60,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if !ok {
 		return ctrl.Result{}, nil
 	}
+
 	l.Info(`Detected "kusk-gateway/openapi-url" annotation`, "found", val)
 
 	openapi, err := getOpenAPIfromURL(svc.Annotations["kusk-gateway/openapi-url"])
@@ -101,25 +104,24 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	api := &gateway.API{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, api); err != nil {
-		if errors.IsNotFound(err) {
-			//create
-			api.Name = req.Name
-			api.Namespace = req.Namespace
-			api.Spec = gatewaySpec
-			if err := r.Client.Create(ctx, api, &client.CreateOptions{}); err != nil {
-				l.Error(err, "error occured while creating API")
-				return ctrl.Result{}, err
-			}
-
-		}
-	} else {
+	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, api); err != nil && errors.IsNotFound(err) {
+		//create
+		api.Name = req.Name
+		api.Namespace = req.Namespace
 		api.Spec = gatewaySpec
-		if err := r.Client.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-			l.Error(err, "error occured while updating API")
+		if err := r.Client.Create(ctx, api, &client.CreateOptions{}); err != nil {
+			l.Error(err, "error occured while creating API")
 			return ctrl.Result{}, err
-
 		}
+
+		return ctrl.Result{}, nil
+	}
+
+	api.Spec = gatewaySpec
+	if err := r.Client.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+		l.Error(err, "error occured while updating API")
+		return ctrl.Result{}, err
+
 	}
 
 	return ctrl.Result{}, nil
@@ -132,8 +134,12 @@ func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func getOpenAPIfromURL(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+func getOpenAPIfromURL(u string) ([]byte, error) {
+	if _, err := url.Parse(u); err != nil {
+		return nil, fmt.Errorf("invalid url %s: %w", u, err)
+	}
+
+	resp, err := http.Get(u)
 	if err != nil {
 		return nil, err
 	}
