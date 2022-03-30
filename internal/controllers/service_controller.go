@@ -18,13 +18,12 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,70 +54,72 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	if val, ok := svc.Annotations["kusk-gateway/openapi-url"]; ok {
-		l.Info(`Detected "kusk-gateway/openapi-url" annotation`, "found", val)
-		openapi, err := getOpenAPIfromURL(val)
-		if err != nil {
-			return ctrl.Result{}, err
+	val, ok := svc.Annotations["kusk-gateway/openapi-url"]
+	if !ok {
+		return ctrl.Result{}, nil
+	}
+	l.Info(`Detected "kusk-gateway/openapi-url" annotation`, "found", val)
+
+	openapi, err := getOpenAPIfromURL(svc.Annotations["kusk-gateway/openapi-url"])
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var yml map[string]interface{}
+	err = yaml.Unmarshal(openapi, &yml)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	service := map[string]interface{}{"service": map[string]interface{}{
+		"name":      req.Name,
+		"namespace": req.Namespace,
+		"port":      svc.Spec.Ports[0].Port,
+	}}
+	upstream := map[string]interface{}{
+		"upstream": service,
+	}
+
+	if _, ok := yml["x-kusk"]; !ok {
+		yml["x-kusk"] = upstream
+	}
+
+	kusk := yml["x-kusk"]
+	if xkusk, ok := kusk.(map[string]interface{}); ok {
+		if _, contains := xkusk["upstream"]; !contains {
+			xkusk["upstream"] = service
 		}
+	}
 
-		var yml map[string]interface{}
-		err = yaml.Unmarshal(openapi, &yml)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	yamlPayload, err := yaml.Marshal(yml)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-		service := map[string]interface{}{"service": map[string]interface{}{
-			"name":      req.Name,
-			"namespace": req.Namespace,
-			"port":      svc.Spec.Ports[0].Port,
-		}}
-		upstream := map[string]interface{}{
-			"upstream": service,
-		}
+	gatewaySpec := gateway.APISpec{
+		Spec: string(yamlPayload),
+	}
 
-		if val, ok := yml["x-kusk"]; !ok {
-			l.Info(`"x-kusk" extension not found in OpenAPI definition`, "missing", val)
-			yml["x-kusk"] = upstream
-		} else if xkusk, ok := val.(map[string]interface{}); ok {
-			if _, contains := xkusk["upstream"]; !contains {
-				xkusk["upstream"] = service
-			}
-		}
-
-		yamlPayload, err := yaml.Marshal(yml)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-		gatewaySpec := gateway.APISpec{
-			Spec: string(yamlPayload),
-		}
-
-		fmt.Println("payload", gatewaySpec.Spec)
-		api := &gateway.API{}
-
-		if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, api); err != nil {
-			if errors.IsNotFound(err) {
-				//create
-				api.Name = req.Name
-				api.Namespace = req.Namespace
-				api.Spec = gatewaySpec
-				if err := r.Client.Create(ctx, api, &client.CreateOptions{}); err != nil {
-					l.Error(err, "error occured while creating API")
-					return ctrl.Result{}, err
-				}
-
-			}
-		} else {
+	api := &gateway.API{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, api); err != nil {
+		if errors.IsNotFound(err) {
+			//create
+			api.Name = req.Name
+			api.Namespace = req.Namespace
 			api.Spec = gatewaySpec
-			if err := r.Client.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-				l.Error(err, "error occured while updating API")
+			if err := r.Client.Create(ctx, api, &client.CreateOptions{}); err != nil {
+				l.Error(err, "error occured while creating API")
 				return ctrl.Result{}, err
-
 			}
-		}
 
+		}
+	} else {
+		api.Spec = gatewaySpec
+		if err := r.Client.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+			l.Error(err, "error occured while updating API")
+			return ctrl.Result{}, err
+
+		}
 	}
 
 	return ctrl.Result{}, nil

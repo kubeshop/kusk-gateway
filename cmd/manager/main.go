@@ -194,7 +194,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&development, "development", false, "enable development mode")
-	flag.StringVar(&logLevel, "log-level", "WARN", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
+	flag.StringVar(&logLevel, "log-level", "INFO", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
 	// This one is configurable for the local development
 	flag.StringVar(&webhookCertsDir, "webhook-certs-dir", "/opt/manager/webhook/certs", "The directory where webhook certificates will be generated.")
 
