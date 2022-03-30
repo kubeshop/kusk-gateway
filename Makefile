@@ -2,7 +2,7 @@
 export PATH := $(shell pwd)/bin:$(PATH)
 
 # Image URL to use all building/pushing image targets
-MANAGER_IMG ?= jasmingacic/kusk-gateway:dev
+MANAGER_IMG ?= kusk-gateway:dev
 AGENT_IMG ?= kusk-gateway-agent:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
