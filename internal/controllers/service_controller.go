@@ -68,18 +68,22 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 
-		if _, ok := yml["x-kusk"]; !ok {
-			l.Info(`"x-kusk" extension not found in OpenAPI definition`, "missing", val)
+		service := map[string]interface{}{"service": map[string]interface{}{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+			"port":      svc.Spec.Ports[0].Port,
+		}}
+		upstream := map[string]interface{}{
+			"upstream": service,
+		}
 
-			service := map[string]interface{}{"service": map[string]interface{}{
-				"name":      req.Name,
-				"namespace": req.Namespace,
-				"port":      svc.Spec.Ports[0].Port,
-			}}
-			upstream := map[string]interface{}{
-				"upstream": service,
-			}
+		if val, ok := yml["x-kusk"]; !ok {
+			l.Info(`"x-kusk" extension not found in OpenAPI definition`, "missing", val)
 			yml["x-kusk"] = upstream
+		} else if xkusk, ok := val.(map[string]interface{}); ok {
+			if _, contains := xkusk["upstream"]; !contains {
+				xkusk["upstream"] = service
+			}
 		}
 
 		yamlPayload, err := yaml.Marshal(yml)
