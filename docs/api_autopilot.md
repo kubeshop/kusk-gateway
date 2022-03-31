@@ -10,7 +10,7 @@ To expose a pre-existing REST API in the cluster, you would just have to execute
 ```sh
 kubectl apply -f svc.yaml
 ```
-Or edit existing Kubernetes service to add annotation `kusk-gateway/openapi-url` with URL to the location of your OpenAPI
+Or edit an existing Kubernetes service to add the annotation `kusk-gateway/openapi-url` with a URL to the location of your OpenAPI
 
 ## Under the hood
 
