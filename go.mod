@@ -23,6 +23,7 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 )
 

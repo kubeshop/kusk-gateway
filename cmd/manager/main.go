@@ -26,18 +26,19 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"time"
 
 	// +kubebuilder:scaffold:imports
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
+	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
@@ -66,13 +67,43 @@ import (
 
 var (
 	scheme = runtime.NewScheme()
+	config managerConfig
 )
+
+type managerConfig struct {
+	MetricsAddr           string `envconfig:"METRICS_BIND_ADDR" default:":8080"`
+	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR" default:":8081"`
+	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:":18000"`
+	AgentManagerAddr      string `envconfig:"AGENT_MANAGER_BIND_ADDR" default:"18010"`
+	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
+	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
+	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR" default:"/opt/manager/webhook/certs"`
+}
+
+func (m managerConfig) String() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("METRICS_BIND_ADDR=%s\n", m.MetricsAddr))
+	b.WriteString(fmt.Sprintf("HEALTH_PROBE_BIND_ADDR=%s\n", m.ProbeAddr))
+	b.WriteString(fmt.Sprintf("ENVOY_CONTROL_PLANE_BIND_ADDR=%s\n", m.EnvoyControlPlaneAddr))
+	b.WriteString(fmt.Sprintf("AGENT_MANAGER_BIND_ADDR=%s\n", m.AgentManagerAddr))
+	b.WriteString(fmt.Sprintf("ENABLE_LEADER_ELECTION=%t\n", m.EnableLeaderElection))
+	b.WriteString(fmt.Sprintf("LOG_LEVEL=%s\n", m.LogLevel))
+	b.WriteString(fmt.Sprintf("WEBHOOK_CERTS_DIR=%s\n", m.WebhookCertsDir))
+
+	return b.String()
+}
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(gateway.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+
+	if err := envconfig.Process("manager", &config); err != nil {
+		panic(fmt.Errorf("unable to process config %w", err))
+	}
+
+	fmt.Println(config)
 }
 
 func initLogger(development bool, level string) (logr.Logger, error) {
@@ -175,34 +206,9 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 }
 
 func main() {
-	var (
-		metricsAddr           string
-		enableLeaderElection  bool
-		probeAddr             string
-		envoyControlPlaneAddr string
-		agentManagerAddr      string
-		logLevel              string
-		development           bool
-		webhookCertsDir       string
-	)
-
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&envoyControlPlaneAddr, "envoy-control-plane-bind-address", ":18000", "The address Envoy control plane XDS server binds to.")
-	flag.StringVar(&agentManagerAddr, "agent-manager-bind-address", ":18010", "The address Agent Manager service binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&development, "development", false, "enable development mode")
-	flag.StringVar(&logLevel, "log-level", "INFO", "level of log detail [DEBUG|INFO|WARN|ERROR|DPANIC|PANIC|FATAL]")
-	// This one is configurable for the local development
-	flag.StringVar(&webhookCertsDir, "webhook-certs-dir", "/opt/manager/webhook/certs", "The directory where webhook certificates will be generated.")
-
-	flag.Parse()
-
-	logger, err := initLogger(development, logLevel)
+	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
-		_ = fmt.Errorf("Unable to init logger: %w", err)
+		_ = fmt.Errorf("unable to init logger: %w", err)
 		os.Exit(1)
 	}
 	ctrl.SetLogger(logger)
@@ -216,10 +222,10 @@ func main() {
 
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
+		MetricsBindAddress:     config.MetricsAddr,
 		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
+		HealthProbeBindAddress: config.ProbeAddr,
+		LeaderElection:         config.EnableLeaderElection,
 		LeaderElectionID:       "cd734a2d.kusk.io",
 	})
 	if err != nil {
@@ -227,7 +233,7 @@ func main() {
 		os.Exit(1)
 	}
 	// Envoy configuration manager (XDS service)
-	envoyManager := manager.New(ctx, envoyControlPlaneAddr, nil)
+	envoyManager := manager.New(ctx, config.EnvoyControlPlaneAddr, nil)
 	go func() {
 		setupLog.Info("Starting Envoy xDS API Server")
 		if err := envoyManager.Start(); err != nil {
@@ -246,7 +252,7 @@ func main() {
 	}()
 
 	// Agent (Envoy sidecar) configuration management service
-	agentManager := agentManagement.New(agentManagerAddr, logger)
+	agentManager := agentManagement.New(config.AgentManagerAddr, logger)
 	go func() {
 		if err := agentManager.Start(); err != nil {
 			setupLog.Error(err, "Unable to start Agent Manager Server")
@@ -287,7 +293,7 @@ func main() {
 		os.Exit(1)
 	}
 	webhookServer := mgr.GetWebhookServer()
-	if err := initWebhookCerts(ctx, webhookCertsDir, webhookServer, kubernetes.NewForConfigOrDie(restConfig)); err != nil {
+	if err := initWebhookCerts(ctx, config.WebhookCertsDir, webhookServer, kubernetes.NewForConfigOrDie(restConfig)); err != nil {
 		setupLog.Error(err, "Failure initializing admission webhook server certs")
 		os.Exit(1)
 	}

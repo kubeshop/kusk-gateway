@@ -3,6 +3,22 @@ kind: Namespace
 metadata:
   name: system
 ---
+apiVersion: v1
+data:
+  AGENT_MANAGER_BIND_ADDR: :18010
+  ENABLE_LEADER_ELECTION: "false"
+  ENVOY_CONTROL_PLANE_BIND_ADDR: :18000
+  HEALTH_PROBE_BIND_ADDR: :8081
+  LOG_LEVEL: INFO
+  METRICS_BIND_ADDR: :8080
+  WEBHOOK_CERTS_DIR: /opt/manager/webhook/certs
+kind: ConfigMap
+metadata:
+  name: kusk-gateway-manager
+  namespace: system
+  labels:
+    app.kubernetes.io/component: kusk-gateway-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,11 +41,11 @@ spec:
       containers:
       - command:
         - /manager
-        args:
-        - --leader-elect
-        - --log-level=INFO
         image: kusk-gateway:latest
         name: manager
+        envFrom:
+          - configMapRef:
+              name: kusk-gateway-manager
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
