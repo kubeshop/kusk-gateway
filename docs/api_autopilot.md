@@ -16,7 +16,7 @@ Or edit an existing Kubernetes service to add the annotation `kusk-gateway/opena
 
 Let's explain what is going on.
 
-We added a convenience method that will allow users to easily expose their REST API through Kusk gateway by using `kusk-gateway/openapi-url` annotation, and here is how.
+We added a convenience method that will allow users to easily expose their REST API through Kusk gateway by using the `kusk-gateway/openapi-url` annotation, and here is how.
 
 Assuming that the user has already set up a pod that is running REST API server code and the pod name is `todo-backend`:
 
