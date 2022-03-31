@@ -2,7 +2,7 @@
 
 Kusk gateway supports API auto deployment. 
 
-Any REST API will typically consist out of a Kubernetes pod that is running the server and a Kubernetes service pointed to it.
+Any REST API will typically consist of a Kubernetes pod(s) that is running the server and a Kubernetes service pointed to it.
 
 ## It just works
 To expose preexisting REST API in the cluster you would just have to execute this:
