@@ -281,6 +281,16 @@ func main() {
 		controllerConfigManager.WatchSecrets(ctx.Done())
 	}()
 
+	if err = (&controllers.ServiceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.
+			WithValues("controller", "ServiceAnnotationReconciler").
+			Error(err, "Unable to create controller")
+		os.Exit(1)
+	}
+
 	// EnvoyFleet obj controller
 	if err = (&controllers.EnvoyFleetReconciler{
 		Client:        mgr.GetClient(),
