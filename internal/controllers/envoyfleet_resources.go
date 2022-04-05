@@ -84,7 +84,7 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 		labels[key] = value
 	}
 
-	configMapName := gateway.EnvoyResourceNamePrefix + e.fleet.Name
+	configMapName := e.fleet.Name
 
 	xdsLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "xds-service"}
 	xdsServices, err := k8sutils.GetServicesByLabels(ctx, e.client, xdsLabels)
@@ -130,7 +130,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 		labels[key] = value
 	}
 
-	deploymentName := gateway.EnvoyResourceNamePrefix + e.fleet.Name
+	deploymentName := e.fleet.Name
 
 	configMapName := e.configMap.Name
 
@@ -310,7 +310,7 @@ func (e *EnvoyFleetResources) generateService() {
 	for key, value := range e.sharedLabels {
 		labels[key] = value
 	}
-	serviceName := gateway.EnvoyResourceNamePrefix + e.fleet.Name
+	serviceName := e.fleet.Name
 
 	e.service = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{

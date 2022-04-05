@@ -48,8 +48,6 @@ var (
 const (
 	EnvoyFleetMutatingWebhookPath   string = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
 	EnvoyFleetValidatingWebhookPath        = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
-
-	EnvoyResourceNamePrefix = "kgw-envoy-"
 )
 
 //+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=menvoyfleet.kb.io,admissionReviewVersions=v1
@@ -132,7 +130,7 @@ func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFle
 }
 
 func (e *EnvoyFleetValidator) validateNameWithinSizeBound(name string) admission.Response {
-	if kubernetesMaxNameLength := 64; len(EnvoyResourceNamePrefix+name) > kubernetesMaxNameLength {
+	if kubernetesMaxNameLength := 64; len(name) > kubernetesMaxNameLength {
 		err := fmt.Errorf(
 			"resulting name of envoy resources (%s) is larger than the kubernetes max allowed name of %d",
 			name,
