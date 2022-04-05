@@ -108,7 +108,7 @@ Run this to find out the External IP address of EnvoyFleet Load balancer.
 kubectl get svc -l "app.kubernetes.io/part-of=kusk-gateway,app.kubernetes.io/component=envoy-svc" --namespace kusk-system
 ```
 
-The output should contain the Service **kgw-envoy-kusk-gateway-envoyfleet** with the **External-IP** address field - use this address for your API endpoints querying.
+The output should contain the Service **kusk-gateway-envoyfleet** with the **External-IP** address field - use this address for your API endpoints querying.
 
 You can now deploy your API or Front applications to this cluster and configure access to them with [Custom Resources](customresources/index.md) or you can check the [ToDoMVC Example](todomvc.md) for the guidelines on how to do this.
 
