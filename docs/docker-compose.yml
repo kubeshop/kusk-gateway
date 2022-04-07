@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  kusk:
+    build: .
+    volumes:
+      - ../:/docs
+    ports:
+      - 8088:8080
