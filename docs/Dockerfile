@@ -22,13 +22,8 @@ RUN \
   && rm -rf /usr/local/lib/python3.8/site-packages/mkdocs/themes/*/* \
   && rm -rf /tmp/*
 
-
-
 # Set final MkDocs working directory
 WORKDIR /docs
-
-# Expose MkDocs development server port
-EXPOSE 8000
 
 # Start development server by default
 ENTRYPOINT ["mkdocs"]
