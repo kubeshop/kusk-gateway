@@ -40,7 +40,7 @@ const (
 	xKuskAnnotation               = "x-kusk"
 	annotationOpenapiUrl          = "openapi-url"
 	annotationApiPathPrefix       = "path-prefix"
-	annotationApiPathSubstitution = "substitution"
+	annotationApiPathSubstitution = "path-prefix-substitution"
 	annotationEnvoyFleet          = "envoy-fleet"
 )
 
@@ -218,17 +218,19 @@ func processPathPrefixAnnotation(l logr.Logger, openApiSpec map[string]interface
 }
 
 func processSubstitutionAnnotation(l logr.Logger, openApiSpec map[string]interface{}, svcAnnotations map[string]string) {
+	substitutionAnnotation := annotation(annotationApiPathSubstitution)
+	pathSubstitution, ok := svcAnnotations[substitutionAnnotation]
+	if !ok {
+		// we only substitute if an annotation is explicitly set
+		return
+	}
+
 	pathPrefixAnnotation := annotation(annotationApiPathPrefix)
 	pathPrefix, ok := svcAnnotations[pathPrefixAnnotation]
 	if !ok {
 		pathPrefix = "/"
 	}
 
-	substitutionAnnotation := annotation(annotationApiPathSubstitution)
-	pathSubstitution := svcAnnotations[substitutionAnnotation]
-	if pathPrefix != "/" {
-		l.Info("path prefix is not /. setting path substitution to " + pathSubstitution)
-	}
 	xKusk, ok := openApiSpec[xKuskAnnotation].(map[string]interface{})
 	if !ok {
 		xKusk = map[string]interface{}{}
@@ -239,7 +241,8 @@ func processSubstitutionAnnotation(l logr.Logger, openApiSpec map[string]interfa
 		xKuskUpstream = map[string]interface{}{}
 	}
 
-	if _, ok := xKuskUpstream["rewrite"]; !ok {
+	if _, ok := xKuskUpstream["rewrite"]; !ok && pathPrefix != "/" {
+		l.Info(fmt.Sprintf("path prefix is not /. setting path substitution to \"%s\"", pathSubstitution))
 		xKuskUpstream["rewrite"] = map[string]interface{}{
 			"pattern":      fmt.Sprintf("^%s", pathPrefix),
 			"substitution": pathSubstitution,
