@@ -13,13 +13,7 @@ Tools needed for the installation:
 - Installed [helm](https://helm.sh/docs/intro/install/) command-line
 - Installed [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
 
-## 1. Install Kusk CLI
-
-```sh
-brew install kusk
-```
-
-## 2. Install Kusk Gateway
+## 1. Install Kusk Gateway
 
 ```sh
 # Install Kubeshop Helm repo and update it
@@ -37,7 +31,7 @@ kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-ma
 helm install kusk-gateway-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
 ```
 
-## 3. Get the Gateway's External IP
+## 2. Get the Gateway's External IP
 
 To get the External IP address of the Load Balancer run the command below command. Note that it may take a few seconds for the LoadBalancer IP to become available.
 
