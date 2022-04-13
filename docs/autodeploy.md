@@ -1,4 +1,4 @@
-# API autopilot
+# API Autodeploy
 
 Kusk gateway supports API auto deployment. 
 
