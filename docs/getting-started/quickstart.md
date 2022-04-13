@@ -38,7 +38,7 @@ spec:
                   example: Hello world!
 ```
 
-Kusk-gateway relies on OpenAPI to define your APIs and configure the gateway all in one place.
+Kusk-gateway relies on OpenAPI to define your APIs and configure the gateway, all in one place.
 
 In this example we have defined a simple `/hello` endpoint and configured the gateway (under `x-kusk` section) enabling CORS and API mocking.
 
@@ -50,7 +50,7 @@ kubectl apply -f api.yaml
 
 ### 3. Test your API
 
-Given we have enable mocks, we don't need to implement the services to be able to test the API.
+Given we have enabled gateway-level mocks, we don't need to implement the services to be able to test the API.
 
 Get the External IP of Kusk-gateway
 
