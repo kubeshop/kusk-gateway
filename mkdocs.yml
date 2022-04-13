@@ -18,6 +18,7 @@ nav:
   - Welcome: index.md
   - 'Getting Started': 
     - Installation: installation.md
+    - Quickstart: quickstart.md
   - TodoMVC example: todomvc.md
   - Extension (x-kusk) docs: extension.md
   - 'Custom Resources':
