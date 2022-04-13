@@ -17,7 +17,8 @@ theme:
 nav:
   - Welcome: index.md
   - 'Getting Started': 
-    - Installation: installation.md
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
   - TodoMVC example: todomvc.md
   - Extension (x-kusk) docs: extension.md
   - 'Custom Resources':
