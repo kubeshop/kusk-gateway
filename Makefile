@@ -213,7 +213,10 @@ envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 run-docs:
-	docker-compose -f docs/docker-compose.yml up
+	python3 -m venv env
+	source env/bin/activate
+	pip3 install mkdocs-material
+	mkdocs serve
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
