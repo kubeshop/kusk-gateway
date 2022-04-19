@@ -30,7 +30,7 @@ SOFTWARE.
 package v1alpha1
 
 import (
-	"github.com/kubeshop/kusk-gateway/internal/options"
+	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )

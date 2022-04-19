@@ -3,6 +3,9 @@ kind: API
 metadata:
   name: httpbin-sample
 spec:
+  fleet:
+    name: default
+    namespace: default
   # service name and port should be specified inside x-kusk annotation
   spec: |
     swagger: '2.0'
