@@ -16,7 +16,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 	"github.com/mitchellh/copystructure"
 
-	"github.com/kubeshop/kusk-gateway/internal/options"
+	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"sigs.k8s.io/yaml"
 
-	"github.com/kubeshop/kusk-gateway/internal/options"
+	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
 const kuskExtensionKey = "x-kusk"
