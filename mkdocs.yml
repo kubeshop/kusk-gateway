@@ -21,8 +21,6 @@ nav:
     - Deploy an API: getting-started/deploy-an-api.md
   - 'Guides':
       - 'Using Cert Manager with Kusk Gateway': cert-manager.md
-  - Roadmap: roadmap.md
-  - For Developers: development.md
   - 'Reference':
     - Automatic API deployment: 'reference/automatic-api-deployment.md'
     - 'Custom Resources':
