@@ -12,8 +12,8 @@ theme:
   highlightjs: true
   hljs_languages:
     - yaml
-  features:
-    - navigation.expand
+  # features:
+  #   - navigation.expand
 nav:
   - Welcome: index.md
   - 'Getting Started': 
@@ -24,6 +24,7 @@ nav:
   - Roadmap: roadmap.md
   - For Developers: development.md
   - 'Reference':
+    - Automatic API deployment: 'reference/automatic-api-deployment.md'
     - 'Custom Resources':
       - 'EnvoyFleet': reference/customresources/envoyfleet.md
       - 'API': reference/customresources/api.md
