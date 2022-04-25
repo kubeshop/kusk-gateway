@@ -11,11 +11,12 @@ Kusk Gateway is for you if:
 
 Kusk Gateway has a unique way to the configuration among other API gateways as it configures itself through the metadata defined in your OpenAPI or Swagger document.
 
-You can apply your API definition like any other Kubernetes resource using our custom-made Kusk Gateway [API](customresources/api.md) CustomResourceDefinition (CRDs).
+You can apply your API definition like any other Kubernetes resource using our custom-made Kusk Gateway [API](reference/customresources/api.md) CustomResourceDefinition (CRDs).
 
-Other [Custom Resources](customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
+Other [Custom Resources](reference/customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
 
 You can check the supported and planned features at Kusk Gateway [Roadmap](roadmap.md).
 
-Proceed with our [Installation](installation.md) instructions for installing to the generic Kubernetes cluster or use these [local installation instructions](local-installation.md) to evaluate the Kusk Gateway locally with Minikube.
-Once you have Kusk Gateway installed, feel free to check out the [TodoMVC](todomvc.md) example to deploy backend and frontend with Kusk Gateway.
+Proceed with our [Installation](getting-started/installation.md) instructions for installing to the generic Kubernetes cluster
+
+Once you have Kusk Gateway installed, feel free to check out the [Deploy an API](getting-started/deploy-an-api.md) section to get started with Kusk Gateway.
