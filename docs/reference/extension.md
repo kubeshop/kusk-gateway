@@ -28,9 +28,8 @@ x-kusk:
       name: petstore
       port: 8000
     rewrite:
-      rewrite_regex:
-        pattern: 'regular_expression'
-        substituion: 'substitution'
+      pattern: 'regular_expression'
+      substitution: 'substitution'
       
   redirect: # upstream and redirect are mutually exclusive
     scheme_redirect: https
@@ -40,7 +39,7 @@ x-kusk:
     path_redirect: /index.html # path_redirect and rewrite_regex are mutually exclusive
     rewrite_regex: # path_redirect and rewrite_regex are mutually exclusive
       pattern: 'regular_expression'
-      substituion: 'substitution'
+      substitution: 'substitution'
         
     response_code: 308
     strip_query: true
