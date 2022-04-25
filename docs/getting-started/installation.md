@@ -43,7 +43,9 @@ The output should contain the [Envoy Fleet](https://kubeshop.github.io/kusk-gate
 
 !!! note non-important "External IP might not be available for some cluster setups"
 
-    If you are running a local setup with **Minikube**, you can access the API endpoint with `minikube tunnel`
+    If you are running a **local setup**, you can access the API endpoint with 
+    
+    `kubectl port-forward service/kusk-gateway-envoy-fleet 8088:80`
 
     If you are running a **bare metal cluster**, consider installing [MetalLB](https://metallb.universe.tf) which creates External IP for LoadBalancer Service type in Kubernetes.
 

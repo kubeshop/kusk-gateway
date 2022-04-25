@@ -12,6 +12,9 @@ kind: API
 metadata:
   name: hello-world
 spec: 
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   spec: |
     openapi: 3.0.0
     info:
@@ -35,7 +38,7 @@ spec:
                 text/plain:
                   schema:
                     type: string
-                  example: Hello world!
+                  example: Hello from a mocked response!
 ```
 
 Kusk-gateway relies on OpenAPI to define your APIs and configure the gateway, all in one place.

@@ -17,12 +17,11 @@ theme:
 nav:
   - Welcome: index.md
   - 'Getting Started': 
-    - Installation: getting-started/installation.md
+    - Install Kusk-gateway: getting-started/installation.md
     - Deploy an API: getting-started/deploy-an-api.md
+    - Connect a Service to the API: getting-started/connect-a-service-to-the-api.md
   - 'Guides':
       - 'Using Cert Manager with Kusk Gateway': cert-manager.md
-  - Roadmap: roadmap.md
-  - For Developers: development.md
   - 'Reference':
     - Automatic API deployment: 'reference/automatic-api-deployment.md'
     - 'Custom Resources':
