@@ -33,6 +33,9 @@ nav:
     - Architecture: reference/architecture.md
   - Troubleshooting: troubleshooting.md
   - Observability: observability.md
+  - Contributing:
+    - Development: 'contributing/development.md'
+    - Roadmap: 'contributing/roadmap.md'
 
 extra:
   analytics:
