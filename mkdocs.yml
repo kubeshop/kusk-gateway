@@ -30,6 +30,7 @@ nav:
       - 'Static Route': reference/customresources/staticroute.md
     - Extension (x-kusk) docs: reference/extension.md
     - Architecture: reference/architecture.md
+    - Kusk CLI: reference/kusk-cli.md
   - Troubleshooting: troubleshooting.md
   - Observability: observability.md
   - Contributing:
