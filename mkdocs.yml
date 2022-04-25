@@ -19,7 +19,6 @@ nav:
   - 'Getting Started': 
     - Installation: getting-started/installation.md
     - Quickstart: getting-started/quickstart.md
-  - TodoMVC example: todomvc.md
   - Extension (x-kusk) docs: extension.md
   - 'Custom Resources':
     - 'EnvoyFleet': customresources/envoyfleet.md
