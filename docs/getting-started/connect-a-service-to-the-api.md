@@ -61,7 +61,7 @@ Stop the API mocking by deleting the `mocking` section:
 ...
 ```
 
-Add the `upstream` details under the `x-kusk` section to connect the gateway to the service. 
+Add the `upstream` details, which are the details of the service we just created, under the `x-kusk` section to connect the gateway to the service. 
 
 ```diff
 ...
@@ -82,10 +82,10 @@ kubectl apply -f api.yaml
 
 ## 4. Test the API
 
-The host is the External IP from the [Install Kusk](installation.md) section.
+Get the External IP of Kusk-gateway as indicated in [installing Kusk-gateway section](../installation/#2-get-the-gateways-external-ip) and run:
 
 ```
-$ curl 127.0.0.1:8080/hello
+$ curl EXTERNAL_IP/hello
 Hello from an implemented service!
 ```
 
