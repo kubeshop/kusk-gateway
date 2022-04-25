@@ -3,11 +3,13 @@ module github.com/kubeshop/kusk-gateway
 go 1.17
 
 require (
+	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/envoyproxy/go-control-plane v0.10.1
 	github.com/getkin/kin-openapi v0.76.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
@@ -23,7 +25,6 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 )
 

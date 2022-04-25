@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
 
 const (
@@ -58,6 +59,7 @@ type APIReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("api-controller")
+	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling API %s ", req.NamespacedName))
 
 	l.Info("Reconciling changed API resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed API resource", "changed", req.NamespacedName)
@@ -77,6 +79,7 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		l.Error(err, fmt.Sprintf("Failed to reconcile API, will retry in %d seconds", reconcilerFastRetrySeconds))
 		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
+
 	// Handle finalisers
 	if apiObj.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
@@ -111,6 +114,7 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
 		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
+
 	return ctrl.Result{}, nil
 }
 

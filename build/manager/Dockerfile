@@ -11,11 +11,14 @@ ARG GOPROXY
 ENV GOPROXY=$GOPROXY
 RUN go mod download
 
+ARG ANALYTICS_API_KEY 
+ARG ANALYTICS_TRACKING_ID 
+
 # Copy the go source
 COPY . .
 
 # Build
-RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux go build -v -o manager cmd/manager/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.kuskGAMeasurementID=$ANALYTICS_TRACKING_ID -X github.com/kubeshop/testkube/pkg/analytics.kuskGAApiSecret=$ANALYTICS_API_KEY" -o manager cmd/manager/main.go
 
 # Directory for the files created and used by the manager, to be copied for static rootless images since we don't have shell to create it there
 RUN mkdir -m=00755 /opt/manager
