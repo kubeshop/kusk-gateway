@@ -55,21 +55,12 @@ kubectl apply -f api.yaml
 
 Given we have enabled gateway-level mocks, we don't need to implement the services to be able to test the API.
 
-Get the External IP of Kusk-gateway
-
-```sh
-kubectl get svc -l "app.kubernetes.io/component=envoy-svc" --namespace kusk-system
-```
-
-```sh
-NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-kusk-gateway-envoyfleet   LoadBalancer   10.109.135.106   127.0.0.1    80:31079/TCP,443:32524/TCP   53s
-```
+Get the External IP of Kusk-gateway as indicated in [installing Kusk-gateway section](../installation/#2-get-the-gateways-external-ip).
 
 And query the `/hello` endpoint
 
 ```sh
-$ curl 127.0.0.1/hello
+$ curl EXTERNAL_IP/hello
 Hello world!
 ```
 
