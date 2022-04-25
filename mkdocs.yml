@@ -18,7 +18,7 @@ nav:
   - Welcome: index.md
   - 'Getting Started': 
     - Installation: getting-started/installation.md
-    - Quickstart: getting-started/quickstart.md
+    - Deploy an API: getting-started/deploy-an-api.md
   - Extension (x-kusk) docs: extension.md
   - 'Custom Resources':
     - 'EnvoyFleet': customresources/envoyfleet.md
