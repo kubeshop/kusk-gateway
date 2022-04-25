@@ -10,4 +10,4 @@ One can deploy multiple Envoy Fleets in the scenario when one needs multiple dif
 Once Envoy Fleet is deployed, Envoy processes connect to the Kusk Gateway Manager for the dynamically updated configuration via GRPC.
 Kusk Gatewy Manager accepts CustomResourceDefinitions [**API**](customresources/api.md) and [**StaticRoute**](customresources/staticroute.md) to configure the routing to the deployed in K8s applications services and updates the related Envoy Fleets routing configuration.
 
-![kusk-gateway arch diagram](img/arch.png)
+![kusk-gateway arch diagram](../img/arch.png)

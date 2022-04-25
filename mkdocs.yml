@@ -19,17 +19,17 @@ nav:
   - 'Getting Started': 
     - Installation: getting-started/installation.md
     - Deploy an API: getting-started/deploy-an-api.md
-  - Extension (x-kusk) docs: extension.md
-  - 'Custom Resources':
-    - 'EnvoyFleet': customresources/envoyfleet.md
-    - 'API': customresources/api.md
-    - 'Static Route': customresources/staticroute.md
-  - Architecture: arch.md
   - 'Guides':
       - 'Using Cert Manager with Kusk Gateway': cert-manager.md
   - Roadmap: roadmap.md
   - For Developers: development.md
-  - KGW CLI: kgw-cli.md
+  - 'Reference':
+    - 'Custom Resources':
+      - 'EnvoyFleet': reference/customresources/envoyfleet.md
+      - 'API': reference/customresources/api.md
+      - 'Static Route': reference/customresources/staticroute.md
+    - Extension (x-kusk) docs: reference/extension.md
+    - Architecture: reference/architecture.md
   - Troubleshooting: troubleshooting.md
   - Observability: observability.md
 

@@ -218,7 +218,7 @@ We have a service `foo` with a single endpoint `/bar`.
 
 We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
 
-![path rewrite example](img/rewrite-path-example.png)
+![path rewrite example](../img/rewrite-path-example.png)
 
 If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
 
