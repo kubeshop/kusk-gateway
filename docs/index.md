@@ -17,5 +17,6 @@ Other [Custom Resources](customresources/index.md) are used to configure the Env
 
 You can check the supported and planned features at Kusk Gateway [Roadmap](roadmap.md).
 
-Proceed with our [Installation](installation.md) instructions for installing to the generic Kubernetes cluster or use these [local installation instructions](local-installation.md) to evaluate the Kusk Gateway locally with Minikube.
+Proceed with our [Installation](installation.md) instructions for installing to the generic Kubernetes cluster.
+
 Once you have Kusk Gateway installed, feel free to check out the [TodoMVC](todomvc.md) example to deploy backend and frontend with Kusk Gateway.
