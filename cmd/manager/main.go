@@ -207,7 +207,7 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 }
 
 func main() {
-	analytics.SendAnonymousInfo("kusk-gateway manager bootstraping")
+	analytics.SendAnonymousInfo("kusk-gateway manager bootstrapping")
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
 		_ = fmt.Errorf("unable to init logger: %w", err)
