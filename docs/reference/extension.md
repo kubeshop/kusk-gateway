@@ -25,7 +25,7 @@ x-kusk:
       port: 80
     service: # host and service are mutually exclusive
       namespace: default
-      service: petstore
+      name: petstore
       port: 8000
     rewrite:
       rewrite_regex:
@@ -117,7 +117,7 @@ paths:
           upstream: # routes the POST /pet endpoint to a Kubernetes service
             service:
               namespace: default
-              service: petstore
+              name: petstore
               port: 8000
         ...
 ```
