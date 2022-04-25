@@ -15,7 +15,7 @@ You can apply your API definition like any other Kubernetes resource using our c
 
 Other [Custom Resources](reference/customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
 
-You can check the supported and planned features at Kusk Gateway [Roadmap](roadmap.md).
+You can check the supported and planned features at Kusk Gateway [Roadmap](contributing/roadmap.md).
 
 Proceed with our [Installation](getting-started/installation.md) instructions for installing to the generic Kubernetes cluster
 
