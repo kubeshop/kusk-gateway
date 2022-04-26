@@ -11,17 +11,17 @@ defaults:
 
 on:
   push:
-#    tags:
-#      - "v[0-9]+.[0-9]+.[0-9]+"
-#      - "v[0-9]+.[0-9]+.[0-9]+-*"
-    branches:
-      - add-build_args
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+      - "add-build_args-*"
+
 
 jobs:
 
   release:
     name: Create and upload release-artifacts, triggers Helm charts release
-    if: github.event.base_ref == 'refs/heads/add-build_args'
+   # if: github.event.base_ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
