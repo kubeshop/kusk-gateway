@@ -94,7 +94,7 @@ $ kusk install --no-dashboard --no-api --no-envoy-fleet
 Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 ```
 
-## kusk api generate
+### kusk api generate
 Generate accepts your OpenAPI spec file as input either as a local file or a URL pointing to your file
 and generates a Kusk Gateway compatible API resource that you can apply directly into your cluster.
 
@@ -114,7 +114,7 @@ If you do not specify the envoyfleet namespace, it will default to `kusk-system`
 
 #### Sample usage
 
-No name specified
+_No name specified_
 
 ```sh
 kusk api generate \
@@ -125,7 +125,7 @@ kusk api generate \
 
 In the above example, kusk will use the openapi spec info.title to generate a manifest name and leave the existing `x-kusk` extension settings.
 
-No api namespace specified
+_No api namespace specified_
 
 ```sh
 kusk api generate \
@@ -138,7 +138,7 @@ kusk api generate \
 
 In the above example, as `--namespace` isn't defined, it will assume the default namespace.
 
-Namespace specified
+_Namespace specified_
 
 ```sh
 kusk api generate \
@@ -150,7 +150,7 @@ kusk api generate \
   --envoyfleet.name kusk-gateway-envoy-fleet
 ```
 
-OpenAPI spec at URL
+_OpenAPI spec at URL_
 
 ```sh
 kusk api generate \
