@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: [ main, add-build_args ]
+    branches: [ main ]
     paths-ignore:
       - 'docs/**'
   pull_request:
