@@ -63,6 +63,7 @@ git clone https://github.com/kubeshop/kusk.git
 The install command will install Kusk Gateway and all its components with a single command. Kusk uses Helm to do this so you will need to have [Helm installed](https://helm.sh/docs/intro/install/).
 
 Kusk Gateway Components:
+
 * **Kusk Gateway manager** - responsible for updating and rolling out the envoy configuration to your envoy fleets as your deploy APIs and Static Routes.
 * **Envoy Fleet** - responsible for exposing and routing to your APIS and frontends
 * **Kusk Gateway API** - REST API which is exposed by Kusk Gateway and allows you to programatically query which APIs, Static Routes and Envoy Fleets are deployed.
