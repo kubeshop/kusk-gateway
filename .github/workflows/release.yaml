@@ -17,7 +17,7 @@ on:
     branches:
       - add-build_args
 
-#jobs:
+jobs:
 #
 #  release:
 #    name: Create and upload release-artifacts, triggers Helm charts release
