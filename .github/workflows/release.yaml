@@ -1,13 +1,13 @@
 name: Release Kusk Gateway
 
 # Cancel any pending or running workflow if the new one is triggered
-#concurrency:
-#  group: "release"
-#  cancel-in-progress: true
+concurrency:
+  group: "release"
+  cancel-in-progress: true
 
-#defaults:
-#  run:
-#    shell: bash
+defaults:
+  run:
+    shell: bash
 
 on:
   push:
