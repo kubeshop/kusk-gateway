@@ -108,7 +108,7 @@ If the `x-kusk` extension is already present, it will override the the upstream 
 and leave the rest of the settings as they are.
 
 You must specify the name of the envoyfleet you wish to use to expose your API. This is because Kusk Gateway could be managing more than one.
-In the future, we will add the notion of a default envoyfleet which kusk gateway will use when none is specified.
+In the future, we will add the notion of a default envoyfleet which kusk gateway will use when none is specified. i.e. kusk-gateway-envoy-fleet
 
 If you do not specify the envoyfleet namespace, it will default to `kusk-system`.
 
