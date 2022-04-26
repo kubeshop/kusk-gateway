@@ -63,6 +63,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
+	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
 
 var (
@@ -206,6 +207,7 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 }
 
 func main() {
+	analytics.SendAnonymousInfo("kusk-gateway manager bootstrapping")
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
 		_ = fmt.Errorf("unable to init logger: %w", err)

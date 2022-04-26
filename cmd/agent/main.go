@@ -10,6 +10,7 @@ import (
 
 	"github.com/kubeshop/kusk-gateway/internal/agent/httpserver"
 	"github.com/kubeshop/kusk-gateway/internal/agent/management"
+	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -18,6 +19,7 @@ import (
 )
 
 func main() {
+	analytics.SendAnonymousInfo("envoyfleet agent sidecar bootstraping")
 
 	var (
 		agentConfigurationManagerServiceAddress string

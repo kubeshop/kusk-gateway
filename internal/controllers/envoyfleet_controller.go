@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
 
 const (
@@ -64,6 +65,7 @@ type EnvoyFleetReconciler struct {
 func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("envoy-fleet-controller")
 	l.Info("EnvoyFleet changed", "changed", req.NamespacedName)
+	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling EnvoyFleet %s ", req.NamespacedName))
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}
 

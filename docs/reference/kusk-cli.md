@@ -4,50 +4,37 @@ Kusk is a CLI tool designed to help you manage common tasks required when
 running Kusk Gateway.
 
 Currently we support the following commands:
+
 - `install` - installs Kusk Gateway and all its components with a single command. (Requires a helm installation)
 - `api generate` - for creating Kusk Gateway API resources from your OpenAPI specification document.
 
----
+## Installation
 
-# Table of contents
-- [Installation](#installation)
-- [Updating](#updating)
-- [Commands](#commands)
-  - [install](#install)
-  - [api generate](#api-generate)
-- [Uninstallation](#uninstallation)
-- [Contributing](#contributing)
-- [License](#license)
-
-# Installation
-
-[(Back to top)](#table-of-contents)
-
-## Homebrew
+### Homebrew
 `brew install kubeshop/kusk/kusk`
 
-## Go install the latest release on Github
+### Using golang installation
 `go install github.com/kubeshop/kusk@latest`
 
 To install a particular version: replace `latest` with the version number
 
 You can get a list of the available kusk versions from our [releases page](https://github.com/kubeshop/kusk/releases)
 
-## Easy install script
+### Install script
 This will install `kusk` into `/usr/local/bin/kusk`
 
 ```sh
 bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
 ```
 
-## From source
+### From source
 ```
 git clone git@github.com:kubeshop/kusk.git && \
 cd kusk && \
 go install
 ```
 
-## Alternative installation method (manual)
+### Alternative installation method (manual)
 
 If you don't like automatic scripts you can always use the manual install:
 
@@ -57,36 +44,32 @@ If you don't like automatic scripts you can always use the manual install:
 
 For Windows, download the binary from [here](https://github.com/kubeshop/kusk/releases), unpack the binary and add it to `%PATH%`. 
 
-# Updating
-
-[(Back to top)](#table-of-contents)
-
-## Homebrew
+## Updating
+### Homebrew
 `brew upgrade kubeshop/kusk/kusk`
 
-## Latest release on Github
+### Latest release on Github
 `go install github.com/kubeshop/kusk@$VERSION`
 
-## From source
+### From source
 Insde of the kusk repository directory
 ```
-git pull && go install
+git clone https://github.com/kubeshop/kusk.git
 ```
 
-# Commands
+## Commands
 
-[(Back to top)](#table-of-contents)
-
-## Install
+### kusk install
 The install command will install Kusk Gateway and all its components with a single command. Kusk uses Helm to do this so you will need to have [Helm installed](https://helm.sh/docs/intro/install/).
 
 Kusk Gateway Components:
+
 * **Kusk Gateway manager** - responsible for updating and rolling out the envoy configuration to your envoy fleets as your deploy APIs and Static Routes.
 * **Envoy Fleet** - responsible for exposing and routing to your APIS and frontends
 * **Kusk Gateway API** - REST API which is exposed by Kusk Gateway and allows you to programatically query which APIs, Static Routes and Envoy Fleets are deployed.
 * **Kusk Gateway Dashboard** - a web UI for Kusk Gateway where you can deploy APIS and see which APIs, StaticRoutes and EnvoyFleets are deployed.
 
-### Flags
+#### Flags
 |         Flag         |                                                     Description                                                     | Required? |
 |:--------------------:|:-------------------------------------------------------------------------------------------------------------------:|:---------:|
 |       `--name`       | the prefix of the name to give to the helm releases for each of the kusk gateway components (default: kusk-gateway) |     ❌     |
@@ -95,7 +78,7 @@ Kusk Gateway Components:
 |      `--no-api`      |                       when set, will not install the kusk gateway api. implies --no-dashboard.                      |     ❌     |
 |  `--no-envoy-fleet`  |                                     when set, will not install any envoy fleets                                     |     ❌     |
 
-### Examples
+#### Examples
 ```
 $ kusk install
 
@@ -216,16 +199,3 @@ x-kusk:
 	namespace: default
 	port: 8080
 ```
-
-# Contributing
-
-[(Back to top)](#table-of-contents)
-
-Your contributions are always welcome! Please have a look at the [contribution guidelines](https://github.com/kubeshop/.github/blob/main/CONTRIBUTING.md) first.
-
-# License
-
-[(Back to top)](#table-of-contents)
-
-
-[MIT](https://mit-license.org/). Please have a look at the [LICENSE](LICENSE) for more details.

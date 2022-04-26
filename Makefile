@@ -21,6 +21,8 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$(ANALYTICS_TRACKING_ID) -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(ANALYTICS_API_KEY)
+
 .PHONY: all
 all: build
 
@@ -93,8 +95,8 @@ docker-images-cache: ## Saves locally frequently used container images and uploa
 
 .PHONY: build
 build: generate fmt vet ## Build manager and agent binary.
-	go build -o bin/manager cmd/manager/main.go
-	go build -o bin/agent cmd/agent/main.go
+	go build -o bin/manager -ldflags='$(LD_FLAGS)' cmd/manager/main.go 
+	go build -o bin/agent -ldflags='$(LD_FLAGS)' cmd/agent/main.go
 
 .PHONY: run
 run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.

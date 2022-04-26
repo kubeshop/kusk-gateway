@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
 
 const (
@@ -59,6 +60,7 @@ func annotation(a string) string {
 //+kubebuilder:rbac:groups=core,resources=pods/finalizers,verbs=update
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("service-reconciler")
+	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling Service annotations for kusk  %s", req.NamespacedName))
 
 	l.Info("Reconciling changed Service resource", "changed", req.NamespacedName)
 
