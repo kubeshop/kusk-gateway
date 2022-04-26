@@ -14,6 +14,8 @@ on:
     tags: 
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*"
+    branches:
+      - add-build_args
 
 jobs:
 
@@ -58,6 +60,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
+          build-args: ANALYTICS_API_KEY=${{ secrets.ANALYTICS_API_KEY }},ANALYTICS_TRACKING_ID=${{ secrets.ANALYTICS_TRACKING_ID }}
       -
         name: Docker metadata for Kusk Gateway Agent
         id: meta-kusk-gateway-agent
@@ -78,6 +81,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway-agent.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway-agent.outputs.labels }}
+          build-args: ANALYTICS_API_KEY=${{ secrets.ANALYTICS_API_KEY }},ANALYTICS_TRACKING_ID=${{ secrets.ANALYTICS_TRACKING_ID }}
       -
         name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
