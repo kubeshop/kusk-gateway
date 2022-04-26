@@ -21,7 +21,7 @@ jobs:
 
   release:
     name: Create and upload release-artifacts, triggers Helm charts release
-    if: github.event.base_ref == 'refs/heads/main'
+    if: github.event.base_ref == 'refs/heads/add-build_args'
     runs-on: ubuntu-latest
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
