@@ -18,7 +18,7 @@ ARG ANALYTICS_API_KEY
 ARG ANALYTICS_TRACKING_ID 
 
 # Build
-RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.kuskGAMeasurementID=$ANALYTICS_TRACKING_ID -X github.com/kubeshop/kusk-gateway/pkg/analytics.kuskGAApiSecret=$ANALYTICS_API_KEY" -o agent cmd/agent/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$ANALYTICS_TRACKING_ID -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$ANALYTICS_API_KEY" -o agent cmd/agent/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

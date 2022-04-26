@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -14,29 +15,33 @@ import (
 )
 
 const (
-	gaUrl = "https://www.google-analytics.com/mp/collect?measurement_id=%s&api_secret=%s"
+	gaUrl           = "https://www.google-analytics.com/mp/collect?measurement_id=%s&api_secret=%s"
+	gaValidationUrl = "https://www.google-analytics.com/debug/mp/collect?measurement_id=%s&api_secret=%s"
 )
 
 var (
-	kuskGAApiSecret     = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.kuskGAApiSecret={ACTUAL SECRET}
-	kuskGAMeasurementID = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.kuskGAMeasurementID=G-V067TPG7HM
+	KuskGAApiSecret     = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret={ACTUAL SECRET}
+	KuskGAMeasurementID = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=G-V067TPG7HM
 )
 
-func SendAnonymousInfo(event string) {
+func SendAnonymousInfo(event string) error {
 	payload := Payload{
 		ClientID: MachineID(),
 		Events: []Event{
 			{
 				Name: event,
 				Params: Params{
-					EventCount: 1,
-					AppName:    "kusk-gateway",
-					DataSource: "gateway",
+					EventCount:    1,
+					EventCategory: event,
+					AppName:       "kusk-gateway",
+					DataSource:    "gateway",
 				},
 			},
 		},
 	}
-	sendDataToGA(payload)
+	sendValidationRequest(payload)
+
+	return sendDataToGA(payload)
 }
 
 // SendAnonymouscmdInfo will send CLI event to GA
@@ -55,7 +60,7 @@ func SendAnonymousCMDInfo() {
 				Name: event,
 				Params: Params{
 					EventCount:       1,
-					EventCategory:    "execution",
+					EventCategory:    "beacon",
 					AppName:          "kusk-cli",
 					CustomDimensions: strings.Join(command, " "),
 				},
@@ -77,7 +82,7 @@ func sendDataToGA(data Payload) error {
 
 	fmt.Println(string(jsonData))
 
-	request, err := http.NewRequest("POST", fmt.Sprintf(gaUrl, kuskGAMeasurementID, kuskGAApiSecret), bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", fmt.Sprintf(gaUrl, KuskGAMeasurementID, KuskGAApiSecret), bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
@@ -136,4 +141,30 @@ func fromHostname() (string, error) {
 	}
 	sum := md5.Sum([]byte(name))
 	return hex.EncodeToString(sum[:]), nil
+}
+
+func sendValidationRequest(payload Payload) (out string, err error) {
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return out, err
+	}
+
+	request, err := http.NewRequest("POST", fmt.Sprintf(gaValidationUrl, KuskGAMeasurementID, KuskGAApiSecret), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return out, err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode > 300 {
+		return out, fmt.Errorf("could not POST, statusCode: %d", resp.StatusCode)
+	}
+	return fmt.Sprintf("status: %d - %s", resp.StatusCode, b), err
 }
