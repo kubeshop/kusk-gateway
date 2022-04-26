@@ -150,7 +150,7 @@ kusk api generate \
   --envoyfleet.name kusk-gateway-envoy-fleet
 ```
 
-_OpenAPI spec at URL_
+_OpenAPI spec from URL_
 
 ```sh
 kusk api generate \
@@ -176,7 +176,7 @@ This will fetch the OpenAPI document from the provided URL and generate a Kusk G
 |   `--envoyfleet.name`  |                                name of envoyfleet to use for this API                               |     ✅     |
 | `envoyfleet.namespace` |                  namespace of envoyfleet to use for this API. Default: kusk-system                  |     ❌     |
 
-### Example
+#### Example
 Take a look at the [http-bin example spec](./examples/httpbin-spec.yaml)
 
 ```
