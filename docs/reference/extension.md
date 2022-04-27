@@ -25,12 +25,11 @@ x-kusk:
       port: 80
     service: # host and service are mutually exclusive
       namespace: default
-      service: petstore
+      name: petstore
       port: 8000
     rewrite:
-      rewrite_regex:
-        pattern: 'regular_expression'
-        substituion: 'substitution'
+      pattern: 'regular_expression'
+      substitution: 'substitution'
       
   redirect: # upstream and redirect are mutually exclusive
     scheme_redirect: https
@@ -40,7 +39,7 @@ x-kusk:
     path_redirect: /index.html # path_redirect and rewrite_regex are mutually exclusive
     rewrite_regex: # path_redirect and rewrite_regex are mutually exclusive
       pattern: 'regular_expression'
-      substituion: 'substitution'
+      substitution: 'substitution'
         
     response_code: 308
     strip_query: true
@@ -117,7 +116,7 @@ paths:
           upstream: # routes the POST /pet endpoint to a Kubernetes service
             service:
               namespace: default
-              service: petstore
+              name: petstore
               port: 8000
         ...
 ```
@@ -218,7 +217,7 @@ We have a service `foo` with a single endpoint `/bar`.
 
 We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
 
-![path rewrite example](img/rewrite-path-example.png)
+![path rewrite example](../img/rewrite-path-example.png)
 
 If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
 
