@@ -14,8 +14,8 @@ RUN go mod download
 # Copy the go source
 COPY . .
 
-ARG ANALYTICS_API_KEY 
-ARG ANALYTICS_TRACKING_ID 
+
+ARG TELEMETRY_TOKEN 
 
 # Build
 RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/root/go/pkg CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$TELEMETRY_TOKEN" -o agent cmd/agent/main.go
