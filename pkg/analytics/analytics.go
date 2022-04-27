@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	TelemetryToken = ""
+	TelemetryToken = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken
 )
 
 func SendAnonymousInfo(event string) error {
