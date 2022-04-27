@@ -26,6 +26,9 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/segmentio/analytics-go v3.1.0+incompatible // indirect
+	github.com/segmentio/backo-go v1.0.0 // indirect
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 )
 
 require (

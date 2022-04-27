@@ -6,15 +6,8 @@ import (
 )
 
 func TestSendAnonymousInfo(t *testing.T) {
-
-	if val, ok := os.LookupEnv("GA_API_SECRET"); ok {
-		KuskGAApiSecret = val
-	} else {
-		t.Skip()
-		return
-	}
-	if val, ok := os.LookupEnv("GA_MEASUREMENT_ID"); ok {
-		KuskGAMeasurementID = val
+	if val, ok := os.LookupEnv("TELEMETRY_TOKEN"); ok {
+		TelemetryToken = val
 	} else {
 		t.Skip()
 		return
@@ -24,5 +17,4 @@ func TestSendAnonymousInfo(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
-
 }
