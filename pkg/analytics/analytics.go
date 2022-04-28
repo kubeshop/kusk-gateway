@@ -1,104 +1,82 @@
+/*
+MIT License
+
+Copyright (c) 2022 Kubeshop
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 package analytics
 
 import (
-	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/denisbrodbeck/machineid"
-)
-
-const (
-	gaUrl           = "https://www.google-analytics.com/mp/collect?measurement_id=%s&api_secret=%s"
-	gaValidationUrl = "https://www.google-analytics.com/debug/mp/collect?measurement_id=%s&api_secret=%s"
+	"github.com/segmentio/analytics-go"
 )
 
 var (
-	KuskGAApiSecret     = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret={ACTUAL SECRET}
-	KuskGAMeasurementID = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=G-V067TPG7HM
+	TelemetryToken = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken
 )
 
 func SendAnonymousInfo(event string) error {
-	payload := Payload{
-		ClientID: MachineID(),
-		Events: []Event{
-			{
-				Name: event,
-				Params: Params{
-					EventCount:    1,
-					EventCategory: event,
-					AppName:       "kusk-gateway",
-					DataSource:    "gateway",
-				},
-			},
-		},
+	track := analytics.Track{
+		AnonymousId: MachineID(),
+		Event:       "kusk-heartbeat",
+		Properties:  analytics.NewProperties().Set("event", event),
+		Timestamp:   time.Now(),
 	}
-	sendValidationRequest(payload)
 
-	return sendDataToGA(payload)
+	return sendDataToGA(track)
 }
 
 // SendAnonymouscmdInfo will send CLI event to GA
 func SendAnonymousCMDInfo() {
-	event := "command"
+	var event string
 	command := []string{}
 	if len(os.Args) > 1 {
 		command = os.Args[1:]
 		event = command[0]
 	}
 
-	payload := Payload{
-		ClientID: MachineID(),
-		Events: []Event{
-			{
-				Name: event,
-				Params: Params{
-					EventCount:       1,
-					EventCategory:    "beacon",
-					AppName:          "kusk-cli",
-					CustomDimensions: strings.Join(command, " "),
-				},
-			}},
+	track := analytics.Track{
+		AnonymousId: MachineID(),
+		UserId:      MachineID(),
+		Event:       "kusk-cli",
+		Properties:  analytics.NewProperties().Set("event", event),
 	}
-	sendDataToGA(payload)
+	sendDataToGA(track)
+
 }
 
-func sendDataToGA(data Payload) error {
+func sendDataToGA(track analytics.Track) error {
 	// if environment variable is set return and collect nothing
 	if _, ok := os.LookupEnv("KUSK_ANALYTICS_DISABLED"); ok {
 		return nil
 	}
 
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
+	client := analytics.New(TelemetryToken)
+	defer client.Close()
+	return client.Enqueue(track)
 
-	fmt.Println(string(jsonData))
-
-	request, err := http.NewRequest("POST", fmt.Sprintf(gaUrl, KuskGAMeasurementID, KuskGAApiSecret), bytes.NewBuffer(jsonData))
-	if err != nil {
-		return err
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode > 300 {
-		return fmt.Errorf("could not POST, statusCode: %d", resp.StatusCode)
-	}
-	return nil
 }
 
 type Params struct {
@@ -141,30 +119,4 @@ func fromHostname() (string, error) {
 	}
 	sum := md5.Sum([]byte(name))
 	return hex.EncodeToString(sum[:]), nil
-}
-
-func sendValidationRequest(payload Payload) (out string, err error) {
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return out, err
-	}
-
-	request, err := http.NewRequest("POST", fmt.Sprintf(gaValidationUrl, KuskGAMeasurementID, KuskGAApiSecret), bytes.NewBuffer(jsonData))
-	if err != nil {
-		return out, err
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return out, err
-	}
-	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
-
-	if resp.StatusCode > 300 {
-		return out, fmt.Errorf("could not POST, statusCode: %d", resp.StatusCode)
-	}
-	return fmt.Sprintf("status: %d - %s", resp.StatusCode, b), err
 }
