@@ -26,4 +26,4 @@ jobs:
         go-version: 1.17
 
     - name: Test
-      run: make test ANALYTICS_TRACKING_ID=${{ secrets.ANALYTICS_TRACKING_ID }} ANALYTICS_API_KEY=${{ secrets.ANALYTICS_API_KEY }}
+      run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
