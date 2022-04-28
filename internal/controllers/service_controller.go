@@ -67,7 +67,7 @@ func annotation(a string) string {
 //+kubebuilder:rbac:groups=core,resources=pods/finalizers,verbs=update
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("service-reconciler")
-	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling Service annotations for kusk  %s", req.Name))
+	analytics.SendAnonymousInfo("reconciling Service annotations for kusk")
 
 	l.Info("Reconciling changed Service resource", "changed", req.NamespacedName)
 
