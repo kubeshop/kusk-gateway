@@ -50,3 +50,6 @@ The output should contain the [Envoy Fleet](https://kubeshop.github.io/kusk-gate
     If you are running a **bare metal cluster**, consider installing [MetalLB](https://metallb.universe.tf) which creates External IP for LoadBalancer Service type in Kubernetes.
 
 In case of the problems please check the [Troubleshooting](../troubleshooting.md) section.
+
+
+*Note*: Kusk CLI and Kusk Gateway collect anonymous data about product usage. To disable telemetry you can run both CLI and Kusk Gateway with set environment variable `KUSK_ANALYTICS_DISABLED=true`.

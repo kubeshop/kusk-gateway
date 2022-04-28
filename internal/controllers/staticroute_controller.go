@@ -60,7 +60,7 @@ type StaticRouteReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("static-route-controller")
-	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling Static route  %s", req.NamespacedName))
+	analytics.SendAnonymousInfo("reconciling Static route")
 
 	l.Info("Reconciling changed StaticRoute resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed StaticRoute resource", "changed", req.NamespacedName)
