@@ -65,7 +65,7 @@ type EnvoyFleetReconciler struct {
 func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("envoy-fleet-controller")
 	l.Info("EnvoyFleet changed", "changed", req.NamespacedName)
-	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling EnvoyFleet %s ", req.NamespacedName))
+	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling EnvoyFleet %s ", req.Name))
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}
 

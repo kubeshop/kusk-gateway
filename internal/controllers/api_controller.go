@@ -59,7 +59,7 @@ type APIReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("api-controller")
-	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling API %s ", req.NamespacedName))
+	analytics.SendAnonymousInfo(fmt.Sprintf("reconciling API %s ", req.Name))
 
 	l.Info("Reconciling changed API resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed API resource", "changed", req.NamespacedName)
