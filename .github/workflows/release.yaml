@@ -79,7 +79,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway-agent.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway-agent.outputs.labels }}
-          build-args: ANALYTICS_API_KEY=${{ secrets.ANALYTICS_API_KEY }},ANALYTICS_TRACKING_ID=${{ secrets.ANALYTICS_TRACKING_ID }}
+          build-args: TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
       -
         name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
