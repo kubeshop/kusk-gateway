@@ -11,7 +11,7 @@ defaults:
 
 on:
   push:
-    tags: 
+    tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*"
 
@@ -58,6 +58,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
+          build-args: TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
       -
         name: Docker metadata for Kusk Gateway Agent
         id: meta-kusk-gateway-agent
@@ -78,6 +79,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway-agent.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway-agent.outputs.labels }}
+          build-args: TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
       -
         name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
@@ -134,7 +136,7 @@ jobs:
       runs-on: ubuntu-latest
       if: ${{ needs.release.outputs.changed_resources == 'false'}}
       steps:
-      - 
+      -
         name: Checkout
         uses: actions/checkout@v2
         with:
@@ -143,13 +145,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.CI_BOT_TOKEN }}
 
-      - 
+      -
         name: Install Helm
         uses: azure/setup-helm@v1
         with:
           version: v3.4.0
 
-      - 
+      -
         name: Bump up kusk-gateway chart
         run: |
           # sets appVersion in the Chart.yaml
@@ -162,12 +164,12 @@ jobs:
           echo New version ${NEW_VERSION}
           sed -i -e "s/^version: .*/version: ${NEW_VERSION}/g" charts/kusk-gateway/Chart.yaml
 
-      - 
+      -
         name: Lint the chart
         run: |
           helm lint charts/kusk-gateway
 
-      - 
+      -
         name: Push updated chart
         run: |
           git config user.name "$GITHUB_ACTOR"
@@ -177,7 +179,7 @@ jobs:
           git commit -m "automatically updated kusk-gateway related charts"
           git push
 
-      - 
+      -
         name: Slack Notification if the helm version bump succeeded
         uses: rtCamp/action-slack-notify@v2
         env:

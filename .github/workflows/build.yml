@@ -26,4 +26,4 @@ jobs:
         go-version: 1.17
 
     - name: Test
-      run: make test
+      run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
