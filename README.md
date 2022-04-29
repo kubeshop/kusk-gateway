@@ -34,7 +34,7 @@ You can apply your API definition like any other Kubernetes resource using our c
 
 # Get Started
 
-See the [architecture document](docs/reference/architecture.md) for an overview of the Kusk Gateway architecture
+See the [architecture document](https://kubeshop.github.io/kusk-gateway/reference/architecture/) for an overview of the Kusk Gateway architecture
 
 ## Installation
 
@@ -42,7 +42,7 @@ See the [architecture document](docs/reference/architecture.md) for an overview 
 
 Kusk Gateway can be installed on any cloud or bare metal Kubernetes cluster.
 
-If you want to quickly setup and evaluate the Kusk Gateway, then please use the [installation instructions](docs/getting-started/installation.md).
+If you want to quickly setup and evaluate the Kusk Gateway, then please use the [installation instructions](https://kubeshop.github.io/kusk-gateway/getting-started/installation).
 
 For the quick and impatient:
 
@@ -66,9 +66,9 @@ helm install kusk-gateway-envoyfleet-default kubeshop/kusk-gateway-envoyfleet -n
 
 [(Back to top)](#table-of-contents)
 
-Kusk Gateway configures itself via the [API CRD](docs/reference/customresources/api.md) that contains your embedded Swagger or OpenAPI document.
+Kusk Gateway configures itself via the [API CRD](https://kubeshop.github.io/kusk-gateway/reference/customresources/api) that contains your embedded Swagger or OpenAPI document.
 
-See also [x-kusk extension documentation](docs/reference/extension.md) and [Custom Resources](docs/reference/customresources/index.md) for the guidelines on how to add the necessary routing information to your OpenAPI file and Kusk Gateway.
+See also [x-kusk extension documentation](https://kubeshop.github.io/kusk-gateway/reference/extension) and [Custom Resources](https://kubeshop.github.io/kusk-gateway/reference/customresources) for the guidelines on how to add the necessary routing information to your OpenAPI file and Kusk Gateway.
 
 After that all that's required is to apply it as you would any other Kubernetes resource.
 
