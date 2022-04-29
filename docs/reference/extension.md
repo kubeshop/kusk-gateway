@@ -213,27 +213,6 @@ Note: `service` and `host` are mutually exlusive since they define the same thin
 
 #### Example
 
-We have a service `foo` with a single endpoint `/bar`.
-
-We configure Kusk Gateway to forward traffic to the `foo` service when it receives traffic on a path with the prefix `/foo`.
-
-![path rewrite example](../img/rewrite-path-example.png)
-
-If we receive a request at `/foo/bar`, the request will be forwarded to the `foo` service. `foo` will throw a 404 error as it doesn't have a path `/foo/bar`.
-
-Therefore we must rewrite the path from `/foo/bar` to `/bar` before sending it onto the `foo` service.
-
-The following config extract will allow us to do this
-
-```yaml
-upstream:
-  service: 
-    ...
-  # /foo/bar/... -> to upstream: /bar/...
-  rewrite:
-    pattern: "^/foo"
-    substitution: ""
-```
 
 ### path
 
@@ -301,6 +280,9 @@ paths:
 Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
 
 ### mocking
+
+
+
 
 `mocking` option enables the mocking of request responses using the provided in OpenAPI spec response definition [examples object](https://swagger.io/specification/#example-object).
 

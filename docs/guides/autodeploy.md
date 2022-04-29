@@ -57,7 +57,7 @@ spec:
 ```
 
 Once the service is deployed to a cluster Kusk gateway will pick it up and create an API resource.
-Annotation `kusk-gateway/openapi-url` contains URL to OpenAPI spec for the user. Provided API may or may not contain `x-kusk` [extension](extension.md) so the reconciler will check if `x-kusk` extension is present and:
+Annotation `kusk-gateway/openapi-url` contains URL to OpenAPI spec for the user. Provided API may or may not contain `x-kusk` [extension](../extension.md) so the reconciler will check if `x-kusk` extension is present and:
    * if not present controller will add it and point upstream to the newly created service 
 ```yaml
 x-kusk:

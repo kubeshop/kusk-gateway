@@ -21,17 +21,22 @@ nav:
     - Deploy an API: getting-started/deploy-an-api.md
     - Connect a Service to the API: getting-started/connect-a-service-to-the-api.md
   - 'Guides':
-      - 'Using Cert Manager with Kusk Gateway': cert-manager.md
+      - Mocking: guides/mocking.md
+      - Validation: guides/validation.md
+      - CORS: guides/cors.md
+      - Routing: guides/routing.md
+      - Timeouts: guides/timeouts.md
+      - Automatic API deployment: guides/autodeploy.md
+      - Using Cert Manager: guides/cert-manager.md
+      - Troubleshooting: guides/troubleshooting.md
   - 'Reference':
-    - Automatic API deployment: 'reference/automatic-api-deployment.md'
+    - Extension (x-kusk) docs: reference/extension.md
+    - Kusk CLI: reference/kusk-cli.md
     - 'Custom Resources':
       - 'EnvoyFleet': reference/customresources/envoyfleet.md
       - 'API': reference/customresources/api.md
       - 'Static Route': reference/customresources/staticroute.md
-    - Extension (x-kusk) docs: reference/extension.md
     - Architecture: reference/architecture.md
-    - Kusk CLI: reference/kusk-cli.md
-  - Troubleshooting: troubleshooting.md
   - Observability: observability.md
   - Contributing:
     - Development: 'contributing/development.md'
