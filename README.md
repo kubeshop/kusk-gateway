@@ -34,7 +34,7 @@ You can apply your API definition like any other Kubernetes resource using our c
 
 # Get Started
 
-See the [architecture document](docs/arch.md) for an overview of the Kusk Gateway architecture
+See the [architecture document](docs/reference/architecture.md) for an overview of the Kusk Gateway architecture
 
 ## Installation
 
@@ -42,9 +42,7 @@ See the [architecture document](docs/arch.md) for an overview of the Kusk Gatewa
 
 Kusk Gateway can be installed on any cloud or bare metal Kubernetes cluster.
 
-If you want to quickly setup and evaluate the Kusk Gateway, then please use the [local installation instructions with Minikube](docs/local-installation.md).
-
-Otherwise see our [Installation document](https://kubeshop.github.io/kusk-gateway/installation/) for how to install the Kusk Gateway to Kubernetes.
+If you want to quickly setup and evaluate the Kusk Gateway, then please use the [installation instructions](docs/getting-started/installation.md).
 
 For the quick and impatient:
 
@@ -68,9 +66,9 @@ helm install kusk-gateway-envoyfleet-default kubeshop/kusk-gateway-envoyfleet -n
 
 [(Back to top)](#table-of-contents)
 
-Kusk Gateway configures itself via the [API CRD](docs/customresources/api.md) that contains your embedded Swagger or OpenAPI document.
+Kusk Gateway configures itself via the [API CRD](docs/reference/customresources/api.md) that contains your embedded Swagger or OpenAPI document.
 
-See also [x-kusk extension documentation](docs/extension.md) and [Custom Resources](docs/customresources/index.md) for the guidelines on how to add the necessary routing information to your OpenAPI file and Kusk Gateway.
+See also [x-kusk extension documentation](docs/reference/extension.md) and [Custom Resources](docs/reference/customresources/index.md) for the guidelines on how to add the necessary routing information to your OpenAPI file and Kusk Gateway.
 
 After that all that's required is to apply it as you would any other Kubernetes resource.
 
@@ -132,13 +130,13 @@ spec:
 
 [(Back to top)](#table-of-contents)
 
-See [Custom Resources](https://kubeshop.github.io/kusk-gateway/customresources/) for more information on the Custom Resources that Kusk Gateway supports.
+See [Custom Resources](https://kubeshop.github.io/kusk-gateway/reference/customresources/) for more information on the Custom Resources that Kusk Gateway supports.
 
 ## Roadmap
 
 [(Back to top)](#table-of-contents)
 
-For the list of the currently supported and planned features please check the [Roadmap](https://kubeshop.github.io/kusk-gateway/roadmap/).
+For the list of the currently supported and planned features please check the [Roadmap](https://kubeshop.github.io/kusk-gateway/contributing/roadmap/).
 
 ## Troubleshooting
 
@@ -150,7 +148,7 @@ See the [Troubleshooting](https://kubeshop.github.io/kusk-gateway/troubleshootin
 
 [(Back to top)](#table-of-contents)
 
-See our [Development document](https://kubeshop.github.io/kusk-gateway/development/) for how to develop Kusk Gateway.
+See our [Development document](https://kubeshop.github.io/kusk-gateway/contributing/development/) for how to develop Kusk Gateway.
 
 # Contribute
 
