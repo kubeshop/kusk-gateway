@@ -1,5 +1,73 @@
-# OpenAPI extension
+# OpenAPI extension Reference
 
+Kusk Gateway comes with an [OpenAPI extension](https://swagger.io/specification/#specification-extensions) to accommodate everything within
+an OpenAPI spec to make that a real source of truth for operational behaviour of your API.
+
+`x-kusk` extension has the following structure:
+
+```yaml
+x-kusk:
+  hosts:
+    - example.com
+  
+  disabled: false
+  
+  validation:
+    request:
+      enabled: true # enable automatic request validation using OpenAPI spec
+  mocking:
+    enabled: true # Enables mocking of the responses using examples in OpenAPI responses definition.
+  upstream: # upstream and redirect are mutually exclusive
+    host: # host and service are mutually exclusive
+      hostname: example.com
+      port: 80
+    service: # host and service are mutually exclusive
+      namespace: default
+      name: petstore
+      port: 8000
+    rewrite:
+      pattern: 'regular_expression'
+      substitution: 'substitution'
+      
+  redirect: # upstream and redirect are mutually exclusive
+    scheme_redirect: https
+    host_redirect: example.org
+    port_redirect: 8081
+      
+    path_redirect: /index.html # path_redirect and rewrite_regex are mutually exclusive
+    rewrite_regex: # path_redirect and rewrite_regex are mutually exclusive
+      pattern: 'regular_expression'
+      substitution: 'substitution'
+        
+    response_code: 308
+    strip_query: true
+        
+        
+  path:
+    prefix: /api
+          
+  qos:
+    retries: 10
+    request_timeout: 60 
+    idle_timeout: 30
+  cors:
+    origins:
+      - "*"
+    methods:
+      - POST
+      - GET
+      - OPTIONS
+    headers:
+      - Content-Type
+    credentials: true
+    expose_headers:
+      - X-Custom-Header1
+      - X-Custom-Header2
+    max_age: 86200
+  websocket: true
+```
+
+Check out the [OpenAPI Extension overview](../guides/working-with-extension.md) to see how it is used.
 
 ## Available properties
 

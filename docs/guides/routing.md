@@ -243,3 +243,34 @@ x-kusk:
 ```
 
 Would ensure that only requests to the onehost.com host will get forward to the simple-api-service.
+
+## Disabling operations
+
+In certain situation your OpenAPI definition might contain operations that you do not want exposed to API consumers, 
+for example if these are still in development, or if they are meant to be consumed internally only. Kusk Gateway
+provides a `x-kusk.disabled` property for this purpose, which can be set at the global, path or operation level.
+
+For example if we wanted to disable the PUT operation in one of our examples above we could add this extension
+accordingly:
+
+```yaml
+openapi: 3.0.0
+info:
+  title: simple-api
+  version: 0.1.0
+x-kusk:
+  upstream:
+    host: simple-api-service-hostname
+    port: 8001
+path:
+  /someoperation:
+    get:
+      operationId: doSomething
+      ..
+    put:
+      x-kusk:
+        disabled: true
+```
+
+Setting this property to true at the top level will hide all operations, allowing you to then override this 
+property at the path or operation level if you want to expose only specific operations.
