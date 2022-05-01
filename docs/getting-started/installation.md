@@ -10,25 +10,24 @@
 
 Tools needed for the installation:
 
-- Installed [helm](https://helm.sh/docs/intro/install/) command-line
-- Installed [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
+- [helm](https://helm.sh/docs/intro/install/) command-line tool
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
 
 ## 1. Install Kusk Gateway
+### 1. Install Kusk CLI 
+
+You can find other installation methods (like Homebrew) [here](https://kubeshop.github.io/kusk-gateway/reference/kusk-cli/#installation).
 
 ```sh
-# Install Kubeshop Helm repo and update it
-helm repo add kubeshop https://kubeshop.github.io/helm-charts
-helm repo update
+bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
+```
 
-# Install the Kusk Gateway with CRDs into kusk-system namespace.
-helm install kusk-gateway kubeshop/kusk-gateway -n kusk-system --create-namespace
+### 2. Install Kusk Gateway
 
-# We need to wait for the kusk-gateway-manager deployment to finish the setup for the next step.
-kubectl wait --for=condition=available --timeout=600s deployment/kusk-gateway-manager  -n kusk-system
+Use the Kusk's CLI to install the gateway in your cluster
 
-# Install EnvoyFleet into kusk-system namespace. It will be used by the Kusk Gateway
-# to create Envoy Fleet Deployment and Service with the type LoadBalancer.
-helm install kusk-gateway-envoyfleet kubeshop/kusk-gateway-envoyfleet -n kusk-system
+```sh
+kusk install
 ```
 
 ## 2. Get the Gateway's External IP
@@ -50,6 +49,3 @@ The output should contain the [Envoy Fleet](https://kubeshop.github.io/kusk-gate
     If you are running a **bare metal cluster**, consider installing [MetalLB](https://metallb.universe.tf) which creates External IP for LoadBalancer Service type in Kubernetes.
 
 In case of the problems please check the [Troubleshooting](../troubleshooting.md) section.
-
-
-*Note*: Kusk CLI and Kusk Gateway collect anonymous data about product usage. To disable telemetry you can run both CLI and Kusk Gateway with set environment variable `KUSK_ANALYTICS_DISABLED=true`.
