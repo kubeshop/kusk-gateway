@@ -1,7 +1,7 @@
 # API
 
 This resource uses OpenAPI file with x-kusk annotations as the source of truth to configure routing.
-Refer to [extention](../extension.md) for the further information on how to add routing information to OpenAPI file.
+Refer to [extention](../reference/extension.md) for the further information on how to add routing information to OpenAPI file.
 
 The required field of API resource is spec.**spec** where `x-kusk`-enhanced OpenAPI file is supplied as an embedded string. You can generate it (and integrate into your CI) using [kgw](https://github.com/kubeshop/kgw) CLI tool.
 
@@ -16,7 +16,7 @@ Once the resource manifest is deployed, Kusk Gateway Manager will use it to conf
 Multiple resources can exist in different namespaces, all of them will be evaluated and the configuration merged on any update with these resource.
 Trying to apply a resource that has conflicting routes with the existing resources (i.e. same HTTP method and path) would result in error.
 
-**Alpha Limitations**:
+**Limitations**:
 
 * currently resource **status** field is not updated by manager when the configuration process finishes.
 

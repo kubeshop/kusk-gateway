@@ -36,7 +36,7 @@ Deploying this manifest with kubectl (`kubectl apply -f svc.yaml`) will make Kus
 
 - read the OpenAPI definition from the `openapi-url` annotation
 - add corresponding `x-kusk.upstream` [extensions](../reference/extension/#upstream) to route API requests to this Service (if not already present)
-- create an [API resource](../reference/customresources/api.md) for the OpenAPI definition and deploy it to Kusk Gateway
+- create an [API resource](../customresources/api.md) for the OpenAPI definition and deploy it to Kusk Gateway
 
 If you want to customize the mapping and/or envoy-fleet used by the API you can add these as annotations also:
 

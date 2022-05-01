@@ -11,7 +11,7 @@ Once the resource manifest is deployed, Kusk Gateway Manager will use it to conf
 Multiple resources can exist in different namespaces, all of them will be evaluated and the configuration merged on any action with the separate resource.
 Trying to apply a resource that has conflicting routes with the existing resources (i.e. same HTTP method and path) will be rejected with the error.
 
-**Alpha Limitations**:
+**Limitations**:
 
 * currently resource **status** field is not updated by manager when the reconciliation of the configuration finishes.
 

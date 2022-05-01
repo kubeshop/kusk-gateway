@@ -1,0 +1,58 @@
+# Kusk CLI
+
+Kusk is a CLI tool designed to help you manage common tasks required when
+running Kusk Gateway.
+
+Currently we support the following commands:
+
+- `install` - installs Kusk Gateway and all its components with a single command. (Requires a helm installation)
+- `api generate` - for creating Kusk Gateway API resources from your OpenAPI specification document.
+
+## Installation
+
+### Homebrew
+`brew install kubeshop/kusk/kusk`
+
+### Using golang installation
+`go install github.com/kubeshop/kusk@latest`
+
+To install a particular version: replace `latest` with the version number
+
+You can get a list of the available kusk versions from our [releases page](https://github.com/kubeshop/kusk/releases)
+
+### Install script
+This will install `kusk` into `/usr/local/bin/kusk`
+
+```sh
+bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
+```
+
+### From source
+```
+git clone git@github.com:kubeshop/kusk.git && \
+cd kusk && \
+go install
+```
+
+### Alternative installation method (manual)
+
+If you don't like automatic scripts you can always use the manual install:
+
+1. Download binary with version of your choice (recent one is recommended)
+2. Upack it (tar -zxvf kusk_0.1.0_Linux_arm64.tar.gz)
+3. Move it to a location in the PATH. For example `mv kusk_0.1.0_Linux_arm64/kusk /usr/local/bin/kusk`
+
+For Windows, download the binary from [here](https://github.com/kubeshop/kusk/releases), unpack the binary and add it to `%PATH%`. 
+
+## Updating
+### Homebrew
+`brew upgrade kubeshop/kusk/kusk`
+
+### Latest release on Github
+`go install github.com/kubeshop/kusk@$VERSION`
+
+### From source
+Insde of the kusk repository directory
+```
+git clone https://github.com/kubeshop/kusk.git
+```

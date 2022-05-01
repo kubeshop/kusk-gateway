@@ -30,15 +30,19 @@ nav:
       - Automatic API deployment: guides/autodeploy.md
       - Using Cert Manager: guides/cert-manager.md
       - Troubleshooting: guides/troubleshooting.md
+  - Kusk CLI:
+      - Installation: cli/overview.md
+      - Install Kusk Gateway: cli/install-cmd.md
+      - Generating API CRDs: cli/generate-cmd.md
+  - 'Kusk Resources':
+    - Overview: customresources/overview.md
+    - 'API': customresources/api.md
+    - 'EnvoyFleet': customresources/envoyfleet.md
+    - 'Static Route': customresources/staticroute.md
   - 'Reference':
-    - Extension (x-kusk) docs: reference/extension.md
-    - Kusk CLI: reference/kusk-cli.md
-    - 'Custom Resources':
-      - 'EnvoyFleet': reference/customresources/envoyfleet.md
-      - 'API': reference/customresources/api.md
-      - 'Static Route': reference/customresources/staticroute.md
+    - OpenAPI Extension (x-kusk): reference/extension.md
     - Architecture: reference/architecture.md
-  - Observability: observability.md
+    - Observability: observability.md
   - Contributing:
     - Development: 'contributing/development.md'
     - Roadmap: 'contributing/roadmap.md'

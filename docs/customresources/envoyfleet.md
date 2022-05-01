@@ -13,7 +13,7 @@ You can deploy multiple Envoy Fleets and thus have multiple Gateways available.
 
 Once the fleet is deployed, it **status** field shows the success of the process (Deployed, Failed), so it can be shown with ```kubectl describe envoyfleet``` command.
 
-**Alpha Limitations**:
+**Limitations**:
 
 * currently it shows only the success of K8s resources deployment, it doesn't show if the Envoy Proxy pods are alive and if the Service has the External IP Address allocated.
 
