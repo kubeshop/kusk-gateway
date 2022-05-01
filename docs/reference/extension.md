@@ -93,14 +93,14 @@ Read more in the [guide on routing](../guides/routing/#using-hosts-for-multi-hos
 
 The `cors` object sets properties for configuring [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for your API.
 
-|       Name       | Description                                                     |
-|:----------------:|:----------------------------------------------------------------|
-|    `origins`     | list of HTTP origins accepted by the configured operations      |
-|    `methods`     | list of HTTP methods accepted by the configured operations      |
-|    `headers`     | list of HTTP headers accepted by the configured operations      |
+| Name             | Description                                                     |
+|:-----------------|:----------------------------------------------------------------|
+| `origins`        | list of HTTP origins accepted by the configured operations      |
+| `methods`        | list of HTTP methods accepted by the configured operations      |
+| `headers`        | list of HTTP headers accepted by the configured operations      |
 | `expose_headers` | list of HTTP headers exposed by the configured operations       |
-|  `credentials`   | boolean flag for requiring credentials                          |
-|    `max_age`     | indicates how long results of a preflight request can be cached |
+| `credentials`    | boolean flag for requiring credentials                          |
+| `max_age`        | indicates how long results of a preflight request can be cached |
 
 Read more in the [guide on CORS](../guides/cors.md)
 
@@ -108,11 +108,11 @@ Read more in the [guide on CORS](../guides/cors.md)
 
 Options for configuring QoS settings, such as retries and timeouts.
 
-|       Name        | Description                               |
-|:-----------------:|:------------------------------------------|
-|     `retries`     | maximum number of retries (0 by default)  |
+| Name              | Description                               |
+|:------------------|:------------------------------------------|
+| `retries`         | maximum number of retries (0 by default)  |
 | `request_timeout` | total request timeout (in seconds)        |
-|  `idle_timeout`   | timeout for idle connections (in seconds) |
+| `idle_timeout`    | timeout for idle connections (in seconds) |
 
 Read more in the [guide on timeouts](../guides/timeouts.md)
 
@@ -135,29 +135,29 @@ See the [Guide on Routing](../guides/routing.md) to learn more about this functi
 Additionally, `upstream` has an optional object `rewrite`. It allows to modify the URL of the request before forwarding
 it to the upstream service.
 
-| Name                 | Description                     |
-|----------------------|---------------------------------|
-| rewrite.pattern      | regular expression              |
-| rewrite.substitution | regular expression substitution |
+| Name                   | Description                     |
+|:-----------------------|---------------------------------|
+| `rewrite.pattern`      | regular expression              |
+| `rewrite.substitution` | regular expression substitution |
 
 #### service
 
 The service object sets the target Kubernetes service to receive traffic, it contains the following properties:
 
-|    Name     | Description                                      |
-|:-----------:|:-------------------------------------------------|
+| Name        | Description                                      |
+|:------------|:-------------------------------------------------|
 | `namespace` | the namespace containing the upstream Service    |
-|   `name`    | the upstream Service's name                      |
-|   `port`    | the upstream Service's port. Default value is 80 |
+| `name`      | the upstream Service's name                      |
+| `port`      | the upstream Service's port. Default value is 80 |
 
 #### host
 
 The host object sets the target host to receive traffic, it contains the following properties:
 
-|    Name    | Description                      |
-|:----------:|:---------------------------------|
+| Name       | Description                      |
+|:-----------|:---------------------------------|
 | `hostname` | the hostname to route traffic to |
-|   `port`   | target port to route traffic to  |
+| `port`     | target port to route traffic to  |
 
 Note: `service` and `host` are mutually exlusive since they define the same thing (the upstream host to route to).
 
@@ -165,9 +165,9 @@ Note: `service` and `host` are mutually exlusive since they define the same thin
 
 The path object contains the following properties to configure service endpoints paths:
 
-| Name   | Description                                                                              |
-|--------|------------------------------------------------------------------------------------------|
-| prefix | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
+| Name     | Description                                                                              |
+|:---------|------------------------------------------------------------------------------------------|
+| `prefix` | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/" |
 
 If `upstream.rewrite` option is not specified then the upstream service will receive the request "as is" with this prefix
 still appended to the URL. If the upstream application doesn't know about this path, usually `404` is returned.
@@ -178,16 +178,16 @@ See the [Guide on Routing](../guides/routing.md) to learn more about this functi
 
 Configures where to redirect request to. Redirect and upstream options are mutually exclusive.
 
-| Name                       | Description                                                                 |
-|----------------------------|-----------------------------------------------------------------------------|
-| scheme_redirect            | redirect scheme (http / https)                                              |
-| host_redirect              | host to redirect to                                                         |
-| port_redirect              | port to redirect to                                                         |
-| path_redirect              | path to redirect to                                                         |
-| rewrite_regex.pattern      | regular expression (mutually exclusive with path_redirect)                  |
-| rewrite_regex.substitution | regular expression substitution                                             |
-| strip_query                | boolean, configures whether to strip the query from the URL (default false) |
-| response_code              | redirect response code (301, 302, 303, 307, 308)                            |
+| Name                        | Description                                                                 |
+|:----------------------------|-----------------------------------------------------------------------------|
+| `scheme_redirect`             | redirect scheme (http / https)                                              |
+| `host_redirect`               | host to redirect to                                                         |
+| `port_redirect`               | port to redirect to                                                         |
+| `path_redirect`               | path to redirect to                                                         |
+| `rewrite_regex.pattern`       | regular expression (mutually exclusive with path_redirect)                  |
+| `rewrite_regex.substitution`  | regular expression substitution                                             |
+| `strip_query`                 | boolean, configures whether to strip the query from the URL (default false) |
+| `response_code`               | redirect response code (301, 302, 303, 307, 308)                            |
 
 See the [Guide on Routing](../guides/routing.md) to learn more about this functionality.
 
@@ -195,9 +195,9 @@ See the [Guide on Routing](../guides/routing.md) to learn more about this functi
 
 The validation objects contains the following properties to configure automatic request validation:
 
-| Name                       | Description                               |
-|----------------------------|-------------------------------------------|
-| validation.request.enabled | boolean flag to enable request validation |
+| Name                         | Description                               |
+|:-----------------------------|-------------------------------------------|
+| `validation.request.enabled` | boolean flag to enable request validation |
 
 See the [Guide on Validation](../guides/validation.md) to learn more about this functionality.
 
@@ -207,9 +207,9 @@ Note: currently `mocking` is incompatible with the `validation` option, the conf
 
 The validation objects contains the following properties to configure automatic request validation:
 
-| Name                | Description                    |
-|---------------------|--------------------------------|
-| mocking.enabled     | boolean flag to enable mocking |
+| Name                 | Description                    |
+|:---------------------|--------------------------------|
+| `mocking.enabled`    | boolean flag to enable mocking |
 
 See the [Guide on Mocking](../guides/mocking.md) to learn more about this functionality.
 
