@@ -17,7 +17,7 @@ Tools needed for the installation:
 ## 1. Install Kusk Gateway
 ### 1. Install Kusk CLI 
 
-You can find other installation methods (like Homebrew) [here](../../reference/kusk-cli/#installation).
+You can find other installation methods (like Homebrew) [here](../cli/overview.md).
 
 ```sh
 bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
@@ -25,11 +25,13 @@ bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts
 
 ### 2. Install Kusk Gateway
 
-Use the Kusk's CLI to install the gateway in your cluster
+Use the Kusk CLIs [install command](../cli/install-cmd.md) to install Kusk Gateway in your cluster 
 
 ```sh
 kusk install
 ```
+
+ 
 
 ## 2. Get the Gateway's External IP
 

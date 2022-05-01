@@ -1,6 +1,7 @@
 # Connect a Service
 
-Once you have [created an API](deploy-an-api.md) and mocked its responses, you would proceed to implement the services and connect them to the API. This section explains how you would connect your services to Kusk-gateway. 
+Once you have [created an API](deploy-an-api.md) and mocked its responses, you would proceed to implement the services and connect them to the API. 
+This section explains how you would connect your services to Kusk-gateway. 
 
 ## 1. Deploy your service
 
