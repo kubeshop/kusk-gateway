@@ -1,10 +1,12 @@
 # Request Routing with Kusk Gateway
 
 Incoming requests to Kusk Gateway can be routed to the target service in two ways:
+
 - Forwarded to an actual service in your cluster using the `upstream` property
 - Redirected to a different endpoint using the `redirect` property
 
 Furthermore, two properties are available to distinguish to which of these an incoming request should go:
+
 - The `hosts` property allows you to define which hostname(s) a specific API answers to
 - The `path` property allows you to configure a base path for the exposed API
 
@@ -125,6 +127,7 @@ See all available upstream configuration options in the [Extension Reference](/r
 
 Instead of forwarding requests to a service or hostname in our cluster we might want to 
 redirect the client to a totally different URL, for example when:
+
 - the API has moved to a different host
 - individual operations have been renamed
 - etc.
@@ -219,6 +222,7 @@ x-kusk:
 
 In a multi-hosting scenario for a single IP you might want to ensure that requests to different hosts 
 go to different APIs, i.e.
+
 - https://onehost.com/api -> api nr 1
 - https://anotherhost.com/api -> api nr 2
 

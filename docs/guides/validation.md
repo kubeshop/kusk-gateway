@@ -1,14 +1,33 @@
-# Validation with Kusk Gateway
+# Request Validation 
 
+Validating request payloads and providing meaningful error messages to consumers of an API can go a long way to provide
+a better developer experience; instead of just receiving a 40X response without further details it can help immensely 
+to know what was actually wrong in payload - missing properties? incorrect formatting? etc. Writing the code on the server
+is tedious and often overlooked - making it harder for both consumers and testers to resolve issues they might have 
+when working with your API.
 
+Kusk Gateway provides end-user friendly validation against the provided OpenAPI definition automatically - without 
+requiring the implementer of the API to write any code - saving development time for both BE and API consumers.
 
-The validation objects contains the following properties to configure automatic request validation:
+Enabling validation is straight-forward - simply add the corresponding x-kusk property to your OpenAPI definition:
 
-| Name                       | Description                               |
-|----------------------------|-------------------------------------------|
-| validation.request.enabled | boolean flag to enable request validation |
+```yaml
+x-kusk:
+  validation:
+    request:
+      enabled:
+```
 
-#### strict validation of request bodies
+Adding this at the global level will ensure all incoming requests are validated against the corresponding OpenAPI definition
+in regard to request parameters and payload - if the request does not match the specified metadata a meaningful error
+is returned to the consumer without any request being forward to your actual API implementation.
+
+Another positive side-effect of this functionality is that it provides a "security-gate" for your API; malicious requests
+that are outside your defined operations will not reach the target service where they could have done potential harm.
+
+See all available validation configuration options in the [Extension Reference](/reference/extension/#validation)
+
+## Strict validation of request bodies
 
 Strict validation means that the request body must conform exactly to the schema specified in your openapi spec.
 Any fields not in schema will cause the validation to fail the request/response.

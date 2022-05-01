@@ -21,6 +21,7 @@ nav:
     - Deploy an API: getting-started/deploy-an-api.md
     - Connect a Service to the API: getting-started/connect-a-service-to-the-api.md
   - 'Guides':
+      - Kusk Extension: guides/working-with-extension.md
       - Mocking: guides/mocking.md
       - Validation: guides/validation.md
       - CORS: guides/cors.md

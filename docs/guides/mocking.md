@@ -1,15 +1,22 @@
 # Mocking with Kusk Gateway
 
+## How can Mocking help?
 
+Mocking is an integral part of the API lifecycle; providing mocks can help both API consumers (for example FE/Mobile app developers) and 
+testers to bootstrap their efforts without being dependent on the actual implementation of an API being available. It can also help prototype
+API integrations and validate API designs with end-users before actually implementing them.
 
-`mocking` option enables the mocking of request responses using the provided in OpenAPI spec response definition [examples object](https://swagger.io/specification/#example-object).
+## How does Mocking work?
+
+Kusk Gateway makes mocking of your APIs extremely easy; simply add the `x-kusk.mocking` property to your API (globally or at any other level) 
+to enable the mocking of responses using the provided in OpenAPI spec response definition [examples object](https://swagger.io/specification/#example-object).
 
 Either `example:` (singular) or `examples:` (plural) are supported, however with multiple objects in `examples`, the response will include only one from that object map.
 If both are specified, singular (`example`) has the priority over plural.
 
 Examples are defined as a part of the response HTTP code and its contents media-type (e.g. `application/json`) and could be different for the different media types.
 
-As part of the mocked response the related HTTP code is returned, but only succes codes are supported for the mocking. I.e. 200, 201, but not 400, 404, 500.
+As part of the mocked response the related HTTP code is returned, but only success codes are supported for the mocking. I.e. 200, 201, but not 400, 404, 500.
 Though the OpenAPI standard allows the response code to be a range or being a wildcard (e.g. "2xx"), we need to know exactly what code to return, so this should be specified exactly as integer compatible ("200").
 In case the response doesn't have the response schema, only the single http code is used to mock the response, i.e. the body is not returned.
 This is useful to test, e.g. DELETE or PATCH operations that don't produce the body.
@@ -18,6 +25,10 @@ This is useful to test, e.g. DELETE or PATCH operations that don't produce the b
 In case there are responses without the response schema but without the examples, these must be explicitly disabled with `mocking.enabled: false`, otherwise the configuration submission will fail.
 
 Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
+
+## Mocking example
+
+Consider the following operation in an OpenAPI definition:
 
 ```yaml
       /mocked/{id}:
