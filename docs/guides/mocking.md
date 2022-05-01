@@ -1,4 +1,4 @@
-# Mocking with Kusk Gateway
+# Response Mocking 
 
 ## How can Mocking help?
 

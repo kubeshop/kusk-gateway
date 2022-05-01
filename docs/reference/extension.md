@@ -3,7 +3,7 @@
 Kusk Gateway comes with an [OpenAPI extension](https://swagger.io/specification/#specification-extensions) to accommodate everything within
 an OpenAPI spec to make that a real source of truth for operational behaviour of your API.
 
-`x-kusk` extension has the following structure:
+The `x-kusk` extension has the following structure:
 
 ```yaml
 x-kusk:
@@ -67,7 +67,8 @@ x-kusk:
   websocket: true
 ```
 
-Check out the [OpenAPI Extension overview](../guides/working-with-extension.md) to see how it is used.
+Check out the [OpenAPI Extension Guide](../guides/working-with-extension.md) to learn how it can be used to configure operational aspects
+of your API.
 
 ## Available properties
 

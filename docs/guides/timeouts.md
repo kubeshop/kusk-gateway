@@ -1,4 +1,4 @@
-# Timeouts with Kusk Gateway
+# Request Timeouts 
 
 Kusk Gateway makes it easy to specify timeouts for your API operations - both globally 
 or individually for each path or operation. 

@@ -1,4 +1,4 @@
-# CORS with Kusk Gateway
+# CORS Settings
 
 CORS is a standard implemented by browsers for ensuring that only the allowed clients actually access your API,
 see [https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).

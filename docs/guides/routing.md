@@ -1,4 +1,4 @@
-# Request Routing with Kusk Gateway
+# Request Routing
 
 Incoming requests to Kusk Gateway can be routed to the target service in two ways:
 
