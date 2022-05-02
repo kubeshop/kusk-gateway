@@ -5,16 +5,22 @@ running Kusk Gateway.
 
 The CLI supports the following commands:
 
-- `install` - installs Kusk Gateway and all its components with a single command. (Requires a helm installation)
-- `api generate` - for creating Kusk Gateway API resources from your OpenAPI specification document.
+- `install` - installs Kusk Gateway and all its components with a single command - [Read more](install-cmd.md)   
+- `api generate` - generates Kusk Gateway API resources from OpenAPI - [Read more](generate-cmd.md)
 
 ## Installation
 
 ### Homebrew
-`brew install kubeshop/kusk/kusk`
+
+```
+brew install kubeshop/kusk/kusk
+```
 
 ### Using golang installation
-`go install github.com/kubeshop/kusk@latest`
+
+```
+go install github.com/kubeshop/kusk@latest
+```
 
 To install a particular version: replace `latest` with the version number
 
@@ -46,13 +52,21 @@ For Windows, download the binary from [here](https://github.com/kubeshop/kusk/re
 
 ## Updating
 ### Homebrew
-`brew upgrade kubeshop/kusk/kusk`
+
+```
+brew upgrade kubeshop/kusk/kusk
+```
 
 ### Latest release on GitHub
-`go install github.com/kubeshop/kusk@$VERSION`
+
+```
+go install github.com/kubeshop/kusk@$VERSION
+```
 
 ### From source
-Insde of the kusk repository directory
+
+Inside of the kusk repository directory
+
 ```
 git clone https://github.com/kubeshop/kusk.git
 ```

@@ -1,12 +1,12 @@
 # Generating API CRDs
 
-The `generate` command accepts your OpenAPI spec file as input either as a local file or a URL pointing to your file
+The `generate` command accepts your OpenAPI definition as input either as a local file or a URL pointing to your file
 and generates a Kusk Gateway compatible API resource that you can apply directly into your cluster. Use this command to automate 
 API deployment workflows from an existing OpenAPI definition. 
 
 Configuration of the API resource is done via the `x-kusk` extension.
 
-If the OpenAPI spec doesn't have a top-level `x-kusk` property set, it will add them for you and set
+If the OpenAPI definition doesn't have a top-level `x-kusk` property set, it will add them for you and set
 the upstream service, namespace and port to the flag values passed in respectively and set the rest of the settings to defaults.
 This is enough to get you started.
 
@@ -57,7 +57,7 @@ kusk api generate \
   --envoyfleet.name kusk-gateway-envoy-fleet
 ```
 
-_OpenAPI spec from URL_
+_OpenAPI definition from URL_
 
 ```sh
 kusk api generate \
@@ -99,7 +99,7 @@ x-kusk:
 |:-----------------------|:----------------------------------------------------------------------------------------------------|:---------:|
 | `--name`               | the name to give the API resource e.g. --name my-api. Otherwise taken from OpenAPI info title field |     ❌     |
 | `--namespace` / `-n`   | the namespace of the API resource e.g. --namespace my-namespace, -n my-namespace (default: default) |     ❌     |
-| `--in` / `-i`          | file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml             |     ✅     |
+| `--in` / `-i`          | file path or URL to OpenAPI definition to generate mappings from. e.g. --in apispec.yaml       |     ✅     |
 | `--upstream.service`   | name of upstream Kubernetes service                                                                 |     ❌     |
 | `--upstream.namespace` | namespace of upstream service (default: default)                                                    |     ❌     |
 | `--upstream.port`      | port that upstream service is exposed on (default: 80)                                              |     ❌     |

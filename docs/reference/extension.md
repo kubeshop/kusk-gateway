@@ -14,7 +14,7 @@ x-kusk:
   
   validation:
     request:
-      enabled: true # enable automatic request validation using OpenAPI spec
+      enabled: true # enable automatic request validation using OpenAPI definition
   mocking:
     enabled: true # Enables mocking of the responses using examples in OpenAPI responses definition.
   upstream: # upstream and redirect are mutually exclusive

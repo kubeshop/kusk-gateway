@@ -3,7 +3,7 @@
 This resource defines manually created routing rules. It is useful to set up the routing to a non-API application, e.g. static pages, images or route to some old (possibly external to the cluster) APIs.
 
 It is designed to overcome the shortcomings of OpenAPI based routing, one of which is the inability to configure "catch all prefixes" like **/**.
-Its structure is still similar to OpenAPI spec and thus is familiar for the users.
+Its structure is still similar to OpenAPI and thus is familiar for the users.
 
 The resource can be deployed additionally to the API resource or completely separately. Routing information from both resources will be merged with the priority given to the **API** resources.
 

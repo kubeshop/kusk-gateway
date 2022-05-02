@@ -9,7 +9,7 @@ API integrations and validate API designs with end-users before actually impleme
 ## How does Mocking work?
 
 Kusk Gateway makes mocking of your APIs extremely easy; simply add the `x-kusk.mocking` property to your API (globally or at any other level) 
-to enable the mocking of responses using the provided in OpenAPI spec response definition [examples object](https://swagger.io/specification/#example-object).
+to enable the mocking of responses using the examples provided in an OpenAPI definition - [examples object](https://swagger.io/specification/#example-object).
 
 Either `example:` (singular) or `examples:` (plural) are supported, however with multiple objects in `examples`, the response will include only one from that object map.
 If both are specified, singular (`example`) has the priority over plural.

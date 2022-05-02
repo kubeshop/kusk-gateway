@@ -16,7 +16,7 @@ available to help you make the most of them:
 
 `x-kusk` extension can be applied at (not exclusively):
 
-1. Top level of an OpenAPI spec:
+1. Top level of an OpenAPI definition:
 
 ```yaml
   openapi: 3.0.2
