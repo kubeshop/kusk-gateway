@@ -11,9 +11,9 @@ Kusk Gateway is for you if:
 
 Kusk Gateway has a unique way to the configuration among other API gateways as it configures itself through the metadata defined in your OpenAPI or Swagger document.
 
-You can apply your API definition like any other Kubernetes resource using our custom-made Kusk Gateway [API](reference/customresources/api.md) CustomResourceDefinition (CRDs).
+You can apply your API definition like any other Kubernetes resource using our custom-made Kusk Gateway [API](customresources/api.md) CustomResourceDefinition (CRDs).
 
-Other [Custom Resources](reference/customresources/index.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
+Other [Custom Resources](customresources/overview.md) are used to configure the Envoy Fleet which implements the gateway and specify additional routing configurations.
 
 You can check the supported and planned features at Kusk Gateway [Roadmap](contributing/roadmap.md).
 

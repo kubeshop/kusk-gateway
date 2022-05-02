@@ -3,8 +3,9 @@
 ## Prerequisites
 
 - Kubernetes v1.16+
-
-- Kubernetes Cluster Administration rights are required - we install [CustomResouseDefinitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions), service account with ClusterRoles and RoleBindings.
+- Kubernetes Cluster Administration rights are required - we 
+  install [CustomResourceDefinitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) 
+  and a ServiceAccount with ClusterRoles and RoleBindings.
 
 ## Installation requirements
 
@@ -16,7 +17,7 @@ Tools needed for the installation:
 ## 1. Install Kusk Gateway
 ### 1. Install Kusk CLI 
 
-You can find other installation methods (like Homebrew) [here](https://kubeshop.github.io/kusk-gateway/reference/kusk-cli/#installation).
+You can find other installation methods (like Homebrew) [here](../cli/overview.md).
 
 ```sh
 bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
@@ -24,11 +25,13 @@ bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts
 
 ### 2. Install Kusk Gateway
 
-Use the Kusk's CLI to install the gateway in your cluster
+Use the Kusk CLIs [install command](../cli/install-cmd.md) to install Kusk Gateway in your cluster 
 
 ```sh
 kusk install
 ```
+
+ 
 
 ## 2. Get the Gateway's External IP
 
@@ -38,7 +41,7 @@ To get the External IP address of the Load Balancer run the command below comman
 kubectl get svc -l "app.kubernetes.io/component=envoy-svc" --namespace kusk-system
 ```
 
-The output should contain the [Envoy Fleet](https://kubeshop.github.io/kusk-gateway/customresources/envoyfleet) Service, which is the entry point of your API gateway, with the **External-IP** address field - use this address for your API endpoints querying. Note that it might take a while for the External IP to be created.
+The output should contain the [Envoy Fleet](../customresources/envoyfleet) Service, which is the entry point of your API gateway, with the **External-IP** address field - use this address for your API endpoints querying. Note that it might take a while for the External IP to be created.
 
 !!! note non-important "External IP might not be available for some cluster setups"
 
@@ -48,4 +51,4 @@ The output should contain the [Envoy Fleet](https://kubeshop.github.io/kusk-gate
 
     If you are running a **bare metal cluster**, consider installing [MetalLB](https://metallb.universe.tf) which creates External IP for LoadBalancer Service type in Kubernetes.
 
-In case of the problems please check the [Troubleshooting](../troubleshooting.md) section.
+In case of the problems please check the [Troubleshooting](../guides/troubleshooting.md) section.

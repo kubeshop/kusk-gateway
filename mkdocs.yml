@@ -17,22 +17,37 @@ theme:
 nav:
   - Welcome: index.md
   - 'Getting Started': 
-    - Install Kusk-gateway: getting-started/installation.md
-    - Deploy an API: getting-started/deploy-an-api.md
+    - Installing Kusk Gateway: getting-started/installation.md
+    - Deploy an OpenAPI definition: getting-started/deploy-an-api.md
     - Connect a Service to the API: getting-started/connect-a-service-to-the-api.md
   - 'Guides':
-      - 'Using Cert Manager with Kusk Gateway': cert-manager.md
+      - OpenAPI Extension: guides/working-with-extension.md
+      - Mocking: guides/mocking.md
+      - Validation: guides/validation.md
+      - CORS: guides/cors.md
+      - Routing & Disabling: guides/routing.md
+      - Timeouts: guides/timeouts.md
+      - Automatic API deployment: guides/autodeploy.md
+      - Using Cert Manager: guides/cert-manager.md
+      - Observability: guides/observability.md
+      - Troubleshooting: guides/troubleshooting.md
+  - Kusk CLI:
+      - Installation: cli/overview.md
+      - Install Kusk Gateway: cli/install-cmd.md
+      - Generating API CRDs: cli/generate-cmd.md
+  - Kusk Dashboard:
+      - Overview: dashboard/overview.md
+      - Inspecting APIs: dashboard/inspecting-apis.md
+      - Deploying APIs: dashboard/deploying-apis.md
+  - 'Kusk Resources':
+    - Overview: customresources/overview.md
+    - 'API': customresources/api.md
+    - 'EnvoyFleet': customresources/envoyfleet.md
+    - 'Static Route': customresources/staticroute.md
   - 'Reference':
-    - Automatic API deployment: 'reference/automatic-api-deployment.md'
-    - 'Custom Resources':
-      - 'EnvoyFleet': reference/customresources/envoyfleet.md
-      - 'API': reference/customresources/api.md
-      - 'Static Route': reference/customresources/staticroute.md
-    - Extension (x-kusk) docs: reference/extension.md
+    - OpenAPI Extension: reference/extension.md
     - Architecture: reference/architecture.md
-    - Kusk CLI: reference/kusk-cli.md
-  - Troubleshooting: troubleshooting.md
-  - Observability: observability.md
+    - Dashboard API: reference/openapi.md
   - Contributing:
     - Development: 'contributing/development.md'
     - Roadmap: 'contributing/roadmap.md'
@@ -49,6 +64,10 @@ extra:
       documentation and whether users find what they're searching for. With your consent, you're helping us to make our
       documentation better.
 
+plugins:
+  - render_swagger
+  - search
+
 extra_css:
   - stylesheets/base.css
 
@@ -60,4 +79,4 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
 
-copyright: Copyright &copy; 2021 <a href="https://kubeshop.io">Kubeshop</a>
+copyright: Copyright &copy; 2022 <a href="https://kubeshop.io">Kubeshop</a>

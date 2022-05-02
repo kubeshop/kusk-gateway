@@ -41,8 +41,8 @@ kusk-gateway
 │   └── webhooks # Create certs for the webhooks
 └── pkg
     ├── analytics # Code for sending analytics data to telemetry provider
-    ├── options # Options structs that contain the fields that the user will configure with the x-kusk extension in their OpenAPI spec
-    └── spec # Code for loading, parsing and validating the OpenAPI spec and the extensions.
+    ├── options # Options structs that contain the fields that the user will configure with the x-kusk extension in their OpenAPI definition
+    └── spec # Code for loading, parsing and validating the OpenAPI definition and the extensions.
 ```
 
 ## Set up development environment
