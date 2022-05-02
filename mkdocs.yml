@@ -34,6 +34,10 @@ nav:
       - Installation: cli/overview.md
       - Install Kusk Gateway: cli/install-cmd.md
       - Generating API CRDs: cli/generate-cmd.md
+  - Kusk Dashboard:
+      - Overview: dashboard/overview.md
+      - Inspecting APIs: dashboard/inspecting-apis.md
+      - Deploying APIs: dashboard/deploying-apis.md
   - 'Kusk Resources':
     - Overview: customresources/overview.md
     - 'API': customresources/api.md
