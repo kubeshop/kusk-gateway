@@ -1,12 +1,10 @@
 <p align="center">  
-  <img style="width:66%" src="assets/kusk-color-lg.png#gh-dark-mode-only" alt="Kusk Logo Light"/>
+  <img style="width:66%" src="assets/kusk-color-lg.png#gh-light-mode-only" alt="Kusk Logo Light"/>
   <img style="width:66%" src="assets/kusk-white-lg.png#gh-dark-mode-only" alt="Kusk Logo Dark" />
 </p>
 
 <p align="center">
-
-  Welcome to Kusk Gateway - a self-service API gateway powered by [OpenAPI](https://www.openapis.org/) and [Envoy](https://www.envoyproxy.io/).
-
+  Welcome to Kusk Gateway - a self-service API gateway powered by <a href="https://www.openapis.org/">OpenAPI</a> and <a href="https://www.envoyproxy.io">Envoy</a>
 </p>
 
 <p align="center">
