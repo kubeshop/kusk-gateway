@@ -11,23 +11,42 @@ Kusk Gateway Components:
 * **Kusk Gateway Dashboard** - a web UI for Kusk Gateway where you can deploy APIS and see which APIs, StaticRoutes and EnvoyFleets are deployed.
 
 #### Examples
-```
+
+The default `kusk install` command will install Kusk Gateway, a public (for your APIS) and private (for the kusk dashboard and api)
+envoy-fleet, api, and dashboard in the kusk-system namespace using helm using the current kubeconfig context.
+
+```shell
 $ kusk install
+adding the kubeshop helm repository
+done
+fetching the latest charts
+done
+installing Kusk Gateway
+done
+installing Envoy Fleet
+done
+installing Kusk API
+done
+installing Kusk Dashboard
+done
+To access the dashboard, port forward to the envoy-fleet service that exposes it
+        $ kubectl port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
+        and go http://localhost:8080/
 ```
-Will install Kusk Gateway, a public (for your APIS) and private (for the kusk dashboard and api) 
-envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-```
+The following command will create a helm release named with --name in the namespace specified by --namespace.
+
+```shell
 $ kusk install --name=my-release --namespace=my-namespace
+...
 ```
 
-Will create a helm release named with --name in the namespace specified by --namespace.
+The following command will install Kusk Gateway, but not the dashboard, api, or envoy-fleet.
 
-```
+```shell
 $ kusk install --no-dashboard --no-api --no-envoy-fleet
+...
 ```
-
-Will install Kusk Gateway, but not the dashboard, api, or envoy-fleet.
 
 #### Arguments
 | Flag                 | Description                                                                                                         | Required? |

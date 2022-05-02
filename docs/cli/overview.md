@@ -1,7 +1,6 @@
 # Kusk CLI
 
-Kusk is a CLI tool designed to help you manage common tasks required when
-running Kusk Gateway.
+Kusk is a CLI tool designed to help you manage common tasks related to Kusk Gateway.
 
 The CLI supports the following commands:
 
