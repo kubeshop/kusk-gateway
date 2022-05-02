@@ -2,16 +2,17 @@
 
 This resource defines the EnvoyFleet, which is the implementation of the gateway in Kubernetes based on Envoy Proxy.
 
-Once the resource manifest is deployed to Kubernetes, it is used by Kusk Gateway Manager to setup K8s Envoy Proxy **Deployment**, **ConfigMap** and **Service**.
+Once the resource manifest is deployed to Kubernetes, it is used by Kusk Gateway Manager to set up K8s Envoy Proxy **Deployment**, 
+**ConfigMap** and **Service**.
 
 The **ConfigMap** config bootstraps Envoy Proxy to connect to the [XDS](https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol) service of the KGW Manager to retrieve the configuration.
-In its initial state there is a minimal configuration, you have to deploy API or StaticRoute resource to setup the routing.
+In its initial state there is a minimal configuration, you have to deploy API or StaticRoute resource to set up the routing.
 
 If the Custom Resource is uninstalled, the Manager deletes the created K8s resources.
 
 You can deploy multiple Envoy Fleets and thus have multiple Gateways available.
 
-Once the fleet is deployed, it **status** field shows the success of the process (Deployed, Failed), so it can be shown with ```kubectl describe envoyfleet``` command.
+Once the fleet is deployed, its **status** field shows the success of the process (Deployed, Failed), so it can be shown with ```kubectl describe envoyfleet``` command.
 
 **Limitations**:
 
@@ -26,7 +27,7 @@ Currently supported parameters:
 * spec.**service** defines the configuration of the K8s Service that exposes Envoy Proxy deployment. It has similar to the K8s Service configuration but with the limited set of fields.
 * spec.service.**type** - select the Service type (NodePort, ClusterIP, LoadBalancer).
 * spec.service.**ports** - expose TCP ports (80, 443 or any other), routed to the ports names that Deployment exposes (http, https) - ports that Envoy Proxy listener binds to.
-* spec.service.**annotations** - add annotations to the Service that will control load balancer configuration in the specific cloud providers implementations (e.g. to setup the internal Google Cloud Platform load balancer in Google Cloud Engine we annotate Service with the related annotation).
+* spec.service.**annotations** - add annotations to the Service that will control load balancer configuration in the specific cloud providers implementations (e.g. to set up the internal Google Cloud Platform load balancer in Google Cloud Engine we annotate Service with the related annotation).
 * spec.service.**loadBalancerIP** can be used to specify the pre-allocated Load Balancer IP address, so it won't be deleted in case the Service is deleted.
 * spec.service.**externalTrafficPolicy** optional parameter denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints. "Local" preserves the client source IP and avoids a second hop for LoadBalancer and Nodeport type services, but risks potentially imbalanced traffic spreading. "Cluster" obscures the client source IP and may cause a second hop to another node, but should have good overall load-spreading. For the preservation of the real client ip in access logs chose "Local"
 
@@ -114,7 +115,7 @@ spec:
   #   effect: "NoSchedule"
 
   # Optional - provide pods affinity and anti-affinity settings.
-  # This is more flexible than nodeSelector scheme but they can be specified together.
+  # This is more flexible than nodeSelector scheme, but they can be specified together.
   # For the scalability and fault tolerance we prefer to put all Envoy pods onto different nodes - in a case one node fails we survive on others.
   # The block below will search for all matching labels of THIS "default" envoy fleet pods and will try to schedule pods onto different nodes.
   # Other fleets (if present) are not taken into consideration. You can specify nodeAffinity and podAffinity as well.

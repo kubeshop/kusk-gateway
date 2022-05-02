@@ -1,6 +1,6 @@
 # StaticRoute
 
-This resource defines manually created routing rules. It is useful to setup the routing to a non-API application, e.g. static pages, images or route to some old (possibly external to the cluster) APIs.
+This resource defines manually created routing rules. It is useful to set up the routing to a non-API application, e.g. static pages, images or route to some old (possibly external to the cluster) APIs.
 
 It is designed to overcome the shortcomings of OpenAPI based routing, one of which is the inability to configure "catch all prefixes" like **/**.
 Its structure is still similar to OpenAPI spec and thus is familiar for the users.
@@ -41,17 +41,17 @@ spec:
     # 2. "redirect" to other endpoint
     <path_match>:
       <http_method>:
-        # "route" defines proxying parameters. Mutually exlusive with "redirect".
+        # "route" defines proxying parameters. Mutually exclusive with "redirect".
         route:
           # upstream is the container for the upstream host specification.
           upstream:
-            # host defines the hostname to proxy to. Mutually exlusive with service.
+            # host defines the hostname to proxy to. Mutually exclusive with service.
             host:
               # DNS name to proxy to
               hostname: <string>
               # Port to proxy to
               port: <int>
-            # service is the convenient way to configure proxying to Kubernetes services. Mutually exlusive with the "host".
+            # service is the convenient way to configure proxying to Kubernetes services. Mutually exclusive with the "host".
             service:
               # service name
               name: <string>
@@ -67,13 +67,13 @@ spec:
             request_timeout: <int>
             # the timeout for the idle upstream of downstream connection, seconds. 0 means forever, unspecified default 1h.
             idle_timeout: <int>
-            # retres define how many retries to upstream with failed (50x code) requests, number. Default 1.
+            # retries define how many retries to upstream with failed (50x code) requests, number. Default 1.
             retries: <int>
           # Optional
           cors:
             # allowed origins returned in Access-Control-Allow-Origin header
             # the list of domain names
-            # Note - regexs other than the wildcard ("*") are not supported right now.
+            # Note - regex other than the wildcard ("*") are not supported right now.
             origins:
             - "*"
             # allowed methods to call this endpoint returned in Access-Control-Allow-Methods header
@@ -104,9 +104,9 @@ spec:
           host_redirect: <string>
           # redirects to different port
           port_redirect: <int>
-          # redirect to different URL path. Mutually exlusive with rewrite_regex.
+          # redirect to different URL path. Mutually exclusive with rewrite_regex.
           path_redirect: "<string>"
-          # redirect using the rewrite rule. Mutually exlusive with path_redirect.
+          # redirect using the rewrite rule. Mutually exclusive with path_redirect.
           rewrite_regex:
             # regex
             pattern: <string>
@@ -124,7 +124,7 @@ spec:
 spec.**fleet** optional field specifies to what Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies to.
 fleet.**name** and fleet.**namespace** reference the deployed EnvoyFleet Custom Resource name and namespace.
 
-You can deploy you StaticRoute configuration in any namespace with any name and it will be applied to the specific Envoy Fleet.
+You can deploy you StaticRoute configuration in any namespace with any name, and it will be applied to the specific Envoy Fleet.
 If this option is missing, the autodetection will be performed to find the single deployed in the Kubernetes cluster fleet which is thus considered as the default fleet.
 The deployed StaticRoute custom resource will be changed to map to that fleet accordingly.
 If there are multiple fleets deployed, the spec.**fleet** is required to specify in the manifest.
@@ -144,13 +144,13 @@ Prefix and suffix wildcards are supported, but not both (i.e. ```example.*, *exa
   * paths ending with `/` will match everything that has that path as a prefix. E.g. ```/api/``` matches ```/api/v1/id```, just ```/``` is a catch all.
   * paths without `/` will match that path exactly. E.g. just ```/resource``` matches exactly this resource with any possible URL query.  **Alpha limitations:** currently regexes are currently not supported.
 
-*paths*.*path_match*.**http_method** adds an additional request matcher which is the lowercased HTTP method (get, post, ...). Calls to the paths with a method type that is not set here will return "404 Not Found".
+*paths*.*path_match*.**http_method** adds an additional request matcher which is the lowercase HTTP method (get, post, ...). Calls to the paths with a method type that is not set here will return "404 Not Found".
 
 ## Final action on the matched request
 
 Once the request is matched, we can decide what to do with it.
 
-*paths*.*path_match*.http_method_match.**route|redirect** specifes the routing decision. The request can be either proxied to the upstream host (backend) or returned to the user as a redirect. Either [**redirect**](#redirect) or [**route**](#route) must be specified, but not both.
+*paths*.*path_match*.http_method_match.**route|redirect** specifies the routing decision. The request can be either proxied to the upstream host (backend) or returned to the user as a redirect. Either [**redirect**](#redirect) or [**route**](#route) must be specified, but not both.
 
  **Alpha Limitations:** currently additional request handling (e.g. direct request response like returning 404 Not Found) is not implemented.
 
@@ -198,13 +198,13 @@ Copy from Envoy's documentation:
 route:
   # upstream is the container for the upstream host specification. Either upstream.host or upstream.service must be specified.
   upstream:
-    # host defines the hostname to proxy to. Mutually exlusive with service.
+    # host defines the hostname to proxy to. Mutually exclusive with service.
     host:
       # DNS hostname to proxy to
       hostname: <string>
       # host port
       port: <int>
-    # service is the convenient way to configure proxying to Kubernetes services. Mutually exlusive with the "host".
+    # service is the convenient way to configure proxying to Kubernetes services. Mutually exclusive with the "host".
     service:
       # K8s service name to proxy to
       name: <string>
@@ -223,13 +223,13 @@ route:
     request_timeout: <int>
     # the timeout for the idle upstream of downstream connection, seconds. 0 means forever, unspecified default 1h.
     idle_timeout: <int>
-    # retres define how many retries to upstream with failed (50x code) requests, number. Default 1.
+    # retries define how many retries to upstream with failed (50x code) requests, number. Default 1.
     retries: <int>
   # Optional
   cors:
     # allowed origins returned in Access-Control-Allow-Origin header
     # the list of domain names
-    # Note - regexs other than the wildcard ("*") are not supported right now.
+    # Note - regex other than the wildcard ("*") are not supported right now.
     # WARNING - this is just the example, write your own CORS settings.
     origins:
     - "*"

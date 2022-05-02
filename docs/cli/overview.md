@@ -3,7 +3,7 @@
 Kusk is a CLI tool designed to help you manage common tasks required when
 running Kusk Gateway.
 
-Currently we support the following commands:
+The CLI supports the following commands:
 
 - `install` - installs Kusk Gateway and all its components with a single command. (Requires a helm installation)
 - `api generate` - for creating Kusk Gateway API resources from your OpenAPI specification document.
@@ -36,7 +36,7 @@ go install
 
 ### Alternative installation method (manual)
 
-If you don't like automatic scripts you can always use the manual install:
+If you don't like automatic scripts you can install the CLI manually:
 
 1. Download binary with version of your choice (recent one is recommended)
 2. Upack it (tar -zxvf kusk_0.1.0_Linux_arm64.tar.gz)
@@ -48,7 +48,7 @@ For Windows, download the binary from [here](https://github.com/kubeshop/kusk/re
 ### Homebrew
 `brew upgrade kubeshop/kusk/kusk`
 
-### Latest release on Github
+### Latest release on GitHub
 `go install github.com/kubeshop/kusk@$VERSION`
 
 ### From source

@@ -160,7 +160,7 @@ The host object sets the target host to receive traffic, it contains the followi
 | `hostname` | the hostname to route traffic to |
 | `port`     | target port to route traffic to  |
 
-Note: `service` and `host` are mutually exlusive since they define the same thing (the upstream host to route to).
+Note: `service` and `host` are mutually exclusive since they define the same thing (the upstream host to route to).
 
 ### path
 
@@ -179,16 +179,16 @@ See the [Guide on Routing](../guides/routing.md) to learn more about this functi
 
 Configures where to redirect request to. Redirect and upstream options are mutually exclusive.
 
-| Name                        | Description                                                                 |
-|:----------------------------|-----------------------------------------------------------------------------|
-| `scheme_redirect`             | redirect scheme (http / https)                                              |
-| `host_redirect`               | host to redirect to                                                         |
-| `port_redirect`               | port to redirect to                                                         |
-| `path_redirect`               | path to redirect to                                                         |
-| `rewrite_regex.pattern`       | regular expression (mutually exclusive with path_redirect)                  |
-| `rewrite_regex.substitution`  | regular expression substitution                                             |
-| `strip_query`                 | boolean, configures whether to strip the query from the URL (default false) |
-| `response_code`               | redirect response code (301, 302, 303, 307, 308)                            |
+| Name                         | Description                                                                 |
+|:-----------------------------|-----------------------------------------------------------------------------|
+| `scheme_redirect`            | redirect scheme (http / https)                                              |
+| `host_redirect`              | host to redirect to                                                         |
+| `port_redirect`              | port to redirect to                                                         |
+| `path_redirect`              | path to redirect to                                                         |
+| `rewrite_regex.pattern`      | regular expression (mutually exclusive with path_redirect)                  |
+| `rewrite_regex.substitution` | regular expression substitution                                             |
+| `strip_query`                | boolean, configures whether to strip the query from the URL (default false) |
+| `response_code`              | redirect response code (301, 302, 303, 307, 308)                            |
 
 See the [Guide on Routing](../guides/routing.md) to learn more about this functionality.
 

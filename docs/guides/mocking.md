@@ -121,7 +121,7 @@ Below we're using the example.com setup from the development/testing directory.
 
    The response includes the `x-kusk-mocked: true` header indicating mocking.
 
-2. With the Accept header, that has application/xml as the preffered type:
+2. With the Accept header, that has application/xml as the preferred type:
 
     ```shell
     curl -v -H "Host: example.com" -H "Accept: application/xml"  http://192.168.49.3/testing/mocked/1
@@ -136,7 +136,7 @@ Below we're using the example.com setup from the development/testing directory.
     <doc><completed>true</completed><order>13</order><title>Mocked XML title</title><url>http://mockedURL.com</url></doc>
     ```
 
-3. With the Accept header specifying multiple weighted preffered media types, text/plain with more weight.
+3. With the Accept header specifying multiple weighted preferred media types, text/plain with more weight.
 
     ```shell
     curl -v -H "Host: example.com" -H "Accept: application/json;q=0.8,text/plain;q=0.9"  http://192.168.49.3/testing/mocked/1

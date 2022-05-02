@@ -13,7 +13,7 @@ kusk-gateway-envoy-default    1/1     1            1           2m33s
 For this example, it's `kusk-envoy-default`. Be sure to query the correct namespace for your installation.
 
 ### Port forward to the envoy deployment on port 19000
-The admin console is configured to listen on port 19000 so we will port forward to it
+The admin console is configured to listen on port 19000, so we will port forward to it
 
 ```
 ❯ kubectl port-forward deployment/kusk-envoy-default -n kusk-system 19000
@@ -35,7 +35,7 @@ If the command hangs at all, cancel it and run it again
 
 ## Webhooks timeouts during the deployment
 
-You may meet the error during the resources deployment with kubectl like:
+You may meet the error during the resources' deployment with kubectl like:
 
 ```shell
 Error from server (InternalError): error when creating "examples/todomvc/kusk-backend-api.yaml": Internal error occurred: failed calling webhook "mapi.kb.io": failed to call webhook: Post "https://kusk-gateway-webhooks-service.kusk-system.svc:443/mutate-gateway-kusk-io-v1alpha1-api?timeout=10s": context deadline exceeded

@@ -4,7 +4,7 @@
 
 - Kubernetes v1.16+
 - Kubernetes Cluster Administration rights are required - we 
-  install [CustomResouseDefinitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) 
+  install [CustomResourceDefinitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) 
   and a ServiceAccount with ClusterRoles and RoleBindings.
 
 ## Installation requirements

@@ -22,7 +22,7 @@ Adding this at the global level will ensure all incoming requests are validated 
 in regard to request parameters and payload - if the request does not match the specified metadata a meaningful error
 is returned to the consumer without any request being forward to your actual API implementation.
 
-Another positive side-effect of this functionality is that it provides a "security-gate" for your API; malicious requests
+Another positive side effect of this functionality is that it provides a "security-gate" for your API; malicious requests
 that are outside your defined operations will not reach the target service where they could have done potential harm.
 
 See all available validation configuration options in the [Extension Reference](/reference/extension/#validation)

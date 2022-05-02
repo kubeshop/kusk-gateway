@@ -52,7 +52,7 @@ EOF
 Cert manager will react to the creation of this Certificate resource and produce for us a Kubernetes secret
 that contains the certificate that we can then use in Kusk Gateway to secure your endpoints with TLS.
 
-Lets fetch the list of secrets to confirm that our certificate was created
+Let's fetch the list of secrets to confirm that our certificate was created
 ```
 ❯ kubectl get secrets
 NAME                  TYPE                                  DATA   AGE
@@ -128,7 +128,7 @@ Now we can issue a `renew` command.
 Manually triggered issuance of Certificate default/selfsigned-cert
 ```
 
-This will mark the named secret for manual renewal by cert-manager and it should do so relatively quickly.
+This will mark the named secret for manual renewal by cert-manager, and it should do so relatively quickly.
 
 Use openssl again to check the updated certificate
 ```shell

@@ -12,7 +12,7 @@ Furthermore, two properties are available to distinguish to which of these an in
 
 Any of these properties can be specified at the root, path or operation level in your OpenAPI 
 definition, allowing you to route different operations differently, for example not all operations might be 
-handled by the same service, in which case your could define different upstream services accordingly.
+handled by the same service, in which case you could define different upstream services accordingly.
 
 ## Forwarding Requests to a Service in your Cluster
 

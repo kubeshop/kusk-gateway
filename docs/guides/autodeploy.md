@@ -6,12 +6,12 @@ you update deploy the corresponding Service to your cluster.
 
 The following annotations are available:
 
-| Name                                   | Description                                                                                          | Optional |
-|:---------------------------------------|:-----------------------------------------------------------------------------------------------------|---------|
-| `kusk-gateway/openapi-url`             | the absolute URL to the OpenAPI definition to deploy                                                 |         |
-| `kusk-gateway/envoy-fleet`             | which EnvoyFleet to use                                                                    | X       |
-| `kusk-gateway/path-prefix:`            | which path your API will be hosted at                                                      | X       |
-| `kusk-gateway/path-prefix-substitution`| what to substitue the prefix with when forwarding the request to the service              | X       |
+| Name                                    | Description                                                                   | Optional |
+|:----------------------------------------|:------------------------------------------------------------------------------|:--------:|
+| `kusk-gateway/openapi-url`              | the absolute URL to the OpenAPI definition to deploy                          |          |
+| `kusk-gateway/envoy-fleet`              | which EnvoyFleet to use                                                       |    X     |
+| `kusk-gateway/path-prefix:`             | which path your API will be hosted at                                         |    X     |
+| `kusk-gateway/path-prefix-substitution` | what to substitute the prefix with when forwarding the request to the service |    X     |
 
 For example, assuming that you have already set up a deployment that is running your REST API, you could deploy 
 the following Kubernetes Service: 

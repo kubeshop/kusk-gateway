@@ -90,6 +90,6 @@ $ curl EXTERNAL_IP/hello
 Hello from an implemented service!
 ```
 
-And now you have succesfully deployed an API! The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API to and later implemented the services and connected them to the API.
+And now you have successfully deployed an API! The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API to and later implemented the services and connected them to the API.
 
 You can also check the [Automatic API Deployment](reference/automatic-api-deployment.md) for a code-first (or service-first) approach. 
