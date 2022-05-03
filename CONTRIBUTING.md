@@ -7,7 +7,7 @@ https://github.com/firstcontributions/first-contributions
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the CNCF [code of conduct](CODE_OF_CONDUCT.md).
+This project and everyone participating in it is governed by the CNCF [code of conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md).
 
 ## Have questions or idea? 
 
@@ -28,7 +28,7 @@ We're trying hard to limit technical debt from the beginning so we defined simpl
 - Always use gofmt (there is only one true way of doing code formatting ;) ).
 - Follow golang good practices (proverbs) in your code.
 - Tests are your friend (we will target 80% CC in our code).
-- Use clean names, don't brake basic design patterns and rules.
+- Use clean names, don't break basic design patterns and rules.
 
 ### For infrastructure / Kubernetes based components
 
