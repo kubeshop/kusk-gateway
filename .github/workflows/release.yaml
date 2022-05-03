@@ -58,7 +58,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
-          build-args: TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+          build-args: TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
       -
         name: Docker metadata for Kusk Gateway Agent
         id: meta-kusk-gateway-agent
