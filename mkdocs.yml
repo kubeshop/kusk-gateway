@@ -43,7 +43,7 @@ nav:
     - Overview: customresources/overview.md
     - 'API': customresources/api.md
     - 'EnvoyFleet': customresources/envoyfleet.md
-    - 'Static Route': customresources/staticroute.md
+    - 'StaticRoute': customresources/staticroute.md
   - 'Reference':
     - OpenAPI Extension: reference/extension.md
     - Architecture: reference/architecture.md

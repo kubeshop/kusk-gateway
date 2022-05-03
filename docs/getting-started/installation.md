@@ -14,7 +14,7 @@ Tools needed for the installation:
 - [helm](https://helm.sh/docs/intro/install/) command-line tool
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
 
-## 1. Install Kusk Gateway
+## Installing Kusk Gateway
 ### 1. Install Kusk CLI 
 
 You can find other installation methods (like Homebrew) [here](../cli/overview.md).
@@ -31,11 +31,20 @@ Use the Kusk CLIs [install command](../cli/install-cmd.md) to install Kusk Gatew
 kusk install
 ```
 
- 
+### 3. Access the Dashboard
 
-## 2. Get the Gateway's External IP
+Kusk Gateway includes a [browser-based dashboard](../dashboard/overview.md) for inspection and management of your deployed APIs.
+Use the following commands to open it in your local browser after the above installation finishes.
 
-To get the External IP address of the Load Balancer run the command below command. Note that it may take a few seconds for the LoadBalancer IP to become available.
+```shell
+port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
+open http://localhost:8080
+```
+
+## Get the Gateway's External IP
+
+If you want to access the APIs or StaticRoutes managed by Kusk Gateway you can get the External IP address of the 
+Load Balancer by running the command below command. Note that it may take a few seconds for the LoadBalancer IP to become available.
 
 ```sh
 kubectl get svc -l "app.kubernetes.io/component=envoy-svc" --namespace kusk-system

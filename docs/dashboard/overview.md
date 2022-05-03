@@ -1,11 +1,13 @@
 # Kusk Dashboard
 
-Kusk Gateway includes a browser-based dashboard for inspecting deploying APIs, EnvoyFleets and StaticRoutes. For APIs
+Kusk Gateway includes a browser-based dashboard for inspecting deployed APIs, EnvoyFleets and StaticRoutes. For APIs
 it is also possible to dig into the underlying OpenAPI definition and make ad-hoc requests to the API using the 
 embedded Swagger-UI. 
 
 The dashboard is installed as part of the [Kusk Installation](../cli/install-cmd.md) and published using Kusk Gateway
-itself via a dedicated EnvoyFleet. After installing Kusk Gateway you can access the dashboard by running:
+itself via dedicated EnvoyFleet, StaticRoute and API resources (which you can all see in the dashboard itself). 
+
+After installing Kusk Gateway you can access the dashboard by running:
 
 ```shell
 port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80

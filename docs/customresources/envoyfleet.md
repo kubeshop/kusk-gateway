@@ -1,4 +1,4 @@
-# Envoy Fleet
+# EnvoyFleet
 
 This resource defines the EnvoyFleet, which is the implementation of the gateway in Kubernetes based on Envoy Proxy.
 
