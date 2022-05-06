@@ -42,7 +42,7 @@ func TestMockConfigSingleExample(t *testing.T) {
 	op := loadOperation(t, "testdata/example.yaml")
 	resp, err := m.GenerateMockResponse(op)
 	assert.NoError(t, err)
-	fmt.Printf("%#v", resp)
+	fmt.Printf("%#v", string(resp.MediaTypeData["application/json"]))
 
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "{\"completed\":true,\"order\":13,\"title\":\"Mocked JSON title\",\"url\":\"http://mockedURL.com\"}", string(resp.MediaTypeData["application/json"]))
@@ -54,8 +54,13 @@ func TestMockConfigMultipleExamples(t *testing.T) {
 	op := loadOperation(t, "testdata/examples.yaml")
 	resp, err := m.GenerateMockResponse(op)
 	assert.NoError(t, err)
-	fmt.Printf("%#v", resp)
+	fmt.Printf("%#v", string(resp.MediaTypeData["application/json"]))
 
 	assert.Equal(t, 200, resp.StatusCode)
+	expected := []string{
+		"{\"completed\":true,\"order\":12,\"title\":\"Mocked title #1\",\"url\":\"http://mockedURL.com\"}",
+		"{\"completed\":true,\"order\":13,\"title\":\"Mocked title #2\",\"url\":\"http://mockedURL.com\"}",
+	}
+	assert.Contains(t, expected, string(resp.MediaTypeData["application/json"]))
 	assert.NotEmpty(t, resp)
 }

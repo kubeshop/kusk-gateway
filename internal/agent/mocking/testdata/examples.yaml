@@ -46,15 +46,19 @@ paths:
                   - url
               examples:
                 first:
-                  title: "Mocked title #1"
-                  completed: true
-                  order: 12
-                  url: "http://mockedURL.com"
+                  summary: "first example"
+                  value:
+                    title: "Mocked title #1"
+                    completed: true
+                    order: 12
+                    url: "http://mockedURL.com"
                 second:
-                  title: "Mocked title #2"
-                  completed: true
-                  order: 13
-                  url: "http://mockedURL.com"
+                  summary: "second example"
+                  value:
+                    title: "Mocked title #2"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
       parameters:
         - name: id
           in: path

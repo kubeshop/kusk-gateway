@@ -95,7 +95,10 @@ func (m MockConfig) GenerateMockResponse(op *openapi3.Operation) (*MockResponse,
 				// Get only the first returned example.
 				// Note that this is not the stable order, sort it first if needed.
 				for _, value := range mediaTypeValue.Examples {
-					exampleContent = value
+					if value.Value == nil || value.Value.Value == nil {
+						continue
+					}
+					exampleContent = value.Value.Value
 					break
 				}
 			default:
