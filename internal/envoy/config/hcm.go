@@ -26,9 +26,11 @@ package config
 import (
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
@@ -40,6 +42,14 @@ type hcmBuilder struct {
 }
 
 func NewHCMBuilder() *hcmBuilder {
+	rl := &ratelimit.LocalRateLimit{
+		StatPrefix: "http_local_rate_limiter",
+	}
+
+	anyRateLimit, err := anypb.New(rl)
+	if err != nil {
+		panic(err)
+	}
 	return &hcmBuilder{
 		httpConnectionManager: &hcm.HttpConnectionManager{
 			CodecType:  hcm.HttpConnectionManager_AUTO,
@@ -51,6 +61,12 @@ func NewHCMBuilder() *hcmBuilder {
 				},
 			},
 			HttpFilters: []*hcm.HttpFilter{
+				{
+					Name: "envoy.filters.http.local_ratelimit",
+					ConfigType: &hcm.HttpFilter_TypedConfig{
+						TypedConfig: anyRateLimit,
+					},
+				},
 				{
 					Name: wellknown.CORS,
 				},

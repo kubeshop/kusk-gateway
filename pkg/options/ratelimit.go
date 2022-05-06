@@ -24,9 +24,11 @@ SOFTWARE.
 package options
 
 type RateLimitOptions struct {
-	RPS   uint32 `json:"rps,omitempty" yaml:"rps,omitempty"`
-	Burst uint32 `json:"burst,omitempty" yaml:"burst,omitempty"`
-	Group string `json:"group,omitempty" yaml:"group,omitempty"`
+	MaxTokens     uint32 `json:"max_tokens,omitEmpty" yaml:"max_tokens,omitempty"`
+	TokensPerFill uint32 `json:"tokens_per_fill,omitEmpty" yaml:"tokens_per_fill,omitempty"`
+	FillInterval  int64  `json:"fill_interval,omitEmpty" yaml:"fill_interval,omitempty"`
+	PerConnection bool   `json:"per_connection,omitEmpty" yaml:"per_connection,omitempty"`
+	ResponseCode  uint32 `yaml:"response_code,omitempty" json:"response_code,omitempty"`
 }
 
 func (o RateLimitOptions) Validate() error {

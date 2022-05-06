@@ -29,8 +29,11 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/getkin/kin-openapi/openapi3"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -107,6 +110,49 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				return err
 			}
 
+			var filterConf map[string]*anypb.Any
+			if finalOpts.RateLimit != nil {
+				rlOpt := finalOpts.RateLimit
+				rl := &ratelimit.LocalRateLimit{
+					StatPrefix: generateMockID(path, method, operation.OperationID),
+					Status: &envoy_type_v3.HttpStatus{
+						Code: envoy_type_v3.StatusCode(rlOpt.ResponseCode),
+					},
+					TokenBucket: &envoy_type_v3.TokenBucket{
+						MaxTokens: rlOpt.MaxTokens,
+						TokensPerFill: &wrapperspb.UInt32Value{
+							Value: rlOpt.TokensPerFill,
+						},
+						FillInterval: &durationpb.Duration{
+							Seconds: rlOpt.FillInterval,
+						},
+					},
+					FilterEnabled: &envoy_config_core_v3.RuntimeFractionalPercent{
+						DefaultValue: &envoy_type_v3.FractionalPercent{
+							Numerator:   100,
+							Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+						},
+						RuntimeKey: "local_rate_limit_enabled",
+					},
+					FilterEnforced: &envoy_config_core_v3.RuntimeFractionalPercent{
+						DefaultValue: &envoy_type_v3.FractionalPercent{
+							Numerator:   100,
+							Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+						},
+						RuntimeKey: "local_rate_limit_enforced",
+					},
+					Stage:                                 0,
+					LocalRateLimitPerDownstreamConnection: rlOpt.PerConnection,
+				}
+				anyRateLimit, err := anypb.New(rl)
+				if err != nil {
+					return err
+				}
+				filterConf = map[string]*anypb.Any{
+					"envoy.filters.http.local_ratelimit": anyRateLimit,
+				}
+			}
+
 			rt := &route.Route{
 				Name: generateRouteName(routePath, method),
 				Match: generateRouteMatch(
@@ -115,6 +161,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					extractParams(operation.Parameters),
 					corsPolicy,
 				),
+				TypedPerFilterConfig: filterConf,
 			}
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
@@ -242,6 +289,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
 					rewriteOpts = &finalOpts.Upstream.Rewrite
 				}
+
 				routeRoute, err := generateRoute(
 					clusterName,
 					corsPolicy,
@@ -328,13 +376,8 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 			// routeMatcher defines how we match a route by the provided path and the headers
 			rt := &route.Route{
-				Name: generateRouteName(routePath, strMethod),
-				Match: generateRouteMatch(
-					routePath,
-					string(method),
-					nil,
-					corsPolicy,
-				),
+				Name:  generateRouteName(routePath, strMethod),
+				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
 			}
 
 			if methodOpts.Redirect != nil {
