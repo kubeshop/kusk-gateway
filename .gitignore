@@ -26,3 +26,6 @@ testbin/
 
 # mkdocs built site
 /site
+
+.tmp/
+/.tmp/

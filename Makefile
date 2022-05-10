@@ -18,7 +18,7 @@ endif
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
-SHELL = /usr/bin/env bash -o pipefail
+SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)
@@ -55,7 +55,7 @@ deploy-envoyfleet: ## Deploy k8s resources for the single Envoy Fleet
 
 .PHONY: delete-env
 delete-env: ## Destroy the local development Minikube cluster
-	minikube delete --profile kgw	
+	minikube delete --profile kgw
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -87,15 +87,15 @@ goproxy: ## Starts local goproxy docker instance for the faster builds. Make sur
 .PHONY: docker-images-cache
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
 	docker pull gcr.io/distroless/static:nonroot
-	docker pull golang:1.17
+	docker pull docker.io/golang:1.17
 	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true golang:1.17
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17
 
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build manager and agent binary.
-	go build -o bin/manager -ldflags='$(LD_FLAGS)' cmd/manager/main.go 
+	go build -o bin/manager -ldflags='$(LD_FLAGS)' cmd/manager/main.go
 	go build -o bin/agent -ldflags='$(LD_FLAGS)' cmd/agent/main.go
 
 .PHONY: run
@@ -105,7 +105,7 @@ run: install-local generate fmt vet ## Run a controller from your host, proxying
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1  docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-agent
 docker-build-agent: ## Build docker image with the agent.
@@ -116,11 +116,11 @@ docker-build: docker-build-manager docker-build-agent ## Build docker images for
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY}  -f ./build/manager/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-agent-debug
 docker-build-agent-debug:  ## Build docker image with the agent and debugger.
-	@eval $$(SHELL=/bin/bash minikube docker-env --profile kgw) ;DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY}  -f ./build/agent/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile-debug .
 
 ##@ Deployment
 
