@@ -37,7 +37,7 @@ Kusk Gateway includes a [browser-based dashboard](../dashboard/overview.md) for 
 Use the following commands to open it in your local browser after the above installation finishes.
 
 ```shell
-port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
+kubectl port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
 open http://localhost:8080
 ```
 

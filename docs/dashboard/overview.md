@@ -10,7 +10,7 @@ itself via dedicated EnvoyFleet, StaticRoute and API resources (which you can al
 After installing Kusk Gateway you can access the dashboard by running:
 
 ```shell
-port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
+kubectl port-forward -n kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
 open http://localhost:8080/
 ```
 
