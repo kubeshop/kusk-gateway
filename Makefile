@@ -88,8 +88,8 @@ goproxy: ## Starts local goproxy docker instance for the faster builds. Make sur
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
 	docker pull gcr.io/distroless/static:nonroot
 	docker pull docker.io/golang:1.17
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot --profile kgw
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17 --profile kgw
 
 ##@ Build
 
