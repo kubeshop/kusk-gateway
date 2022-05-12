@@ -23,13 +23,20 @@ SOFTWARE.
 */
 package options
 
+import "fmt"
+
 type RateLimitOptions struct {
-	RPS   uint32 `json:"rps,omitempty" yaml:"rps,omitempty"`
-	Burst uint32 `json:"burst,omitempty" yaml:"burst,omitempty"`
-	Group string `json:"group,omitempty" yaml:"group,omitempty"`
+	RequestsPerUnit uint32 `json:"requests_per_unit,omitempty" yaml:"requests_per_unit,omitempty"`
+	Unit            string `json:"unit,omitempty" yaml:"unit,omitempty"`
+	PerConnection   bool   `json:"per_connection,omitempty" yaml:"per_connection,omitempty"`
+	ResponseCode    uint32 `yaml:"response_code,omitempty" json:"response_code,omitempty"`
 }
 
 func (o RateLimitOptions) Validate() error {
-	// TODO: write validations
+	switch o.Unit {
+	case "minute", "second", "hour":
+	default:
+		return fmt.Errorf("unsupported unit '%s', must be second, minute or hour", o.Unit)
+	}
 	return nil
 }

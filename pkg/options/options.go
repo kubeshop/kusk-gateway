@@ -72,6 +72,7 @@ type SubOptions struct {
 	Websocket  *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
 	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
 	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
+	RateLimit  *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -156,6 +157,10 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	// Mocking
 	if o.Mocking == nil && in.Mocking != nil {
 		o.Mocking = in.Mocking
+	}
+	// RateLimit
+	if o.RateLimit == nil && in.RateLimit != nil {
+		o.RateLimit = in.RateLimit
 	}
 
 	return
