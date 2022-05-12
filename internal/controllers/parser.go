@@ -550,10 +550,17 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 	case "hour":
 		seconds = 60 * 60
 	}
+
+	responseCode := rlOpt.ResponseCode
+	if responseCode == 0 {
+		// HTTP Status too many requests
+		responseCode = 429
+	}
+
 	rl := &ratelimit.LocalRateLimit{
 		StatPrefix: statPrefix,
 		Status: &envoy_type_v3.HttpStatus{
-			Code: envoy_type_v3.StatusCode(rlOpt.ResponseCode),
+			Code: envoy_type_v3.StatusCode(responseCode),
 		},
 		TokenBucket: &envoy_type_v3.TokenBucket{
 			MaxTokens: rlOpt.RequestsPerUnit,
