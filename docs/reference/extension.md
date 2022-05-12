@@ -65,6 +65,12 @@ x-kusk:
       - X-Custom-Header2
     max_age: 86200
   websocket: true
+
+  rate_limit:
+    requests_per_unit: 2
+    unit: minute
+    per_connection: false
+    response_code: 429
 ```
 
 Check out the [OpenAPI Extension Guide](../guides/working-with-extension.md) to learn how it can be used to configure operational aspects
@@ -215,3 +221,17 @@ The validation objects contains the following properties to configure automatic 
 See the [Guide on Mocking](../guides/mocking.md) to learn more about this functionality.
 
 Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
+
+### rate_limit
+
+The rate_limit object contains the following properties to configure request rate limiting:
+
+| Name                 | Description                    |
+|:---------------------|--------------------------------|
+| `rate_limit.requests_per_unit`    | how many requests API can handle per unit of time. |
+| `rate_limit.unit`                 | unit of time, can be one of the following: second, minute, hour . |
+| `rate_limit.per_connection`       | boolean flag, that specifies whether the rate limiting, should be applied per connection or in total. |
+| `rate_limit.response_code`        | HTTP response code, which is returned when rate limiting. Typically 429, Too Many Requests. |
+
+
+Note: currently `rate_limiting` is applied per Envoy process, which means that if you have more than a single Envoy deployed the total request capacity will be bigger than specified in the extension.
