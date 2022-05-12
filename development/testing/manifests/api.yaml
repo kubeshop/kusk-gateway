@@ -14,6 +14,11 @@ spec:
       version: 1.0.0
     x-kusk:
       hosts: [ "example.org", "example.com"]
+      rate_limit:
+        requests_per_unit: 2
+        unit: minute
+        per_connection: false
+        response_code: 429
       cors:
         origins:
           - 'http://example.org'

@@ -29,8 +29,11 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/getkin/kin-openapi/openapi3"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -242,6 +245,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
 					rewriteOpts = &finalOpts.Upstream.Rewrite
 				}
+
 				routeRoute, err := generateRoute(
 					clusterName,
 					corsPolicy,
@@ -257,6 +261,21 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
+				filterConf := map[string]*anypb.Any{}
+
+				if finalOpts.RateLimit != nil {
+					rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
+					anyRateLimit, err := anypb.New(rl)
+					if err != nil {
+						return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
+					}
+					filterConf = map[string]*anypb.Any{
+						"envoy.filters.http.local_ratelimit": anyRateLimit,
+					}
+
+				}
+				rt.TypedPerFilterConfig = filterConf
+
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
@@ -328,13 +347,8 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 			// routeMatcher defines how we match a route by the provided path and the headers
 			rt := &route.Route{
-				Name: generateRouteName(routePath, strMethod),
-				Match: generateRouteMatch(
-					routePath,
-					string(method),
-					nil,
-					corsPolicy,
-				),
+				Name:  generateRouteName(routePath, strMethod),
+				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
 			}
 
 			if methodOpts.Redirect != nil {
@@ -371,6 +385,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 			}
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
+
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
@@ -446,6 +461,10 @@ func generateMockID(path string, method string, operationID string) string {
 	return fmt.Sprintf("%s-%s-%s", path, method, operationID)
 }
 
+func generateRateLimitStatPrefix(host, path, method, operationID string) string {
+	return fmt.Sprintf("%s-%s-%s-%s", host, path, method, operationID)
+}
+
 // Can be moved to operationID, but generally we just need unique string
 func generateRouteName(path string, method string) string {
 	return fmt.Sprintf("%s-%s", path, strings.ToUpper(method))
@@ -519,4 +538,56 @@ func generateRoute(
 	}
 
 	return routeRoute, nil
+}
+
+func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratelimit.LocalRateLimit {
+	var seconds int64
+	switch rlOpt.Unit {
+	case "second":
+		seconds = 1
+	case "minute":
+		seconds = 60
+	case "hour":
+		seconds = 60 * 60
+	}
+
+	responseCode := rlOpt.ResponseCode
+	if responseCode == 0 {
+		// HTTP Status too many requests
+		responseCode = 429
+	}
+
+	rl := &ratelimit.LocalRateLimit{
+		StatPrefix: statPrefix,
+		Status: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode(responseCode),
+		},
+		TokenBucket: &envoy_type_v3.TokenBucket{
+			MaxTokens: rlOpt.RequestsPerUnit,
+			TokensPerFill: &wrapperspb.UInt32Value{
+				Value: rlOpt.RequestsPerUnit,
+			},
+			FillInterval: &durationpb.Duration{
+				Seconds: seconds,
+			},
+		},
+		FilterEnabled: &envoy_config_core_v3.RuntimeFractionalPercent{
+			DefaultValue: &envoy_type_v3.FractionalPercent{
+				Numerator:   100,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+			RuntimeKey: "local_rate_limit_enabled",
+		},
+		FilterEnforced: &envoy_config_core_v3.RuntimeFractionalPercent{
+			DefaultValue: &envoy_type_v3.FractionalPercent{
+				Numerator:   100,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+			RuntimeKey: "local_rate_limit_enforced",
+		},
+		Stage:                                 0,
+		LocalRateLimitPerDownstreamConnection: rlOpt.PerConnection,
+	}
+
+	return rl
 }

@@ -155,7 +155,10 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 	}
 
-	httpConnectionManagerBuilder := config.NewHCMBuilder()
+	httpConnectionManagerBuilder, err := config.NewHCMBuilder()
+	if err != nil {
+		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
+	}
 	if fleet.Spec.AccessLog != nil {
 		var accessLogBuilder *config.AccessLogBuilder
 		var err error
