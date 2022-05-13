@@ -63,15 +63,11 @@ func (o Options) Validate() error {
 		return err
 	}
 
-	fmt.Printf("o: %+v", o)
-
-	fmt.Print("***** MOCKING *****\n", o.Mocking)
 	// check if global options contains either mocking or an upstream service that covers all endpoints
 	if o.Mocking != nil {
 		return o.Mocking.Validate()
 	}
 
-	fmt.Print("***** Upstream *****\n", o.Upstream)
 	if o.Upstream != nil {
 		return o.Upstream.Validate()
 	}
