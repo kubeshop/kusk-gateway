@@ -122,7 +122,7 @@ func (a *APIValidator) Handle(ctx context.Context, req admission.Request) admiss
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	if err := apiObj.validate(); err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	return admission.Allowed("")
