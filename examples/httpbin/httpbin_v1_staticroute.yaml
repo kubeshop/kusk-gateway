@@ -3,6 +3,9 @@ kind: StaticRoute
 metadata:
   name: httpbin-sample
 spec:
+  fleet:
+    name: default
+    namespace: default
   # should work with localhost, example.org
   hosts: [ "localhost", "*"]
   paths:

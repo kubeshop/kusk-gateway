@@ -73,6 +73,7 @@ type SubOptions struct {
 	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
 	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 	RateLimit  *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
+	OAuth      *OAuthOptions      `json:"oauth,omitempty" yaml:"oauth,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
