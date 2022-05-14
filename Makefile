@@ -21,7 +21,8 @@ endif
 SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)
+LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$(GA_ID)
+LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(GA_SECRET)
 
 .PHONY: all
 all: build
