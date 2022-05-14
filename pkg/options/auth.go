@@ -23,8 +23,6 @@ SOFTWARE.
 */
 package options
 
-import "fmt"
-
 type OAuthOptions struct {
 	AuthScopes            []string    `json:"auth_scopes,omitempty" yaml:"auth_scopes,omitempty"`
 	Credentials           Credentials `json:"unit,omitempty" yaml:"unit,omitempty"`
@@ -61,10 +59,5 @@ type Secret struct {
 }
 
 func (o OAuthOptions) Validate() error {
-	switch o.Unit {
-	case "minute", "second", "hour":
-	default:
-		return fmt.Errorf("unsupported unit '%s', must be second, minute or hour", o.Unit)
-	}
 	return nil
 }
