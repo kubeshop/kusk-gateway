@@ -40,7 +40,7 @@ func LoggerMiddleware(l *zap.Logger, next http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				l.Error("Panic",
-					zap.String("path", escapeForLog(r.URL.EscapedPath())),
+					zap.String("path", escapeForLog(r.URL.Path)),
 					zap.Any("error", err),
 					zap.ByteString("trace", debug.Stack()),
 				)
@@ -49,9 +49,10 @@ func LoggerMiddleware(l *zap.Logger, next http.Handler) http.Handler {
 		startTime := time.Now()
 		wrapped := wrapResponseWriter(w)
 		next.ServeHTTP(wrapped, r)
+
 		// Read the response and log the results
 		l.Info("Served",
-			zap.String("path", escapeForLog(r.URL.EscapedPath())),
+			zap.String("path", escapeForLog(r.URL.Path)),
 			zap.Duration("duration", time.Since(startTime)),
 			zap.Int("size", wrapped.size),
 			zap.Int("status", wrapped.status),
