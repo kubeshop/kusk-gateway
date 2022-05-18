@@ -1,25 +1,26 @@
-.DEFAULT_GOAL 					:= all
-MAKEFLAGS 							+= --environment-overrides --warn-undefined-variables # --print-directory --no-builtin-rules --no-builtin-variables
+.DEFAULT_GOAL := all
+MAKEFLAGS += --environment-overrides --warn-undefined-variables # --print-directory --no-builtin-rules --no-builtin-variables
 
 # Add bin to the PATH
-export PATH 						:= $(shell pwd)/bin:$(PATH)
-BINARIES_DIR 						:= $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/bin
-KUSTOMIZE 							:= ${BINARIES_DIR}/kustomize
-CONTROLLER_GEN 					:= ${BINARIES_DIR}/controller-gen
-PROTOC 									:= ${BINARIES_DIR}/protoc/bin/protoc
-PROTOC_GEN_GO						:= ${BINARIES_DIR}/protoc-gen-go
-PROTOC_GEN_GO_GRPC 			:= ${BINARIES_DIR}/protoc-gen-go-grpc
-ENVTEST									:= ${BINARIES_DIR}/setup-envtest
-KTUNNEL 								:= ${BINARIES_DIR}/ktunnel
+export PATH := $(shell pwd)/bin:$(PATH)
+BINARIES_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/bin
+KUSTOMIZE := ${BINARIES_DIR}/kustomize
+CONTROLLER_GEN := ${BINARIES_DIR}/controller-gen
+PROTOC := ${BINARIES_DIR}/protoc/bin/protoc
+PROTOC_GEN_GO := ${BINARIES_DIR}/protoc-gen-go
+PROTOC_GEN_GO_GRPC := ${BINARIES_DIR}/protoc-gen-go-grpc
+ENVTEST := ${BINARIES_DIR}/setup-envtest
+KTUNNEL := ${BINARIES_DIR}/ktunnel
 
 VERSION ?= $(shell git describe --tags)
 
 # Image URL to use all building/pushing image targets
-MANAGER_IMG 						?= kusk-gateway:dev
-AGENT_IMG 							?= kusk-gateway-agent:dev
+IMAGE_TAG ?= dev
+MANAGER_IMG ?= kusk-gateway:${IMAGE_TAG}
+AGENT_IMG ?= kusk-gateway-agent:${IMAGE_TAG}
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION			:= 1.22
+ENVTEST_K8S_VERSION := 1.22
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
