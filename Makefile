@@ -1,14 +1,25 @@
+.DEFAULT_GOAL 					:= all
+MAKEFLAGS 							+= --environment-overrides --warn-undefined-variables # --print-directory --no-builtin-rules --no-builtin-variables
+
 # Add bin to the PATH
-export PATH := $(shell pwd)/bin:$(PATH)
+export PATH 						:= $(shell pwd)/bin:$(PATH)
+BINARIES_DIR 						:= $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/bin
+KUSTOMIZE 							:= ${BINARIES_DIR}/kustomize
+CONTROLLER_GEN 					:= ${BINARIES_DIR}/controller-gen
+PROTOC 									:= ${BINARIES_DIR}/protoc/bin/protoc
+PROTOC_GEN_GO						:= ${BINARIES_DIR}/protoc-gen-go
+PROTOC_GEN_GO_GRPC 			:= ${BINARIES_DIR}/protoc-gen-go-grpc
+ENVTEST									:= ${BINARIES_DIR}/setup-envtest
+KTUNNEL 								:= ${BINARIES_DIR}/ktunnel
 
 VERSION ?= $(shell git describe --tags)
 
 # Image URL to use all building/pushing image targets
-MANAGER_IMG ?= kusk-gateway:dev
-AGENT_IMG ?= kusk-gateway-agent:dev
+MANAGER_IMG 						?= kusk-gateway:dev
+AGENT_IMG 							?= kusk-gateway-agent:dev
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.22
+ENVTEST_K8S_VERSION			:= 1.22
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -26,6 +37,8 @@ SHELL 			= /usr/bin/env bash -o pipefail
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$(GA_ID)
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(GA_SECRET)
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
+
+export DOCKER_BUILDKIT 	?=	1
 
 .PHONY: all
 all: build
@@ -62,11 +75,11 @@ delete-env: ## Destroy the local development Minikube cluster
 	minikube delete --profile kgw
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen agent-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) agent-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -78,12 +91,13 @@ vet: ## Run go vet against code.
 	go vet $(shell go list ./... | grep -v /examples/)
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: testing
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
+
 .PHONY: goproxy
 goproxy: ## Starts local goproxy docker instance for the faster builds. Make sure to set your shell environment variable (e.g. put into .bashrc "export GOPROXY=http://<your_ip_address>:8085".
 	cd development/goproxy && docker-compose up --detach
@@ -103,28 +117,28 @@ build: generate fmt vet ## Build manager and agent binary.
 	go build -o bin/agent -ldflags='$(LD_FLAGS)' cmd/agent/main.go
 
 .PHONY: run
-run: install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
+run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
 	go build -o bin/manager cmd/manager/main.go
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build-agent
 docker-build-agent: ## Build docker image with the agent.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t ${AGENT_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); docker build -t ${AGENT_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager docker-build-agent ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
 
 .PHONY: docker-build-agent-debug
 docker-build-agent-debug:  ## Build docker image with the agent and debugger.
-	@eval $$(minikube docker-env --profile kgw); DOCKER_BUILDKIT=1 docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -133,29 +147,29 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install-local
-install-local: manifests kustomize ## Install CRDs and Envoy into the K8s cluster specified in ~/.kube/config.
+install-local: manifests $(KUSTOMIZE) ## Install CRDs and Envoy into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/local | kubectl apply -f -
 	kubectl -n kusk-system wait --for condition=established --timeout=60s crd/envoyfleet.gateway.kusk.io
 	kubectl -n kusk-system apply -f config/samples/gateway_v1_envoyfleet.yaml
 
 .PHONY: uninstall-local
-uninstall-local: manifests kustomize ## Uninstall CRDs and Envoy from the K8s cluster specified in ~/.kube/config.
+uninstall-local: manifests $(KUSTOMIZE) ## Uninstall CRDs and Envoy from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/local | kubectl delete -f -
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: manifests $(KUSTOMIZE) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: deploy-debug
-deploy-debug: manifests kustomize ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
+deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/debug | kubectl apply -f -
 
 .PHONY: undeploy
@@ -180,64 +194,48 @@ cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up th
 .PHONY: cycle-envoy
 cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
 	kubectl rollout restart deployment/kgw-envoy-default -n default
-	-kubectl rollout restart deployment/kgw-envoy-testing -n testing
+	kubectl rollout restart deployment/kgw-envoy-testing -n testing || echo 'rollout restart failed'
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
-.PHONY: controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)
+$(KUSTOMIZE): ## Download kustomize locally if necessary.
+	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.4
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
-.PHONY: kustomize
-kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.4)
+$(CONTROLLER_GEN): ## Download controller-gen locally if necessary.
+	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
 
 # Protoc and friends installation and generation
-PROTOC_GEN_GO := $(shell pwd)/bin/protoc-gen-go
-PROTOC_GEN_GO_GRPC := $(shell pwd)/bin/protoc-gen-go-grpc
-
-PROTOC := $(shell pwd)/bin/protoc/bin/protoc
 $(PROTOC):
 	$(call install-protoc)
 
 $(PROTOC_GEN_GO):
 	@echo "[INFO]: Installing protobuf go generation plugin."
-	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1)
+	GOBIN=${BINARIES_DIR} go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
 
 $(PROTOC_GEN_GO_GRPC):
 	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
-	$(call go-get-tool,$(PROTOC_GEN_GO_GRPC),google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0)
+	GOBIN=${BINARIES_DIR} go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+# Envtest
+$(ENVTEST): ## Download envtest-setup locally if necessary.
+	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+$(KTUNNEL):
+	GOBIN=${BINARIES_DIR} go install github.com/omrikiei/ktunnel@v1.4.7
 
 .PHONY: agent-management-compile
 agent-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for agent/management
 	cd "internal/agent/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
 
-# Envtest
-ENVTEST = $(shell pwd)/bin/setup-envtest
-.PHONY: envtest
-envtest: ## Download envtest-setup locally if necessary.
-	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
 run-docs:
 	docker-compose -f docs/docker-compose.yml up
-# go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
+
+.PHONY: tools
+tools: $(KTUNNEL) $(ENVTEST) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_GO) $(PROTOC) $(CONTROLLER_GEN) $(KUSTOMIZE) ## Install all tools
 
 define install-protoc
 @[ -f "${PROTOC}" ] || { \
 set -e ;\
-echo "[INFO] Installing protoc compiler to ${PROJECT_DIR}/bin/protoc" ;\
+echo "[INFO] Installing protoc compiler to ${BINARIES_DIR}/protoc" ;\
+mkdir -pv "${BINARIES_DIR}/" ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 PB_REL="https://github.com/protocolbuffers/protobuf/releases" ;\
@@ -245,7 +243,7 @@ VERSION=3.19.4 ;\
 if [ "$$(uname)" == "Darwin" ];then FILENAME=protoc-$${VERSION}-osx-x86_64.zip ;fi ;\
 if [ "$$(uname)" == "Linux" ];then FILENAME=protoc-$${VERSION}-linux-x86_64.zip;fi ;\
 echo "Downloading $${FILENAME} to $${TMP_DIR}" ;\
-curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d ${PROJECT_DIR}/bin/protoc ; \
+curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d ${BINARIES_DIR}/protoc ; \
 rm -rf $${TMP_DIR} ;\
 }
 endef
