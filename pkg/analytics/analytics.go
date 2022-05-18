@@ -36,6 +36,7 @@ import (
 	"strings"
 
 	"github.com/denisbrodbeck/machineid"
+	kuskBuild "github.com/kubeshop/kusk-gateway/pkg/build"
 )
 
 const (
@@ -60,6 +61,7 @@ func SendAnonymousInfo(event string) error {
 					AppName:          "kusk-gateway",
 					CustomDimensions: event,
 					DataSource:       "gateway",
+					AppVersion:       kuskBuild.Version,
 				},
 			},
 		},
@@ -86,6 +88,7 @@ func SendAnonymousCMDInfo() error {
 					EventCategory:    "beacon",
 					AppName:          "kusk-cli",
 					CustomDimensions: strings.Join(command, " "),
+					AppVersion:       kuskBuild.Version,
 				},
 			}},
 	}
