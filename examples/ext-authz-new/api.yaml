@@ -1,7 +1,7 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
-  name: ext-authz-http-service
+  name: ext-authz
 spec:
   fleet:
     name: default
@@ -10,8 +10,8 @@ spec:
   spec: |
     openapi: 3.0.0
     info:
-      title: ext-authz-http-service
-      description: ext-authz-http-service
+      title: ext-authz
+      description: ext-authz
       version: '0.0.1'
     schemes:
     - http
@@ -21,11 +21,11 @@ spec:
         scheme: basic
         auth-upstream:
           host:
-            hostname: ext-authz-http-service
+            hostname: ext-authz-http-basic-auth
             port: 80
       upstream:
         service:
-          name: httpbin
+          name: ext-authz-httpbin
           namespace: default
           port: 80
     paths:

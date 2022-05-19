@@ -3,21 +3,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: ext-authz-http-service
-  name: ext-authz-http-service
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ext-authz-http-service
+      app: ext-authz-http-basic-auth
   template:
     metadata:
       labels:
-        app: ext-authz-http-service
+        app: ext-authz-http-basic-auth
     spec:
       containers:
-        - image: docker.io/kubeshop/kusk-ext-authz-http-service
-          name: ext-authz-http-service
+        - name: ext-authz-http-basic-auth
+          image: docker.io/kubeshop/kusk-ext-authz-http-service
           ports:
             - containerPort: 9002
 ---
@@ -25,30 +25,30 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: ext-authz-http-service
-  name: ext-authz-http-service
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
 spec:
   ports:
     - port: 80
       targetPort: 9002
   selector:
-    app: ext-authz-http-service
+    app: ext-authz-http-basic-auth
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-authz-httpbin
+  name: ext-authz-httpbin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpbin
+      app: ext-authz-httpbin
   template:
     metadata:
       labels:
-        app: httpbin
+        app: ext-authz-httpbin
     spec:
       containers:
         - image: docker.io/kennethreitz/httpbin
@@ -60,12 +60,12 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-authz-httpbin
+  name: ext-authz-httpbin
 spec:
   ports:
     - port: 80
       targetPort: 80
   selector:
-    app: httpbin
+    app: ext-authz-httpbin
 ---
