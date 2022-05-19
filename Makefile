@@ -45,6 +45,10 @@ LD_FLAGS += -s -w
 
 export DOCKER_BUILDKIT 	?=	1
 
+# or set to `kind`
+KUBERNETES_PROVIDER ?= minikube
+$(info KUBERNETES_PROVIDER=${KUBERNETES_PROVIDER})
+
 .PHONY: all
 all: build
 
@@ -109,10 +113,19 @@ testing: ## Run the integration tests from development/testing and then delete t
 
 .PHONY: docker-images-cache
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
+	$(info KUBERNETES_PROVIDER=${KUBERNETES_PROVIDER})
+ifeq ($(KUBERNETES_PROVIDER),minikube)
 	docker pull gcr.io/distroless/static:nonroot
 	docker pull docker.io/golang:1.17
 	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot --profile kgw
 	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17 --profile kgw
+endif
+ifeq ($(KUBERNETES_PROVIDER),kind)
+	docker pull gcr.io/distroless/static:nonroot
+	docker pull docker.io/golang:1.17
+	kind load docker-image gcr.io/distroless/static:nonroot --name kusk
+	kind load docker-image docker.io/golang:1.17 --name kusk
+endif
 
 ##@ Build
 
