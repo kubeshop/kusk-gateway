@@ -51,7 +51,7 @@ spec:
         app: httpbin
     spec:
       containers:
-        - image: docker.io/kennethreitz/httpbin
+        - image: kennethreitz/httpbin
           name: httpbin
 ---
 apiVersion: v1
