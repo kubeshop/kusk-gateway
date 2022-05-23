@@ -11,7 +11,8 @@ ARG GOPROXY
 ENV GOPROXY=$GOPROXY
 RUN go mod download
 
-ARG TELEMETRY_TOKEN
+ARG GA_ID
+ARG GA_SECRET
 
 # Copy the go source
 COPY . .
