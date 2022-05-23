@@ -14,10 +14,11 @@ RUN go mod download
 # Copy the go source
 COPY . .
 
-ARG TELEMETRY_TOKEN
+ARG GA_ID
+ARG GA_SECRET
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$TELEMETRY_TOKEN" -o agent cmd/agent/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$GA_ID -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$GA_SECRET" -o agent cmd/agent/main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
