@@ -26,8 +26,9 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    service: simple-api-service
-    namespace: default
+    service:
+      name: simple-api-service
+      namespace: default
 ..
 ```
 
@@ -42,17 +43,19 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    service: simple-api-service
-    namespace: default
-    port: 8001
+    service: 
+      name: simple-api-service
+      namespace: default
+      port: 8001
 path:
   /someoperation:
     get:
       operationId: doSomething
       x-kusk:
         upstream:
-          service: another-service
-          port: 8080
+          service:
+            name: another-service
+            port: 8080
 ..
 ```
 
@@ -69,8 +72,9 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    host: simple-api-service-hostname
-    port: 8001
+    host:
+      hostname: simple-api-service-hostname
+      port: 8001
 ..
 ```
 
@@ -83,16 +87,18 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    host: simple-api-service-hostname
-    port: 8001
+    host:
+      hostname: simple-api-service-hostname
+      port: 8001
 path:
   /someoperation:
     get:
       operationId: doSomething
       x-kusk:
         upstream:
-          service: another-service
-          port: 8080
+          service:
+            name: another-service
+            port: 8080
 ..
 ```
 
@@ -182,8 +188,9 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    host: simple-api-service-hostname
-    port: 8001
+    host:
+      hostname: simple-api-service-hostname
+      port: 8001
 path:
   /someoperation:
     get:
@@ -260,8 +267,9 @@ info:
   version: 0.1.0
 x-kusk:
   upstream:
-    host: simple-api-service-hostname
-    port: 8001
+    host:
+      hostname: simple-api-service-hostname
+      port: 8001
 path:
   /someoperation:
     get:

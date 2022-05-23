@@ -45,6 +45,12 @@ type UpstreamOptions struct {
 	Rewrite RewriteRegex `yaml:"rewrite,omitempty" json:"rewrite,omitempty"`
 }
 
+func (o *UpstreamOptions) FillDefaults() {
+	if o.Service != nil {
+		o.Service.FillDefaults()
+	}
+}
+
 // UpstreamHost defines any DNS hostname with port that we can proxy to, even outside of the cluster
 type UpstreamHost struct {
 	// Hostname is the upstream hostname, without port.
@@ -72,6 +78,17 @@ func (o UpstreamHost) Validate() error {
 		v.Field(&o.Port, v.Min(uint32(1)), v.Max(uint32(65356)), v.Required),
 	)
 }
+
+func (o *UpstreamService) FillDefaults() {
+	if o.Namespace == "" {
+		o.Namespace = "default"
+	}
+
+	if o.Port == 0 {
+		o.Port = 80
+	}
+}
+
 func (o UpstreamService) Validate() error {
 	return v.ValidateStruct(&o,
 		v.Field(&o.Name, is.DNSName, v.Required),

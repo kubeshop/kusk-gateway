@@ -49,13 +49,46 @@ func (o *Options) FillDefaults() {
 	if len(o.Hosts) == 0 {
 		o.Hosts = append(o.Hosts, "*")
 	}
+
+	if o.Upstream != nil {
+		o.Upstream.FillDefaults()
+	}
 }
 
 func (o Options) Validate() error {
-	return v.ValidateStruct(&o,
+	if err := v.ValidateStruct(&o,
 		v.Field(&o.Hosts, v.Each()),
 		v.Field(&o.OperationFinalSubOptions, v.Each()),
-	)
+	); err != nil {
+		return err
+	}
+
+	// check if global options contains either mocking or an upstream service that covers all endpoints
+	if o.Mocking != nil {
+		return o.Mocking.Validate()
+	}
+
+	if o.Upstream != nil {
+		return o.Upstream.Validate()
+	}
+
+	// if we get here, it means there aren't global options contains either mocking or an upstream service that covers all endpoints
+	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
+	for pathAndMethod, op := range o.OperationFinalSubOptions {
+		if op.Mocking != nil {
+			return o.Mocking.Validate()
+		}
+
+		if op.Upstream != nil {
+			return o.Upstream.Validate()
+		}
+
+		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
+		// global upstream service or mocking config, so return an error
+		return fmt.Errorf("no upstream or mocking configuration found for path %s", pathAndMethod)
+	}
+
+	return nil
 }
 
 // SubOptions allow user to overwrite certain options at path/operation level using x-kusk extension
@@ -162,6 +195,4 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.RateLimit == nil && in.RateLimit != nil {
 		o.RateLimit = in.RateLimit
 	}
-
-	return
 }

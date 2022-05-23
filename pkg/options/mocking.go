@@ -24,7 +24,7 @@ SOFTWARE.
 package options
 
 type MockingOptions struct {
-	Enabled *bool `json:"enabled" yaml:"mocking"`
+	Enabled *bool `json:"enabled" yaml:"enabled"`
 }
 
 func (o MockingOptions) Validate() error {
