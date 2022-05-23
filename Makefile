@@ -1,6 +1,8 @@
 # Add bin to the PATH
 export PATH := $(shell pwd)/bin:$(PATH)
 
+VERSION ?= $(shell git describe --tags)
+
 # Image URL to use all building/pushing image targets
 MANAGER_IMG ?= kusk-gateway:dev
 AGENT_IMG ?= kusk-gateway-agent:dev
@@ -22,6 +24,7 @@ SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)
+LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
 
 .PHONY: all
 all: build
@@ -186,7 +189,7 @@ controller-gen: ## Download controller-gen locally if necessary.
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.4)
 
 # Protoc and friends installation and generation
 PROTOC_GEN_GO := $(shell pwd)/bin/protoc-gen-go
