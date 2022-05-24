@@ -34,9 +34,9 @@ endif
 SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$(GA_ID)
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(GA_SECRET)
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=${GA_ID}'
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=${GA_SECRET}'
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
 
 export DOCKER_BUILDKIT 	?=	1
 
@@ -105,9 +105,9 @@ goproxy: ## Starts local goproxy docker instance for the faster builds. Make sur
 .PHONY: docker-images-cache
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
 	docker pull gcr.io/distroless/static:nonroot
-	docker pull docker.io/golang:1.17
+	docker pull docker.io/library/golang:1.18
 	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot --profile kgw
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17 --profile kgw
+	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/library/golang:1.18 --profile kgw
 
 ##@ Build
 
