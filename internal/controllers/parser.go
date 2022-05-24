@@ -24,13 +24,10 @@ SOFTWARE.
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/clbanning/mxj"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
@@ -41,11 +38,12 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
+	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
@@ -71,7 +69,7 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mockingConfiguration *mocking.MockConfig, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -89,6 +87,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 	// TODO: fetch kusk gateway validator service dynamically
 	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
 	var validatorPort uint32 = 17000
+
+	// var routesToAddToVirtualHosts []*route.Route
 
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -114,7 +114,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 			}
 
 			rt := &route.Route{
-				Name: generateRouteName(routePath, method),
+				Name: types.GenerateRouteName(routePath, method),
 				Match: generateRouteMatch(
 					routePath,
 					method,
@@ -149,173 +149,43 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					// Note that we don't handle wildcards, e.g. '2xx' - this is allowed in OpenAPI, but we need the exact status code.
 					statusCode, err := strconv.Atoi(respCode)
 					if err != nil {
-						// return nil, fmt.Errorf("cannot convert the response code %s to int: %w", respCode, err)
-						continue
-					}
-
-					rt := &route.Route{
-						Name: generateRouteName(routePath, method),
-						Match: generateRouteMatch(
-							routePath,
-							method,
-							extractParams(operation.Parameters),
-							nil,
-						),
-					}
-
-					rt.Action = &route.Route_DirectResponse{
-						DirectResponse: &route.DirectResponseAction{
-							Status: uint32(statusCode),
-						},
+						return fmt.Errorf("cannot convert the response code %s to int: %w", respCode, err)
 					}
 
 					for mediaType, mediaTypeValue := range respRef.Value.Content {
-						var exampleContent interface{}
-						switch {
-						case mediaTypeValue.Example != nil:
-							exampleContent = mediaTypeValue.Example
-						case mediaTypeValue.Examples != nil:
-							// Get only the first returned example.
-							// Note that this is not the stable order, sort it first if needed.
-							for _, value := range mediaTypeValue.Examples {
-								if value.Value == nil || value.Value.Value == nil {
-									continue
-								}
-								exampleContent = value.Value.Value
-								break
-							}
-						default:
-							// no example nor examples are present, skip this
+						exampleContent := parseSpec.GetExampleResponse(mediaTypeValue)
+						if exampleContent == nil {
 							continue
 						}
 
-						var (
-							JsonMediaTypePattern = regexp.MustCompile("^application/.*json$")
-							XmlMediaTypePattern  = regexp.MustCompile("^application/.*xml$")
-							TextMediaTypePattern = regexp.MustCompile("^text/.*$")
-						)
-						switch {
-						case JsonMediaTypePattern.MatchString(mediaType):
-							j, err := json.Marshal(exampleContent)
-							if err != nil {
-								return err
-							}
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(mediaType)
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
 
-							rt.Action = &route.Route_DirectResponse{
-								DirectResponse: &route.DirectResponseAction{
-									Status: uint32(statusCode),
-									Body: &envoy_config_core_v3.DataSource{
-										Specifier: &envoy_config_core_v3.DataSource_InlineString{
-											InlineString: string(j),
-										},
-									},
-								},
-							}
+						// if there are more examples of different content types, require headers
+						// to differentiate which should be returned
+						requireAcceptHeader := len(respRef.Value.Content) > 1
+						rt, err = mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+							RoutePath:           routePath,
+							Method:              method,
+							StatusCode:          uint32(statusCode),
+							ExampleContent:      exampleContent,
+							RequireAcceptHeader: requireAcceptHeader,
+						})
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
 
-						case XmlMediaTypePattern.MatchString(mediaType):
-							var xmlBytes []byte
-							var err error
-							if object, isObject := exampleContent.(map[string]interface{}); isObject {
-								xml := mxj.Map(object)
-								xmlBytes, err = xml.Xml()
-							} else {
-								xmlBytes, err = mxj.AnyXml(exampleContent, "root")
+						for _, vh := range opts.Hosts {
+							if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+								return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 							}
-							if err != nil {
-								return err
-							}
-							rt.Action = &route.Route_DirectResponse{
-								DirectResponse: &route.DirectResponseAction{
-									Status: uint32(statusCode),
-									Body: &envoy_config_core_v3.DataSource{
-										Specifier: &envoy_config_core_v3.DataSource_InlineString{
-											InlineString: string(xmlBytes),
-										},
-									},
-								},
-							}
-
-						case TextMediaTypePattern.MatchString(mediaType):
-							if bytes, ok := exampleContent.([]byte); ok {
-								rt.Action = &route.Route_DirectResponse{
-									DirectResponse: &route.DirectResponseAction{
-										Status: uint32(statusCode),
-										Body: &envoy_config_core_v3.DataSource{
-											Specifier: &envoy_config_core_v3.DataSource_InlineString{
-												InlineString: string(bytes),
-											},
-										},
-									},
-								}
-							} else if s, ok := exampleContent.(string); ok {
-								rt.Action = &route.Route_DirectResponse{
-									DirectResponse: &route.DirectResponseAction{
-										Status: uint32(statusCode),
-										Body: &envoy_config_core_v3.DataSource{
-											Specifier: &envoy_config_core_v3.DataSource_InlineString{
-												InlineString: s,
-											},
-										},
-									},
-								}
-							} else if s, ok := exampleContent.(fmt.Stringer); ok {
-								// If it can't just be converted to string explicitly, call String method for that type if present.
-								rt.Action = &route.Route_DirectResponse{
-									DirectResponse: &route.DirectResponseAction{
-										Status: uint32(statusCode),
-										Body: &envoy_config_core_v3.DataSource{
-											Specifier: &envoy_config_core_v3.DataSource_InlineString{
-												InlineString: s.String(),
-											},
-										},
-									},
-								}
-							} else {
-								return fmt.Errorf("cannot serialise %s into string", exampleContent)
-							}
-						default:
-							return fmt.Errorf("unsupported format type %s", mediaType)
 						}
 					}
 				}
 
-			// 	clusterName := "AgentHTTPService"
-			// 	if !envoyConfiguration.ClusterExist(clusterName) {
-			// 		envoyConfiguration.AddCluster(clusterName, agentHTTPServer.ServerHostname, agentHTTPServer.ServerPort)
-			// 	}
-
-			// 	// We don't support websockets during mocking, disable it if inherited.
-			// 	websocketEnabled := false
-			// 	routeRoute, err := generateRoute(
-			// 		clusterName,
-			// 		corsPolicy,
-			// 		nil,
-			// 		finalOpts.QoS,
-			// 		&websocketEnabled,
-			// 	)
-			// 	if err != nil {
-			// 		return fmt.Errorf("cannot generage route for path %s operation %s: %w", path, method, err)
-			// 	}
-			// 	rt.Action = routeRoute
-
-			// 	// Create MockingID.
-			// 	// Note: this is not unique - 2 and more API files can declare the same path/method/OperationID but with the different vhosts.
-			// 	mockID := generateMockID(path, method, operation.OperationID)
-			// 	rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-			// 		Header: &envoy_config_core_v3.HeaderValue{
-			// 			Key:   agentHTTPServer.HeaderMockID,
-			// 			Value: mockID,
-			// 		},
-			// 		Append: wrapperspb.Bool(false),
-			// 	})
-			// 	mockResponse, err := mockingConfiguration.GenerateMockResponse(operation)
-			// 	if err != nil {
-			// 		return fmt.Errorf("cannot generate mock response for path %s operation %s: %w", path, method, err)
-			// 	}
-			// 	// Finally, add the mock response to the whole mock configuration with the mockID
-			// 	if err := mockingConfiguration.AddMockResponse(mockID, mockResponse); err != nil {
-			// 		return fmt.Errorf("failure setting mock with ID %s: %w", mockID, err)
-			// 	}
+				return nil
 
 			// // Validate and Proxy to the upstream
 			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
@@ -488,7 +358,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 			// routeMatcher defines how we match a route by the provided path and the headers
 			rt := &route.Route{
-				Name:  generateRouteName(routePath, strMethod),
+				Name:  types.GenerateRouteName(routePath, strMethod),
 				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
 			}
 
@@ -604,11 +474,6 @@ func generateMockID(path string, method string, operationID string) string {
 
 func generateRateLimitStatPrefix(host, path, method, operationID string) string {
 	return fmt.Sprintf("%s-%s-%s-%s", host, path, method, operationID)
-}
-
-// Can be moved to operationID, but generally we just need unique string
-func generateRouteName(path string, method string) string {
-	return fmt.Sprintf("%s-%s", path, strings.ToUpper(method))
 }
 
 func generateRoutePath(prefix, path string) string {

@@ -39,13 +39,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
+	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
-
-	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
-	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 )
 
 const (
@@ -112,7 +111,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, mockingConfig, c.Validator, opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
