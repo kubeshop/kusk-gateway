@@ -39,8 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
-	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -57,7 +55,6 @@ type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	EnvoyManager *manager.EnvoyConfigManager
-	AgentManager *agentManagement.ConfigManager
 	Validator    *validation.Proxy
 	m            sync.Mutex
 
@@ -84,7 +81,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	envoyConfig := config.New()
 
-	mockingConfig := mocking.NewMockConfig()
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs for the fleet", "fleet", fleetIDstr)
 
@@ -237,8 +233,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	l.Info("Configuration snapshot was generated for the fleet", "fleet", fleetIDstr)
-	// Agent config is applied first to make Agent ready for the new Envoy routes
-	c.AgentManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to apply snapshot: %w", err)

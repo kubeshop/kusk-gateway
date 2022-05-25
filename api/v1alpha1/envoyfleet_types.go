@@ -82,21 +82,6 @@ type EnvoyFleetSpec struct {
 	// TLS configuration
 	//+optional
 	TLS TLS `json:"tls,omitempty"`
-
-	// Agent sidecar configuration
-	//+optional
-	Agent *AgentSpec `json:"agent,omitempty"`
-}
-
-type AgentSpec struct {
-	// Agent sidecar image tag.
-	// If empty (most of the cases) - will be detected from the Kusk Gateway Manager version and default Kubeshop container repository
-	//+optional
-	Image string `json:"image,omitempty"`
-
-	// Agent sidecar CPU and Memory resources requests and limits
-	//+optional
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ServiceConfig struct {

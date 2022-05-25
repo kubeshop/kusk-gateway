@@ -18,6 +18,3 @@ spec:
         - containerPort: 17000
           name: validator
           protocol: TCP
-        - containerPort: 18010
-          name: agent-config
-          protocol: TCP
