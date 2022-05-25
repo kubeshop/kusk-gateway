@@ -23,6 +23,7 @@ rules:
     resources:
       - services
       - configmaps
+      - namespaces
     verbs:
       - create
       - delete
