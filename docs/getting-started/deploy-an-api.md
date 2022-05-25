@@ -1,8 +1,8 @@
 # Quickstart
 
-Now that you've installed Kusk Gateway, let's have a look of how you can use OpenAPI to configure the operational and functional parts of your API.
+Now that you've installed Kusk Gateway, let's have a look at how you can use OpenAPI to configure the operational and functional parts of your API.
 
-### 1. Create your API manifest
+### **1. Create an API Manifest**
 
 Create the file `api.yaml`
 
@@ -43,15 +43,15 @@ spec:
 
 Kusk Gateway relies on OpenAPI to define your APIs and configure the gateway, all in one place, using the `x-kusk` extension.
 
-In this example we have defined a simple `/hello` endpoint and configured the gateway (under `x-kusk` section) enabling CORS and API mocking.
+In this example, we have defined a simple `/hello` endpoint and configured the gateway (under `x-kusk` section) enabling CORS and API mocking.
 
-### 2. Deploy the gateway configuration
+### **2. Deploy the Gateway Configuration**
 
 ```sh
 kubectl apply -f api.yaml
 ```
 
-### 3. Test your API
+### **3. Test the API**
 
 Given we have enabled gateway-level mocks, we don't need to implement the services to be able to test the API.
 
@@ -66,8 +66,8 @@ Hello world!
 
 In the [next section](connect-a-service-to-the-api.md), we'll cover how to connect your service to Kusk-gateway.
 
-### Read more
+### **Read More**
 
-- About the Kusk Gateway [API manifest](../customresources/api.md) 
-- The [x-kusk extension](../guides/working-with-extension.md)
-- [Mocking of APIs](../guides/mocking.md) with Kusk
+- Kusk Gateway [API manifest](../customresources/api.md).
+- The [x-kusk extension](../guides/working-with-extension.md).
+- [Mocking of APIs](../guides/mocking.md) with Kusk.

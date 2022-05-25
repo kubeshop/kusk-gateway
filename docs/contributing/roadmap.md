@@ -1,10 +1,10 @@
-# Supported and planned features
+# Supported and Planned Features
 
 The table below contains the current state of the Kusk Gateway features.
 
 Features marked with the ✅ are implemented, not marked are planned to be implemented.
 
-For the features currently on the roadmap please see [the milestones](https://github.com/kubeshop/kusk-gateway/milestones).
+For the features currently on the roadmap please see [Kusk-gateway milestones](https://github.com/kubeshop/kusk-gateway/milestones).
 
 <style type="text/css">
     .tg {
@@ -120,10 +120,10 @@ For the features currently on the roadmap please see [the milestones](https://gi
             <td class="tg-0pky">
                 <ul>
                     <li>
-                        prepend and strip HTTP path prefix for the OpenAPI paths ✅
+                        Prepend and strip HTTP path prefix for the OpenAPI paths ✅
                     </li>
                     <li>
-                        rewrite paths when sending to the upstream (backend) ✅
+                        Rewrite paths when sending to the upstream (backend) ✅
                     </li>
                 </ul>
             </td>
@@ -209,17 +209,17 @@ For the features currently on the roadmap please see [the milestones](https://gi
             <td class="tg-0pky">
                 <ul>
                     <li>
-                        <p>retries on 50x code ✅</p>
+                        <p>Retries on 50x code ✅</p>
                     </li>
                     <li>
-                        <p>request timeouts, idle timeouts ✅
+                        <p>Request timeouts, idle timeouts ✅
                         </p>
                     </li>
                     <li>
-                        <p>rate limiting </p>
+                        <p>Rate limiting </p>
                     </li>
                     <li>
-                        <p>cirquit breaker </p>
+                        <p>Cirquit breaker </p>
                     </li>
                 </ul>
             </td>

@@ -5,6 +5,6 @@ Kusk Gateway installation process.
 
 Kusk Gateway uses the following CRDs:
 
-* [EnvoyFleet](envoyfleet.md) - For managing Envoy deployments.
+* [Envoy Fleet](envoyfleet.md) - For managing Envoy deployments.
 * [API](api.md) - For using an OpenAPI definition to configure Gateway behaviour.
-* [StaticRoute](staticroute.md) - For exposing static content through Kusk Gateway.
+* [Static Route](staticroute.md) - For exposing static content through Kusk Gateway.

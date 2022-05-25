@@ -1,6 +1,6 @@
-# EnvoyFleet
+# Envoy Fleet
 
-This resource defines the EnvoyFleet, which is the implementation of the gateway in Kubernetes based on Envoy Proxy.
+This resource defines the Envoy Fleet, which is the implementation of the gateway in Kubernetes based on Envoy Proxy.
 
 Once the resource manifest is deployed to Kubernetes, it is used by Kusk Gateway Manager to set up K8s Envoy Proxy **Deployment**, 
 **ConfigMap** and **Service**.
@@ -10,56 +10,62 @@ In its initial state there is a minimal configuration, you have to deploy API or
 
 If the Custom Resource is uninstalled, the Manager deletes the created K8s resources.
 
-You can deploy multiple Envoy Fleets and thus have multiple Gateways available.
+You can deploy multiple Envoy Fleets and have multiple Gateways available.
 
-Once the fleet is deployed, its **status** field shows the success of the process (Deployed, Failed), so it can be shown with ```kubectl describe envoyfleet``` command.
+Once the Fleet is deployed, its **status** field shows the success of the process (Deployed, Failed), so it can be shown with ```kubectl describe envoyfleet``` command.
 
-**Limitations**:
+## **Limitations**
 
-* currently it shows only the success of K8s resources deployment, it doesn't show if the Envoy Proxy pods are alive and if the Service has the External IP Address allocated.
+Currently, only the success of K8s resources deployment is shown, not if the Envoy Proxy pods are alive or if the Service has the External IP Address allocated.
 
-Currently supported parameters:
+**Supported parameters:**
 
-* metadata.**name** and metadata.**namespace** are used as the EnvoyFleet ID. The Manager will supply the configuration for this specific ID - Envoy will connect to the KGW Manager with it. API/StaticRoute can be deployed to this fleet using their fleet name field.
+* metadata.**name** and metadata.**namespace** - Used as the Envoy Fleet ID. The Manager will supply the configuration for this specific ID - Envoy will connect to the KGW Manager with it. API/Static Route can be deployed to this fleet using their fleet name field.
 
-* spec.**image** is the Envoy Proxy container image tag, usually envoyproxy/envoy-alpine.
+* spec.**image** - The Envoy Proxy container image tag, usually envoyproxy/envoy-alpine.
 
-* spec.**service** defines the configuration of the K8s Service that exposes Envoy Proxy deployment. It has similar to the K8s Service configuration but with the limited set of fields.
-* spec.service.**type** - select the Service type (NodePort, ClusterIP, LoadBalancer).
-* spec.service.**ports** - expose TCP ports (80, 443 or any other), routed to the ports names that Deployment exposes (http, https) - ports that Envoy Proxy listener binds to.
-* spec.service.**annotations** - add annotations to the Service that will control load balancer configuration in the specific cloud providers implementations (e.g. to set up the internal Google Cloud Platform load balancer in Google Cloud Engine we annotate Service with the related annotation).
-* spec.service.**loadBalancerIP** can be used to specify the pre-allocated Load Balancer IP address, so it won't be deleted in case the Service is deleted.
-* spec.service.**externalTrafficPolicy** optional parameter denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints. "Local" preserves the client source IP and avoids a second hop for LoadBalancer and Nodeport type services, but risks potentially imbalanced traffic spreading. "Cluster" obscures the client source IP and may cause a second hop to another node, but should have good overall load-spreading. For the preservation of the real client ip in access logs chose "Local"
+* spec.**service** - Defines the configuration of the K8s Service that exposes the Envoy Proxy deployment. It is similar to the K8s Service configuration but with a limited set of fields.
 
-* spec.**size** optional parameter is the number of Envoy Proxy pods in the K8s deployment, defaults to 1 if not specified.
+* spec.service.**type** - Select the Service Type (NodePort, ClusterIP, LoadBalancer).
 
-* spec.**resources** optional parameter configures Envoy Proxy container CPU/Memory requests and limits - read [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for the details. By default we don't specify any requests or limits.
+* spec.service.**ports** - Expose TCP ports (80, 443 or any other) routed to the ports names that Deployment exposes (http, https); ports to which the Envoy Proxy listener binds.
 
-* spec.**annotations** optional parameter adds additional annotations to the Envoy Proxy pods, e.g. for the Prometheus scraping.
+* spec.service.**annotations** - Add annotations to the Service that will control load balancer configuration in the specific cloud providers implementations (e.g. to set up the internal Google Cloud Platform load balancer in the Google Cloud Engine, we annotate Service with the related annotation).
 
-* spec.**nodeSelector**, spec.**tolerations** and spec.**affinity** optional parameters provide the Envoy Proxy deployment settings for the K8s Pod scheduler. Read [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) to understand how can you bind Envoy pods to some type of nodes (e.g. non-preemtible node type pool) and how to ensure that Envoy pods are placed onto the different nodes for the High Availability. See the YAML example below too. The structure of these fields are the same as for K8s Deployment. All these options could be used simultaneously influencing each other.
+* spec.service.**loadBalancerIP** - Used to specify the pre-allocated Load Balancer IP address so it won't be deleted in case the Service is deleted.
 
-* spec.**accesslog** optional parameter defines Envoy Proxy stdout HTTP requests logging. Each Envoy pod can stream access log to stdout. If not specified - no streaming. If specified, you must chose the **format** and optionally - text or json template to tune the output.
-* spec.accesslog.**format** required parameter specifies the format of the output **json** (structured) or **text**. Note that json format doesn't preserve fields order.
-* spec.accesslog.**text_template**|**json_template** optional parameters could be used to specify what exactly available Envoy request data to log. See [Envoy's Access Logging](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-strings) for the details. If not specified any - use Kusk Gateway provided defaults.
+* spec.service.**externalTrafficPolicy** - Optional parameter that denotes if this Service routes external traffic to node-local or cluster-wide endpoints. **Local** preserves the client source IP and avoids a second hop for LoadBalancer and Nodeport type services, but risks potentially imbalanced traffic spreading. **Cluster** obscures the client source IP and may cause a second hop to another node, but should have good overall load-spreading. For the preservation of the real client IP in access logs, choose "Local"
 
-* spec.**tls** optional parameter defines TLS settings for the EnvoyFleet. If not specified, the EnvoyFleet will accept only HTTP traffic.
+* spec.**size** - Optional parameter to specify the number of Envoy Proxy pods in the K8s deployment. If not specified, defaults to 1.
 
-* spec.tls.**cipherSuites** An optional field, if specified, the TLS listener will only support the specified cipher list when negotiating TLS 1.0-1.2 (this setting has no effect when negotiating TLS 1.3). If not specified, a default list will be used. Defaults are different for server (downstream) and client (upstream) TLS configurations. For more information see: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto
+* spec.**resources** - Optional parameter that configures the Envoy Proxy container CPU/Memory requests and limits. Read [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for the details. By default, no requests or limits are specified.
 
-* spec.tls.**tlsMinimumProtocolVersion** An optional field specifying the minimum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_0 for servers.
+* spec.**annotations** - Optional parameter that adds additional annotations to the Envoy Proxy pods, e.g. for Prometheus scraping.
 
-* spec.tls.**tlsMaximumProtocolVersion** An optional field specifying the maximum TLS protocol version. By default, it’s TLSv1_2 for clients and TLSv1_3 for servers.
+* spec.**nodeSelector**, spec.**tolerations** and spec.**affinity** - Optional parameters that provide the Envoy Proxy deployment settings for the K8s Pod scheduler. Read [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) to understand how can you bind Envoy pods to some types of nodes (e.g. non-preemtible node type pool) and how to ensure that Envoy pods are placed onto the different nodes for High Availability. See the YAML example below, too. The structure of these fields are the same as for K8s Deployment. These options can be used simultaneously, influencing each other.
 
-* spec.tls.**https_redirect_hosts** An optional field specifying the domain names to force use of HTTPS with. Non secure (HTTP) requests with the matched Host header will be automatically redirected to secure HTTPS with the "301 Moved Permanently" code.
+* spec.**accesslog** - Optional parameter that defines Envoy Proxy stdout HTTP requests logging. Each Envoy pod can stream the access log to stdout. If not specified,  no streaming occurs. If specified, you must chose the **format** and, optionally, the text or JSON template to tune the output.
 
-* spec.tls.**tlsSecrets** Secret name and namespace combinations for locating TLS secrets containing TLS certificates.
-You can specify more than one.
-Kusk Gateway Manager pulls the certificates from the secrets, extracts the matching hostnames from SubjectAlternativeNames (SAN) certificate field and configures Envoy to use that certificate for those hostnames.
+* spec.accesslog.**format** - Required parameter that specifies the format of the output: **JSON** (structured) or **text**. Note that JSON format doesn't preserve fields order.
 
-* spec.tls.tlsSecrets.**secretRef** is the name of the Kubernetes secret containing the TLS certificate.
+* spec.accesslog.**text_template**|**json_template** - Optional parameters that could be used to specify the exact Envoy request data to log. See [Envoy's Access Logging](https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-strings) for the details. If not specified, Kusk Gateway provided defaults.
 
-* spec.tls.tlsSecrets.**namespace** is the namespace where that Kubernetes secret resides.
+* spec.**tls** - Optional parameter that defines TLS settings for the Envoy Fleet. If not specified, the Envoy Fleet will accept only HTTP traffic.
+
+* spec.tls.**cipherSuites** - An optional field that, when specified, the TLS listener will only support the specified cipher list when negotiating TLS 1.0 or 1.2 (this setting has no effect when negotiating TLS 1.3). If not specified, a default list will be used. Defaults are different for server (downstream) and client (upstream) TLS configurations. For more information see: [Envoy's Common TLS Configuration](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto).
+
+* spec.tls.**tlsMinimumProtocolVersion** - An optional field specifying the minimum TLS protocol version. By default, TLSv1_2 for clients and TLSv1_0 for servers.
+
+* spec.tls.**tlsMaximumProtocolVersion** - An optional field specifying the maximum TLS protocol version. By default, TLSv1_2 for clients and TLSv1_3 for servers.
+
+* spec.tls.**https_redirect_hosts** - An optional field specifying the domain names to force use of HTTPS with. Non-secure HTTP requests with the matched Host header will be automatically redirected to secure HTTPS with the "301 Moved Permanently" code.
+
+* spec.tls.**tlsSecrets** - Secret name and namespace combinations for locating TLS secrets containing TLS certificates. More than one may be specified.
+Kusk Gateway Manager pulls the certificates from the secrets, extracts the matching hostnames from the SubjectAlternativeNames (SAN) certificate field and configures Envoy to use that certificate for those hostnames.
+
+* spec.tls.tlsSecrets.**secretRef** - The name of the Kubernetes secret containing the TLS certificate.
+
+* spec.tls.tlsSecrets.**namespace** - The namespace where the Kubernetes secret resides.
 
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1
