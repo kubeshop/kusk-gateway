@@ -1,9 +1,9 @@
 ARG PYTHON_VERSION=3.11.0a7-slim
 
-FROM python:${PYTHON_VERSION} as builder
+FROM python:3.7-alpine3.12 as builder
 
 ENV PYTHONUNBUFFERED 1
-
+ENV PATH="${PATH}:/sbin"
 # Set build directory
 WORKDIR /wheels
 
