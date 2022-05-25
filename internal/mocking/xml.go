@@ -38,16 +38,7 @@ func (m mockedXmlRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*ro
 		return nil, err
 	}
 
-	rt := m.getBaseRoute(args.RoutePath, args.Method)
-	rt.Name = rt.Name + "-xml"
-
-	if args.RequireAcceptHeader {
-		rt.Match.Headers = append(rt.Match.Headers, m.getAcceptHeaderMatcher(xmlPatternStr))
-	}
-
-	rt.Action = m.getAction(args.StatusCode, string(x))
-
-	return rt, nil
+	return m.getRoute("xml", xmlPatternStr, string(x), args), nil
 }
 
 func marshalXml(content interface{}) ([]byte, error) {

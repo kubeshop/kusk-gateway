@@ -88,8 +88,6 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
 	var validatorPort uint32 = 17000
 
-	// var routesToAddToVirtualHosts []*route.Route
-
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts
@@ -102,6 +100,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
+
+			var routesToAddToVirtualHost []*route.Route
 
 			routePath := path
 			if finalOpts.Path != nil {
@@ -134,6 +134,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				}
 				rt.Action = routeRedirect
 
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			// Mock
 			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
 				// TODO: make them compatible
@@ -152,6 +153,10 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 						return fmt.Errorf("cannot convert the response code %s to int: %w", respCode, err)
 					}
 
+					// if there are more examples of different content types, require headers
+					// to differentiate which should be returned
+					requireAcceptHeader := len(respRef.Value.Content) > 1
+
 					for mediaType, mediaTypeValue := range respRef.Value.Content {
 						exampleContent := parseSpec.GetExampleResponse(mediaTypeValue)
 						if exampleContent == nil {
@@ -163,10 +168,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 							return fmt.Errorf("cannot build mocked route: %w", err)
 						}
 
-						// if there are more examples of different content types, require headers
-						// to differentiate which should be returned
-						requireAcceptHeader := len(respRef.Value.Content) > 1
-						rt, err = mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+						mockedRoute, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
 							RoutePath:           routePath,
 							Method:              method,
 							StatusCode:          uint32(statusCode),
@@ -177,15 +179,53 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 							return fmt.Errorf("cannot build mocked route: %w", err)
 						}
 
-						for _, vh := range opts.Hosts {
-							if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
-								return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
+						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
+					}
+
+					// if there is more than one mediatype, ensure that json is the default when no Accept header passed
+					// by appending the match to the end of the chain
+					// if no json response present, take the first response in the list and use that as the default
+					if requireAcceptHeader {
+						singleMediaType := "application/json"
+						var singleResponse *openapi3.MediaType
+
+						// Grab the json response if present
+						if json, ok := respRef.Value.Content[singleMediaType]; ok {
+							singleResponse = json
+						} else {
+							// Otherwise grab the first response from the list of responses
+							for mediaType, mediaTypeValue := range respRef.Value.Content {
+								singleMediaType = mediaType
+								singleResponse = mediaTypeValue
+								break
 							}
 						}
+
+						exampleContent := parseSpec.GetExampleResponse(singleResponse)
+						if exampleContent == nil {
+							break
+						}
+
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(singleMediaType)
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						mockedRoute, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+							RoutePath:           routePath,
+							Method:              method,
+							StatusCode:          uint32(statusCode),
+							ExampleContent:      exampleContent,
+							RequireAcceptHeader: false,
+						})
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						mockedRoute.Name = mockedRoute.Name + "-no-accept-header"
+						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
 					}
 				}
-
-				return nil
 
 			// // Validate and Proxy to the upstream
 			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
@@ -243,6 +283,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 
 				rt.Action = routeRoute
 
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
+
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -268,27 +310,31 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					return err
 				}
 				rt.Action = routeRoute
+
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			}
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-				filterConf := map[string]*anypb.Any{}
+				for _, rt := range routesToAddToVirtualHost {
+					filterConf := map[string]*anypb.Any{}
 
-				if finalOpts.RateLimit != nil {
-					rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
-					anyRateLimit, err := anypb.New(rl)
-					if err != nil {
-						return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
+					if finalOpts.RateLimit != nil {
+						rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
+						anyRateLimit, err := anypb.New(rl)
+						if err != nil {
+							return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
+						}
+						filterConf = map[string]*anypb.Any{
+							"envoy.filters.http.local_ratelimit": anyRateLimit,
+						}
+
 					}
-					filterConf = map[string]*anypb.Any{
-						"envoy.filters.http.local_ratelimit": anyRateLimit,
+					rt.TypedPerFilterConfig = filterConf
+
+					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+						return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 					}
-
-				}
-				rt.TypedPerFilterConfig = filterConf
-
-				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
-					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
 			}
 		}

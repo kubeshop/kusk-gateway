@@ -39,16 +39,7 @@ func (m mockedTextRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*r
 		return nil, err
 	}
 
-	rt := m.getBaseRoute(args.RoutePath, args.Method)
-	rt.Name = rt.Name + "-text"
-
-	if args.RequireAcceptHeader {
-		rt.Match.Headers = append(rt.Match.Headers, m.getAcceptHeaderMatcher(textPatternStr))
-	}
-
-	rt.Action = m.getAction(args.StatusCode, text)
-
-	return rt, nil
+	return m.getRoute("text", textPatternStr, text, args), nil
 }
 
 func getContentPlainTextReponse(exampleContent interface{}) (string, error) {

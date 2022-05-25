@@ -30,6 +30,7 @@ import (
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 )
@@ -87,23 +88,56 @@ func NewRouteBuilder(mediaType string) (MockedRouteBuilder, error) {
 
 type baseMockedRouteBuilder struct{}
 
-func (b baseMockedRouteBuilder) getBaseRoute(routePath, method string) *route.Route {
-	return &route.Route{
-		Name: types.GenerateRouteName(routePath, method),
+func (b baseMockedRouteBuilder) getRoute(
+	contentType string,
+	patternStr string,
+	responseContent string,
+	args *BuildMockedRouteArgs,
+) *route.Route {
+	rt := &route.Route{
+		Name: fmt.Sprintf("%s-%d-%s", types.GenerateRouteName(args.RoutePath, args.Method), args.StatusCode, contentType),
 		Match: &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_SafeRegex{
 				SafeRegex: &envoytypematcher.RegexMatcher{
 					EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
 						GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
 					},
-					Regex: routePath,
+					Regex: args.RoutePath,
 				},
 			},
 			Headers: []*route.HeaderMatcher{
-				types.GetHeaderMatcherConfig([]string{method}, false),
+				types.GetHeaderMatcherConfig([]string{args.Method}, false),
+			},
+		},
+		ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
+			{
+				Header: &envoy_config_core_v3.HeaderValue{
+					Key:   "x-kusk-mocked",
+					Value: "true",
+				},
+				Append: &wrapperspb.BoolValue{
+					Value: true,
+				},
 			},
 		},
 	}
+
+	if args.RequireAcceptHeader {
+		rt.Match.Headers = append(rt.Match.Headers, b.getAcceptHeaderMatcher(patternStr))
+	}
+
+	rt.Action = &route.Route_DirectResponse{
+		DirectResponse: &route.DirectResponseAction{
+			Status: args.StatusCode,
+			Body: &envoy_config_core_v3.DataSource{
+				Specifier: &envoy_config_core_v3.DataSource_InlineString{
+					InlineString: responseContent,
+				},
+			},
+		},
+	}
+
+	return rt
 }
 
 func (b baseMockedRouteBuilder) getAcceptHeaderMatcher(regex string) *route.HeaderMatcher {
@@ -114,19 +148,6 @@ func (b baseMockedRouteBuilder) getAcceptHeaderMatcher(regex string) *route.Head
 				Regex: regex,
 				EngineType: &envoytypematcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &envoytypematcher.RegexMatcher_GoogleRE2{},
-				},
-			},
-		},
-	}
-}
-
-func (b baseMockedRouteBuilder) getAction(statusCode uint32, content string) *route.Route_DirectResponse {
-	return &route.Route_DirectResponse{
-		DirectResponse: &route.DirectResponseAction{
-			Status: statusCode,
-			Body: &envoy_config_core_v3.DataSource{
-				Specifier: &envoy_config_core_v3.DataSource_InlineString{
-					InlineString: content,
 				},
 			},
 		},

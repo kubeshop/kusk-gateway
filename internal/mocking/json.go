@@ -39,14 +39,5 @@ func (m mockedJsonRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*r
 		return nil, err
 	}
 
-	rt := m.getBaseRoute(args.RoutePath, args.Method)
-	rt.Name = rt.Name + "-json"
-
-	if args.RequireAcceptHeader {
-		rt.Match.Headers = append(rt.Match.Headers, m.getAcceptHeaderMatcher(jsonPatternStr))
-	}
-
-	rt.Action = m.getAction(args.StatusCode, string(j))
-
-	return rt, nil
+	return m.getRoute("json", jsonPatternStr, string(j), args), nil
 }
