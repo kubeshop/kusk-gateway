@@ -52,7 +52,7 @@ kubectl get svc -l "app.kubernetes.io/component=envoy-svc" --namespace kusk-syst
 
 The output should contain the [Envoy Fleet](../customresources/envoyfleet) Service, which is the entry point of your API gateway, with the **External-IP** address field - use this address for your API endpoints querying. Note that it might take a while for the External IP to be created.
 
-**Note:** Non-important "External IP might not be available for some cluster setups".
+!!! note non-important "External IP might not be available for some cluster setups".
 
     If you are running a **local setup**, you can access the API endpoint with: 
     
