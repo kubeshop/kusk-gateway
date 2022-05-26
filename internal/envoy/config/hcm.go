@@ -28,6 +28,8 @@ import (
 
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	simplecache "github.com/envoyproxy/go-control-plane/envoy/extensions/cache/simple_http_cache/v3"
+	cachev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cache/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -52,6 +54,23 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal ratelimit configuration: %w", err)
 	}
+
+	sc := &simplecache.SimpleHttpCacheConfig{}
+	simpleCacheConfig, err := anypb.New(sc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal SimpleHttpCache configuration: %w", err)
+	}
+	cc := &cachev3.CacheConfig{
+		TypedConfig:        simpleCacheConfig,
+		AllowedVaryHeaders: nil,
+		KeyCreatorParams:   nil,
+		MaxBodyBytes:       0,
+	}
+	cacheConfig, err := anypb.New(cc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal cacheconfig configuration: %w", err)
+	}
+
 	return &hcmBuilder{
 		httpConnectionManager: &hcm.HttpConnectionManager{
 			CodecType:  hcm.HttpConnectionManager_AUTO,
@@ -63,6 +82,12 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 				},
 			},
 			HttpFilters: []*hcm.HttpFilter{
+				{
+					Name: "envoy.filters.http.cache",
+					ConfigType: &hcm.HttpFilter_TypedConfig{
+						TypedConfig: cacheConfig,
+					},
+				},
 				{
 					Name: "envoy.filters.http.local_ratelimit",
 					ConfigType: &hcm.HttpFilter_TypedConfig{

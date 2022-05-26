@@ -122,6 +122,17 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					corsPolicy,
 				),
 			}
+
+			if finalOpts.Cache != nil && finalOpts.Cache.Enabled != nil && *finalOpts.Cache.Enabled {
+				rt.ResponseHeadersToAdd = append(rt.ResponseHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "Cache-Control",
+						Value: "max-age=60",
+					},
+					Append: wrapperspb.Bool(false),
+				},
+				)
+			}
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
 			// Redirect -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
@@ -328,7 +339,6 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 						filterConf = map[string]*anypb.Any{
 							"envoy.filters.http.local_ratelimit": anyRateLimit,
 						}
-
 					}
 					rt.TypedPerFilterConfig = filterConf
 

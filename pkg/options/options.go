@@ -106,6 +106,7 @@ type SubOptions struct {
 	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
 	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 	RateLimit  *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
+	Cache      *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -195,4 +196,10 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.RateLimit == nil && in.RateLimit != nil {
 		o.RateLimit = in.RateLimit
 	}
+	// Cache
+	if o.Cache == nil && in.Cache != nil {
+		o.Cache = in.Cache
+	}
+
+	return
 }
