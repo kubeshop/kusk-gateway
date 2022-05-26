@@ -130,3 +130,25 @@ func parseSwagger(spec []byte) (*openapi3.T, error) {
 func parseOpenAPI3(spec []byte) (*openapi3.T, error) {
 	return openapi3.NewLoader().LoadFromData(spec)
 }
+
+// GetExampleResponse returns a single example response from the given operation
+// if one exists.
+func GetExampleResponse(mediaType *openapi3.MediaType) interface{} {
+	if mediaType == nil {
+		return nil
+	}
+
+	if mediaType.Example != nil {
+		return mediaType.Example
+	}
+
+	if mediaType.Examples != nil {
+		for _, example := range mediaType.Examples {
+			if example.Value != nil && example.Value.Value != nil {
+				return example.Value.Value
+			}
+		}
+	}
+
+	return nil
+}

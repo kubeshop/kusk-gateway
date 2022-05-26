@@ -23,16 +23,21 @@ SOFTWARE.
 */
 package mocking
 
-type MockResponse struct {
-	// 200, 201
-	StatusCode int
-	// application/json -> []byte
-	// application/xml -> []byte
-	MediaTypeData map[string][]byte
+import (
+	"encoding/json"
+
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+)
+
+type mockedJsonRouteBuilder struct {
+	baseMockedRouteBuilder
 }
 
-func NewMockResponse() *MockResponse {
-	return &MockResponse{
-		MediaTypeData: make(map[string][]byte),
+func (m mockedJsonRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+	j, err := json.Marshal(args.ExampleContent)
+	if err != nil {
+		return nil, err
 	}
+
+	return m.getRoute("json", jsonPatternStr, string(j), args), nil
 }

@@ -21,42 +21,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-// package server provides the Agent HTTP server, which is the service, configured with the Agent Management Service.
-package httpserver
+package mocking
 
 import (
-	"fmt"
-	"net/http"
-	"time"
-
-	"go.uber.org/zap"
+	"github.com/clbanning/mxj"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 )
 
-const (
-	// Server Hostname and port are not configurable since the manager needs to know them for the Envoy cluster creation
-	ServerHostname           string = "127.0.0.1"
-	ServerPort               uint32 = 8090
-	HeaderMockID                    = "X-Kusk-Mock-ID"
-	HeaderMockResponseInsert        = "X-Kusk-Mocked"
-)
-
-type httpServer struct {
-	mainHandler *mainHandler
-	*http.Server
+type mockedXmlRouteBuilder struct {
+	baseMockedRouteBuilder
 }
 
-func NewHTTPServer(log *zap.Logger, mainHandler *mainHandler) *httpServer {
-	server := &httpServer{}
-	server.mainHandler = mainHandler
-
-	mux := http.NewServeMux()
-	muxWithMiddlewares := LoggerMiddleware(log, mux)
-	mux.Handle("/", server.mainHandler)
-	server.Server = &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", ServerHostname, ServerPort),
-		Handler:      muxWithMiddlewares,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+func (m mockedXmlRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+	x, err := marshalXml(args.ExampleContent)
+	if err != nil {
+		return nil, err
 	}
-	return server
+
+	return m.getRoute("xml", xmlPatternStr, string(x), args), nil
+}
+
+func marshalXml(content interface{}) ([]byte, error) {
+	var xmlBytes []byte
+	var err error
+	if object, isObject := content.(map[string]interface{}); isObject {
+		xml := mxj.Map(object)
+		xmlBytes, err = xml.Xml()
+	} else {
+		xmlBytes, err = mxj.AnyXml(content, "root")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return xmlBytes, nil
 }

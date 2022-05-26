@@ -26,7 +26,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,10 +37,9 @@ import (
 )
 
 const (
-	envoyHTTPListenerPort       int32  = 8080
-	envoyAdminListenerPort      int32  = 19000
-	agentImageName              string = "kusk-gateway-agent"
-	kuskGatewayManagerImageName        = "kusk-gateway"
+	envoyHTTPListenerPort       int32 = 8080
+	envoyAdminListenerPort      int32 = 19000
+	kuskGatewayManagerImageName       = "kusk-gateway"
 )
 
 // EnvoyFleetResources is a collection of related Envoy Fleet K8s resources
@@ -203,79 +201,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 			envoyContainer.Resources.Requests = e.fleet.Spec.Resources.Requests
 		}
 	}
-	// Creation of the agent sidecar requires passing the parameter with Kusk Gateway Agent management service.
-	// We do the service detection dynamically.
-	agentServiceLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "agent-service"}
-	agentServices, err := k8sutils.GetServicesByLabels(ctx, e.client, agentServiceLabels)
-	if err != nil {
-		return fmt.Errorf("cannot create Envoy Fleet %s: %w", e.fleet.Name, err)
-	}
-	switch svcs := len(agentServices); {
-	case svcs == 0:
-		return fmt.Errorf("cannot create Envoy Fleet %s: no Agent management services were detected in the cluster when searching with the labels %s", e.fleet.Name, agentServiceLabels)
-	case svcs > 1:
-		return fmt.Errorf("cannot create Envoy Fleet %s: multiple Agent management services were detected in the cluster when searching with the labels %s", e.fleet.Name, agentServiceLabels)
-	}
-	// At this point - we have exactly one service with (we ASSUME!) one port
-	agentServiceHostname := fmt.Sprintf("%s.%s.svc.cluster.local.", agentServices[0].Name, agentServices[0].Namespace)
-	agentServicePort := agentServices[0].Spec.Ports[0].Port
 
-	// Agent container (sidecar)
-	agentContainer := corev1.Container{
-		Name:            "agent",
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		// Command:         []string{"/bin/sh", "-c"},
-		Args: []string{
-			"-fleetID",
-			e.fleetID,
-			"-agent-config-manager-service-address",
-			fmt.Sprintf("%s:%d", agentServiceHostname, agentServicePort),
-		},
-	}
-	// Additional parameters for the agent service
-	if e.fleet.Spec.Agent != nil {
-		if e.fleet.Spec.Agent.Image != "" {
-			agentContainer.Image = e.fleet.Spec.Agent.Image
-		}
-		if e.fleet.Spec.Agent.Resources != nil {
-			if e.fleet.Spec.Agent.Resources.Limits != nil {
-				agentContainer.Resources.Limits = e.fleet.Spec.Agent.Resources.Limits
-			}
-			if e.fleet.Spec.Agent.Resources.Requests != nil {
-				agentContainer.Resources.Requests = e.fleet.Spec.Agent.Resources.Requests
-			}
-		}
-	}
-	// Image for the agent container was not set, do the autodetection based on Kusk Gateway Manager Image
-	if agentContainer.Image == "" {
-
-		kuskGatewayManagerLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "kusk-gateway-manager"}
-		kuskGatewayManagerDeployments, err := k8sutils.GetDeploymentsByLabels(ctx, e.client, kuskGatewayManagerLabels)
-		if err != nil {
-			return fmt.Errorf("cannot create Envoy Fleet %s: %w", e.fleet.Name, err)
-		}
-		switch deploys := len(kuskGatewayManagerDeployments); {
-		case deploys == 0:
-			return fmt.Errorf("cannot create Envoy Fleet %s: no Deployments of Kusk Gateway Manager were found were detected in the cluster when searching with the labels %s, where we're running from?", e.fleet.Name, kuskGatewayManagerLabels)
-		case deploys > 1:
-			return fmt.Errorf("cannot create Envoy Fleet %s: multiple Deployments of Kusk Gateway Manager were detected in the cluster when searching with the labels %s", e.fleet.Name, kuskGatewayManagerLabels)
-		}
-		deployment := kuskGatewayManagerDeployments[0]
-		for _, container := range deployment.Spec.Template.Spec.Containers {
-			// Skip if not the right container
-			if container.Name != "manager" {
-				continue
-			}
-			managerImageTag := strings.Split(container.Image, ":")
-			if len(managerImageTag) != 2 {
-				return fmt.Errorf("cannot create Envoy Fleet %s: failed Kusk Gateway Manager's version autodetection - container image tag %s doesn't match the imageName:version pattern", e.fleet.Name, container.Image)
-			}
-			containerRepositoryURL := strings.TrimSuffix(managerImageTag[0], kuskGatewayManagerImageName)
-			// Form and set agent server container image tag
-			agentContainer.Image = fmt.Sprintf("%s%s:%s", containerRepositoryURL, agentImageName, managerImageTag[1])
-			break
-		}
-	}
 	// Create the deployment
 	e.deployment = &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -299,7 +225,6 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						envoyContainer,
-						agentContainer,
 					},
 					Volumes: []corev1.Volume{
 						{

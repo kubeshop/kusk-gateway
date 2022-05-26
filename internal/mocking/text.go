@@ -21,42 +21,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-// The definition of the communication service between mocking service and manager
+package mocking
 
-syntax = "proto3";
+import (
+	"fmt"
 
-option go_package = "github.com/kubeshop/kusk-gateway/internal/agent/management";
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+)
 
-package grpc;
-
-// ConfigManager service continuously streams the snapshots of configuration to the client.
-service ConfigManager {
-  rpc GetSnapshot(ClientParams) returns (stream Snapshot) {}
+type mockedTextRouteBuilder struct {
+	baseMockedRouteBuilder
 }
 
-// This client request message provides the node name and fleet ID.
-message ClientParams {
-  // Client node name
-  string nodeName = 1;
-  string fleetID = 2;
+func (m mockedTextRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+	text, err := getContentPlainTextReponse(args.ExampleContent)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.getRoute("text", textPatternStr, text, args), nil
 }
 
-// Snapshot response message provides the snapshot of the configurations.
-message Snapshot {
-  MockConfig mockConfig = 1;
-}
+func getContentPlainTextReponse(exampleContent interface{}) (string, error) {
+	if bytes, ok := exampleContent.([]byte); ok {
+		return string(bytes), nil
+	} else if s, ok := exampleContent.(string); ok {
+		return s, nil
+	} else if s, ok := exampleContent.(fmt.Stringer); ok {
+		// If it can't just be converted to string explicitly, call String method for that type if present.
+		return s.String(), nil
+	}
 
-// MockConfig is the mapping of mockID to MockResponse struct
-message MockConfig {
-  map<string,MockResponse> MockResponses = 1;
-}
-
-// MockResponse is the mocking.MockResponse struct
-message MockResponse {
-	// HTTP Status Code
-	uint32 StatusCode = 1;
-  // Mapping of Media type to Media data
-	// application/json -> []byte
-	// application/xml -> []byte
-	map <string, bytes> MediaTypeData = 2;
+	return "", fmt.Errorf("cannot serialise %s into string", exampleContent)
 }

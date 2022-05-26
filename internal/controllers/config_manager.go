@@ -43,9 +43,6 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
-
-	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
-	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 )
 
 const (
@@ -58,7 +55,6 @@ type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	EnvoyManager *manager.EnvoyConfigManager
-	AgentManager *agentManagement.ConfigManager
 	Validator    *validation.Proxy
 	m            sync.Mutex
 
@@ -85,7 +81,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	envoyConfig := config.New()
 
-	mockingConfig := mocking.NewMockConfig()
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs for the fleet", "fleet", fleetIDstr)
 
@@ -112,7 +107,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, mockingConfig, c.Validator, opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
@@ -238,8 +233,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	l.Info("Configuration snapshot was generated for the fleet", "fleet", fleetIDstr)
-	// Agent config is applied first to make Agent ready for the new Envoy routes
-	c.AgentManager.ApplyNewFleetConfig(fleetIDstr, mockingConfig)
 	if err := c.EnvoyManager.ApplyNewFleetSnapshot(fleetIDstr, snapshot); err != nil {
 		l.Error(err, "Envoy configuration failed to apply", "fleet", fleetIDstr)
 		return fmt.Errorf("failed to apply snapshot: %w", err)

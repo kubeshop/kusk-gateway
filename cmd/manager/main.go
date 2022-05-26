@@ -58,7 +58,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	agentManagement "github.com/kubeshop/kusk-gateway/internal/agent/management"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -75,7 +74,6 @@ type managerConfig struct {
 	MetricsAddr           string `envconfig:"METRICS_BIND_ADDR" default:":8080"`
 	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR" default:":8081"`
 	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:":18000"`
-	AgentManagerAddr      string `envconfig:"AGENT_MANAGER_BIND_ADDR" default:"18010"`
 	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
 	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
 	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR" default:"/opt/manager/webhook/certs"`
@@ -86,7 +84,6 @@ func (m managerConfig) String() string {
 	b.WriteString(fmt.Sprintf("METRICS_BIND_ADDR=%s\n", m.MetricsAddr))
 	b.WriteString(fmt.Sprintf("HEALTH_PROBE_BIND_ADDR=%s\n", m.ProbeAddr))
 	b.WriteString(fmt.Sprintf("ENVOY_CONTROL_PLANE_BIND_ADDR=%s\n", m.EnvoyControlPlaneAddr))
-	b.WriteString(fmt.Sprintf("AGENT_MANAGER_BIND_ADDR=%s\n", m.AgentManagerAddr))
 	b.WriteString(fmt.Sprintf("ENABLE_LEADER_ELECTION=%t\n", m.EnableLeaderElection))
 	b.WriteString(fmt.Sprintf("LOG_LEVEL=%s\n", m.LogLevel))
 	b.WriteString(fmt.Sprintf("WEBHOOK_CERTS_DIR=%s\n", m.WebhookCertsDir))
@@ -253,22 +250,12 @@ func main() {
 		}
 	}()
 
-	// Agent (Envoy sidecar) configuration management service
-	agentManager := agentManagement.New(config.AgentManagerAddr, logger)
-	go func() {
-		if err := agentManager.Start(); err != nil {
-			setupLog.Error(err, "Unable to start Agent Manager Server")
-			os.Exit(1)
-		}
-	}()
-
 	secretsChan := make(chan *corev1.Secret)
 	controllerConfigManager := controllers.KubeEnvoyConfigManager{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		EnvoyManager:       envoyManager,
 		Validator:          proxy,
-		AgentManager:       agentManager,
 		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 		WatchedSecretsChan: secretsChan,
 	}

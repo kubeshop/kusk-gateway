@@ -25,6 +25,7 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -37,12 +38,12 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	agentHTTPServer "github.com/kubeshop/kusk-gateway/internal/agent/httpserver"
-	"github.com/kubeshop/kusk-gateway/internal/agent/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
+	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
@@ -68,7 +69,7 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mockingConfiguration *mocking.MockConfig, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -100,6 +101,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				continue
 			}
 
+			var routesToAddToVirtualHost []*route.Route
+
 			routePath := path
 			if finalOpts.Path != nil {
 				routePath = generateRoutePath(finalOpts.Path.Prefix, path)
@@ -111,7 +114,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 			}
 
 			rt := &route.Route{
-				Name: generateRouteName(routePath, method),
+				Name: types.GenerateRouteName(routePath, method),
 				Match: generateRouteMatch(
 					routePath,
 					method,
@@ -131,6 +134,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 				}
 				rt.Action = routeRedirect
 
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			// Mock
 			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
 				// TODO: make them compatible
@@ -138,45 +142,92 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					return fmt.Errorf("mocking and validation are enabled but are mutually exclusive")
 				}
 
-				clusterName := "AgentHTTPService"
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, agentHTTPServer.ServerHostname, agentHTTPServer.ServerPort)
+				for respCode, respRef := range operation.Responses {
+					// We don't handle non 2xx codes, skip if found
+					if !strings.HasPrefix(respCode, "2") {
+						continue
+					}
+					// Note that we don't handle wildcards, e.g. '2xx' - this is allowed in OpenAPI, but we need the exact status code.
+					statusCode, err := strconv.Atoi(respCode)
+					if err != nil {
+						return fmt.Errorf("cannot convert the response code %s to int: %w", respCode, err)
+					}
+
+					// if there are more examples of different content types, require headers
+					// to differentiate which should be returned
+					requireAcceptHeader := len(respRef.Value.Content) > 1
+
+					for mediaType, mediaTypeValue := range respRef.Value.Content {
+						exampleContent := parseSpec.GetExampleResponse(mediaTypeValue)
+						if exampleContent == nil {
+							continue
+						}
+
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(mediaType)
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						mockedRoute, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+							RoutePath:           routePath,
+							Method:              method,
+							StatusCode:          uint32(statusCode),
+							ExampleContent:      exampleContent,
+							RequireAcceptHeader: requireAcceptHeader,
+						})
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
+					}
+
+					// if there is more than one mediatype, ensure that json is the default when no Accept header passed
+					// by appending the match to the end of the chain
+					// if no json response present, take the first response in the list and use that as the default
+					if requireAcceptHeader {
+						singleMediaType := "application/json"
+						var singleResponse *openapi3.MediaType
+
+						// Grab the json response if present
+						if json, ok := respRef.Value.Content[singleMediaType]; ok {
+							singleResponse = json
+						} else {
+							// Otherwise grab the first response from the list of responses
+							for mediaType, mediaTypeValue := range respRef.Value.Content {
+								singleMediaType = mediaType
+								singleResponse = mediaTypeValue
+								break
+							}
+						}
+
+						exampleContent := parseSpec.GetExampleResponse(singleResponse)
+						if exampleContent == nil {
+							break
+						}
+
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(singleMediaType)
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						mockedRoute, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+							RoutePath:           routePath,
+							Method:              method,
+							StatusCode:          uint32(statusCode),
+							ExampleContent:      exampleContent,
+							RequireAcceptHeader: false,
+						})
+						if err != nil {
+							return fmt.Errorf("cannot build mocked route: %w", err)
+						}
+
+						mockedRoute.Name = mockedRoute.Name + "-no-accept-header"
+						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
+					}
 				}
 
-				// We don't support websockets during mocking, disable it if inherited.
-				websocketEnabled := false
-				routeRoute, err := generateRoute(
-					clusterName,
-					corsPolicy,
-					nil,
-					finalOpts.QoS,
-					&websocketEnabled,
-				)
-				if err != nil {
-					return fmt.Errorf("cannot generage route for path %s operation %s: %w", path, method, err)
-				}
-				rt.Action = routeRoute
-
-				// Create MockingID.
-				// Note: this is not unique - 2 and more API files can declare the same path/method/OperationID but with the different vhosts.
-				mockID := generateMockID(path, method, operation.OperationID)
-				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-					Header: &envoy_config_core_v3.HeaderValue{
-						Key:   agentHTTPServer.HeaderMockID,
-						Value: mockID,
-					},
-					Append: wrapperspb.Bool(false),
-				})
-				mockResponse, err := mockingConfiguration.GenerateMockResponse(operation)
-				if err != nil {
-					return fmt.Errorf("cannot generate mock response for path %s operation %s: %w", path, method, err)
-				}
-				// Finally, add the mock response to the whole mock configuration with the mockID
-				if err := mockingConfiguration.AddMockResponse(mockID, mockResponse); err != nil {
-					return fmt.Errorf("failure setting mock with ID %s: %w", mockID, err)
-				}
-
-			// Validate and Proxy to the upstream
+			// // Validate and Proxy to the upstream
 			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
 
@@ -232,6 +283,8 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 
 				rt.Action = routeRoute
 
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
+
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -257,27 +310,31 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, mock
 					return err
 				}
 				rt.Action = routeRoute
+
+				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			}
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-				filterConf := map[string]*anypb.Any{}
+				for _, rt := range routesToAddToVirtualHost {
+					filterConf := map[string]*anypb.Any{}
 
-				if finalOpts.RateLimit != nil {
-					rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
-					anyRateLimit, err := anypb.New(rl)
-					if err != nil {
-						return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
+					if finalOpts.RateLimit != nil {
+						rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
+						anyRateLimit, err := anypb.New(rl)
+						if err != nil {
+							return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
+						}
+						filterConf = map[string]*anypb.Any{
+							"envoy.filters.http.local_ratelimit": anyRateLimit,
+						}
+
 					}
-					filterConf = map[string]*anypb.Any{
-						"envoy.filters.http.local_ratelimit": anyRateLimit,
+					rt.TypedPerFilterConfig = filterConf
+
+					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+						return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 					}
-
-				}
-				rt.TypedPerFilterConfig = filterConf
-
-				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
-					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
 			}
 		}
@@ -347,7 +404,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 			// routeMatcher defines how we match a route by the provided path and the headers
 			rt := &route.Route{
-				Name:  generateRouteName(routePath, strMethod),
+				Name:  types.GenerateRouteName(routePath, strMethod),
 				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
 			}
 
@@ -463,11 +520,6 @@ func generateMockID(path string, method string, operationID string) string {
 
 func generateRateLimitStatPrefix(host, path, method, operationID string) string {
 	return fmt.Sprintf("%s-%s-%s-%s", host, path, method, operationID)
-}
-
-// Can be moved to operationID, but generally we just need unique string
-func generateRouteName(path string, method string) string {
-	return fmt.Sprintf("%s-%s", path, strings.ToUpper(method))
 }
 
 func generateRoutePath(prefix, path string) string {

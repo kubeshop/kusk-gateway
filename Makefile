@@ -17,7 +17,6 @@ VERSION ?= $(shell git describe --tags)
 # Image URL to use all building/pushing image targets
 IMAGE_TAG ?= dev
 MANAGER_IMG ?= kusk-gateway:${IMAGE_TAG}
-AGENT_IMG ?= kusk-gateway-agent:${IMAGE_TAG}
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION := 1.22
@@ -80,7 +79,7 @@ manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and C
 	$(CONTROLLER_GEN) rbac:roleName=kusk-gateway-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) agent-management-compile ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
@@ -113,9 +112,8 @@ docker-images-cache: ## Saves locally frequently used container images and uploa
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager and agent binary.
+build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager -ldflags='$(LD_FLAGS)' cmd/manager/main.go
-	go build -o bin/agent -ldflags='$(LD_FLAGS)' cmd/agent/main.go
 
 .PHONY: run
 run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
@@ -126,20 +124,12 @@ run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your hos
 docker-build-manager: ## Build docker image with the manager.
 	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
 
-.PHONY: docker-build-agent
-docker-build-agent: ## Build docker image with the agent.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${AGENT_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile .
-
 .PHONY: docker-build
-docker-build: docker-build-manager docker-build-agent ## Build docker images for all apps
+docker-build: docker-build-manager ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
 	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
-
-.PHONY: docker-build-agent-debug
-docker-build-agent-debug:  ## Build docker image with the agent and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${AGENT_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/agent/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -180,11 +170,8 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 .PHONY: update
 update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
-.PHONY: update-agent
-update-agent: docker-build-agent cycle-envoy
-
 .PHONY: update-debug
-update-debug: docker-build-manager-debug docker-build-agent-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
+update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
@@ -222,9 +209,11 @@ $(ENVTEST): ## Download envtest-setup locally if necessary.
 $(KTUNNEL):
 	GOBIN=${BINARIES_DIR} go install github.com/omrikiei/ktunnel@v1.4.7
 
-.PHONY: agent-management-compile
-agent-management-compile: $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) # Compile protoc files for agent/management
-	cd "internal/agent/management"; $(PROTOC) --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative *.proto
+# Envtest
+ENVTEST = $(shell pwd)/bin/setup-envtest
+.PHONY: envtest
+envtest: ## Download envtest-setup locally if necessary.
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 run-docs:
 	docker-compose -f docs/docker-compose.yml up
