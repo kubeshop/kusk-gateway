@@ -1,5 +1,3 @@
-ARG PYTHON_VERSION=3.11.0a7-slim
-
 FROM python:3.7-alpine3.12 as builder
 
 ENV PYTHONUNBUFFERED 1
