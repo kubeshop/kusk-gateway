@@ -1,13 +1,13 @@
-# How to develop Kusk Gateway
+# How to Develop Kusk Gateway
 
 Kusk Gateway code is managed with the help of [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) that provides code scaffolding and generation of K8s Custom Resource Definitions files.
 
-Internally Kusk Gateway uses the [go-control-plane](https://github.com/envoyproxy/go-control-plane) package to configure Envoy with its xDS protocol.
+Internally, Kusk Gateway uses the [go-control-plane](https://github.com/envoyproxy/go-control-plane) package to configure Envoy with its xDS protocol.
 
-## Code structure to get started with Development
+## **Code Structure to Get Started with Development**
 Below is the (reduced) output of the `tree` command on this repository.
 
-These are the directories and packages, we believe, you need to know about to get started with Kusk Gateway development.
+These are the directories and packages that we suggest you need to know about to get started with Kusk Gateway development.
 
 Obviously, there are more, so feel free to investigate the others for yourself to get an idea about how they fit into the overall architecture.
 
@@ -45,11 +45,11 @@ kusk-gateway
     └── spec # Code for loading, parsing and validating the OpenAPI definition and the extensions.
 ```
 
-## Set up development environment
+## **Set Up Development Environment**
 You can install Kusk Gateway into any cluster offering. So you can BYOC (Bring Your Own Cluster).
 
-### Launch Kusk Gateway in Minikube
-However, we have a useful Make command to set up a complete environment for development in Minikube.
+### **Launch Kusk Gateway in Minikube**
+We have a useful Make command to set up a complete environment for development in Minikube.
 
 To set up the environment, run the following command:
 
@@ -58,12 +58,13 @@ make create-env
 ```
 
 This will do the following:
-- Start minikube with the profile name "kgw" and enable the Metallb addon. Metallb will expose the envoyfleet services "locally" without needing to port-forward to them.
-- Install our CustomResourceDefinitions
-- Build the docker images, cache them for faster rebuilds and deploy them with Kustomize
-- Deploy an EnvoyFleet.
 
-### Launch Kusk Gateway in your cluster
+- Start minikube with the profile name "kusk" and enable the Metallb add on. Metallb will expose the Envoy Fleet services "locally" without needing to port-forward to them.   
+- Install our CustomResourceDefinitions.   
+- Build the docker images, cache them for faster rebuilds and deploy them with Kustomize.   
+- Deploy an Envoy Fleet.   
+
+### **Launch Kusk Gateway in Your Cluster**
 If you opt to use a cluster offering that is not Minikube, you can use the following commands to launch Kusk Gateway in your cluster:
 
 ```
@@ -80,8 +81,8 @@ kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 make deploy-envoyfleet
 ```
 
-## Redeploy after code changes
-The simplest way to ensure that everything required is recompiled is to run the following command:
+## **Redeploy After Code Changes**
+The simplest way to ensure the recompliation of everything required is to run one of the following commands:
 
 ```
 # generate will recompile any controller implementations

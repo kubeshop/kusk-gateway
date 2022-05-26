@@ -6,18 +6,17 @@ Kusk Gateway can be instructed to use those certificates by defining them in you
 Kusk Gateway will also watch your certificates for updates and will reload the EnvoyFleet config automatically
 without the need for any manual actions.
 
-## Install Cert Manager
+## **Install Cert Manager**
 Cert Manager can be installed using the following command which uses the default configuration.
 
 `kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml`
 
-For other installation methods, refer to Cert Manager's installation [document](https://cert-manager.io/docs/installation/)
+For other installation methods, refer to Cert Manager's installation [document](https://cert-manager.io/docs/installation/).
 
-## Issue a certificate
-To issue a certificate, we need to define an Issuer or ClusterIssuer. This defines which Certificate Authority
-Cert Manager will use to issue the certificate.
+## **Issue a Certificate**
+To issue a certificate, we need to define an Issuer or ClusterIssuer. This defines which Certificate Authority Cert Manager will be used to issue the certificate.
 
-For demonstration purposes, let's use a simple self-signed certificate issuer
+For demonstration purposes, let's use a simple self-signed certificate issuer:
 
 ```yaml
 kubectl apply -f - <<EOF
@@ -31,7 +30,7 @@ spec:
 EOF
 ```
 
-We can now issue a self-signed certificate using this issuer.
+We can now issue a self-signed certificate using this issuer:
 
 ```yaml
 kubectl apply -f - <<EOF
@@ -50,16 +49,16 @@ EOF
 ```
 
 Cert manager will react to the creation of this Certificate resource and produce for us a Kubernetes secret
-that contains the certificate that we can then use in Kusk Gateway to secure your endpoints with TLS.
+that contains the certificate we can use in Kusk Gateway to secure your endpoints with TLS (Transport Layer Security).
 
-Let's fetch the list of secrets to confirm that our certificate was created
+Fetch the list of secrets to confirm that our certificate was created:
 ```
 ❯ kubectl get secrets
 NAME                  TYPE                                  DATA   AGE
 ...
 selfsigned-cert-tls   kubernetes.io/tls                     3      103s
 ```
-and describe the secret for good measure
+Describe the secret:
 
 ```
 ❯ kubectl describe secret selfsigned-cert-tls
@@ -84,8 +83,8 @@ tls.key:  1679 bytes
 ca.crt:   1021 bytes
 ```
 
-## Using the certificate in Kusk Gateway
-In your EnvoyFleet definition, add the following TLS settings into the spec field.
+## **Using the Certificate in Kusk Gateway**
+In your EnvoyFleet definition, add the following TLS settings into the spec field:
 
 ```
 apiVersion: gateway.kusk.io/v1alpha1
@@ -100,10 +99,9 @@ spec:
          namespace: default
 ```
 
-We defined the hostname in the certificate as example.com, therefore your API will need to have this host in the hosts array of the x-kusk extension
-to make use of the secret.
+We defined the hostname in the certificate as example.com, therefore, your API will need to have this host in the hosts array of the x-kusk extension to make use of the secret.
 
-We can confirm the details of the certificate using openssl.
+We can confirm the details of the certificate using OpenSSL:
 ```shell
 echo | \
     openssl s_client -servername example.com -connect example.com:443 2>/dev/null | \
@@ -112,25 +110,25 @@ echo | \
 
 For this example, you will need to add example.com to your `/etc/hosts` file pointing at the envoy service public IP running in the cluster.
 
-## Rotating secrets
-Kusk Gateway will watch for updates to your secrets using in any of its EnvoyFleets and update the config to use them
-automatically without any manual intervention being needed
+## **Rotating Secrets**
+Kusk Gateway will watch for updates to your secrets in any of its EnvoyFleets and update the config to use them
+automatically, without any manual intervention needed
 
-We can force a certificate rotation ourselves using cmctl and then check that Kusk Gateway does in fact pick up on the change
+We can force a certificate rotation using cmctl and then check that Kusk Gateway does register the change
 and update the config accordingly.
 
 You will need to have [cmctl installed](https://cert-manager.io/docs/usage/cmctl/#installation).
 
-Now we can issue a `renew` command.
+Now we can issue a `renew` command:
 
 ```
 ❯ cmctl renew selfsigned-cert
 Manually triggered issuance of Certificate default/selfsigned-cert
 ```
 
-This will mark the named secret for manual renewal by cert-manager, and it should do so relatively quickly.
+This will mark the named secret for manual renewal by cert-manager and it should do so relatively quickly.
 
-Use openssl again to check the updated certificate
+Use OpenSSL again to check the updated certificate:
 ```shell
 echo | \
     openssl s_client -servername example.com -connect example.com:443 2>/dev/null | \

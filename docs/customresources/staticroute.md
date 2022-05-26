@@ -1,27 +1,27 @@
-# StaticRoute
+# Static Route
 
-This resource defines manually created routing rules. It is useful to set up the routing to a non-API application, e.g. static pages, images or route to some old (possibly external to the cluster) APIs.
+This resource defines manually created routing rules. It is useful to set up the routing to a non-API application, e.g. static pages or images or to route to legacy, possibly external to the cluster, APIs.
 
-It is designed to overcome the shortcomings of OpenAPI based routing, one of which is the inability to configure "catch all prefixes" like **/**.
-Its structure is still similar to OpenAPI and thus is familiar for the users.
+The Static Route resource is designed to overcome the shortcomings of OpenAPI based routing, one of which is the inability to configure "catch all prefixes" like **/**.
+Its structure is still similar to OpenAPI and, thus, familiar to users.
 
-The resource can be deployed additionally to the API resource or completely separately. Routing information from both resources will be merged with the priority given to the **API** resources.
+The resource can be deployed to the API resource or completely separately. Routing information from both resources will be merged with the priority given to the **API** resources.
 
 Once the resource manifest is deployed, Kusk Gateway Manager will use it to configure routing for Envoy Fleet.
 Multiple resources can exist in different namespaces, all of them will be evaluated and the configuration merged on any action with the separate resource.
 Trying to apply a resource that has conflicting routes with the existing resources (i.e. same HTTP method and path) will be rejected with the error.
 
-**Limitations**:
+## **Limitations**
 
-* currently resource **status** field is not updated by manager when the reconciliation of the configuration finishes.
+Currently, the resource **status** field is not updated by the manager when the reconciliation of the configuration finishes.
 
-## Configuration structure description
+## **Configuration Structure Description**
 
-The main elements of the configuration are in **spec** field.
+The main elements of the configuration are in the **spec** field.
 
-They specify how the incoming request is matched and what action to take.
+The elements specify how the incoming request is matched and what action to take.
 
-Below is the YAML structure of the configuration, please read on further for a full explanation.
+Below is the YAML structure of the configuration. Please read further for a full explanation.
 
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1
@@ -119,44 +119,44 @@ spec:
         -- skipped --
 ```
 
-## Envoy Fleet
+## **Envoy Fleet**
 
-spec.**fleet** optional field specifies to what Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies to.
-fleet.**name** and fleet.**namespace** reference the deployed EnvoyFleet Custom Resource name and namespace.
+The spec.**fleet** optional field specifies to which Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies.
+fleet.**name** and fleet.**namespace** reference the deployed Envoy Fleet Custom Resource name and namespace.
 
-You can deploy you StaticRoute configuration in any namespace with any name, and it will be applied to the specific Envoy Fleet.
-If this option is missing, the autodetection will be performed to find the single deployed in the Kubernetes cluster fleet which is thus considered as the default fleet.
-The deployed StaticRoute custom resource will be changed to map to that fleet accordingly.
-If there are multiple fleets deployed, the spec.**fleet** is required to specify in the manifest.
+You can deploy a Static Route configuration in any namespace with any name and it will be applied to the specific Envoy Fleet.
+If this option is missing, the autodetection will be performed to find the single fleet deployed in the Kubernetes cluster Fleet, which is then considered as the default Fleet.
+The deployed Static Route custom resource will be changed to map to that fleet accordingly.
+If there are multiple fleets deployed, spec.**fleet** is required to specify which in the manifest.
 
-## Request matching
+## **Request Matching**
 
 We match the incoming request by HOST header, path and HTTP method.
 
-The following fields specify matching.
+The following fields specify matching:
 
-**hosts** that define the list of HOST headers this configuration applies to. This will create the Envoy's VirtualHost with the same name and domain matching. Wildcards are possible, e.g. "*" means "any host".
+**hosts** - Defines the list of HOST headers to which the current configuration applies. This will create the Envoy's VirtualHost with the same name and domain matching. Wildcards are possible, e.g. "*" means "any host".
 Prefix and suffix wildcards are supported, but not both (i.e. ```example.*, *example.com```, but not ```*example*```).
 
-**paths** is the container of URL paths + HTTP methods collection to match and handle the request during the routing decision.
-*paths*.**path_match** is the URL path string, starts with / (e.g. */api*, */robots.txt*). The suffix hints how to match the request:
+**paths** - The container of URL paths and HTTP methods collection to match and handle the request during the routing decision.
+*paths*.**path_match** is the URL path string and starts with / (e.g. */api*, */robots.txt*). The suffix hints how to match the request:
 
-  * paths ending with `/` will match everything that has that path as a prefix. E.g. ```/api/``` matches ```/api/v1/id```, just ```/``` is a catch all.
-  * paths without `/` will match that path exactly. E.g. just ```/resource``` matches exactly this resource with any possible URL query.  **Alpha limitations:** currently regexes are currently not supported.
+  * Paths ending with `/` will match everything that has that path as a prefix. E.g. ```/api/``` matches ```/api/v1/id```, just ```/``` is a catch all.
+  * Paths without `/` will match that path exactly. For example, ```/resource``` matches exactly this resource with any possible URL query.  **Alpha limitations:** Regexes are currently not supported.
 
-*paths*.*path_match*.**http_method** adds an additional request matcher which is the lowercase HTTP method (get, post, ...). Calls to the paths with a method type that is not set here will return "404 Not Found".
+*paths*.*path_match*.**http_method** - Adds an additional request matcher which is the lowercase HTTP method (get, post, ...). Calls to the paths with a method not set here will return "404 Not Found".
 
-## Final action on the matched request
+## **Final Action on the Matched Request**
 
 Once the request is matched, we can decide what to do with it.
 
 *paths*.*path_match*.http_method_match.**route|redirect** specifies the routing decision. The request can be either proxied to the upstream host (backend) or returned to the user as a redirect. Either [**redirect**](#redirect) or [**route**](#route) must be specified, but not both.
 
- **Alpha Limitations:** currently additional request handling (e.g. direct request response like returning 404 Not Found) is not implemented.
+ **Alpha Limitations:** Currently additional request handling (e.g. direct request response like returning 404 Not Found) is not implemented.
 
-### Redirect
+### **Redirect**
 
-**redirect** provides HTTP redirect options with the following fields. All of them are optional but once specified enable a part of redirection behaviour.
+**redirect** provides HTTP redirect options with the following fields. All of them are optional but, once specified, enable a part of redirection behaviour.
 
 **redirect** structure:
 
@@ -175,7 +175,7 @@ redirect:
 ```
 
 **rewrite_regex** pattern matching and substitution provides a powerful mechanism to rewrite redirect path based on incoming requests.
-Copy from Envoy's documentation:
+From Envoy's documentation:
 > Indicates that during redirect, portions of the path that match the pattern should be rewritten, even allowing the substitution of capture groups from the pattern into the new path as specified by the rewrite substitution string. This is useful to allow application paths to be rewritten in a way that is aware of segments with variable content like identifiers.
 
 >Examples using Google’s RE2 engine:
@@ -188,9 +188,9 @@ Copy from Envoy's documentation:
 >
 >    The pattern (?i)/xxx/ paired with a substitution string of /yyy/ would do a case-insensitive match and transform path /aaa/XxX/bbb to /aaa/yyy/bbb.
 
-### Route
+### **Route**
 
-**route** specifies how the request will be proxied to the upstream with the following fields.
+**route** specifies how the request will be proxied to the upstream with the following fields:
 
 **route** structure:
 
@@ -256,19 +256,20 @@ route:
 
 ```
 
-*route*.**upstream** is a required field that defines the upstream host parameters.
+*route*.**upstream** - A required field that defines the upstream host parameters.
 We proxy using DNS hostname or local cluster K8s service parameters, which are further resolved to DNS hostname. Either *upstream*.**host** or *upstream*.**service** must be specified inside.
 
-*route*.**upstream**.**rewrite** is an optional field that specifies what to do with the URL path when proxying to the upstream - possible values right now is to rewrite it. See the rewrite_regex section in redirect action above for the explanation.
+*route*.**upstream**.**rewrite** - An optional field that specifies what to do with the URL path when proxying to the upstream. The only value currently is **rewrite**. See the rewrite_regex section in redirect action above for the explanation.
 
-*route*.**qos** optional field is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
+*route*.**qos** - An optional field that is the container for request Quality of Service parameters, i.e. timeouts, failure retry policy.
 
-*route*.**cors** optional field is the container for [Cross-Origin Resource Sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers parameters. If this field is specified, route will be augmented with CORS preflight OPTIONS HTTP method matching. This will allow Envoy to return the response to OPTIONS request with the specified here CORS headers to the user without proxying to upstream. It is advised to read [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) before trying to configure this.
-Note: the structure for CORS specified above is an example, i.e. one should write its own set of methods and headers.
+*route*.**cors** - An optional field that is the container for [Cross-Origin Resource Sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) headers parameters. If this field is specified, the route will be augmented with CORS preflight OPTIONS HTTP method matching. This will allow Envoy to return the response to the OPTIONS request with the specified CORS headers to the user without proxying to upstream. It is advised to read [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) before trying to configure this.
 
-*route*.**websocket** optional boolean field defines whether to enable handling of "Upgrade: websocket" and related Websocket HTTP headers in the request to create a Websocket tunnel to the backend. By default false, don't handle Websockets.
+Note: The structure for CORS specified above is an example; users should write their own set of methods and headers.
 
-## Example
+*route*.**websocket** - An optional boolean field that defines whether to enable handling of "Upgrade: websocket" and related Websocket HTTP headers in the request to create a Websocket tunnel to the backend. The default is false - don't handle Websockets.
+
+## **Example**
 
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1

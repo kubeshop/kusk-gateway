@@ -1,19 +1,19 @@
-# Automatic API deployment
+# Automatic API Deployment
 
 Kusk Gateway supports automatic configuration and deployment of an API based on kusk-gateway annotations on 
 your Kubernetes Service resource, allowing you to totally automate the deployment of your API to Kusk Gateway whenever
-you update deploy the corresponding Service to your cluster.
+you deploy the corresponding Service to your cluster.
 
 The following annotations are available:
 
 | Name                                    | Description                                                                   | Optional |
 |:----------------------------------------|:------------------------------------------------------------------------------|:--------:|
-| `kusk-gateway/openapi-url`              | the absolute URL to the OpenAPI definition to deploy                          |          |
-| `kusk-gateway/envoy-fleet`              | which EnvoyFleet to use                                                       |    X     |
-| `kusk-gateway/path-prefix:`             | which path your API will be hosted at                                         |    X     |
-| `kusk-gateway/path-prefix-substitution` | what to substitute the prefix with when forwarding the request to the service |    X     |
+| `kusk-gateway/openapi-url`              | The absolute URL to the OpenAPI definition to deploy.                          |          |
+| `kusk-gateway/envoy-fleet`              | Which EnvoyFleet to use.                                                       |    X     |
+| `kusk-gateway/path-prefix:`             | The path where your API will be hosted.                                         |    X     |
+| `kusk-gateway/path-prefix-substitution` | What to substitute the prefix with when forwarding the request to the service. |    X     |
 
-For example, assuming that you have already set up a deployment that is running your REST API, you could deploy 
+For example, assuming that you have set up a deployment that is running your REST API, you could deploy 
 the following Kubernetes Service: 
 
 ```yaml
@@ -32,13 +32,13 @@ spec:
       targetPort: http
 ```
 
-Deploying this manifest with kubectl (`kubectl apply -f svc.yaml`) will make Kusk Gateway automatically 
+Deploying this manifest with kubectl (`kubectl apply -f svc.yaml`) will make Kusk Gateway automatically: 
 
-- read the OpenAPI definition from the `openapi-url` annotation
-- add corresponding `x-kusk.upstream` [extensions](../reference/extension/#upstream) to route API requests to this Service (if not already present)
-- create an [API resource](../customresources/api.md) for the OpenAPI definition and deploy it to Kusk Gateway
+- Read the OpenAPI definition from the `openapi-url` annotation.
+- Add corresponding `x-kusk.upstream` [extensions](../reference/extension/#upstream) to route API requests to this Service (if not already present).
+- Create an [API resource](../customresources/api.md) for the OpenAPI definition and deploy it to Kusk Gateway.
 
-If you want to customize the mapping and/or envoy-fleet used by the API you can add these as annotations also:
+If you want to customize the mapping and/or envoy-fleet used by the API, add these as annotations:
 
 ```yaml
 apiVersion: v1

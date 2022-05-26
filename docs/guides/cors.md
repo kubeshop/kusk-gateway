@@ -1,10 +1,10 @@
 # CORS Settings
 
-CORS is a standard implemented by browsers for ensuring that only the allowed clients actually access your API,
+CORS (Cross-Origin Resource Sharing) is a standard implemented by browsers for ensuring that only the allowed clients actually access your API,
 see [https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
 
 One of the biggest pain-points when deploying your API that is consumed by a browser application is 
-not having the correct CORS configuration on your API Server. Fortunately Kusk makes configuring CORS 
+not having the correct CORS configuration on your API Server. Fortunately, Kusk makes configuring CORS 
 for your API easy - add the corresponding CORS extension to your
 OpenAPI definition at the desired level (usually the root):
 
@@ -28,8 +28,7 @@ x-kusk:
 ..
 ```
 
-If you want to override CORS settings for a specific operation or path you can do so - for example to
-change the allowed origins for a specific operation you could add:
+If you want to override CORS settings for a specific operation or path you can do so. For example, to change the allowed origins for a specific operation you could add:
 
 ```yaml
 
@@ -44,4 +43,4 @@ paths:
       ..
 ```
 
-See all available CORS configuration options in the [Extension Reference](../../reference/extension/#cors)
+See all available CORS configuration options in the [Extension Reference](../../reference/extension/#cors).

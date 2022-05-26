@@ -1,12 +1,12 @@
 # Response Mocking 
 
-## How can Mocking help?
+## **How can Mocking help?**
 
-Mocking is an integral part of the API lifecycle; providing mocks can help both API consumers (for example FE/Mobile app developers) and 
+Mocking is an integral part of the API lifecycle. Providing mocks can help both API consumers (for example, FE/Mobile app developers) and 
 testers to bootstrap their efforts without being dependent on the actual implementation of an API being available. It can also help prototype
 API integrations and validate API designs with end-users before actually implementing them.
 
-## How does Mocking work?
+## **How does Mocking work?**
 
 Kusk Gateway makes mocking of your APIs extremely easy; simply add the `x-kusk.mocking` property to your API (globally or at any other level) 
 to enable the mocking of responses using the examples provided in an OpenAPI definition - [examples object](https://swagger.io/specification/#example-object).
@@ -14,19 +14,19 @@ to enable the mocking of responses using the examples provided in an OpenAPI def
 Either `example:` (singular) or `examples:` (plural) are supported, however with multiple objects in `examples`, the response will include only one from that object map.
 If both are specified, singular (`example`) has the priority over plural.
 
-Examples are defined as a part of the response HTTP code and its contents media-type (e.g. `application/json`) and could be different for the different media types.
+Examples are defined as a part of the response HTTP code and its contents' media-type (e.g. `application/json`) and could be different for the different media types.
 
-As part of the mocked response the related HTTP code is returned, but only success codes are supported for the mocking. I.e. 200, 201, but not 400, 404, 500.
-Though the OpenAPI standard allows the response code to be a range or being a wildcard (e.g. "2xx"), we need to know exactly what code to return, so this should be specified exactly as integer compatible ("200").
-In case the response doesn't have the response schema, only the single http code is used to mock the response, i.e. the body is not returned.
-This is useful to test, e.g. DELETE or PATCH operations that don't produce the body.
+As part of the mocked response, the related HTTP code is returned, but only success codes are supported for the mocking. For example, 200 and 201, but not 400, 404 or 500.
+Though the OpenAPI standard allows the response code to be a range or a wildcard (e.g. "2xx"), we need to know exactly what code to return, so this should be specified exactly as integer compatible ("200").
+In case the response doesn't have the response schema, only the single http code is used to mock the response, the body is not returned.
+This is useful to test, for example, DELETE or PATCH operations that don't produce the body.
 
-`mocking` is inheritable, i.e. if it is specified on the path or root level it will include every operation below it.
-In case there are responses without the response schema but without the examples, these must be explicitly disabled with `mocking.enabled: false`, otherwise the configuration submission will fail.
+`mocking` is inheritable - if it is specified on the path or root level it will include every operation below it.
+In case there are responses without the response schema but with the examples, these must be explicitly disabled with `mocking.enabled: false`, otherwise the configuration submission will fail.
 
-Note: currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
+Note: Currently `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
 
-## Mocking example
+## **Mocking Example**
 
 Consider the following operation in an OpenAPI definition:
 
@@ -99,11 +99,13 @@ Consider the following operation in an OpenAPI definition:
         ...
 ```
 
-With the example above, the response to GET request will be different depending on the client's preferred media type when using the `Accept` header.
+With the example above, the response to the GET request will be different depending on the client's preferred media type when using the `Accept` header.
 
-Below we're using the example.com setup from the development/testing directory.
+Below, we're using the example.com setup from the development/testing directory.
 
-1. Curl call without specifying the Accept header. From the list of specified media types (application/json, plain/text, application/xml) - uses our default Mocking media type - application/json:
+1. Curl call without specifying the **Accept** header:
+
+    From the list of specified media types (application/json, plain/text, application/xml), this example uses our default Mocking media type - application/json:
 
     ```shell
     curl -v -H "Host: example.com" http://192.168.49.3/testing/mocked/multiple/1
@@ -121,7 +123,7 @@ Below we're using the example.com setup from the development/testing directory.
 
    The response includes the `x-kusk-mocked: true` header indicating mocking.
 
-2. With the Accept header, that has application/xml as the preferred type:
+2. With the **Accept** header, that has application/xml as the preferred type:
 
     ```shell
     curl -v -H "Host: example.com" -H "Accept: application/xml"  http://192.168.49.3/testing/mocked/1
@@ -136,7 +138,7 @@ Below we're using the example.com setup from the development/testing directory.
     <doc><completed>true</completed><order>13</order><title>Mocked XML title</title><url>http://mockedURL.com</url></doc>
     ```
 
-3. With the Accept header specifying multiple weighted preferred media types, text/plain with more weight.
+3. With the **Accept** header specifying multiple weighted preferred media types, text/plain with more weight.
 
     ```shell
     curl -v -H "Host: example.com" -H "Accept: application/json;q=0.8,text/plain;q=0.9"  http://192.168.49.3/testing/mocked/1

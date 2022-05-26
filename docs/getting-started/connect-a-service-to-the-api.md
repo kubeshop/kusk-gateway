@@ -1,11 +1,11 @@
 # Connect a Service
 
-Once you have [created an API](deploy-an-api.md) and mocked its responses, you would proceed to implement the services and connect them to the API. 
+Once you have [created an API](deploy-an-api.md) and mocked its responses, you are ready to implement the services and connect them to the API. 
 This section explains how you would connect your services to Kusk-gateway. 
 
-## 1. Deploy your service
+## **1. Deploy a Service**
 
-Create a `deployment.yaml` file
+Create a `deployment.yaml` file:
 
 ```sh 
 apiVersion: apps/v1
@@ -43,13 +43,13 @@ spec:
     targetPort: 8080
 ```
 
-And apply it with 
+And apply it with: 
 
 ```sh
 kubectl apply -f deployment.yaml
 ```
 
-## 2. Update the API manifest to connect the service to the gateway
+## **2. Update the API Manifest to Connect the Service to the Gateway**
 
 Once you have finished implementing and deploying the service, you will need to stop the mocking of the API endpoint and connect the service to the gateway. 
 
@@ -75,13 +75,13 @@ x-kusk:
 ...
 ```
 
-## 3. Apply the changes
+## **3. Apply the Changes**
 
 ```
 kubectl apply -f api.yaml
 ```
 
-## 4. Test the API
+## **4. Test the API**
 
 Get the External IP of Kusk-gateway as indicated in [installing Kusk-gateway section](../installation/#2-get-the-gateways-external-ip) and run:
 
@@ -92,4 +92,4 @@ Hello from an implemented service!
 
 And now you have successfully deployed an API! The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API to and later implemented the services and connected them to the API.
 
-You can also check the [Automatic API Deployment](reference/automatic-api-deployment.md) for a code-first (or service-first) approach. 
+You can also check the [Automatic API Deployment](../guides/autodeploy.md) for a code-first (or service-first) approach. 

@@ -1,28 +1,30 @@
 # API
 
-This resource uses OpenAPI file with x-kusk annotations as the source of truth to configure routing.
-Refer to [extension](../reference/extension.md) for the further information on how to add routing information to OpenAPI file.
+This resource uses an OpenAPI file with x-kusk annotations as the source of truth to configure routing.
+Refer to [OpenAPI Extension Reference](../reference/extension.md) for the further information on how to add routing information to OpenAPI file.
 
 The required field of API resource is `spec.**spec**` where `x-kusk`-enhanced OpenAPI file is supplied as an embedded string. 
 You can generate API resources from an OpenAPI definition (and integrate into your CI) using the Kusk CLI - see 
 [Generating API CRDs](../cli/generate-cmd.md).
 
-The optional spec.**fleet** field specifies to what Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies to.
-fleet.**name** and fleet.**namespace** reference the deployed EnvoyFleet Custom Resource name and namespace.
-You can deploy your API configuration in any namespace with any name, and it will be applied to the specific Envoy Fleet.
-If this option is missing, the auto-detection will be performed to find the single deployed in the Kubernetes cluster fleet which is thus considered as the default fleet.
+## **Using fleet**
+
+The optional spec.**fleet** field specifies to what Envoy Fleet (Envoy Proxy instances with the exposing K8s Service) this configuration applies.
+The fleet.**name** and fleet.**namespace** fields reference the deployed Envoy Fleet Custom Resource name and namespace.
+Deploy your API configuration in any namespace with any name and it will be applied to the specific Envoy Fleet.
+If this option is missing, auto-detection will be performed to find the single fleet deployed in the Kubernetes cluster fleet, which is considered as the default fleet.
 The deployed API custom resource will be changed to map to that fleet accordingly.
 If there are multiple fleets deployed, the spec.**fleet** is required to specify in the manifest.
 
 Once the resource manifest is deployed, Kusk Gateway Manager will use it to configure routing for Envoy Fleet.
-Multiple resources can exist in different namespaces, all of them will be evaluated and the configuration merged on any update with these resources.
-Trying to apply a resource that has conflicting routes with the existing resources (i.e. same HTTP method and path) would result in error.
+Multiple resources can exist in different namespaces; all of them will be evaluated and the configuration merged on any update with these resources.
+Trying to apply a resource that has conflicting routes with the existing resources (i.e. same HTTP method and path) will result in error.
 
-**Limitations**:
+## **Limitations**
 
-* currently resource **status** field is not updated by manager when the configuration process finishes.
+* Currently, the resource **status** field is not updated by the manager when the configuration process finishes.
 
-*Example*
+*Example:*
 
 ```yaml
 apiVersion: gateway.kusk.io/v1alpha1

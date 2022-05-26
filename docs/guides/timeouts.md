@@ -1,10 +1,8 @@
 # Request Timeouts 
 
-Kusk Gateway makes it easy to specify timeouts for your API operations - both globally 
-or individually for each path or operation. 
+Kusk Gateway makes it easy to specify timeouts for your API operations, both globally and individually, for each path or operation. 
 
-For example the below API defines a global 60-second request timeout - which is overridden 
-for the getHello operation and set to 10 seconds.
+For example the API below defines a global 60-second request timeout, which is overridden for the getHello operation and set to 10 seconds:
 
 ```yaml
 openapi: 3.0.0
@@ -24,4 +22,4 @@ paths:
    ..
 ```
 
-See all available timeout configuration options in the [Extension Reference](/reference/extension/#qos)
+See all available timeout configuration options in the [Extension Reference](/reference/extension/#qos).
