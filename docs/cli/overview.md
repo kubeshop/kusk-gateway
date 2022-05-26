@@ -23,7 +23,7 @@ go install github.com/kubeshop/kusk@latest
 
 To install a particular version replace `latest` with the version number.
 
-You can get a list of the available Kusk versions from our [releases page](https://github.com/kubeshop/kusk/releases).
+You can get a list of the available Kusk Gateway versions from our [releases page](https://github.com/kubeshop/kusk/releases).
 
 ### **Install Script**
 Install `kusk` into `/usr/local/bin/kusk`:
