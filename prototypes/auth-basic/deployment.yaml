@@ -1,0 +1,20 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auth-basic-http
+  name: auth-basic-http
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-basic-http
+  template:
+    metadata:
+      labels:
+        app: auth-basic-http
+    spec:
+      containers:
+        - image: kubeshop.io/kusk-gateway/auth-basic-http
+          name: auth-basic-http

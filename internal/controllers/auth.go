@@ -28,48 +28,75 @@ import (
 	"fmt"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	auth_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_auth_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_hcm_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-var _ = auth_v3.AuthorizationRequest{}
-
-func convertAuthOptions(auth *options.Auth) *auth_v3.HttpService {
+func fromAuthOptionsToHttpService(auth *options.Auth) *envoy_auth_v3.HttpService {
+	// Hardcoding for now to see if it actually works.
 	uri := fmt.Sprintf("http://%s:%d", auth.AuthUpstream.Host.Hostname, auth.AuthUpstream.Host.Port)
-	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{}
 
 	pathPrefix := ""
 	if auth.PathPrefix != nil {
 		pathPrefix = *auth.PathPrefix
 	}
 
-	return &auth_v3.HttpService{
-		ServerUri: &envoy_config_core_v3.HttpUri{
-			// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/http_uri.proto#envoy-v3-api-msg-config-core-v3-httpuri
-			Uri:              uri,
-			HttpUpstreamType: httpUpstreamType,
-			Timeout: &durationpb.Duration{
-				Seconds: 60,
+	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
+		Cluster: "envoy-auth-basic-http-service",
+	}
+	serverUri := &envoy_config_core_v3.HttpUri{
+		// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/http_uri.proto#envoy-v3-api-msg-config-core-v3-httpuri
+		Uri:              uri,
+		HttpUpstreamType: httpUpstreamType,
+		Timeout: &durationpb.Duration{
+			Seconds: 60,
+		},
+	}
+	authorizationResponse := &envoy_auth_v3.AuthorizationResponse{
+		AllowedUpstreamHeaders: &envoy_type_matcher_v3.ListStringMatcher{
+			Patterns: []*envoy_type_matcher_v3.StringMatcher{
+				{
+					MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{
+						Exact: "x-current-user",
+					},
+					IgnoreCase: true,
+				},
 			},
 		},
-		PathPrefix: pathPrefix,
 	}
+	httpService := &envoy_auth_v3.HttpService{
+		ServerUri:             serverUri,
+		PathPrefix:            pathPrefix,
+		AuthorizationResponse: authorizationResponse,
+	}
+
+	_ = envoy_hcm_v3.HttpFilter_TypedConfig{}
+
+	return httpService
 }
 
 func configureAuthz(filterConf map[string]*anypb.Any, authOptions *options.Auth) error {
-	// Do nothing for now.
+	// // Do nothing for now.
+	// return nil
+
+	if authOptions != nil {
+		httpService := fromAuthOptionsToHttpService(authOptions)
+		anyHTTPService, err := anypb.New(httpService)
+		if err != nil {
+			return fmt.Errorf("configureAuthz: failure marshalling `auth` configuration: %w ", err)
+		}
+
+		// "envoy.filters.http.ext_authz"
+		filterName := wellknown.HTTPExternalAuthorization
+		filterConf[filterName] = anyHTTPService
+		// filterConf["envoy.filters.http.ext_authz.v3.HttpService"] = anyHTTPService
+	}
+
 	return nil
-
-	// if authOptions != nil {
-	// 	httpService := convertAuthOptions(authOptions)
-	// 	anyHTTPService, err := anypb.New(httpService)
-	// 	if err != nil {
-	// 		return fmt.Errorf("configureAuthz: failure marshalling `auth` configuration: %w ", err)
-	// 	}
-
-	// 	filterConf["envoy.filters.http.ext_authz.v3.HttpService"] = anyHTTPService
-	// }
 }

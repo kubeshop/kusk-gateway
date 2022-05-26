@@ -1,0 +1,59 @@
+version: "3.8"
+services:
+
+  flask_service:
+    build:
+      context: ../shared/flask
+    image: flask_service:python-3.10-slim-bullseye
+    restart: "no"
+    deploy:
+      replicas: 0
+
+  front-envoy:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontenvoy
+    environment:
+    - FRONT_ENVOY_YAML
+    ports:
+    - "8000:8000"
+
+#  # ext_authz-http-service:
+#  #   build:
+#  #     context: ./auth
+#  #     dockerfile: http-service/Dockerfile
+#  #   volumes:
+#  #   - ./users.json:/etc/users.json
+#  #   environment:
+#  #   - USERS=/etc/users.json
+#  #   ports:
+#  #   banaioltd/envoy-auth-basic-http-service:latest
+
+  ext_authz-http-service:
+    image: banaioltd/envoy-auth-basic-http-service:latest
+
+  ext_authz-grpc-service:
+    build:
+      context: ./auth
+      dockerfile: grpc-service/Dockerfile
+    volumes:
+    - ./users.json:/etc/users.json
+
+  ext_authz-opa-service:
+    image: openpolicyagent/opa:0.25.1-istio
+    volumes:
+    - ./config/opa-service/policy.rego:/etc/policy.rego
+    command:
+    - run
+    - --server
+    - --log-format=json-pretty
+    - --set=plugins.envoy_ext_authz_grpc.addr=:9002
+    - --set=decision_logs.console=true
+    - /etc/policy.rego
+
+  upstream-service:
+    image: flask_service:python-3.10-slim-bullseye
+    volumes:
+    - ./upstream/service/service.py:/code/service.py
+    ports:
+    - "8080:8080"

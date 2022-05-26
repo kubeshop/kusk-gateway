@@ -178,6 +178,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
 	}
+
+	// Add auth configuration to HTTPConnectionManager
+	httpConnectionManager := httpConnectionManagerBuilder.GetHTTPConnectionManager()
+	_ = httpConnectionManager
+
 	if err := httpConnectionManagerBuilder.Validate(); err != nil {
 		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for HttpConnectionManager")
