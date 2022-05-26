@@ -59,7 +59,7 @@ make create-env
 
 This will do the following:
 
-- Start minikube with the profile name "kgw" and enable the Metallb add on. Metallb will expose the Envoy Fleet services "locally" without needing to port-forward to them.   
+- Start minikube with the profile name "kusk" and enable the Metallb add on. Metallb will expose the Envoy Fleet services "locally" without needing to port-forward to them.   
 - Install our CustomResourceDefinitions.   
 - Build the docker images, cache them for faster rebuilds and deploy them with Kustomize.   
 - Deploy an Envoy Fleet.   
