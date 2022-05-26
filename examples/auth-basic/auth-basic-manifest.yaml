@@ -1,0 +1,76 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: envoy-auth-basic-http-service
+  name: envoy-auth-basic-http-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envoy-auth-basic-http-service
+  template:
+    metadata:
+      labels:
+        app: envoy-auth-basic-http-service
+    spec:
+      containers:
+        - image: banaioltd/envoy-auth-basic-http-service:latest
+          name: envoy-auth-basic-http-service
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9092
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: envoy-auth-basic-http-service
+  name: envoy-auth-basic-http-service
+spec:
+  ports:
+    - port: 9092
+      targetPort: 9092
+  selector:
+    app: envoy-auth-basic-http-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: httpbin
+  name: httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+  template:
+    metadata:
+      labels:
+        app: httpbin
+    spec:
+      containers:
+        - image: kennethreitz/httpbin
+          name: httpbin
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: httpbin
+  name: httpbin
+spec:
+  ports:
+    - port: 8080
+      targetPort: 80
+  selector:
+    app: httpbin

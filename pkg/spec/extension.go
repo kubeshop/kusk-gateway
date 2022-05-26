@@ -92,7 +92,7 @@ func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{})
 		if kuskExtension, ok := extension.(json.RawMessage); ok {
 			err := yaml.UnmarshalStrict(kuskExtension, target)
 			if err != nil {
-				return false, fmt.Errorf("failed to parse extension: %w", err)
+				return false, fmt.Errorf("failed to parse x-kusk='%s' extension: %w", string(kuskExtension), err)
 			}
 
 			return true, nil

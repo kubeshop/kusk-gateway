@@ -207,7 +207,7 @@ func main() {
 	analytics.SendAnonymousInfo("kusk-gateway manager bootstrapping")
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
-		_ = fmt.Errorf("unable to init logger: %w", err)
+		fmt.Fprintln(os.Stderr, fmt.Errorf("kusk-gateway-manager: unable to init logger: %w", err))
 		os.Exit(1)
 	}
 	ctrl.SetLogger(logger)

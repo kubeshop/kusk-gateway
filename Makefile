@@ -38,7 +38,7 @@ LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementI
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(GA_SECRET)
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
 
-export DOCKER_BUILDKIT 	?=	1
+export DOCKER_BUILDKIT ?= 1
 
 .PHONY: all
 all: build
@@ -122,14 +122,14 @@ run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your hos
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); echo; set -x; docker build --no-cache -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); echo; set -x; docker build --no-cache -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
 
 ##@ Deployment
 

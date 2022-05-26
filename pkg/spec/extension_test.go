@@ -40,7 +40,7 @@ func TestGetOptions(t *testing.T) {
 		name string
 		spec *openapi3.T
 		res  options.Options
-		err  bool
+		err  string
 	}{
 		{
 			name: "no extensions",
@@ -109,7 +109,7 @@ func TestGetOptions(t *testing.T) {
 					},
 				},
 			},
-			err: true,
+			err: `failed to extract operation suboptions: failed to parse x-kusk='{"enabled":true}' extension: error unmarshaling JSON: while decoding JSON: json: unknown field "enabled"`,
 		},
 	}
 
@@ -118,8 +118,8 @@ func TestGetOptions(t *testing.T) {
 			r := require.New(t)
 
 			actual, err := GetOptions(testCase.spec)
-			if testCase.err {
-				r.True(err != nil, "expected error")
+			if testCase.err != "" {
+				r.EqualError(err, testCase.err)
 			} else {
 				r.Equal(testCase.res, *actual)
 			}

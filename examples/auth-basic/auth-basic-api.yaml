@@ -1,0 +1,36 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: envoy-auth-basic-http-service-sample
+spec:
+  fleet:
+    name: default
+    namespace: default
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: envoy-auth-basic-http-service
+      description: envoy-auth-basic-http-service
+      version: '0.0.1'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: envoy-auth-basic-http-service.svc.cluster.local
+            port: 9092
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}

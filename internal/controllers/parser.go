@@ -335,6 +335,16 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 						return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 					}
+
+					if err := configureAuthz(filterConf, finalOpts.Auth); err != nil {
+						return err
+					}
+
+					rt.TypedPerFilterConfig = filterConf
+				}
+
+				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
+					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
 			}
 		}
