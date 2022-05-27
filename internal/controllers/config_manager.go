@@ -150,7 +150,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 	}
 
-	httpConnectionManagerBuilder, err := config.NewHCMBuilder()
+	httpConnectionManagerBuilder, err := config.NewHCMBuilder( /* TODO(MBana): Figure out how to pass `opts` here*/ nil)
 	if err != nil {
 		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
 	}
@@ -178,10 +178,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
 	}
-
-	// Add auth configuration to HTTPConnectionManager
-	httpConnectionManager := httpConnectionManagerBuilder.GetHTTPConnectionManager()
-	_ = httpConnectionManager
 
 	if err := httpConnectionManagerBuilder.Validate(); err != nil {
 		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetIDstr)

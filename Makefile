@@ -62,6 +62,9 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: dev-update
+dev-update: docker-build update cycle deploy-envoyfleet ## Update cluster with local changes (usually after you have modified the code).
+
 .PHONY: create-env
 create-env: ## Spin up a local development cluster with Minikube and install kusk Gateway
 	./development/cluster/create-env.sh

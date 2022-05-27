@@ -227,7 +227,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 					}
 				}
 
-			// // Validate and Proxy to the upstream
+			// Validate and Proxy to the upstream
 			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
 
@@ -284,7 +284,25 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				rt.Action = routeRoute
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
-
+			// Auth
+			case finalOpts.Auth != nil:
+				fmt.Println("-----")
+				fmt.Printf("finalOpts.Auth not nil, finalOpts.Auth=%+v\n", finalOpts.Auth)
+				clusterName := "auth-basic-http-authentication-service"
+				upstreamServiceHost := "auth-basic-http-authentication-service"
+				var upstreamServicePort uint32 = 9002
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					fmt.Printf("cluster does not exist - add: %s %s:%d\n", clusterName, upstreamServiceHost, upstreamServicePort)
+					envoyConfiguration.AddCluster(
+						clusterName,
+						upstreamServiceHost,
+						upstreamServicePort,
+					)
+				}
+				if envoyConfiguration.ClusterExist(clusterName) {
+					fmt.Printf("cluster does not exist - skip add: %s %s:%d\n", clusterName, upstreamServiceHost, upstreamServicePort)
+				}
+				fmt.Println("-----")
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)

@@ -1,0 +1,124 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: auth-basic
+spec:
+  fleet:
+    name: default
+    namespace: default
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: auth-basic
+      description: auth-basic
+      version: '0.0.1'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: auth-basic-http-authentication-service.default.svc.cluster.local
+            port: 9002
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
+    paths:
+      "/auth":
+        get:
+          description: Returns GET data.
+          operationId: "/auth"
+          responses: {}
+      "/auth/home":
+        get:
+          description: Returns GET data.
+          operationId: "/auth/home"
+          responses: {}
+      "/auth/get":
+        get:
+          description: Returns GET data.
+          operationId: "/auth/get"
+          responses: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auth-basic-http-authentication-service
+  name: auth-basic-http-authentication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-basic-http-authentication-service
+  template:
+    metadata:
+      labels:
+        app: auth-basic-http-authentication-service
+    spec:
+      containers:
+        - name: auth-basic-http-authentication-service
+          image: banaioltd/envoy-auth-basic-http-service:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: auth-basic-http-authentication-service
+  name: auth-basic-http-authentication-service
+spec:
+  ports:
+    - port: 9002
+      targetPort: 9002
+  selector:
+    app: auth-basic-http-authentication-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: httpbin
+  name: httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin
+  template:
+    metadata:
+      labels:
+        app: httpbin
+    spec:
+      containers:
+        - name: httpbin
+          image: kennethreitz/httpbin
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          # ports:
+          #   - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: httpbin
+  name: httpbin
+spec:
+  ports:
+    - port: 8080
+      targetPort: 80
+  selector:
+    app: httpbin

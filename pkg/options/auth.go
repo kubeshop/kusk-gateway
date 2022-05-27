@@ -24,16 +24,6 @@ SOFTWARE.
 
 package options
 
-// x-kusk:
-//   ...
-//   auth:
-//     scheme: basic
-//     path_prefix: /login #optional
-//     auth-upstream:
-//       host:
-//         hostname: example.com
-//         port: 80
-
 type Auth struct {
 	Scheme       string       `json:"scheme,omitempty" yaml:"scheme,omitempty"`
 	PathPrefix   *string      `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
@@ -52,6 +42,7 @@ type AuthUpstreamHost struct {
 func (a *Auth) Validate() error {
 	return nil
 
+	// TODO(MBana): Double-check if we should do validation here.
 	// return v.ValidateStruct(&a,
 	// 	v.Field(&a.Scheme, v.In("http", "https")),
 	// 	v.Field(&a.Scheme, v.In("basic")),

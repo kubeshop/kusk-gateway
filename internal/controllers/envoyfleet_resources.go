@@ -162,7 +162,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/bin/sh", "-c"},
 		Args: []string{
-			"envoy -c /etc/envoy/envoy.yaml --service-node $POD_NAME",
+			"envoy -c /etc/envoy/envoy.yaml --log-level debug --service-node $POD_NAME",
 		},
 		Env: []corev1.EnvVar{
 			{

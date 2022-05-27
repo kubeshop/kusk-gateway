@@ -22,7 +22,7 @@ spec:
         auth-upstream:
           host:
             hostname: envoy-auth-basic-http-service.svc.cluster.local
-            port: 9092
+            port: 9002
       upstream:
         service:
           name: httpbin

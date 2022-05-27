@@ -36,6 +36,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
 const (
@@ -46,15 +48,7 @@ type hcmBuilder struct {
 	httpConnectionManager *hcm.HttpConnectionManager
 }
 
-// x-kusk:
-//   auth:
-//     scheme: basic
-//     auth-upstream:
-//       host:
-//         hostname: envoy-auth-basic-http-service.svc.cluster.local
-//         port: 9092
-
-func NewHCMBuilder() (*hcmBuilder, error) {
+func NewHCMBuilder( /* TODO(MBana): Figure out how to use `opts` here*/ opts *options.Options) (*hcmBuilder, error) {
 	rl := &ratelimit.LocalRateLimit{
 		StatPrefix: "http_local_rate_limiter",
 	}
@@ -63,12 +57,14 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 		return nil, fmt.Errorf("cannot marshal ratelimit configuration: %w", err)
 	}
 
-	uri := fmt.Sprintf("http://%s:%d", "envoy-auth-basic-http-service.svc.cluster.local", 9092)
+	// uri := fmt.Sprintf("http://%s:%d", "auth-basic-http-authentication-service.svc.cluster.local", 9002)
+	// // uri := fmt.Sprintf("%s:%d", "auth-basic-http-authentication-service", 9002)
 
-	pathPrefix := ""
+	// uri := fmt.Sprintf("http://%s:%d", "auth-basic-http-authentication-service.default.svc.cluster.local", 9002)
+	uri := fmt.Sprintf("%s:%d", "auth-basic-http-authentication-service.default.svc.cluster.local", 9002)
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
-		Cluster: "envoy-auth-basic-http-service",
+		Cluster: "auth-basic-http-authentication-service",
 	}
 	serverUri := &envoy_config_core_v3.HttpUri{
 		// https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/http_uri.proto#envoy-v3-api-msg-config-core-v3-httpuri
@@ -78,6 +74,7 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 			Seconds: 60,
 		},
 	}
+	pathPrefix := ""
 	authorizationResponse := &envoy_auth_v3.AuthorizationResponse{
 		AllowedUpstreamHeaders: &envoy_type_matcher_v3.ListStringMatcher{
 			Patterns: []*envoy_type_matcher_v3.StringMatcher{
@@ -90,10 +87,23 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 			},
 		},
 	}
+	// authorizationRequest := &envoy_auth_v3.AuthorizationRequest{
+	// 	AllowedHeaders: &envoy_type_matcher_v3.ListStringMatcher{
+	// 		Patterns: []*envoy_type_matcher_v3.StringMatcher{
+	// 			{
+	// 				MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{
+	// 					Exact: "Authorization",
+	// 				},
+	// 				IgnoreCase: true,
+	// 			},
+	// 		},
+	// 	},
+	// }
 	httpService := &envoy_auth_v3.HttpService{
 		ServerUri:             serverUri,
 		PathPrefix:            pathPrefix,
 		AuthorizationResponse: authorizationResponse,
+		// AuthorizationRequest:  authorizationRequest,
 	}
 	services := &envoy_auth_v3.ExtAuthz_HttpService{
 		HttpService: httpService,
@@ -128,6 +138,7 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 					Name: wellknown.CORS,
 				},
 				{
+					// Name: "envoy.filters.http.ext_authz", // TODO(MBana): Replace with `Name: wellknown.HTTPExternalAuthorization`
 					Name: wellknown.HTTPExternalAuthorization,
 					ConfigType: &hcm.HttpFilter_TypedConfig{
 						TypedConfig: anyAuthorization,

@@ -1,19 +1,19 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: StaticRoute
 metadata:
-  name: httpbin-sample
+  name: auth-static-route
 spec:
   # should work with localhost, example.org
-  hosts: [ "localhost", "*"]
+  hosts: ["localhost", "*"]
   paths:
-  # Root goes to httpbin
-    /: 
+    # Root goes to httpbin
+    /static:
       get: &root_route
         route:
           upstream:
             host:
-              hostname: httpbin.default.svc.cluster.local
-              port: 8080
+              hostname: auth-basic-http-authentication-service
+              port: 9002
             rewrite:
               pattern: "^/$"
               substitution: "/get"
@@ -22,13 +22,13 @@ spec:
       put: *root_route
       head: *root_route
     # /static -> /
-    /static: 
+    /static/redirect:
       get:
         redirect:
-          path_redirect: "/"
+          path_redirect: "/static-root"
           response_code: 308
     # /get2 routed to k8s service httpbin in default namespace with rewrite to /get
-    /get2: 
+    /static/get:
       get:
         route:
           upstream:
@@ -39,5 +39,3 @@ spec:
             rewrite:
               pattern: "^/get2$"
               substitution: "/get"
-
-
