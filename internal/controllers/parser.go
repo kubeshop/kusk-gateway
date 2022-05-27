@@ -127,7 +127,7 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				rt.ResponseHeadersToAdd = append(rt.ResponseHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
 						Key:   "Cache-Control",
-						Value: "max-age=60",
+						Value: "max-age=" + strconv.Itoa(*finalOpts.Cache.MaxAge),
 					},
 					Append: wrapperspb.Bool(false),
 				},
