@@ -1,0 +1,36 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: ext-authz-http-service
+spec:
+  fleet:
+    name: default
+    namespace: default
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: ext-authz-http-service
+      description: ext-authz-http-service
+      version: '0.0.1'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: ext-authz-http-service
+            port: 9002
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}

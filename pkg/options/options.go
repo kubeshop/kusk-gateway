@@ -107,6 +107,7 @@ type SubOptions struct {
 	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 	RateLimit  *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
 	Cache      *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
+	Auth       *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
@@ -133,6 +134,7 @@ func (o SubOptions) Validate() error {
 		v.Field(&o.QoS),
 		v.Field(&o.CORS),
 		v.Field(&o.Mocking),
+		v.Field(&o.Auth),
 	)
 }
 
@@ -199,6 +201,10 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	// Cache
 	if o.Cache == nil && in.Cache != nil {
 		o.Cache = in.Cache
+	}
+	// Auth
+	if o.Auth == nil && in.Auth != nil {
+		o.Auth = in.Auth
 	}
 
 	return

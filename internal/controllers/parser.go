@@ -69,7 +69,13 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(
+	envoyConfiguration *config.EnvoyConfiguration,
+	proxy *validation.Proxy,
+	opts *options.Options,
+	spec *openapi3.T,
+	httpConnectionManagerBuilder *config.HCMBuilder,
+) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -295,7 +301,35 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				rt.Action = routeRoute
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
+			case finalOpts.Auth != nil:
+				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
 
+				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
+
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(
+						clusterName,
+						upstreamServiceHost,
+						upstreamServicePort,
+					)
+				}
+
+				pathPrefix := ""
+				if finalOpts.Auth.PathPrefix != nil {
+					pathPrefix = *finalOpts.Auth.PathPrefix
+				}
+
+				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+					upstreamServiceHost,
+					upstreamServicePort,
+					clusterName,
+					pathPrefix,
+				)
+				if err != nil {
+					return err
+				}
+				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)

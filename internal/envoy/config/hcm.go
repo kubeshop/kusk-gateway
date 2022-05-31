@@ -41,11 +41,11 @@ const (
 	RouteName string = "local_route"
 )
 
-type hcmBuilder struct {
-	httpConnectionManager *hcm.HttpConnectionManager
+type HCMBuilder struct {
+	HTTPConnectionManager *hcm.HttpConnectionManager
 }
 
-func NewHCMBuilder() (*hcmBuilder, error) {
+func NewHCMBuilder() (*HCMBuilder, error) {
 	rl := &ratelimit.LocalRateLimit{
 		StatPrefix: "http_local_rate_limiter",
 	}
@@ -71,8 +71,8 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 		return nil, fmt.Errorf("cannot marshal cacheconfig configuration: %w", err)
 	}
 
-	return &hcmBuilder{
-		httpConnectionManager: &hcm.HttpConnectionManager{
+	hcmBuilder := &HCMBuilder{
+		HTTPConnectionManager: &hcm.HttpConnectionManager{
 			CodecType:  hcm.HttpConnectionManager_AUTO,
 			StatPrefix: "http",
 			RouteSpecifier: &hcm.HttpConnectionManager_Rds{
@@ -102,20 +102,40 @@ func NewHCMBuilder() (*hcmBuilder, error) {
 				},
 			},
 		},
-	}, nil
+	}
+
+	return hcmBuilder, nil
 }
 
-func (h *hcmBuilder) Validate() error {
-	return h.httpConnectionManager.Validate()
+// AppendFilterHTTPExternalAuthorizationFilterToStart - `HTTPExternalAuthorization` needs to come before `CORS` and `Router`,
+// so append it to the start of the list.
+func (h *HCMBuilder) AppendFilterHTTPExternalAuthorizationFilterToStart(anyAuthorization *anypb.Any) {
+	httpExternalAuthorizationFilter := &hcm.HttpFilter{
+		Name: wellknown.HTTPExternalAuthorization,
+		ConfigType: &hcm.HttpFilter_TypedConfig{
+			TypedConfig: anyAuthorization,
+		},
+	}
+
+	h.HTTPConnectionManager.HttpFilters = append(
+		[]*hcm.HttpFilter{
+			httpExternalAuthorizationFilter,
+		},
+		h.HTTPConnectionManager.HttpFilters...,
+	)
 }
 
-func (h *hcmBuilder) AddAccessLog(al *accesslog.AccessLog) *hcmBuilder {
-	h.httpConnectionManager.AccessLog = append(h.httpConnectionManager.AccessLog, al)
+func (h *HCMBuilder) Validate() error {
+	return h.HTTPConnectionManager.Validate()
+}
+
+func (h *HCMBuilder) AddAccessLog(al *accesslog.AccessLog) *HCMBuilder {
+	h.HTTPConnectionManager.AccessLog = append(h.HTTPConnectionManager.AccessLog, al)
 	return h
 }
 
-func (h *hcmBuilder) GetHTTPConnectionManager() *hcm.HttpConnectionManager {
-	return h.httpConnectionManager
+func (h *HCMBuilder) GetHTTPConnectionManager() *hcm.HttpConnectionManager {
+	return h.HTTPConnectionManager
 }
 
 func makeConfigSource() *core.ConfigSource {
