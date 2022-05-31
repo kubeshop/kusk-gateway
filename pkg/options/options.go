@@ -129,12 +129,6 @@ func (o SubOptions) Validate() error {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}
-	// TODO: make it work together
-	if o.Validation != nil && o.Mocking != nil {
-		if *o.Validation.Request.Enabled && *o.Mocking.Enabled {
-			return fmt.Errorf("validation and mocking are mutually exclusive")
-		}
-	}
 
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),

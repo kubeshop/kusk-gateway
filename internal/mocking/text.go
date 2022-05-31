@@ -30,10 +30,10 @@ import (
 )
 
 type mockedTextRouteBuilder struct {
-	baseMockedRouteBuilder
+	*baseMockedRouteBuilder
 }
 
-func (m mockedTextRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+func (m *mockedTextRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
 	text, err := getContentPlainTextReponse(args.ExampleContent)
 	if err != nil {
 		return nil, err
