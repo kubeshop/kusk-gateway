@@ -71,6 +71,10 @@ x-kusk:
     unit: minute
     per_connection: false
     response_code: 429
+
+  cache:
+    enabled: true
+    max_age: 10
 ```
 
 Check out the [OpenAPI Extension Guide](../guides/working-with-extension.md) to configure the operational aspects of your API.
@@ -232,3 +236,15 @@ The rate_limit object contains the following properties to configure request rat
 | `rate_limit.response_code`        | HTTP response code, which is returned when rate limiting. Default: 429, Too Many Requests. |
 
 Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](../customresources/envoyfleet.md).
+
+
+### **cache**
+
+The cache object contains the following properties to configure HTTP caching:
+
+| Name                 | Description                    |
+|:---------------------|--------------------------------|
+| `cache.enabled`      | Boolean flag to enable request validation.|
+| `cache.max_age`      | Indicates how long (in seconds) results of a request can be cached.  |
+
+Note: current support for caching is experimental. Check out [https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/cache_filter](Envoy documentation) to learn more about how it works.
