@@ -1,3 +1,5 @@
+include smoketests/Makefile.variables
+
 .DEFAULT_GOAL := all
 MAKEFLAGS += --environment-overrides --warn-undefined-variables # --print-directory --no-builtin-rules --no-builtin-variables
 
@@ -157,7 +159,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default  | kubectl apply -f -
 
 .PHONY: deploy-debug
 deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
@@ -237,3 +239,26 @@ curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d $
 rm -rf $${TMP_DIR} ;\
 }
 endef
+
+start-smoke-tests: 
+	@docker rm smoke-registry -f
+	@docker run -d -p 5000:5000 --name smoke-registry registry:2
+	@docker build -t localhost:5000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
+	@docker push localhost:5000/kusk-gateway:smoke
+deploy-smoke-tests: start-smoke-tests
+	cp config/default/kustomization.yaml kustomization-backup.yaml
+	@cat smoketests/image.yml >> config/default/kustomization.yaml
+	
+bootstrap-smoke-tests: deploy-smoke-tests deploy
+	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
+
+.PHONY: $(smoketests)
+$(smoketests): bootstrap-smoke-tests
+	$(MAKE) -C smoketests $@
+	@mv kustomization-backup.yaml config/default/kustomization.yaml
+
+# .PHONY: smoketests
+# smoketests:  $(smoketests)
+# $(smoketest): bootstrap-smoke-tests
+# 	$(MAKE) -C smoketests
+
