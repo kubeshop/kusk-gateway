@@ -253,9 +253,9 @@ bootstrap-smoke-tests: deploy-smoke-tests deploy
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 
 .PHONY: $(smoketests)
-$(smoketests): bootstrap-smoke-tests
+$(smoketests): #bootstrap-smoke-tests
 	$(MAKE) -C smoketests $@
-	@mv kustomization-backup.yaml config/default/kustomization.yaml
+#@mv kustomization-backup.yaml config/default/kustomization.yaml
 
 # .PHONY: smoketests
 # smoketests:  $(smoketests)

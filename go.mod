@@ -13,7 +13,6 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
-	github.com/segmentio/analytics-go v3.1.0+incompatible
 	github.com/stretchr/testify v1.7.0
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
@@ -24,12 +23,9 @@ require (
 )
 
 require (
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/segmentio/backo-go v1.0.0 // indirect
-	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 )
 
 require (
