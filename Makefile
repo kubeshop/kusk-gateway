@@ -255,7 +255,8 @@ bootstrap-smoke-tests: deploy-smoke-tests deploy
 .PHONY: $(smoketests)
 $(smoketests): #bootstrap-smoke-tests
 	$(MAKE) -C smoketests $@
-#@mv kustomization-backup.yaml config/default/kustomization.yaml
+	# @mv kustomization-backup.yaml config/default/kustomization.yaml
+	# @rm -rf smoketests/bin
 
 # .PHONY: smoketests
 # smoketests:  $(smoketests)
