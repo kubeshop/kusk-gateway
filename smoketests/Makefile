@@ -1,12 +1,5 @@
-# .PHONY: $(smoketests)
 include Makefile.variables
 
-test: 
-	@echo ''
-
-$(smoketests): test
-	touch .timestamp
-	# @echo github.com/kubeshop/kusk-gateway/smoketests/basic
-	echo "TADA"
+$(smoketests): 
 	go mod tidy
-	go test -v github.com/kubeshop/kusk-gateway/smoketests/$@
+	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)

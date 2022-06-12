@@ -1,2 +1,2 @@
 smoketests := \
-    basic \
+    check-basic \

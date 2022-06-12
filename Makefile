@@ -94,7 +94,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet $(ENVTEST) ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
 
 .PHONY: testing
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
@@ -253,13 +253,7 @@ bootstrap-smoke-tests: deploy-smoke-tests deploy
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 
 .PHONY: $(smoketests)
-$(smoketests): #bootstrap-smoke-tests
+$(smoketests): bootstrap-smoke-tests
 	$(MAKE) -C smoketests $@
-	# @mv kustomization-backup.yaml config/default/kustomization.yaml
-	# @rm -rf smoketests/bin
-
-# .PHONY: smoketests
-# smoketests:  $(smoketests)
-# $(smoketest): bootstrap-smoke-tests
-# 	$(MAKE) -C smoketests
-
+	@mv kustomization-backup.yaml config/default/kustomization.yaml
+	@rm -rf smoketests/bin
