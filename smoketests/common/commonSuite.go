@@ -54,4 +54,6 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 			counter++
 		}
 	}
+
+	// time.Sleep(10 * time.Second) // ugly way to wait it out
 }

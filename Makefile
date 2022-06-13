@@ -245,15 +245,14 @@ start-smoke-tests:
 	@docker run -d -p 5000:5000 --name smoke-registry registry:2
 	@docker build -t localhost:5000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
 	@docker push localhost:5000/kusk-gateway:smoke
-deploy-smoke-tests: start-smoke-tests
-	cp config/default/kustomization.yaml kustomization-backup.yaml
-	@cat smoketests/image.yml >> config/default/kustomization.yaml
 	
-bootstrap-smoke-tests: deploy-smoke-tests deploy #deploy-envoyfleet
+bootstrap-smoke-tests: start-smoke-tests deploy-local-registry deploy-envoyfleet $(smoketests)
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 
+deploy-local-registry: envtest
+	$(KUSTOMIZE) build smoketests/common  | kubectl apply -f -
+
 .PHONY: $(smoketests)
-$(smoketests): bootstrap-smoke-tests
+$(smoketests): 
 	$(MAKE) -C smoketests $@
-	@mv kustomization-backup.yaml config/default/kustomization.yaml
 	@rm -rf smoketests/bin
