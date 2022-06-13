@@ -240,19 +240,20 @@ rm -rf $${TMP_DIR} ;\
 }
 endef
 
-start-smoke-tests: 
+start-smoke-tests: bootstrap-smoke-tests
 	@docker rm smoke-registry -f
-	@docker run -d -p 5000:5000 --name smoke-registry registry:2
-	@docker build -t localhost:5000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
-	@docker push localhost:5000/kusk-gateway:smoke
+	@docker run -d -p 50000:5000 --name smoke-registry registry:2
+	@docker build -t localhost:50000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
+	@docker push localhost:50000/kusk-gateway:smoke
 	
-bootstrap-smoke-tests: start-smoke-tests deploy-local-registry deploy-envoyfleet $(smoketests)
+bootstrap-smoke-tests: start-smoke-tests deploy-local-registry deploy-envoyfleet #$(smoketests)
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 
 deploy-local-registry: envtest
-	$(KUSTOMIZE) build smoketests/common  | kubectl apply -f -
+	echo $(shell pwd)
+	bin/kustomize build smoketests/common  | kubectl apply -f -
 
 .PHONY: $(smoketests)
-$(smoketests): 
+$(smoketests): bootstrap-smoke-tests
 	$(MAKE) -C smoketests $@
 	@rm -rf smoketests/bin

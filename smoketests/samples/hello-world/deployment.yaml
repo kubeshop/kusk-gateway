@@ -13,10 +13,10 @@ spec:
         app: hello-world
     spec:
       containers:
-      - name: hello-world
-        image: localhost:5000/hello-world:smoke
-        ports:
-        - containerPort: 8080
+        - name: hello-world
+          image: localhost:50000/hello-world:smoke
+          ports:
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -27,5 +27,5 @@ spec:
   selector:
     app: hello-world
   ports:
-  - port: 8080
-    targetPort: 8080
+    - port: 8080
+      targetPort: 8080
