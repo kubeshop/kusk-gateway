@@ -28,7 +28,7 @@ func (s *KuskTestSuite) SetupSuite() {
 
 func (s *KuskTestSuite) setupAndWaitForReady() {
 
-	config, err := getKubeconfig()
+	config, err := GetKubeconfig()
 	s.NoError(err)
 
 	scheme := runtime.NewScheme()
@@ -54,6 +54,4 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 			counter++
 		}
 	}
-
-	// time.Sleep(10 * time.Second) // ugly way to wait it out
 }

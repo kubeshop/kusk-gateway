@@ -68,7 +68,7 @@ func (m *MockCheckSuite) SetupTest() {
 }
 
 func (m *MockCheckSuite) TestEndpoint() {
-	resp, err := http.Get(fmt.Sprintf("http://%s/hello", common.GetLocalIPAddress()))
+	resp, err := http.Get(fmt.Sprintf("http://%s/hello", common.GetClusterIP()))
 	m.NoError(err)
 
 	defer resp.Body.Close()

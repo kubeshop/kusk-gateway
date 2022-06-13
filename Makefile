@@ -256,3 +256,5 @@ deploy-local-registry: envtest
 $(smoketests): 
 	$(MAKE) -C smoketests $@
 	@rm -rf smoketests/bin
+
+check-all: check-basic check-mocking

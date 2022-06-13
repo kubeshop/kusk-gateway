@@ -1,7 +1,7 @@
 package common
 
 import (
-	"net"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func getKubeconfig() (*rest.Config, error) {
+func GetKubeconfig() (*rest.Config, error) {
 	var err error
 	var config *rest.Config
 	k8sConfigExists := false
@@ -48,13 +48,15 @@ func ReadFile(path string) string {
 	return string(dat)
 }
 
-func GetLocalIPAddress() string {
-	host, _ := os.Hostname()
-	addrs, _ := net.LookupIP(host)
-	for _, addr := range addrs {
-		if ipv4 := addr.To4(); ipv4 != nil {
-			return ipv4.String()
-		}
+func GetClusterIP() string {
+
+	config, err := GetKubeconfig()
+	if err != nil {
+		return ""
 	}
-	return ""
+
+	u, _ := url.Parse(config.Host)
+
+	return u.Hostname()
+
 }
