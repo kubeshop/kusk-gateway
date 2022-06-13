@@ -1,2 +1,3 @@
 smoketests := \
+    check-mocking \
     check-basic \

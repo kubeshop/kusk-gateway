@@ -249,11 +249,11 @@ deploy-smoke-tests: start-smoke-tests
 	cp config/default/kustomization.yaml kustomization-backup.yaml
 	@cat smoketests/image.yml >> config/default/kustomization.yaml
 	
-bootstrap-smoke-tests: deploy-smoke-tests deploy
+bootstrap-smoke-tests: deploy-smoke-tests deploy deploy-envoyfleet
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 
 .PHONY: $(smoketests)
-$(smoketests): bootstrap-smoke-tests
+$(smoketests): #bootstrap-smoke-tests
 	$(MAKE) -C smoketests $@
 	@mv kustomization-backup.yaml config/default/kustomization.yaml
 	@rm -rf smoketests/bin
