@@ -3,6 +3,7 @@ package mocking
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -63,11 +64,11 @@ func (m *MockCheckSuite) SetupTest() {
 	api.Spec.Fleet.Namespace = defaultNamespace
 
 	m.NoError(m.Cli.Create(context.TODO(), api, &client.CreateOptions{}))
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (m *MockCheckSuite) TestEndpoint() {
-	resp, err := http.Get("http://127.0.0.1/hello")
+	resp, err := http.Get(fmt.Sprintf("http://%s/hello", common.GetLocalIPAddress()))
 	m.NoError(err)
 
 	defer resp.Body.Close()
