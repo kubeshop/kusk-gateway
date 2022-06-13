@@ -58,7 +58,8 @@ func (b *BasicCheckSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName + "api"
 	api.ObjectMeta.Namespace = defaultNamespace
-
+	api.Spec.Fleet.Name = testName + "fleet"
+	api.Spec.Fleet.Namespace = defaultNamespace
 	b.NoError(b.Cli.Create(context.TODO(), api, &client.CreateOptions{}))
 }
 

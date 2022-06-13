@@ -56,3 +56,7 @@ vars:
       kind: Service
       name: kusk-gateway-webhooks-service
       version: v1
+images:
+  - name: kusk-gateway
+    newName: localhost:5000/kusk-gateway
+    newTag: smoke
