@@ -37,7 +37,7 @@ func (m *MockCheckSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName
 	api.ObjectMeta.Namespace = defaultNamespace
-
+	fmt.Println(api)
 	m.NoError(m.Cli.Create(context.TODO(), api, &client.CreateOptions{}))
 }
 
@@ -52,7 +52,7 @@ func (m *MockCheckSuite) TestEndpoint() {
 
 	o, _ := io.ReadAll(resp.Body)
 	res := map[string]string{}
-	fmt.Println("******", string(o))
+
 	m.NoError(json.Unmarshal(o, &res))
 
 	m.Equal(res["message"], "Hello from a mocked response!")
@@ -68,10 +68,9 @@ func (m *MockCheckSuite) TearDownTest() {
 	}
 
 	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
-
 }
 
-func TestBasichCheckSuite(t *testing.T) {
+func TestMockingSuite(t *testing.T) {
 	b := MockCheckSuite{}
 	suite.Run(t, &b)
 }
