@@ -1,7 +1,6 @@
 package common
 
 import (
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -46,17 +45,4 @@ func ReadFile(path string) string {
 	dat, _ := os.ReadFile(path)
 
 	return string(dat)
-}
-
-func GetClusterIP() string {
-
-	config, err := GetKubeconfig()
-	if err != nil {
-		return ""
-	}
-
-	u, _ := url.Parse(config.Host)
-
-	return u.Hostname()
-
 }

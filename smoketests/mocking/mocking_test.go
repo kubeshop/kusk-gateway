@@ -9,13 +9,14 @@ import (
 	"testing"
 	"time"
 
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kubeshop/kusk-gateway/smoketests/common"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/smoketests/common"
 )
 
 const (
@@ -68,7 +69,11 @@ func (m *MockCheckSuite) SetupTest() {
 }
 
 func (m *MockCheckSuite) TestEndpoint() {
-	resp, err := http.Get(fmt.Sprintf("http://%s/hello", common.GetClusterIP()))
+	envoyFleetSvc := &corev1.Service{}
+	m.NoError(
+		m.Cli.Get(context.TODO(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
+	)
+	resp, err := http.Get(fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP))
 	m.NoError(err)
 
 	defer resp.Body.Close()
@@ -93,13 +98,13 @@ func (m *MockCheckSuite) TearDownTest() {
 
 	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
 
-	// fleet := &kuskv1.EnvoyFleet{
-	// 	ObjectMeta: v1.ObjectMeta{
-	// 		Name:      testName + "fleet",
-	// 		Namespace: defaultNamespace,
-	// 	},
-	// }
-	// m.NoError(m.Cli.Delete(context.TODO(), fleet, &client.DeleteOptions{}))
+	fleet := &kuskv1.EnvoyFleet{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      defaultName,
+			Namespace: defaultNamespace,
+		},
+	}
+	m.NoError(m.Cli.Delete(context.TODO(), fleet, &client.DeleteOptions{}))
 }
 
 func TestMockingSuite(t *testing.T) {
