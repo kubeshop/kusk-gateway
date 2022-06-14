@@ -27,6 +27,8 @@ type BasicCheckSuite struct {
 }
 
 func (b *BasicCheckSuite) SetupTest() {
+	// time.Sleep(10 * time.Second) //crude way to wait it out
+
 	rawFleet := common.ReadFile("envoyfleet.yaml")
 	fleet := &kuskv1.EnvoyFleet{}
 

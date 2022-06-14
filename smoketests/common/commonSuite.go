@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -46,7 +47,12 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 			break
 		}
 		s.NoError(s.Cli.Get(context.Background(), client.ObjectKey{Namespace: KuskNamespace, Name: KuskManager}, &deploy))
-
+		// if counter == 0 {
+		// 	time.Sleep(5 * time.Second)
+		// }
+		fmt.Println(" deploy.Status.AvailableReplicas", deploy.Status.AvailableReplicas)
+		fmt.Println("deploy.Status.ReadyReplicas", deploy.Status.ReadyReplicas)
+		fmt.Println("deploy.Status.UpdatedReplicas", deploy.Status.UpdatedReplicas)
 		if deploy.Status.AvailableReplicas > 0 && deploy.Status.ReadyReplicas > 0 {
 			break
 		} else {
