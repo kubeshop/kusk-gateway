@@ -1,10 +1,10 @@
 include Makefile.variables
 
 
-$(smoketests): sandbox
+$(smoketests): #sandbox
 	go mod tidy
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
-	kubectl delete -f samples/hello-world/deployment.yaml
+	# kubectl delete -f samples/hello-world/deployment.yaml
 
 
 sandbox: 
