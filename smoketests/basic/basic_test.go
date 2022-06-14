@@ -27,8 +27,6 @@ type BasicCheckSuite struct {
 }
 
 func (b *BasicCheckSuite) SetupTest() {
-	// time.Sleep(10 * time.Second) //crude way to wait it out
-
 	rawFleet := common.ReadFile("envoyfleet.yaml")
 	fleet := &kuskv1.EnvoyFleet{}
 
@@ -71,7 +69,7 @@ func (b *BasicCheckSuite) TestGetAPI() {
 		Namespace: defaultNamespace,
 		Name:      testName + "api",
 	}, api))
-	b.Equal(api.Name, testName+"api")
+	b.Equal(testName+"api", api.Name)
 }
 
 func (b *BasicCheckSuite) TestGetFleet() {
@@ -80,7 +78,7 @@ func (b *BasicCheckSuite) TestGetFleet() {
 		Namespace: defaultNamespace,
 		Name:      testName + "fleet",
 	}, api))
-	b.Equal(api.Name, testName+"fleet")
+	b.Equal(testName+"fleet", api.Name)
 }
 
 func (b *BasicCheckSuite) TearDownTest() {

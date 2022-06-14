@@ -31,30 +31,6 @@ type MockCheckSuite struct {
 }
 
 func (m *MockCheckSuite) SetupTest() {
-	// rawFleet := common.ReadFile("envoyfleet.yaml")
-	// fleet := &kuskv1.EnvoyFleet{}
-
-	// m.NoError(yaml.Unmarshal([]byte(rawFleet), fleet))
-
-	// fleet.ObjectMeta.Namespace = defaultNamespace
-	// fleet.ObjectMeta.Name = testName + "fleet"
-	// fleet.Spec.Service = &kuskv1.ServiceConfig{
-	// 	Type: corev1.ServiceTypeLoadBalancer,
-	// 	Ports: []corev1.ServicePort{
-	// 		{
-	// 			Port:       testPort,
-	// 			TargetPort: intstr.FromString("http"),
-	// 			Name:       "http",
-	// 		},
-	// 		{
-	// 			Port:       444,
-	// 			TargetPort: intstr.FromString("http"),
-	// 			Name:       "https",
-	// 		},
-	// 	},
-	// }
-	// m.NoError(m.Cli.Create(context.TODO(), fleet, &client.CreateOptions{}))
-
 	rawApi := common.ReadFile("../samples/hello-world/mock-api.yaml")
 	api := &kuskv1.API{}
 	m.NoError(yaml.Unmarshal([]byte(rawApi), api))
@@ -84,7 +60,7 @@ func (m *MockCheckSuite) TestEndpoint() {
 	res := map[string]string{}
 	m.NoError(json.Unmarshal(o, &res))
 
-	m.Equal(res["message"], "Hello from a mocked response!")
+	m.Equal("Hello from a mocked response!", res["message"])
 
 }
 
