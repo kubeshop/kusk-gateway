@@ -1,4 +1,4 @@
-FROM python:3.7-alpine3.12 as builder
+FROM python:rc-alpine3.12 as builder
 
 ENV PYTHONUNBUFFERED 1
 ENV PATH="${PATH}:/sbin"
