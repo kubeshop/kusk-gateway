@@ -29,4 +29,4 @@ jobs:
       # - name: Pepare
       #   run: make
       - name: Test
-        run: make check-basic check-mocking
+        run: make test check-all
