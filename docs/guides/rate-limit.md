@@ -2,7 +2,7 @@
 
 Rate limiting ensures that your application doesn't get more than a specified number of requests over time. It effectively helps to protect your API from overloading. For requests above the threshold, Kusk Gateway returns HTTP Too Many Requests error.
 
-Kusk makes it easy to configure Rate Limiting, using a simple CORS extension:
+Kusk makes it easy to configure Rate Limiting, using the `rate_limit` option in the `x-kusk` extension:
 
 ```yaml
 openapi: 3.0.0
