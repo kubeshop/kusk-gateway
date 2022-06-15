@@ -41,17 +41,13 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 
 	deploy := apps.Deployment{}
 	counter := 0
-	for {
-		if counter == 100 {
-			break
-		}
+	for counter == 100 {
 		s.NoError(s.Cli.Get(context.Background(), client.ObjectKey{Namespace: KuskNamespace, Name: KuskManager}, &deploy))
 
 		if deploy.Status.AvailableReplicas > 0 && deploy.Status.ReadyReplicas > 0 {
 			break
-		} else {
-			time.Sleep(2 * time.Second)
-			counter++
 		}
+		time.Sleep(2 * time.Second)
+		counter++
 	}
 }

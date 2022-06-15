@@ -1,12 +1,26 @@
 # Smoketest
 
 ## Running smoketest: 
+
+Run all smoke tests
+```
+make check-all
+```
+
+or individually:
+
 ```
 make check-basic 
-```
-```
-make check-mocking
 ```
 
 ## Adding smoketests
 
+1. Before adding a smoke test first add test in Makefile.variables in form check-{test_name}
+2. Next add a directory in smoketest {test_name}. 
+3. Ensure that you are implementing tests like this:
+
+```
+type SomeTestCheckSuite struct {
+	common.KuskTestSuite
+}
+```
