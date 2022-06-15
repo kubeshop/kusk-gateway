@@ -246,7 +246,7 @@ start-smoke-tests: deploy-local-registry deploy-envoyfleet
 	@docker build -t localhost:50000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
 	@docker push localhost:50000/kusk-gateway:smoke
 	
-deploy-local-registry: envtest
+deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
 	echo $(shell pwd)
 	bin/kustomize build smoketests/common  | kubectl apply -f -
 
