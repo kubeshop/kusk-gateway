@@ -224,7 +224,7 @@ See the [Guide on Mocking](../guides/mocking.md) to learn more about this functi
 
 Note: Currently `mocking` is incompatible with the `validation` option - the configuration deployment will fail if both are enabled.
 
-### **rate_limit**
+### **Rate limiting**
 
 The rate_limit object contains the following properties to configure request rate limiting:
 
@@ -238,7 +238,7 @@ The rate_limit object contains the following properties to configure request rat
 Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](../customresources/envoyfleet.md).
 
 
-### **cache**
+### **Caching**
 
 The cache object contains the following properties to configure HTTP caching:
 
