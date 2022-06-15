@@ -1,3 +1,5 @@
+include smoketests/Makefile.variables
+
 .DEFAULT_GOAL := all
 MAKEFLAGS += --environment-overrides --warn-undefined-variables # --print-directory --no-builtin-rules --no-builtin-variables
 
@@ -92,7 +94,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet $(ENVTEST) ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
 
 .PHONY: testing
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
@@ -157,7 +159,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default  | kubectl apply -f -
 
 .PHONY: deploy-debug
 deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
@@ -237,3 +239,20 @@ curl -LO $${PB_REL}/download/v$${VERSION}/$${FILENAME} ; unzip $${FILENAME} -d $
 rm -rf $${TMP_DIR} ;\
 }
 endef
+
+start-smoke-tests: deploy-local-registry deploy-envoyfleet
+	@docker rm smoke-registry -f
+	@docker run -d -p 50000:5000 --name smoke-registry registry:2
+	@docker build -t localhost:50000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
+	@docker push localhost:50000/kusk-gateway:smoke
+	
+deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
+	echo $(shell pwd)
+	bin/kustomize build smoketests/common  | kubectl apply -f -
+
+.PHONY: $(smoketests)
+$(smoketests): start-smoke-tests
+	$(MAKE) -C smoketests $@
+	@rm -rf smoketests/bin
+
+check-all: check-basic check-mocking

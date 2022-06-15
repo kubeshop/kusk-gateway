@@ -1,10 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../crd
-  - ../rbac
-  - ../manager
-  - ../webhook
+  - ../../config/crd
+  - ../../config/rbac
+  - ../../config/manager
+  - ../../config/webhook
 
 # Adds namespace to all resources.
 namespace: kusk-system
@@ -56,3 +56,8 @@ vars:
       kind: Service
       name: kusk-gateway-webhooks-service
       version: v1
+
+images:
+  - name: kusk-gateway
+    newName: localhost:50000/kusk-gateway
+    newTag: smoke

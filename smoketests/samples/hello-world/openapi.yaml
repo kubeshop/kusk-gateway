@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: simple-api
+  version: 0.1.0
+x-kusk:
+  cors:
+    origins:
+      - "*"
+    methods:
+      - GET
+      - POST
+  upstream:
+    service:
+      name: hello-world-svc
+      namespace: default
+      port: 8080
+paths:
+  /hello:
+    get:
+      responses:
+        '200':
+          description: A simple hello world!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+              example: 
+                message: Hello from a mocked response!
+  /validated:
+    x-kusk:
+      validation:
+        request:
+          enabled: true
+    post:
+      requestBody:
+        description: ""
+        content:
+          application/json:
+            schema: 
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '200':
+          description: ""
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Hello mocked Kusk!
