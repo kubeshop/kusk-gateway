@@ -48,6 +48,23 @@ func (m *BasicAuthCheckSuite) SetupTest() {
 	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
 }
 
+func (m *BasicAuthCheckSuite) TestAuthorized() {
+	envoyFleetSvc := &corev1.Service{}
+	m.NoError(
+		m.Cli.Get(context.TODO(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
+	)
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP), nil)
+	m.NoError(err)
+	req.SetBasicAuth("kubeshop", "kubeshop")
+
+	resp, err := http.DefaultClient.Do(req)
+	m.NoError(err)
+
+	defer resp.Body.Close()
+	m.Equal(200, resp.StatusCode)
+}
+
 func (m *BasicAuthCheckSuite) TestUnauthorized() {
 	envoyFleetSvc := &corev1.Service{}
 	m.NoError(
