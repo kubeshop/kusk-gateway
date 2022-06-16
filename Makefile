@@ -64,6 +64,9 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: dev-update
+dev-update: docker-build update cycle deploy-envoyfleet ## Update cluster with local changes (usually after you have modified the code).
+
 .PHONY: create-env
 create-env: ## Spin up a local development cluster with Minikube and install kusk Gateway
 	./development/cluster/create-env.sh
@@ -240,19 +243,20 @@ rm -rf $${TMP_DIR} ;\
 }
 endef
 
-start-smoke-tests: deploy-local-registry deploy-envoyfleet
+start-smoke-tests: deploy-local-registry 
 	@docker rm smoke-registry -f
 	@docker run -d -p 50000:5000 --name smoke-registry registry:2
-	@docker build -t localhost:50000/kusk-gateway:smoke -f ./build/manager/Dockerfile .
-	@docker push localhost:50000/kusk-gateway:smoke
+	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
+	@docker push localhost:50000/kusk-gateway:latest
 	
 deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
 	echo $(shell pwd)
 	bin/kustomize build smoketests/common  | kubectl apply -f -
+	$(MAKE) deploy-envoyfleet
 
 .PHONY: $(smoketests)
 $(smoketests): start-smoke-tests
 	$(MAKE) -C smoketests $@
 	@rm -rf smoketests/bin
 
-check-all: check-basic check-mocking
+check-all: check-basic check-mocking check-basic_auth

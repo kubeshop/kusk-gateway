@@ -74,13 +74,6 @@ func (m *MockCheckSuite) TearDownTest() {
 
 	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
 
-	fleet := &kuskv1.EnvoyFleet{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      defaultName,
-			Namespace: defaultNamespace,
-		},
-	}
-	m.NoError(m.Cli.Delete(context.TODO(), fleet, &client.DeleteOptions{}))
 }
 
 func TestMockingSuite(t *testing.T) {

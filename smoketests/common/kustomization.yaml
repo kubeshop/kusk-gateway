@@ -60,4 +60,4 @@ vars:
 images:
   - name: kusk-gateway
     newName: localhost:50000/kusk-gateway
-    newTag: smoke
+    newTag: latest
