@@ -3,7 +3,7 @@
 Kusk Gateway comes with an `x-kusk` [OpenAPI extension](https://swagger.io/specification/#specification-extensions) to allow
 an OpenAPI definition to be the source of truth for both operational and functional aspects of your APIs.
 
-The [extension reference](../reference/extension.md) describes all available properties and the following guides are 
+The [extension reference](../../reference/extension) describes all available properties and the following guides are 
 available to help you make the most of them:
 
 - [Mocking](mocking.md) - How to mock all or parts of your API.
