@@ -139,6 +139,7 @@ func UpdateConfigFromAPIOpts(
 				},
 				)
 			}
+
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
 			// Redirect -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
@@ -302,34 +303,10 @@ func UpdateConfigFromAPIOpts(
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
-				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
-				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
-
-				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
-
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(
-						clusterName,
-						upstreamServiceHost,
-						upstreamServicePort,
-					)
-				}
-
-				pathPrefix := ""
-				if finalOpts.Auth.PathPrefix != nil {
-					pathPrefix = *finalOpts.Auth.PathPrefix
-				}
-
-				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
-					upstreamServiceHost,
-					upstreamServicePort,
-					clusterName,
-					pathPrefix,
-				)
+				err := configureAuth(finalOpts, envoyConfiguration, httpConnectionManagerBuilder)
 				if err != nil {
 					return err
 				}
-				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -686,4 +663,37 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 	}
 
 	return rl
+}
+
+func configureAuth(finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+	upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+	upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
+
+	clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
+
+	if !envoyConfiguration.ClusterExist(clusterName) {
+		envoyConfiguration.AddCluster(
+			clusterName,
+			upstreamServiceHost,
+			upstreamServicePort,
+		)
+	}
+
+	pathPrefix := ""
+	if finalOpts.Auth.PathPrefix != nil {
+		pathPrefix = *finalOpts.Auth.PathPrefix
+	}
+
+	httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+		upstreamServiceHost,
+		upstreamServicePort,
+		clusterName,
+		pathPrefix,
+	)
+	if err != nil {
+		return err
+	}
+
+	httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+	return nil
 }
