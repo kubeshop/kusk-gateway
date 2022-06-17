@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ext-authz-http-service
+  name: ext-authz-http-service
+  namespace: default
+spec:
+  ports:
+    - port: 9002
+      targetPort: 9002
+  selector:
+    app: ext-authz-http-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: httpbin
+  name: httpbin
+  namespace: default
+spec:
+  ports:
+    - port: 8080
+      targetPort: 80
+  selector:
+    app: httpbin
+---

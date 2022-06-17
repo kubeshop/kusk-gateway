@@ -2,6 +2,7 @@ apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
   name: ext-authz-http-service
+  namespace: default
 spec:
   fleet:
     name: default
