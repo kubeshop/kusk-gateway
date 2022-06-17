@@ -62,10 +62,5 @@ spec:
         - POST
         origins:
         - '*'
-      upstream:
-        service:
-          name: hello-world-svc
-          namespace: default
-          port: 8080
       mocking:
         enabled: true
