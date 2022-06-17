@@ -111,11 +111,11 @@ func (e *EnvoyConfiguration) AddRouteToVHost(vhost string, rt *route.Route) erro
 	virtualHost, ok := e.vHosts[vhost]
 
 	if !ok {
-		return fmt.Errorf("envoy configuration doesnt have virtualhost: %s", vhost)
+		return fmt.Errorf("envoy configuration does not have virtualhost: %s", vhost)
 	}
 
 	if err := virtualHost.AddRoute(rt); err != nil {
-		return fmt.Errorf("can't add route %s to vhost %s: %w", rt.GetName(), vhost, err)
+		return fmt.Errorf("cannot add route %s to vhost %s: %w", rt.GetName(), vhost, err)
 	}
 
 	return nil
