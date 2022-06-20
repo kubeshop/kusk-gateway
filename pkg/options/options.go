@@ -107,7 +107,7 @@ type SubOptions struct {
 	Mocking     *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 	RateLimit   *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
 	Cache       *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
-	OpenAPIPath string             `json:"openapi-path,omitempty" yaml:"openapipath,omitempty"`
+	OpenAPIPath string             `json:"openapi-path,omitempty" yaml:"openapi-path,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
