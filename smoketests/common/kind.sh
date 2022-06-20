@@ -10,6 +10,7 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true
     registry:2
 fi
 
+kind delete cluster
 # create a cluster with the local registry enabled in containerd
 cat <<EOF | kind create cluster --config=-
 kind: Cluster

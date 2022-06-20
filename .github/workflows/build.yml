@@ -27,4 +27,4 @@ jobs:
           go-version: 1.17
 
       - name: Test
-        run: make check-all
+        run: make gh-ci
