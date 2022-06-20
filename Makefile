@@ -266,7 +266,7 @@ check-all: check-basic check-mocking check-basic_auth
 gh-ci: 
 	@docker rm smoke-registry -f
 	@docker run -d -p 50000:5000 --name smoke-registry registry:2
-	@docker build -t localhost:50/kusk-gateway:latest -f ./build/manager/Dockerfile .
+	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
 	@docker push localhost:50000/kusk-gateway:latest
 	./smoketests/common/kind.sh
 	$(MAKE) check-all 
