@@ -35,7 +35,7 @@ import (
 
 const kuskExtensionKey = "x-kusk"
 
-func getPathOptions(path *openapi3.PathItem) (options.SubOptions, bool, error) {
+func GetPathOptions(path *openapi3.PathItem) (options.SubOptions, bool, error) {
 	var res options.SubOptions
 
 	ok, err := parseExtension(&path.ExtensionProps, &res)
@@ -65,7 +65,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 	}
 
 	for path, pathItem := range spec.Paths {
-		pathSubOptions, _, err := getPathOptions(pathItem)
+		pathSubOptions, _, err := GetPathOptions(pathItem)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract path suboptions: %w", err)
 		}
@@ -100,4 +100,47 @@ func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{})
 	}
 
 	return false, nil
+}
+
+func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
+	postProcessed := &openapi3.T{
+		Paths: openapi3.Paths{},
+	}
+	for path, pathItem := range apiSpec.Paths {
+		pathOptions, _, _ := GetPathOptions(pathItem)
+		for method := range pathItem.Operations() {
+			if pathOptions.Disabled != nil && *pathOptions.Disabled {
+				item := &openapi3.PathItem{}
+				fOpt := opt.OperationFinalSubOptions[method+path]
+				if fOpt.Disabled != nil && !*fOpt.Disabled {
+					if pathOptions.Disabled != nil && *pathOptions.Disabled {
+						if item = parsePathItem(pathItem); len(item.Operations()) > 0 {
+							postProcessed.Paths[path] = item
+						}
+					}
+				}
+			} else {
+				delete(pathItem.ExtensionProps.Extensions, kuskExtensionKey)
+				postProcessed.Paths[path] = pathItem
+			}
+		}
+	}
+	return postProcessed
+}
+func parsePathItem(pathItem *openapi3.PathItem) (result *openapi3.PathItem) {
+	result = pathItem
+	delete(result.ExtensionProps.Extensions, kuskExtensionKey)
+	for operation, oper := range pathItem.Operations() {
+		opts, _, _ := getOperationOptions(oper)
+		if opts.Disabled != nil && !*opts.Disabled {
+			delete(oper.ExtensionProps.Extensions, kuskExtensionKey)
+			result.SetOperation(operation, oper)
+		} else if opts.Disabled != nil && *opts.Disabled {
+			result.SetOperation(operation, nil)
+		} else if opts.Disabled == nil {
+			result.SetOperation(operation, nil)
+		}
+
+	}
+	return result
 }

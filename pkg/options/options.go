@@ -99,14 +99,15 @@ type SubOptions struct {
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path       *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
-	QoS        *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
-	CORS       *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
-	Websocket  *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
-	Validation *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
-	Mocking    *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
-	RateLimit  *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
-	Cache      *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
+	Path        *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS         *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS        *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Websocket   *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
+	Validation  *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
+	Mocking     *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
+	RateLimit   *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
+	Cache       *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
+	OpenAPIPath string             `json:"openapi-path,omitempty" yaml:"openapipath,omitempty"`
 }
 
 func (o SubOptions) Validate() error {

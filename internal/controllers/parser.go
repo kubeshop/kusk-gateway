@@ -348,7 +348,33 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				}
 			}
 		}
+
 	}
+
+	if opts.OpenAPIPath != "" {
+		for _, vh := range opts.Hosts {
+
+			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json")
+			if err != nil {
+				return fmt.Errorf("cannot build mocked route: %w", err)
+			}
+
+			if !strings.HasPrefix(opts.OpenAPIPath, "/") {
+				opts.OpenAPIPath = fmt.Sprintf("/%s", opts.OpenAPIPath)
+			}
+			openapiRt, _ := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+				RoutePath:      opts.OpenAPIPath,
+				Method:         "GET",
+				StatusCode:     uint32(200),
+				ExampleContent: parseSpec.PostProcessedDef(spec, opts),
+			})
+
+			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
+				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
+			}
+		}
+	}
+
 	// update the validation proxy in the end
 	if len(proxiedServices) > 0 {
 		proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
