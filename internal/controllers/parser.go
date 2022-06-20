@@ -402,7 +402,6 @@ func UpdateConfigFromAPIOpts(
 
 	if opts.OpenAPIPath != "" {
 		for _, vh := range opts.Hosts {
-
 			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json")
 			if err != nil {
 				return fmt.Errorf("cannot build mocked route: %w", err)
@@ -415,7 +414,7 @@ func UpdateConfigFromAPIOpts(
 				RoutePath:      opts.OpenAPIPath,
 				Method:         "GET",
 				StatusCode:     uint32(200),
-				ExampleContent: parseSpec.PostProcessedDef(spec, opts),
+				ExampleContent: parseSpec.PostProcessedDef(*spec, *opts),
 			})
 			if err != nil {
 				return fmt.Errorf("cannot build postprocessed api route: %w", err)
