@@ -103,9 +103,10 @@ func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{})
 }
 
 func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
-	postProcessed := &openapi3.T{
-		Paths: openapi3.Paths{},
-	}
+	postProcessed := apiSpec
+	postProcessed.Paths = openapi3.Paths{}
+	delete(postProcessed.ExtensionProps.Extensions, kuskExtensionKey)
+
 	for path, pathItem := range apiSpec.Paths {
 		pathOptions, _, _ := GetPathOptions(pathItem)
 		for method := range pathItem.Operations() {
