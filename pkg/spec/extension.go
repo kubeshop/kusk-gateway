@@ -102,7 +102,7 @@ func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{})
 	return false, nil
 }
 
-func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
+func PostProcessedDef(apiSpec openapi3.T, opt options.Options) *openapi3.T {
 	postProcessed := apiSpec
 	postProcessed.Paths = openapi3.Paths{}
 	delete(postProcessed.ExtensionProps.Extensions, kuskExtensionKey)
@@ -126,7 +126,8 @@ func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
 			}
 		}
 	}
-	return postProcessed
+
+	return &postProcessed
 }
 
 func parsePathItem(pathItem *openapi3.PathItem) (result *openapi3.PathItem) {
