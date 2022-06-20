@@ -182,7 +182,7 @@ update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug config
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
-	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=360s
+	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=30s
 
 .PHONY: cycle-envoy
 cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
@@ -248,6 +248,7 @@ start-smoke-tests:
 	@docker run -d -p 50000:5000 --name smoke-registry registry:2
 	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
 	@docker push localhost:50000/kusk-gateway:latest
+	@kind load docker-image localhost:50000/hello-world:smoke
 	$(MAKE) deploy-local-registry 
 	
 deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
