@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 
-	// v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -96,15 +96,15 @@ func (m *BasicAuthCheckSuite) TestForbidden() {
 	m.Equal(403, resp.StatusCode)
 }
 
-// func (m *BasicAuthCheckSuite) TearDownSuite() {
-// 	api := &kuskv1.API{
-// 		ObjectMeta: v1.ObjectMeta{
-// 			Name:      testName,
-// 			Namespace: defaultNamespace,
-// 		},
-// 	}
-// 	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
-// }
+func (m *BasicAuthCheckSuite) TearDownSuite() {
+	api := &kuskv1.API{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      testName,
+			Namespace: defaultNamespace,
+		},
+	}
+	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
+}
 
 func TestBasicAuthCheckSuite(t *testing.T) {
 	b := BasicAuthCheckSuite{}
