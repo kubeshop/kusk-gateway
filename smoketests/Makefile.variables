@@ -1,5 +1,4 @@
 smoketests := \
     check-mocking \
     check-basic \
-    check-basic_auth \
-    check-rate_limit
+    check-basic_auth

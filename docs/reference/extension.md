@@ -227,12 +227,12 @@ Note: Currently `mocking` is incompatible with the `validation` option - the con
 
 The rate_limit object contains the following properties to configure request rate limiting:
 
-| Name                              | Description                                                                                                              |
-|:----------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `rate_limit.requests_per_unit`    | How many requests API can handle per unit of time.                                                                       |
-| `rate_limit.unit`                 | Unit of time, can be one of the following: second, minute, hour .                                                        |
-| `rate_limit.per_connection`       | Boolean flag, that specifies whether the rate limiting, should be applied per connection or in total. Default: false.    |
-| `rate_limit.response_code`        | HTTP response code, which is returned when rate limiting. Default: 429, Too Many Requests.                               |
+| Name                 | Description                    |
+|:---------------------|--------------------------------|
+| `rate_limit.requests_per_unit`    | How many requests API can handle per unit of time. |
+| `rate_limit.unit`                 | Unit of time, can be one of the following: second, minute, hour . |
+| `rate_limit.per_connection`       | Boolean flag, that specifies whether the rate limiting, should be applied per connection or in total. Default: false. |
+| `rate_limit.response_code`        | HTTP response code, which is returned when rate limiting. Default: 429, Too Many Requests. |
 
 Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](../customresources/envoyfleet.md).
 

@@ -63,7 +63,7 @@ func (m *BasicAuthCheckSuite) TestAuthorized() {
 	m.NoError(err)
 
 	defer resp.Body.Close()
-	m.Equal(http.StatusOK, resp.StatusCode)
+	m.Equal(200, resp.StatusCode)
 }
 
 func (m *BasicAuthCheckSuite) TestUnauthorized() {
@@ -80,7 +80,7 @@ func (m *BasicAuthCheckSuite) TestUnauthorized() {
 	m.NoError(err)
 
 	defer resp.Body.Close()
-	m.Equal(http.StatusUnauthorized, resp.StatusCode)
+	m.Equal(401, resp.StatusCode)
 }
 
 func (m *BasicAuthCheckSuite) TestForbidden() {
@@ -93,7 +93,7 @@ func (m *BasicAuthCheckSuite) TestForbidden() {
 
 	defer resp.Body.Close()
 
-	m.Equal(http.StatusForbidden, resp.StatusCode)
+	m.Equal(403, resp.StatusCode)
 }
 
 func (m *BasicAuthCheckSuite) TearDownSuite() {

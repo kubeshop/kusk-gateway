@@ -243,16 +243,16 @@ rm -rf $${TMP_DIR} ;\
 }
 endef
 
-start-smoke-tests:
+start-smoke-tests: 
 	@docker rm smoke-registry -f
 	@docker run -d -p 50000:5000 --name smoke-registry registry:2
 	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
 	@docker push localhost:50000/kusk-gateway:latest
-	$(MAKE) deploy-local-registry
-
+	$(MAKE) deploy-local-registry 
+	
 deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
 	echo $(shell pwd)
-	bin/kustomize build smoketests/common | kubectl apply -f -
+	bin/kustomize build smoketests/common  | kubectl apply -f -
 	$(MAKE) cycle
 	$(MAKE) deploy-envoyfleet
 
@@ -261,4 +261,4 @@ $(smoketests): start-smoke-tests
 	$(MAKE) -C smoketests $@
 	@rm -rf smoketests/bin
 
-check-all: check-basic check-mocking check-basic_auth check-rate_limit
+check-all: check-basic check-mocking check-basic_auth
