@@ -35,7 +35,7 @@ import (
 
 const kuskExtensionKey = "x-kusk"
 
-func GetPathOptions(path *openapi3.PathItem) (options.SubOptions, bool, error) {
+func getPathOptions(path *openapi3.PathItem) (options.SubOptions, bool, error) {
 	var res options.SubOptions
 
 	ok, err := parseExtension(&path.ExtensionProps, &res)
@@ -65,7 +65,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 	}
 
 	for path, pathItem := range spec.Paths {
-		pathSubOptions, _, err := GetPathOptions(pathItem)
+		pathSubOptions, _, err := getPathOptions(pathItem)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract path suboptions: %w", err)
 		}
@@ -108,7 +108,7 @@ func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
 	delete(postProcessed.ExtensionProps.Extensions, kuskExtensionKey)
 
 	for path, pathItem := range apiSpec.Paths {
-		pathOptions, _, _ := GetPathOptions(pathItem)
+		pathOptions, _, _ := getPathOptions(pathItem)
 		for method := range pathItem.Operations() {
 			if pathOptions.Disabled != nil && *pathOptions.Disabled {
 				item := &openapi3.PathItem{}
@@ -128,6 +128,7 @@ func PostProcessedDef(apiSpec *openapi3.T, opt *options.Options) *openapi3.T {
 	}
 	return postProcessed
 }
+
 func parsePathItem(pathItem *openapi3.PathItem) (result *openapi3.PathItem) {
 	result = pathItem
 	delete(result.ExtensionProps.Extensions, kuskExtensionKey)
