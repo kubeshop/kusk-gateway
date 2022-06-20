@@ -182,7 +182,7 @@ update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug config
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
-	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=120s
+	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=360s
 
 .PHONY: cycle-envoy
 cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
