@@ -248,7 +248,6 @@ start-smoke-tests:
 	@docker run -d -p 50000:5000 --name smoke-registry registry:2
 	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
 	@docker push localhost:50000/kusk-gateway:latest
-	@kind load docker-image localhost:50000/kusk-gateway:latest
 	$(MAKE) deploy-local-registry 
 	
 deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)

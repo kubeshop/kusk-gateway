@@ -15,14 +15,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    env:
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
-      - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.3.0
       - uses: actions/checkout@v2
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.18
+
       - name: Test
-        run: make check-all
+        run: make test
