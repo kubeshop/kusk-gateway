@@ -12,7 +12,6 @@ check-basic_auth:
 	
 sandbox: 
 	@docker build samples/hello-world/hello-world-container/ -t localhost:50000/hello-world:smoke
-	kind load docker-image localhost:50000/hello-world:smoke
-	# @docker push localhost:50000/hello-world:smoke
+	@docker push localhost:50000/hello-world:smoke
 	kubectl apply -f samples/hello-world/deployment.yaml
 	

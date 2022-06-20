@@ -27,4 +27,4 @@ jobs:
           go-version: 1.18
 
       - name: Test
-        run: make test
+        run: make check-all
