@@ -362,12 +362,15 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 			if !strings.HasPrefix(opts.OpenAPIPath, "/") {
 				opts.OpenAPIPath = fmt.Sprintf("/%s", opts.OpenAPIPath)
 			}
-			openapiRt, _ := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
+			openapiRt, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
 				RoutePath:      opts.OpenAPIPath,
 				Method:         "GET",
 				StatusCode:     uint32(200),
 				ExampleContent: parseSpec.PostProcessedDef(spec, opts),
 			})
+			if err != nil {
+				return fmt.Errorf("cannot build postprocessed api route: %w", err)
+			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
 				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
