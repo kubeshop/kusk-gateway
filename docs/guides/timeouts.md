@@ -22,4 +22,4 @@ paths:
    ..
 ```
 
-See all available timeout configuration options in the [Extension Reference](/reference/extension/#qos).
+See all available timeout configuration options in the [Extension Reference](../../reference/extension/#qos).

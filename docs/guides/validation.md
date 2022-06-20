@@ -23,7 +23,7 @@ in regard to request parameters and payload. If the request does not match the s
 Another positive side effect of this functionality is that it provides a "security-gate" for your API; malicious requests
 that are outside your defined operations will not reach the target service where they could do potential harm.
 
-See all available validation configuration options in the [Extension Reference](/reference/extension/#validation).
+See all available validation configuration options in the [Extension Reference](../../reference/extension/#validation).
 
 ## **Strict Validation of Request Bodies**
 

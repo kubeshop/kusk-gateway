@@ -90,6 +90,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return err
 	}
 
+	httpConnectionManagerBuilder, err := config.NewHCMBuilder()
+	if err != nil {
+		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
+	}
+
 	parser := spec.NewParser(nil)
 	for _, api := range apis {
 		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api.Name)
@@ -107,7 +112,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
@@ -150,10 +155,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 	}
 
-	httpConnectionManagerBuilder, err := config.NewHCMBuilder()
-	if err != nil {
-		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
-	}
 	if fleet.Spec.AccessLog != nil {
 		var accessLogBuilder *config.AccessLogBuilder
 		var err error

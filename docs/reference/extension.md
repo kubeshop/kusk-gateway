@@ -9,9 +9,9 @@ The `x-kusk` extension has the following structure:
 x-kusk:
   hosts:
     - example.com
-  
+
   disabled: false
-  
+
   validation:
     request:
       enabled: true # enable automatic request validation using OpenAPI definition
@@ -28,27 +28,27 @@ x-kusk:
     rewrite:
       pattern: 'regular_expression'
       substitution: 'substitution'
-      
+
   redirect: # upstream and redirect are mutually exclusive
     scheme_redirect: https
     host_redirect: example.org
     port_redirect: 8081
-      
+
     path_redirect: /index.html # path_redirect and rewrite_regex are mutually exclusive
     rewrite_regex: # path_redirect and rewrite_regex are mutually exclusive
       pattern: 'regular_expression'
       substitution: 'substitution'
-        
+
     response_code: 308
     strip_query: true
-        
-        
+
+
   path:
     prefix: /api
-          
+
   qos:
     retries: 10
-    request_timeout: 60 
+    request_timeout: 60
     idle_timeout: 30
   cors:
     origins:
@@ -96,7 +96,6 @@ This string array property configures the hosts (i.e. `Host` HTTP header) list t
 - example.*
 
 Read more in the [Guide on Routing](/docs/guides/routing.md#using-hosts-for-multi-hosting-scenarios).
-
 
 ### **CORS**
 
@@ -224,7 +223,7 @@ See the [Guide on Mocking](../guides/mocking.md) to learn more about this functi
 
 Note: Currently `mocking` is incompatible with the `validation` option - the configuration deployment will fail if both are enabled.
 
-### **rate_limit**
+### **Rate limiting**
 
 The rate_limit object contains the following properties to configure request rate limiting:
 
@@ -237,8 +236,7 @@ The rate_limit object contains the following properties to configure request rat
 
 Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](../customresources/envoyfleet.md).
 
-
-### **cache**
+### **Caching**
 
 The cache object contains the following properties to configure HTTP caching:
 
@@ -248,3 +246,32 @@ The cache object contains the following properties to configure HTTP caching:
 | `cache.max_age`      | Indicates how long (in seconds) results of a request can be cached.  |
 
 Note: current support for caching is experimental. Check out [https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/cache_filter](Envoy documentation) to learn more about how it works.
+
+### Authentication
+
+The `auth` object contains the following properties to configure HTTP authentication:
+
+| Name                          | Description                                                                                                          |
+|:------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `scheme`                      | **Required**. The authentication scheme. Only `basic` authentication is supported at the moment.                     |
+| `path_prefix`                 | **Optional**. The prefix to attach to `auth-upstream.host.hostname`                                                  |
+| `auth-upstream`               | **Required**. Defines the upstream authentication host.                                                              |
+| `auth-upstream.host`          | **Required**. Defines how to reach the authentication server.                                                        |
+| `auth-upstream.host.hostname` | **Required**. Defines the `hostname` the authentication server is running on.                                        |
+| `auth-upstream.host.port`     | **Required**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`. |
+
+### Sample
+
+```yaml
+...
+x-kusk:
+...
+  auth:
+    scheme: basic
+    path_prefix: /login # optional
+    auth-upstream:
+      host:
+        hostname: example.com
+        port: 80
+...
+```

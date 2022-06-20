@@ -1,0 +1,26 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: EnvoyFleet
+metadata:
+  name: test
+spec:
+  image: "envoyproxy/envoy-alpine:v1.20.0"
+  service:
+    type: LoadBalancer
+    ports:
+      - name: http
+        port: 80
+        targetPort: http
+      - name: https
+        port: 443
+        targetPort: http
+  size: 1
+  accesslog:
+    format: text
+    text_template: |
+      "[%START_TIME%]" "%REQ(:METHOD)%" "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "%RESPONSE_CODE%" "%DURATION%"
+    json_template:
+      start_time: "%START_TIME%"
+      method: "%REQ(:METHOD)%"
+      path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+      response_code: "%RESPONSE_CODE%"
+      duration: "%DURATION%"

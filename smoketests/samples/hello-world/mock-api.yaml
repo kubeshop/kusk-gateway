@@ -1,0 +1,60 @@
+---
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: mock-api
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    components: {}
+    info:
+      title: simple-api
+      version: 0.1.0
+    openapi: 3.0.0
+    paths:
+      /hello:
+        get:
+          responses:
+            "200":
+              content:
+                application/json:
+                  example:
+                    message: Hello from a mocked response!
+                  schema:
+                    properties:
+                      message:
+                        type: string
+                    type: object
+              description: A simple hello world!
+      /validated:
+        post:
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  properties:
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+          responses:
+            "200":
+              content:
+                text/plain:
+                  example: Hello mocked Kusk!
+                  schema:
+                    type: string
+              description: ""
+    x-kusk:
+      cors:
+        methods:
+        - GET
+        - POST
+        origins:
+        - '*'
+      mocking:
+        enabled: true
