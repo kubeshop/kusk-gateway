@@ -2,7 +2,7 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
-  name: mock-api
+  name: auth-api
   namespace: default
 spec:
   fleet:
@@ -50,6 +50,12 @@ spec:
                     type: string
               description: ""
     x-kusk:
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: ext-authz-http-service
+            port: 9002
       cors:
         methods:
         - GET

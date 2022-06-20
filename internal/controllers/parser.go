@@ -30,10 +30,12 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_auth_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/golang/protobuf/ptypes/any"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -69,7 +71,13 @@ Domain search order:
 */
 
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
-func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, proxy *validation.Proxy, opts *options.Options, spec *openapi3.T) error {
+func UpdateConfigFromAPIOpts(
+	envoyConfiguration *config.EnvoyConfiguration,
+	proxy *validation.Proxy,
+	opts *options.Options,
+	spec *openapi3.T,
+	httpConnectionManagerBuilder *config.HCMBuilder,
+) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -295,7 +303,35 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 				rt.Action = routeRoute
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
+			case finalOpts.Auth != nil:
+				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
 
+				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
+
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(
+						clusterName,
+						upstreamServiceHost,
+						upstreamServicePort,
+					)
+				}
+
+				pathPrefix := ""
+				if finalOpts.Auth.PathPrefix != nil {
+					pathPrefix = *finalOpts.Auth.PathPrefix
+				}
+
+				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+					upstreamServiceHost,
+					upstreamServicePort,
+					clusterName,
+					pathPrefix,
+				)
+				if err != nil {
+					return err
+				}
+				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -327,8 +363,11 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
+
 				for _, rt := range routesToAddToVirtualHost {
-					filterConf := map[string]*anypb.Any{}
+					if rt.TypedPerFilterConfig == nil {
+						rt.TypedPerFilterConfig = map[string]*any.Any{}
+					}
 
 					if finalOpts.RateLimit != nil {
 						rl := mapRateLimitConf(finalOpts.RateLimit, generateRateLimitStatPrefix(string(vh), path, method, operation.OperationID))
@@ -336,11 +375,21 @@ func UpdateConfigFromAPIOpts(envoyConfiguration *config.EnvoyConfiguration, prox
 						if err != nil {
 							return fmt.Errorf("failure marshalling ratelimiting configuration: %w ", err)
 						}
-						filterConf = map[string]*anypb.Any{
-							"envoy.filters.http.local_ratelimit": anyRateLimit,
-						}
+
+						rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = anyRateLimit
 					}
-					rt.TypedPerFilterConfig = filterConf
+					if finalOpts.Auth == nil {
+						perrouteAuth, err := anypb.New(&envoy_auth_v3.ExtAuthzPerRoute{
+							Override: &envoy_auth_v3.ExtAuthzPerRoute_Disabled{Disabled: true},
+						})
+
+						if err != nil {
+							return fmt.Errorf("cannot build auth per route: %w", err)
+						}
+
+						rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = perrouteAuth
+
+					}
 
 					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 						return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
