@@ -33,7 +33,6 @@ import (
 	"reflect"
 	"strings"
 	"time"
-
 	// +kubebuilder:scaffold:imports
 
 	"github.com/go-logr/logr"
@@ -77,6 +76,7 @@ type managerConfig struct {
 	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
 	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
 	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR" default:"/opt/manager/webhook/certs"`
+	AnalyticsEnabled      string `envconfig:"ANALYTICS_ENABLED" default:"true"`
 }
 
 func (m managerConfig) String() string {
@@ -87,6 +87,7 @@ func (m managerConfig) String() string {
 	b.WriteString(fmt.Sprintf("ENABLE_LEADER_ELECTION=%t\n", m.EnableLeaderElection))
 	b.WriteString(fmt.Sprintf("LOG_LEVEL=%s\n", m.LogLevel))
 	b.WriteString(fmt.Sprintf("WEBHOOK_CERTS_DIR=%s\n", m.WebhookCertsDir))
+	b.WriteString(fmt.Sprintf("ANALYTICS_ENABLED=%s\n", m.AnalyticsEnabled))
 
 	return b.String()
 }
