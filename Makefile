@@ -5,7 +5,7 @@ MAKEFLAGS += --environment-overrides --warn-undefined-variables # --print-direct
 
 # Add bin to the PATH
 export PATH := $(shell pwd)/bin:$(PATH)
-BINARIES_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/bin
+BINARIES_DIR := $(shell pwd)/bin
 KUSTOMIZE := ${BINARIES_DIR}/kustomize
 CONTROLLER_GEN := ${BINARIES_DIR}/controller-gen
 PROTOC := ${BINARIES_DIR}/protoc/bin/protoc
@@ -102,9 +102,6 @@ test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
 
-.PHONY: goproxy
-goproxy: ## Starts local goproxy docker instance for the faster builds. Make sure to set your shell environment variable (e.g. put into .bashrc "export GOPROXY=http://<your_ip_address>:8085".
-	cd development/goproxy && docker-compose up --detach
 
 .PHONY: docker-images-cache
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
@@ -126,14 +123,14 @@ run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your hos
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile .
+	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" --build-arg GOPROXY=${GOPROXY} -f ./build/manager/Dockerfile-debug .
+	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -181,7 +178,7 @@ update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug config
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
 	@echo "Triggered deployment/kusk-gateway-manager restart, waiting for it to finish"
-	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=30s
+	kubectl rollout status deployment/kusk-gateway-manager -n kusk-system --timeout=60s
 
 .PHONY: cycle-envoy
 cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
@@ -242,22 +239,8 @@ rm -rf $${TMP_DIR} ;\
 }
 endef
 
-start-smoke-tests:
-	@docker rm smoke-registry -f
-	@docker run -d -p 50000:5000 --name smoke-registry registry:2
-	@docker build -t localhost:50000/kusk-gateway:latest -f ./build/manager/Dockerfile .
-	@docker push localhost:50000/kusk-gateway:latest
-	$(MAKE) deploy-local-registry
-
-deploy-local-registry: $(ENVTEST) $(KUSTOMIZE)
-	echo $(shell pwd)
-	bin/kustomize build smoketests/common | kubectl apply -f -
-	$(MAKE) cycle
-	$(MAKE) deploy-envoyfleet
-
 .PHONY: $(smoketests)
-$(smoketests): start-smoke-tests
+$(smoketests): $(ENVTEST) $(KUSTOMIZE)
 	$(MAKE) -C smoketests $@
-	@rm -rf smoketests/bin
 
-check-all: check-basic check-mocking check-basic_auth check-rate_limit
+check-all: $(smoketests)
