@@ -1,6 +1,10 @@
 # Smoketest
 
-## Running smoketest: 
+## Running smoketest:
+
+Ensure you have a cluster running and have Kusk Gateway and an EnvoyFleet deployed.
+
+For minikube, you can do this with make `create-env`
 
 Run all smoke tests
 ```

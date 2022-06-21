@@ -32,7 +32,7 @@ make install
 echo "========> building control-plane docker image and installing into cluster"
 
 SHELL=/bin/bash
-make docker-images-cache docker-build deploy
+make docker-build deploy
 
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 
