@@ -11,14 +11,13 @@ ARG GOPROXY
 ENV GOPROXY=$GOPROXY
 RUN go mod download
 
-ARG GA_ID
-ARG GA_SECRET
+ARG TELEMETRY_TOKEN
 
 # Copy the go source
 COPY . .
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$GA_ID -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$GA_SECRET" -o manager cmd/manager/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$TELEMETRY_TOKEN" -o manager cmd/manager/main.go
 
 # Directory for the files created and used by the manager, to be copied for static rootless images since we don't have shell to create it there
 RUN mkdir -m=00755 /opt/manager
