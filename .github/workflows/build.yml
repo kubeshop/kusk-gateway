@@ -18,11 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
+        id: k3s
+        with:
+          version: 'latest'
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
 
       - name: Test
-        run: make test
+        run: make check-all 
