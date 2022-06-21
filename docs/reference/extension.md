@@ -260,7 +260,7 @@ The `auth` object contains the following properties to configure HTTP authentica
 | `auth-upstream.host.hostname` | **Required**. Defines the `hostname` the authentication server is running on.                                        |
 | `auth-upstream.host.port`     | **Required**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`. |
 
-### Sample
+#### Sample
 
 ```yaml
 ...
