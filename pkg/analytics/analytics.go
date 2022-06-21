@@ -69,10 +69,11 @@ func SendAnonymousCMDInfo() error {
 }
 
 func sendDataToGA(track analytics.Track) error {
-	// if environment variable is set return and collect nothing
-	if _, ok := os.LookupEnv("KUSK_ANALYTICS_DISABLED"); ok {
+	// enabled by default, dont send anything if explicitely disabled
+	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok && enabled == "false" {
 		return nil
 	}
+
 	client := analytics.New(TelemetryToken)
 	defer client.Close()
 	return client.Enqueue(track)
