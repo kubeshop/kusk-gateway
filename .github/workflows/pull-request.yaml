@@ -93,14 +93,14 @@ jobs:
       run: |
         helm repo add kubeshop https://kubeshop.github.io/helm-charts
         helm repo update
-        helm upgrade --install kusk-gateway-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway \
-          --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} --create-namespace \
+        helm upgrade kusk-gateway-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway \
+          --install --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} --create-namespace \
           --set analytics.enabled=false \ 
           --set manager.image.tag=pr-${{ github.event.pull_request.number }} \
           --set manager.image.pullPolicy=Always \
           --wait --timeout 3m
-        helm upgrade --install kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
-          --namespace default --set fullnameOverride=default \
+        helm upgrade kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
+          --install --namespace default --set fullnameOverride=default \
           --wait --timeout 3m
 
   e2e:
