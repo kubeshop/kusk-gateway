@@ -16,7 +16,7 @@ x-kusk:
 ..
 ```
 
-The example above allows only up to two requests per minute to be sent to the whole API. 
+The example above allows only up to two requests per minute to be sent to the whole API.
 
 You can also specify different rate-limiting settings for a specific operation or path. The following example shows rate limiting configuration for a specific operation:
 

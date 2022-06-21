@@ -36,8 +36,7 @@ endif
 SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAMeasurementID=$(GA_ID)
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.KuskGAApiSecret=$(GA_SECRET)
+LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.Telemetry_Token=$(TELEMETRY_TOKEN)
 LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
 
 export DOCKER_BUILDKIT 	?=	1
