@@ -96,8 +96,8 @@ jobs:
         helm upgrade --install kusk-gateway-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway \
           --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} --create-namespace \
           --set analytics.enabled=false \ 
-          --set image.tag=pr-${{ github.event.pull_request.number }} \
-          --set image.pullPolicy=Always \
+          --set manager.image.tag=pr-${{ github.event.pull_request.number }} \
+          --set manager.image.pullPolicy=Always \
           --wait --timeout 3m
         helm upgrade --install kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
           --namespace default --set fullnameOverride=default \
