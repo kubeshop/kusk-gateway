@@ -240,7 +240,7 @@ rm -rf $${TMP_DIR} ;\
 endef
 
 .PHONY: $(smoketests)
-$(smoketests): $(ENVTEST) $(KUSTOMIZE)
+$(smoketests):
 	$(MAKE) -C smoketests $@
 
 check-all: $(smoketests)
