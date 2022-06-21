@@ -29,5 +29,4 @@ jobs:
 
       - name: Test
         run: |
-          kubectl delete svc -n kube-system   traefik
           make check-all
