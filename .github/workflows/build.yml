@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: debianmaster/actions-k3s@master
         id: k3s
         with:
           version: 'latest'
