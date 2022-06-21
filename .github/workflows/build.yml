@@ -21,11 +21,13 @@ jobs:
       - uses: debianmaster/actions-k3s@master
         id: k3s
         with:
-          version: 'latest'
+          version: "latest"
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
 
       - name: Test
-        run: make check-all 
+        run: |
+          kubectl delete svc -n kube-system   traefik
+          make check-all

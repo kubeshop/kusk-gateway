@@ -5,7 +5,7 @@ MAKEFLAGS += --environment-overrides --warn-undefined-variables # --print-direct
 
 # Add bin to the PATH
 export PATH := $(shell pwd)/bin:$(PATH)
-BINARIES_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))/bin
+BINARIES_DIR := $(shell pwd)/bin
 KUSTOMIZE := ${BINARIES_DIR}/kustomize
 CONTROLLER_GEN := ${BINARIES_DIR}/controller-gen
 PROTOC := ${BINARIES_DIR}/protoc/bin/protoc
