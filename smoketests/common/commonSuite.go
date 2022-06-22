@@ -1,13 +1,11 @@
 package common
 
 import (
-	"context"
-	"time"
-
 	"github.com/stretchr/testify/suite"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -39,16 +37,4 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 
 	s.Cli, err = client.New(config, client.Options{Scheme: scheme})
 	s.NoError(err)
-
-	deploy := apps.Deployment{}
-	counter := 0
-	for counter < 100 {
-		s.NoError(s.Cli.Get(context.Background(), client.ObjectKey{Namespace: KuskNamespace, Name: KuskManager}, &deploy))
-
-		if deploy.Status.AvailableReplicas > 0 && deploy.Status.ReadyReplicas > 0 {
-			break
-		}
-		time.Sleep(2 * time.Second)
-		counter++
-	}
 }
