@@ -6,7 +6,7 @@ $(smoketests):
 
 check-basic_auth:
 	kubectl apply -f ../examples/ext-authz
-	kubectl wait deployment --namespace=default ext-authz-http-service --for condition=Available=True --timeout=90s
+	kubectl wait deployment --namespace=default ext-authz-http-service --for condition=Available=True --timeout=3m
 	@echo "sleeping for 6s ..."
 	@sleep 6s
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
