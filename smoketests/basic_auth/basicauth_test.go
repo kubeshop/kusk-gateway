@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,7 +45,7 @@ func (m *BasicAuthCheckSuite) SetupTest() {
 		}
 		m.Fail(err.Error(), nil)
 	}
-	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
+	time.Sleep(20 * time.Second) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (m *BasicAuthCheckSuite) TestAuthorized() {
