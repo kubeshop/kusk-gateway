@@ -1,0 +1,39 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: test-cache
+spec:
+  fleet:
+    name: default
+    namespace: default
+  # service name and port should be specified inside x-kusk annotation
+  # NB: `/post` is not cached.
+  spec: |
+    components: {}
+    info:
+      title: simple-api
+      version: 0.1.0
+    openapi: 3.0.0
+    x-kusk:
+      cache:
+        enabled: true
+        max_age: 2
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 8080
+    paths:
+      /post:
+        post:
+          x-kusk:
+            cache:
+              enabled: false
+          description: Returns POST data.
+          operationId: "/post"
+          responses: {}
+      /uuid:
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}

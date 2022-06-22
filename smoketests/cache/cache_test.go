@@ -1,4 +1,4 @@
-package rate_limit
+package Cache
 
 import (
 	"context"
@@ -6,32 +6,34 @@ import (
 	"fmt"
 	"net/http"
 
+	"io"
+
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"testing"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	defaultNamespace = "default"
+	testName         = "test-cache"
 	defaultName      = "default"
-	testName         = "auth-test"
+	defaultNamespace = "default"
 )
 
-type RateLimitTestSuite struct {
+type CacheTestSuite struct {
 	common.KuskTestSuite
 	api *kuskv1.API
 }
 
-func (t *RateLimitTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/hello-world/rate_limit.yaml")
+func (t *CacheTestSuite) SetupTest() {
+	rawApi := common.ReadFile("../samples/cache/cache.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
@@ -41,37 +43,41 @@ func (t *RateLimitTestSuite) SetupTest() {
 	api.Spec.Fleet.Namespace = defaultNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
-		if strings.Contains(err.Error(), `apis.gateway.kusk.io "test-rate-limit" already exists`) {
+		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
 			return
 		}
 
-		t.Fail(err.Error(), nil)
+		t.Fail(err.Error())
 	}
 
 	t.api = api // store `api` for deletion later
 
-	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
+	duration := 4 * time.Second
+	t.T().Logf("Sleeping for %s", duration)
+	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
 
-func (t *RateLimitTestSuite) TestRateLimitReached() {
-	// We are expecting 429 Too Many Requests with a body of `local_rate_limited` once we do 3 requests.
+func (t *CacheTestSuite) TestCacheCacheOn() {
+	// We are expecting `cache-control: max-age=2` header and the value of `age` to increase over time.
+	// the `uuid` will be cached up until `NoOfRequests`.
 	const (
-		RateLimit = 2
+		NoOfRequests = 3
 	)
 
 	envoyFleetSvc := getEnvoyFleetSvc(t)
-	var (
-		url = fmt.Sprintf("http://%s/rate_limit", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
-	)
+	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
 
-	// Do 2 requests then the next one will fail
-	for x := 0; x < RateLimit; x++ {
+	uuidCached := ""
+	// Do n requests that will get cached, i.e., they'll return the same uuid.
+	for x := 0; x < NoOfRequests; x++ {
 		func() {
 			req, err := http.NewRequest("GET", url, nil)
+
 			t.NoError(err)
 
 			res, err := http.DefaultClient.Do(req)
 			t.NoError(err)
+			t.Equal(http.StatusOK, res.StatusCode)
 
 			defer res.Body.Close()
 
@@ -81,8 +87,19 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 			body := map[string]string{}
 			t.NoError(json.Unmarshal(responseBody, &body))
 
-			t.Equal(http.StatusOK, res.StatusCode)
-			t.Equal(`rate-limited mocked response.`, body["message"])
+			if body["uuid"] == "" {
+				t.Fail("uuid is empty - expecting a uuid")
+			}
+
+			if uuidCached == "" && x == 0 {
+				uuidCached = body["uuid"]
+			}
+
+			if uuidCached != body["uuid"] {
+				t.Fail("uuid has changed - expecting the same uuid")
+			}
+
+			time.Sleep(1 * time.Second)
 		}()
 	}
 
@@ -91,26 +108,29 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 
 	res, err := http.DefaultClient.Do(req)
 	t.NoError(err)
+	t.Equal(http.StatusOK, res.StatusCode)
 
 	defer res.Body.Close()
 
 	responseBody, err := io.ReadAll(res.Body)
 	t.NoError(err)
 
-	t.Equal(http.StatusTooManyRequests, res.StatusCode)
-	t.Equal("local_rate_limited", string(responseBody))
+	body := map[string]string{}
+	t.NoError(json.Unmarshal(responseBody, &body))
+
+	t.NotEqual(body["uuid"], uuidCached)
 }
 
-func (t *RateLimitTestSuite) TearDownSuite() {
+func (t *CacheTestSuite) TearDownSuite() {
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
-func TestRateLimitTestSuite(t *testing.T) {
-	testSuite := RateLimitTestSuite{}
+func TestCacheTestSuite(t *testing.T) {
+	testSuite := CacheTestSuite{}
 	suite.Run(t, &testSuite)
 }
 
-func getEnvoyFleetSvc(t *RateLimitTestSuite) *corev1.Service {
+func getEnvoyFleetSvc(t *CacheTestSuite) *corev1.Service {
 	t.T().Helper()
 
 	envoyFleetSvc := &corev1.Service{}
