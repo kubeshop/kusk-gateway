@@ -17,10 +17,6 @@ spec:
       containers:
         - image: docker.io/kennethreitz/httpbin
           name: httpbin
-          resources:
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
