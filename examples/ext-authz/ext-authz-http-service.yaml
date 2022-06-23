@@ -18,10 +18,6 @@ spec:
       containers:
         - image: docker.io/kubeshop/kusk-ext-authz-http-service
           name: ext-authz-http-service
-          resources:
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
           ports:
             - containerPort: 9002
 ---
