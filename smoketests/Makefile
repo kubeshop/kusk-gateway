@@ -7,14 +7,9 @@ $(smoketests):
 check-basic_auth:
 	kubectl apply -f ../examples/ext-authz
 	kubectl wait deployment --namespace=default ext-authz-http-service --for condition=Available=True --timeout=3m
-	@echo "sleeping for 32 seconds ..."
-	@sleep 32s
-	-go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
-	@echo
-	kubectl logs -l fleet=default.default
-	@echo
-	kubectl logs --all-containers=true -n kusk-system -l app.kubernetes.io/name=kusk-gateway
-	@echo
+	@echo "sleeping for 6s ..."
+	@sleep 6
+	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 	kubectl delete -f ../examples/ext-authz
 
 check-cache:

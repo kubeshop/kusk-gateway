@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 	"testing"
 	"time"
@@ -46,7 +45,7 @@ func (m *BasicAuthCheckSuite) SetupTest() {
 		}
 		m.Fail(err.Error(), nil)
 	}
-	time.Sleep(32 * time.Second) // weird way to wait it out probably needs to be done dynamically
+	time.Sleep(20 * time.Second) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (m *BasicAuthCheckSuite) TestAuthorized() {
@@ -63,8 +62,6 @@ func (m *BasicAuthCheckSuite) TestAuthorized() {
 	m.NoError(err)
 
 	defer resp.Body.Close()
-	printResponseBody(resp, m.T().Name())
-
 	m.Equal(http.StatusOK, resp.StatusCode)
 }
 
@@ -82,8 +79,6 @@ func (m *BasicAuthCheckSuite) TestUnauthorized() {
 	m.NoError(err)
 
 	defer resp.Body.Close()
-	printResponseBody(resp, m.T().Name())
-
 	m.Equal(http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -96,7 +91,6 @@ func (m *BasicAuthCheckSuite) TestForbidden() {
 	m.NoError(err)
 
 	defer resp.Body.Close()
-	printResponseBody(resp, m.T().Name())
 
 	m.Equal(http.StatusForbidden, resp.StatusCode)
 }
@@ -114,13 +108,4 @@ func (m *BasicAuthCheckSuite) TearDownSuite() {
 func TestBasicAuthCheckSuite(t *testing.T) {
 	b := BasicAuthCheckSuite{}
 	suite.Run(t, &b)
-}
-
-func printResponseBody(resp *http.Response, name string) {
-	dump, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		fmt.Printf("printResponseBody - %v", err)
-	}
-
-	fmt.Printf("\n%s\n%s\n", name, dump)
 }
