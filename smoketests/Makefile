@@ -15,9 +15,9 @@ check-basic_auth:
 	@echo
 	kubectl get pods -A
 	@echo
-	-kubectl logs $(shell kubectl get pods --namespace default | grep default | awk '{print $$2}')
+	-kubectl logs $(shell kubectl get pods --namespace default | grep default | awk '{print $$1}')
 	@echo
-	-kubectl logs --namespace kusk-gateway-pr-483 --all-containers=true $(shell kubectl get pods --namespace kusk-gateway-pr-483 | grep kusk-gateway-manager | awk '{print $$2}')
+	-kubectl logs --namespace kusk-gateway-pr-483 --all-containers=true $(shell kubectl get pods --namespace kusk-gateway-pr-483 | grep kusk-gateway-manager | awk '{print $$1}')
 	@echo
 	kubectl delete -f ../examples/ext-authz
 
