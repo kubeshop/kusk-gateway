@@ -56,8 +56,3 @@ vars:
       kind: Service
       name: kusk-gateway-webhooks-service
       version: v1
-
-images:
-  - name: kusk-gateway
-    newName: localhost:50000/kusk-gateway
-    newTag: latest
