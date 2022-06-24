@@ -56,3 +56,8 @@ vars:
       kind: Service
       name: kusk-gateway-webhooks-service
       version: v1
+
+images:
+  - name: kusk-gateway
+    newName: kubeshop/kusk-gateway
+    newTag: v1.1.0-rc1

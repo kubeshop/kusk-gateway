@@ -59,3 +59,17 @@ $ kusk install --no-dashboard --no-api --no-envoy-fleet
 | `--no-dashboard`        | When set, will not install the kusk gateway dashboard.                                                              |     ❌     |
 | `--no-api`              | When set, will not install the kusk gateway api. implies --no-dashboard.                                            |     ❌     |
 | `--no-envoy-fleet`      | When set, will not install any envoy fleets.                                                                        |     ❌     |
+
+#### **Environment Variables**
+
+To disable analytics set following environment variable:
+
+```
+export ANALYTICS_ENABLED=false
+```
+
+or run 
+```
+ANALYTICS_ENABLED=false kusk install
+```
+

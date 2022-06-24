@@ -38,10 +38,14 @@ var (
 )
 
 func SendAnonymousInfo(event string) error {
+	properties := analytics.NewProperties()
+	properties.Set("event", event)
+	properties.Set("version", analytics.Version)
+
 	track := analytics.Track{
 		AnonymousId: MachineID(),
 		Event:       "kusk-heartbeat",
-		Properties:  analytics.NewProperties().Set("event", event),
+		Properties:  properties,
 		Timestamp:   time.Now()}
 
 	return sendDataToGA(track)
@@ -59,6 +63,7 @@ func SendAnonymousCMDInfo() error {
 	properties := analytics.NewProperties()
 	properties.Set("event", event)
 	properties.Set("command", command)
+	properties.Set("version", analytics.Version)
 	track := analytics.Track{
 		AnonymousId: MachineID(),
 		UserId:      MachineID(),
