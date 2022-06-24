@@ -64,6 +64,7 @@ jobs:
         cache-to: type=local,dest=/tmp/.buildx-cache-new
         build-args: |
           TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
+          TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
     - name: Update docker cache
       run: |
         rm -rf /tmp/.buildx-cache

@@ -58,7 +58,7 @@ jobs:
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
           build-args: |
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
-            VERSION: ${{ env.VERSION }}
+            VERSION=${{ env.VERSION }}
 
       - name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
