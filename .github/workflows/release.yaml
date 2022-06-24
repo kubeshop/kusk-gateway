@@ -45,6 +45,9 @@ jobs:
             type=sha
           flavor: |
             latest=true
+      - name: setup-goreleaser-environment-variables
+        run: |
+          echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
       - name: Build and push Kusk Gateway
         uses: docker/build-push-action@v2
         with:
@@ -55,6 +58,7 @@ jobs:
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
           build-args: |
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
+            VERSION: ${{ env.VERSION }}
 
       - name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
