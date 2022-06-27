@@ -304,7 +304,8 @@ func UpdateConfigFromAPIOpts(
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
-				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+				fmt.Println("finalOpts.Auth explicitly disabled - all auth tests should fail")
+				/*upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
 				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
 
 				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
@@ -331,7 +332,7 @@ func UpdateConfigFromAPIOpts(
 				if err != nil {
 					return err
 				}
-				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)*/
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -363,7 +364,6 @@ func UpdateConfigFromAPIOpts(
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				for _, rt := range routesToAddToVirtualHost {
 					if rt.TypedPerFilterConfig == nil {
 						rt.TypedPerFilterConfig = map[string]*any.Any{}
@@ -382,7 +382,6 @@ func UpdateConfigFromAPIOpts(
 						perrouteAuth, err := anypb.New(&envoy_auth_v3.ExtAuthzPerRoute{
 							Override: &envoy_auth_v3.ExtAuthzPerRoute_Disabled{Disabled: true},
 						})
-
 						if err != nil {
 							return fmt.Errorf("cannot build auth per route: %w", err)
 						}
@@ -397,7 +396,6 @@ func UpdateConfigFromAPIOpts(
 				}
 			}
 		}
-
 	}
 
 	if opts.OpenAPIPath != "" {
@@ -529,7 +527,6 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 			}
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
@@ -625,7 +622,6 @@ func generateRoute(
 	QoS *options.QoSOptions,
 	websocket *bool,
 ) (*route.Route_Route, error) {
-
 	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 	if rewriteRegex != nil {
 		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
