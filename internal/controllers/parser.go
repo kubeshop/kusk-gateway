@@ -304,7 +304,9 @@ func UpdateConfigFromAPIOpts(
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
+				fmt.Println("")
 				fmt.Println("finalOpts.Auth explicitly disabled - all auth tests should fail")
+				fmt.Println("")
 				/*upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
 				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
 
