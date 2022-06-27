@@ -185,6 +185,7 @@ cycle-envoy: ## Triggers all Envoy pods in the cluster to restart
 	kubectl rollout restart deployment/kgw-envoy-default -n default
 	kubectl rollout restart deployment/kgw-envoy-testing -n testing || echo 'rollout restart failed'
 
+
 $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.4
 
