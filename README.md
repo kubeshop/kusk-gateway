@@ -1,4 +1,4 @@
-<p align="center">  
+<p align="center">
   <img style="width:66%" src="assets/kusk-color-lg.png#gh-light-mode-only" alt="Kusk Logo Light"/>
   <img style="width:66%" src="assets/kusk-white-lg.png#gh-dark-mode-only" alt="Kusk Logo Dark" />
 </p>
@@ -9,17 +9,17 @@
 
 <p align="center">
   <a href="https://kusk.io">Website</a>&nbsp;|&nbsp;
-  <a href="https://kubeshop.github.io/kusk-gateway">Documentation</a>&nbsp;|&nbsp; 
-  <a href="https://twitter.com/Kusk_io">Twitter</a>&nbsp;|&nbsp; 
-  <a href="https://discord.gg/hfq44wtR6Q">Discord</a>&nbsp;|&nbsp; 
+  <a href="https://kubeshop.github.io/kusk-gateway">Documentation</a>&nbsp;|&nbsp;
+  <a href="https://twitter.com/Kusk_io">Twitter</a>&nbsp;|&nbsp;
+  <a href="https://discord.gg/hfq44wtR6Q">Discord</a>&nbsp;|&nbsp;
   <a href="https://kubeshop.io/category/kusk">Blog</a>
 </p>
 
-<div align="center" >
+<div align="center">
   <a href="https://github.com/kubeshop/kusk-gateway/releases"><img title="Release" src="https://img.shields.io/github/v/release/kubeshop/kusk-gateway"/></a>
   <a href=""><img title="Go version" src="https://img.shields.io/github/go-mod/go-version/kubeshop/kusk-gateway"/></a>
   <a href=""><img title="Code builds" src="https://img.shields.io/github/workflow/status/kubeshop/kusk-gateway/build%20and%20test"/></a>
-  <a href="https://github.com/kubeshop/testkube/releases"><img title="Release date" src="https://img.shields.io/github/release-date/kubeshop/testkube"/></a>
+  <a href="https://github.com/kubeshop/kusk-gateway/releases"><img title="Release date" src="https://img.shields.io/github/release-date/kubeshop/kusk-gateway"/></a>
 </div>
 
 # Welcome to Kusk Gateway
