@@ -356,6 +356,13 @@ func UpdateConfigFromAPIOpts(
 				if err != nil {
 					return err
 				}
+
+				// https://github.com/kubeshop/kusk-gateway/issues/404
+				// to help with issues around direct IP access e.g. CloudFlare
+				routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+					HostRewriteLiteral: upstreamHostname,
+				}
+
 				rt.Action = routeRoute
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)

@@ -72,6 +72,10 @@ func (o Options) Validate() error {
 		return o.Upstream.Validate()
 	}
 
+	if o.Redirect != nil {
+		return o.Redirect.Validate()
+	}
+
 	// if we get here, it means there aren't global options contains either mocking or an upstream service that covers all endpoints
 	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
 	for pathAndMethod, op := range o.OperationFinalSubOptions {
@@ -81,6 +85,10 @@ func (o Options) Validate() error {
 
 		if op.Upstream != nil {
 			return o.Upstream.Validate()
+		}
+
+		if op.Redirect != nil {
+			return o.Redirect.Validate()
 		}
 
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
@@ -207,6 +215,4 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.Auth == nil && in.Auth != nil {
 		o.Auth = in.Auth
 	}
-
-	return
 }
