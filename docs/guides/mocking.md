@@ -95,7 +95,7 @@ Consider the following operation in an OpenAPI definition:
           # Disable for patch
           x-kusk:
             mocking:
-              enabled: true
+              enabled: false
         ...
 ```
 
