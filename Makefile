@@ -36,8 +36,8 @@ endif
 SHELL 			= /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/analytics.Telemetry_Token=$(TELEMETRY_TOKEN)
-LD_FLAGS += -X github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)'
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)'
 
 export DOCKER_BUILDKIT 	?=	1
 
@@ -114,7 +114,7 @@ docker-images-cache: ## Saves locally frequently used container images and uploa
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager -ldflags='$(LD_FLAGS)' cmd/manager/main.go
+	go build -o bin/manager -ldflags="$(LD_FLAGS)" cmd/manager/main.go
 
 .PHONY: run
 run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
