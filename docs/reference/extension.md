@@ -103,7 +103,7 @@ An optional boolean field that defines whether to enable handling of "Upgrade: w
 
 ```yaml
 ...
-x-kusk: 
+x-kusk:
   websocket: true
 ...
 ```
@@ -132,9 +132,9 @@ it to the upstream service.
 
 ```yaml
 ...
-x-kusk: 
+x-kusk:
   upstream:
-    service: 
+    service:
       ...
     # /foo/bar/... -> to upstream: /bar/...
     rewrite:
@@ -358,9 +358,19 @@ x-kusk:
 ...
 ```
 
+#### `oauth2`
+
+TODO(MBana): Document OAuth 2.0.
+
+##### References
+
+* [OAuth](https://en.wikipedia.org/wiki/OAuth)
+* [What the Heck is OAuth?](https://developer.okta.com/blog/2017/06/21/what-the-heck-is-oauth)
+* [Open Source OAuth 2.0 and OpenID Connect Server - gethydra.sh](https://www.ory.sh/hydra/)
+
 ### Exposing OpenAPI defintion
 
-The `openapi-path` field takes the a path name and will expose your OpenAPI defintion in defined path. 
+The `openapi-path` field takes the a path name and will expose your OpenAPI defintion in defined path.
 
 **Sample:**
 
@@ -371,6 +381,6 @@ x-kusk:
 ...
 ```
 
-This will expose your entire OpenAPI defintion, without the Kusk extensions, on `yourdomain.com/openapi.json`. 
+This will expose your entire OpenAPI defintion, without the Kusk extensions, on `yourdomain.com/openapi.json`.
 
 To remove some paths or operations from the exposed OpenAPI, use the [`disabled` option](./#disabled).

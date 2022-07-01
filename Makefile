@@ -43,7 +43,7 @@ LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)'
 # https://github.com/kubeshop/kusk-gateway/issues/431
 LD_FLAGS += -s -w
 
-export DOCKER_BUILDKIT 	?=	1
+export DOCKER_BUILDKIT ?= 1
 
 .PHONY: all
 all: build
