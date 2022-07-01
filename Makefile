@@ -39,6 +39,10 @@ SHELL 			= /usr/bin/env bash -o pipefail
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)'
 
+# strip DWARF, symbol table and debug info. Expect ~25% binary size decrease
+# https://github.com/kubeshop/kusk-gateway/issues/431
+LD_FLAGS += -s -w
+
 export DOCKER_BUILDKIT 	?=	1
 
 .PHONY: all
