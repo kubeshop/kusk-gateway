@@ -20,6 +20,9 @@ spec:
       - name: https
         port: 443
         targetPort: http
+      - name: admin
+        port: 19000
+        targetPort: 19000
     # To preserve clients real ip addresses choose Local.
     # Note that this can make load balancing worse.
     #externalTrafficPolicy: Cluster|Local

@@ -1,0 +1,42 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: ext-authz-http-basic-auth
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  # service name and port should be specified inside x-kusk annotation
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: ext-authz-http-basic-auth
+      description: ext-authz-http-basic-auth
+      version: '0.1.0'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: ext-authz-http-basic-auth
+            port: 80
+      upstream:
+        service:
+          name: ext-authz-httpbin
+          namespace: default
+          port: 80
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}

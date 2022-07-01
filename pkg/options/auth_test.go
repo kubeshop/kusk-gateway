@@ -23,6 +23,7 @@
 package options
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,9 +32,16 @@ import (
 
 func Test_AuthOptions_UnmarshalStrict(t *testing.T) {
 	t.Parallel()
-	assert := assert.New(t)
 
-	input := `
+	type testCase struct {
+		input    string
+		expected *AuthOptions
+	}
+
+	testCases := []testCase{
+		{
+			// name: "basic-auth",
+			input: `
 auth:
   scheme: basic
   path_prefix: /login
@@ -41,24 +49,84 @@ auth:
     host:
       hostname: example.com
       port: 80
-`
-
-	expected := &AuthOptions{
-		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
-			Host: AuthUpstreamHost{
-				Hostname: "example.com",
-				Port:     80,
+`,
+			expected: &AuthOptions{
+				Scheme:     "basic",
+				PathPrefix: StringToPtr("/login"),
+				AuthUpstream: &AuthUpstream{
+					Host: AuthUpstreamHost{
+						Hostname: "example.com",
+						Port:     80,
+					},
+				},
+			},
+		},
+		{
+			// name: "oauth2",
+			input: `
+auth:
+  scheme: oauth2
+  oauth2:
+    token_endpoint: https://oauth2.googleapis.com/token
+    authorization_endpoint: https://accounts.google.com/o/oauth2/auth
+    credentials:
+      client_id: client_id
+      client_secret: client_secret
+      token_secret: token_secret
+      hmac_secret: hmac_secret
+    redirect_uri: http://localhost
+    redirect_path_matcher: /oauth2/callback
+    signout_path: /oauth2/signout
+    forward_bearer_token: true
+    auth_scopes:
+      - user
+      - openid
+    resources:
+      - user
+      - openid
+`,
+			expected: &AuthOptions{
+				Scheme: "oauth2",
+				OAuth2: &OAuth2{
+					TokenEndpoint:         "https://oauth2.googleapis.com/token",
+					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/auth",
+					Credentials: Credentials{
+						ClientID:     "client_id",
+						ClientSecret: "client_secret",
+						TokenSecret:  "token_secret",
+						HmacSecret:   "hmac_secret",
+						CookieNames: CookieNames{
+							BearerToken:  "",
+							OauthHMAC:    "",
+							ExpiresOauth: "",
+						},
+					},
+					RedirectURI:         "http://localhost",
+					RedirectPathMatcher: "/oauth2/callback",
+					SignoutPath:         "/oauth2/signout",
+					ForwardBearerToken:  true,
+					AuthScopes:          []string{"user", "openid"},
+					Resources:           []string{"user", "openid"},
+				},
 			},
 		},
 	}
 
-	options := &SubOptions{}
-	err := yaml.UnmarshalStrict([]byte(input), options)
+	for index, testCase := range testCases {
+		index, test := index, testCase
+		name := fmt.Sprintf("%s-%d", t.Name(), index)
 
-	assert.NoError(err)
-	assert.Equal(expected, options.Auth)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			assert := assert.New(t)
+			options := &SubOptions{}
+			err := yaml.UnmarshalStrict([]byte(test.input), options)
+
+			assert.NoError(err)
+			assert.Equal(test.expected, options.Auth)
+		})
+	}
 }
 
 func Test_AuthOptions_Validate_OK(t *testing.T) {
@@ -67,8 +135,8 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
+		PathPrefix: StringToPtr("/login"),
+		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				Hostname: "example.com",
 				Port:     80,
@@ -90,8 +158,8 @@ func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
 
 	authOptions := &AuthOptions{
 		Scheme:     "cloudentity",
-		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
+		PathPrefix: StringToPtr("/login"),
+		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				Hostname: "example.com",
 				Port:     80,
@@ -112,8 +180,8 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
+		PathPrefix: StringToPtr("/login"),
+		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				// Hostname: "example.com",
 				// Port: 80,
@@ -126,9 +194,4 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 	}
 
 	assert.EqualError(options.Validate(), "auth: (auth-upstream: (host: (hostname: cannot be blank; port: cannot be blank.).).).")
-}
-
-func stringToPtr(str string) *string {
-	strPtr := &str
-	return strPtr
 }
