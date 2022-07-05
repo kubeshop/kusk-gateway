@@ -25,6 +25,9 @@ package parser
 import (
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
 // RouteAuthzDisabled returns a per-route config to disable authorization.
@@ -36,4 +39,38 @@ func RouteAuthzDisabled() (*anypb.Any, error) {
 			},
 		},
 	)
+}
+
+func ParseAuthOptions(finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+	upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+	upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
+
+	clusterName := GenerateClusterName(upstreamServiceHost, upstreamServicePort)
+
+	if !envoyConfiguration.ClusterExist(clusterName) {
+		envoyConfiguration.AddCluster(
+			clusterName,
+			upstreamServiceHost,
+			upstreamServicePort,
+		)
+	}
+
+	pathPrefix := ""
+	if finalOpts.Auth.PathPrefix != nil {
+		pathPrefix = *finalOpts.Auth.PathPrefix
+	}
+
+	httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+		upstreamServiceHost,
+		upstreamServicePort,
+		clusterName,
+		pathPrefix,
+	)
+	if err != nil {
+		return err
+	}
+
+	httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+
+	return nil
 }

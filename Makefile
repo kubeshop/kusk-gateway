@@ -106,7 +106,6 @@ test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
 
-
 .PHONY: docker-images-cache
 docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
 	docker pull gcr.io/distroless/static:nonroot

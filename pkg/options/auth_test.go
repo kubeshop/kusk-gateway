@@ -23,6 +23,7 @@
 package options
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,9 +32,16 @@ import (
 
 func Test_AuthOptions_UnmarshalStrict(t *testing.T) {
 	t.Parallel()
-	assert := assert.New(t)
 
-	input := `
+	type testCase struct {
+		input    string
+		expected *AuthOptions
+	}
+
+	testCases := []testCase{
+		{
+			// name: "basic-auth",
+			input: `
 auth:
   scheme: basic
   path_prefix: /login
@@ -41,24 +49,35 @@ auth:
     host:
       hostname: example.com
       port: 80
-`
-
-	expected := &AuthOptions{
-		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
-			Host: AuthUpstreamHost{
-				Hostname: "example.com",
-				Port:     80,
+`,
+			expected: &AuthOptions{
+				Scheme:     "basic",
+				PathPrefix: stringToPtr("/login"),
+				AuthUpstream: &AuthUpstream{
+					Host: AuthUpstreamHost{
+						Hostname: "example.com",
+						Port:     80,
+					},
+				},
 			},
 		},
 	}
 
-	options := &SubOptions{}
-	err := yaml.UnmarshalStrict([]byte(input), options)
+	for index, testCase := range testCases {
+		index, test := index, testCase
+		name := fmt.Sprintf("%s-%d", t.Name(), index)
 
-	assert.NoError(err)
-	assert.Equal(expected, options.Auth)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			assert := assert.New(t)
+			options := &SubOptions{}
+			err := yaml.UnmarshalStrict([]byte(test.input), options)
+
+			assert.NoError(err)
+			assert.Equal(test.expected, options.Auth)
+		})
+	}
 }
 
 func Test_AuthOptions_Validate_OK(t *testing.T) {
@@ -68,7 +87,7 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
 		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
+		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				Hostname: "example.com",
 				Port:     80,
@@ -91,7 +110,7 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
 		PathPrefix: stringToPtr("/login"),
-		AuthUpstream: AuthUpstream{
+		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				// Hostname: "example.com",
 				// Port: 80,

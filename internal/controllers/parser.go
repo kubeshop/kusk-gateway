@@ -282,7 +282,7 @@ func UpdateConfigFromAPIOpts(
 					Append: wrapperspb.Bool(false),
 				})
 
-				clusterName := generateClusterName(validatorHostname, validatorPort)
+				clusterName := parser.GenerateClusterName(validatorHostname, validatorPort)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
 				}
@@ -305,40 +305,16 @@ func UpdateConfigFromAPIOpts(
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
-				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
-				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
-
-				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
-
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(
-						clusterName,
-						upstreamServiceHost,
-						upstreamServicePort,
-					)
-				}
-
-				pathPrefix := ""
-				if finalOpts.Auth.PathPrefix != nil {
-					pathPrefix = *finalOpts.Auth.PathPrefix
-				}
-
-				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
-					upstreamServiceHost,
-					upstreamServicePort,
-					clusterName,
-					pathPrefix,
-				)
+				err := parser.ParseAuthOptions(finalOpts, envoyConfiguration, httpConnectionManagerBuilder)
 				if err != nil {
 					return err
 				}
-				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 				fallthrough
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
 
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				clusterName := parser.GenerateClusterName(upstreamHostname, upstreamPort)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
@@ -522,7 +498,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 				rt.Action = routeRedirect
 			} else {
 				upstreamHostname, upstreamPort := getUpstreamHost(methodOpts.Upstream)
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				clusterName := parser.GenerateClusterName(upstreamHostname, upstreamPort)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
 				}
@@ -611,11 +587,6 @@ func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, po
 		return fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace), upstreamOpts.Service.Port
 	}
 	return upstreamOpts.Host.Hostname, upstreamOpts.Host.Port
-}
-
-// each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func generateClusterName(name string, port uint32) string {
-	return fmt.Sprintf("%s-%d", name, port)
 }
 
 func generateMockID(path string, method string, operationID string) string {
