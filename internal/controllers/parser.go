@@ -332,6 +332,7 @@ func UpdateConfigFromAPIOpts(
 					return err
 				}
 				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+				fallthrough
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
