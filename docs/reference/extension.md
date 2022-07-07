@@ -357,3 +357,20 @@ x-kusk:
         port: 80
 ...
 ```
+
+### Exposing OpenAPI defintion
+
+The `openapi-path` field takes the a path name and will expose your OpenAPI defintion in defined path. 
+
+**Sample:**
+
+```yaml
+...
+x-kusk:
+ openapi-path: openapi.json
+...
+```
+
+This will expose your entire OpenAPI defintion, without the Kusk extensions, on `yourdomain.com/openapi.json`. 
+
+To remove some paths or operations from the exposed OpenAPI, use the [`disabled` option](./#disabled).
