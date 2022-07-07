@@ -27,6 +27,7 @@ nav:
       - CORS: guides/cors.md
       - Routing & Disabling: guides/routing.md
       - Timeouts: guides/timeouts.md
+      - Basic Auth: guides/basic-auth.md
       - Rate Limiting: guides/rate-limit.md
       - Caching: guides/cache.md
       - Automatic API deployment: guides/autodeploy.md
