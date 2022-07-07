@@ -23,7 +23,7 @@ x-kusk:
 
 The example above authenticates requests to the whole API.
 
-You can also specify different authentication settings for a specific operation or path. The following example shows authentication configuration for a specific operation:
+You can also specify different authentication settings for specific operations or paths. The following example shows an example authentication configuration for a specific operation:
 
 ```yaml
 ...
