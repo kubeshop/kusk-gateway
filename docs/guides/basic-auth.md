@@ -5,7 +5,7 @@ Currently you can use any Header based authentication methods. This includes:
 - JWT Tokens
 - Bearer Tokens
 
-To use the authentication, you will need to add the following section to your `x-kusk`:
+To set up authentication, add the following section to your `x-kusk` settings block:
 
 ```yaml
 openapi: 3.0.0
