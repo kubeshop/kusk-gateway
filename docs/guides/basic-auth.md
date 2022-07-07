@@ -40,7 +40,7 @@ paths:
       ..
 ```
 
-As you can see in the example, in the `hostname` section we're referencing a service in our cluster that will handle the authentication of the requests. This flow looks like the following: 
+In the example, in the `hostname` section we're referencing an upstream service in our cluster that will handle request authentication. The flow is as follows: 
 
 ![kusk-gateway basic-auth diagram](../img/basic-auth.png)
 
