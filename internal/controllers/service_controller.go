@@ -59,7 +59,7 @@ type ServiceReconciler struct {
 }
 
 func annotation(a string) string {
-	return fmt.Sprintf("kusk-gateway/%s", a)
+	return fmt.Sprintf("gateway.kusk.io/%s", a)
 }
 
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
@@ -87,7 +87,7 @@ func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	openAPIUrlAnnotation := annotation(annotationOpenapiUrl)
 	openApiUrl, ok := svc.Annotations[openAPIUrlAnnotation]
 	if !ok {
-		// if the service doesn't have the kusk-gateway/openapi-url annotation then we dont do anything
+		// if the service doesn't have the gateway.kusk.io/openapi-url annotation then we dont do anything
 		// as this is the minimum requirement for the service reconciler to have an effect
 		return ctrl.Result{}, nil
 	}
