@@ -1,6 +1,9 @@
 # Authentication
 
-Currently the methods of authentication you can use are any methods that are Header based. That includes Basic authentication, JWT tokens, Bearer tokens, etc.
+Currently you can use any Header based authentication methods. This includes:
+- Basic Authentication
+- JWT Tokens
+- Bearer Tokens
 
 To use the authentication, you will need to add the following section to your `x-kusk`:
 
