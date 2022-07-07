@@ -41,6 +41,7 @@ func RouteAuthzDisabled() (*anypb.Any, error) {
 	)
 }
 
+// ParseAuthOptions
 func ParseAuthOptions(finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
 	upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
 	upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port

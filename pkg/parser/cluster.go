@@ -24,6 +24,7 @@ package parser
 
 import "fmt"
 
+// GenerateClusterName
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 func GenerateClusterName(name string, port uint32) string {
 	return fmt.Sprintf("%s-%d", name, port)

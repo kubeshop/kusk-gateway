@@ -328,19 +328,21 @@ x-kusk:
 ...
 ```
 
-
 ### Authentication
 
 The `auth` object contains the following properties to configure HTTP authentication:
 
-| Name                          | Description                                                                                                          |
-|:------------------------------|----------------------------------------------------------------------------------------------------------------------|
-| `auth.scheme`                      | **Required**. The authentication scheme. Only `basic` authentication is supported at the moment.                     |
-| `auth.path_prefix`                 | **Optional**. The prefix to attach to `auth-upstream.host.hostname`                                                  |
-| `auth.auth-upstream`               | **Required**. Defines the upstream authentication host.                                                              |
-| `auth.auth-upstream.host`          | **Required**. Defines how to reach the authentication server.                                                        |
-| `auth.auth-upstream.host.hostname` | **Required**. Defines the `hostname` the authentication server is running on.                                        |
-| `auth.auth-upstream.host.port`     | **Required**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`. |
+| Name                                  | Description                                                                                                                                  |
+|:--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `auth.scheme`                         | **Required**. The authentication scheme. `basic` and `oauth2` are valid values.                                                              |
+| `auth.path_prefix`                    | **Optional**. The prefix to attach to `auth-upstream.host.hostname`                                                                          |
+| `auth-upstream`                       | **Required, if `scheme` is `basic`**. Defines the upstream authentication host.                                                              |
+| `auth-upstream.host`                  | **Required, if `scheme` is `basic`**. Defines how to reach the authentication server.                                                        |
+| `auth-upstream.host.hostname`         | **Required, if `scheme` is `basic`**. Defines the `hostname` the authentication server is running on.                                        |
+| `auth-upstream.host.port`             | **Required, if `scheme` is `basic`**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`. |
+| `oauth2`                              | **Required, if `scheme` is `oauth2`**. TODO(MBana): Complete documentation.                                                                  |
+
+`auth-upstream` (basic authentication) is mutually exclusive with `oauth2`: The two cannot be specified together.
 
 **Sample:**
 
