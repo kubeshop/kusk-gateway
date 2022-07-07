@@ -136,10 +136,11 @@ type OAuth2 struct {
 
 func (o OAuth2) Validate() error {
 	// return validation.ValidateStruct(&o,
-	// 	validation.Field(&o.AuthorizationEndpoint, validation.Required, is.URL),
 	// 	validation.Field(&o.TokenEndpoint, validation.Required, is.URL),
+	// 	validation.Field(&o.AuthorizationEndpoint, validation.Required, is.URL),
 	// 	validation.Field(&o.RedirectURI, validation.Required, is.RequestURI),
-	// 	validation.Field(&o.SignoutPath, validation.Required, is.URL),
+	// 	validation.Field(&o.RedirectPathMatcher, validation.Required, is.RequestURI),
+	// 	validation.Field(&o.SignoutPath, validation.Required, is.RequestURI),
 	// )
 	return nil
 }
@@ -147,6 +148,8 @@ func (o OAuth2) Validate() error {
 type Credentials struct {
 	// REQUIRED.
 	ClientID string `json:"client_id,omitempty" yaml:"client_id,omitempty"`
+	// REQUIRED.
+	ClientSecret string `json:"client_secret,omitempty" yaml:"client_secret,omitempty"`
 	// REQUIRED.
 	TokenSecret string `json:"token_secret,omitempty" yaml:"token_secret,omitempty"`
 	// REQUIRED.
@@ -158,6 +161,7 @@ type Credentials struct {
 func (o Credentials) Validate() error {
 	// return validation.ValidateStruct(&o,
 	// 	validation.Field(&o.ClientID),
+	// 	validation.Field(&o.ClientSecret),
 	// 	validation.Field(&o.TokenSecret),
 	// 	validation.Field(&o.HmacSecret),
 	// )

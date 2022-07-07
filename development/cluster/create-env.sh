@@ -37,4 +37,6 @@ make docker-build deploy
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 
 echo "========> Deploying default Envoy Fleet"
+echo "sleeping for 4 seconds"
+sleep 4
 make deploy-envoyfleet
