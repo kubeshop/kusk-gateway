@@ -1,0 +1,41 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: test-openapi-path-with-auth
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: test-openapi-path-with-auth
+      description: test-openapi-path-with-auth
+      version: '0.0.1'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      openapi-path: openapi.json
+      auth:
+        scheme: basic
+        auth-upstream:
+          host:
+            hostname: ext-authz-http-service-openapi-path-with-auth
+            port: 80
+      upstream:
+        service:
+          name: httpbin
+          namespace: default
+          port: 80
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}
