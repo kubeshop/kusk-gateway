@@ -20,11 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cache
+package openapi_path
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,18 +41,18 @@ import (
 )
 
 const (
-	testName         = "test-cache"
+	testName         = "test-openapi-path-with-auth"
 	defaultName      = "default"
 	defaultNamespace = "default"
 )
 
-type CacheTestSuite struct {
+type OpenAPIPathTestSuite struct {
 	common.KuskTestSuite
 	api *kuskv1.API
 }
 
-func (t *CacheTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/cache/cache.yaml")
+func (t *OpenAPIPathTestSuite) SetupTest() {
+	rawApi := common.ReadFile("../samples/openapi-path/openapi-path-with-auth.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
@@ -72,56 +71,47 @@ func (t *CacheTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 8 * time.Second
+	duration := 2 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
 	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
 
-func (t *CacheTestSuite) TestCacheCacheOn() {
-	// We are expecting `cache-control: max-age=2` header and the value of `age` to increase over time.
-	// the `uuid` will be cached up until `NoOfRequests`.
-	const (
-		NoOfRequests = 3
-	)
+func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthOK() {
+	// Calling `/openapi.json` should return the below:
+	bodyExpected := `
+{
+    "components": {},
+    "info": {
+        "description": "test-openapi-path-with-auth",
+        "title": "test-openapi-path-with-auth",
+        "version": "0.0.1"
+    },
+    "openapi": "3.0.0",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Returns GET data.",
+                "operationId": "/get",
+                "responses": {}
+            }
+        },
+        "/uuid": {
+            "get": {
+                "description": "Returns UUID4.",
+                "operationId": "/uuid",
+                "responses": {}
+            }
+        }
+    },
+    "schemes": [
+        "http",
+        "https"
+    ]
+}
+	`
 
-	envoyFleetSvc := getEnvoyFleetSvc(t)
-	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
-
-	uuidCached := ""
-	// Do n requests that will get cached, i.e., they'll return the same uuid.
-	for x := 0; x < NoOfRequests; x++ {
-		func() {
-			req, err := http.NewRequest(http.MethodGet, url, nil)
-
-			t.NoError(err)
-
-			res, err := http.DefaultClient.Do(req)
-			t.NoError(err)
-			t.Equal(http.StatusOK, res.StatusCode)
-
-			defer res.Body.Close()
-
-			responseBody, err := io.ReadAll(res.Body)
-			t.NoError(err)
-
-			body := map[string]string{}
-			t.NoError(json.Unmarshal(responseBody, &body))
-
-			if body["uuid"] == "" {
-				t.Fail("uuid is empty - expecting a uuid")
-			}
-
-			if uuidCached == "" && x == 0 {
-				uuidCached = body["uuid"]
-			}
-
-			if uuidCached != body["uuid"] {
-				t.Fail("uuid has changed - expecting the same uuid")
-			}
-
-			time.Sleep(1 * time.Second)
-		}()
-	}
+	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/openapi.json", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	t.NoError(err)
@@ -130,27 +120,44 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 	t.NoError(err)
 	t.Equal(http.StatusOK, res.StatusCode)
 
-	defer res.Body.Close()
+	defer func() {
+		t.NoError(res.Body.Close())
+	}()
 
 	responseBody, err := io.ReadAll(res.Body)
 	t.NoError(err)
 
-	body := map[string]string{}
-	t.NoError(json.Unmarshal(responseBody, &body))
-
-	t.NotEqual(body["uuid"], uuidCached)
+	t.JSONEq(bodyExpected, string(responseBody))
 }
 
-func (t *CacheTestSuite) TearDownSuite() {
+func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthForbidden() {
+	// Should return 403 - Forbidden, if auth credentials are not provided the `/uuid` route.
+	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	t.NoError(err)
+
+	res, err := http.DefaultClient.Do(req)
+	t.NoError(err)
+
+	defer func() {
+		t.NoError(res.Body.Close())
+	}()
+
+	t.Equal(http.StatusForbidden, res.StatusCode)
+}
+
+func (t *OpenAPIPathTestSuite) TearDownSuite() {
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
-func TestCacheTestSuite(t *testing.T) {
-	testSuite := CacheTestSuite{}
+func TestOpenAPIPathTestSuite(t *testing.T) {
+	testSuite := OpenAPIPathTestSuite{}
 	suite.Run(t, &testSuite)
 }
 
-func getEnvoyFleetSvc(t *CacheTestSuite) *corev1.Service {
+func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 	t.T().Helper()
 
 	envoyFleetSvc := &corev1.Service{}

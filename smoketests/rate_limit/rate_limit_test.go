@@ -4,19 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/smoketests/common"
-	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v3"
 	"io"
-	corev1 "k8s.io/api/core/v1"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/smoketests/common"
 )
 
 const (
@@ -67,7 +67,7 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 	// Do 2 requests then the next one will fail
 	for x := 0; x < RateLimit; x++ {
 		func() {
-			req, err := http.NewRequest("GET", url, nil)
+			req, err := http.NewRequest(http.MethodGet, url, nil)
 			t.NoError(err)
 
 			res, err := http.DefaultClient.Do(req)
@@ -86,7 +86,7 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 		}()
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	t.NoError(err)
 
 	res, err := http.DefaultClient.Do(req)

@@ -30,10 +30,10 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_auth_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/golang/protobuf/ptypes/any"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -45,6 +45,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
+	"github.com/kubeshop/kusk-gateway/pkg/parser"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
@@ -371,7 +372,6 @@ func UpdateConfigFromAPIOpts(
 
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				for _, rt := range routesToAddToVirtualHost {
 					if rt.TypedPerFilterConfig == nil {
 						rt.TypedPerFilterConfig = map[string]*any.Any{}
@@ -386,17 +386,14 @@ func UpdateConfigFromAPIOpts(
 
 						rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = anyRateLimit
 					}
-					if finalOpts.Auth == nil {
-						perrouteAuth, err := anypb.New(&envoy_auth_v3.ExtAuthzPerRoute{
-							Override: &envoy_auth_v3.ExtAuthzPerRoute_Disabled{Disabled: true},
-						})
 
+					if finalOpts.Auth == nil {
+						perRouteAuth, err := parser.RouteAuthzDisabled()
 						if err != nil {
-							return fmt.Errorf("cannot build auth per route: %w", err)
+							return fmt.Errorf("cannot create per-route config to disable authorization: vh=%q, %w", string(vh), err)
 						}
 
-						rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = perrouteAuth
-
+						rt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 					}
 
 					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
@@ -405,7 +402,6 @@ func UpdateConfigFromAPIOpts(
 				}
 			}
 		}
-
 	}
 
 	if opts.OpenAPIPath != "" {
@@ -426,6 +422,19 @@ func UpdateConfigFromAPIOpts(
 			})
 			if err != nil {
 				return fmt.Errorf("cannot build postprocessed api route: %w", err)
+			}
+
+			if opts.Auth != nil {
+				if openapiRt.TypedPerFilterConfig == nil {
+					openapiRt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+
+				perRouteAuth, err := parser.RouteAuthzDisabled()
+				if err != nil {
+					return fmt.Errorf("cannot create per-route config to disable authorization: path=%q, %w", opts.OpenAPIPath, err)
+				}
+
+				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
