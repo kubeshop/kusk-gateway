@@ -11,6 +11,7 @@ data:
   LOG_LEVEL: INFO
   METRICS_BIND_ADDR: :8080
   WEBHOOK_CERTS_DIR: /opt/manager/webhook/certs
+  ANALYTICS_ENABLED: "false"
 kind: ConfigMap
 metadata:
   name: kusk-gateway-manager
