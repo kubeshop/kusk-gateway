@@ -24,6 +24,7 @@ SOFTWARE.
 package analytics
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"os"
@@ -32,23 +33,25 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
 	"github.com/segmentio/analytics-go"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
 	TelemetryToken = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken
 )
 
-func SendAnonymousInfo(event string) error {
+func SendAnonymousInfo(ctx context.Context, client client.Client, event string) error {
 	properties := analytics.NewProperties()
 	properties.Set("event", event)
 	properties.Set("version", build.Version)
 
 	track := analytics.Track{
-		AnonymousId: MachineID(),
+		AnonymousId: ClusterID(ctx, client),
 		Event:       "kusk-heartbeat",
 		Properties:  properties,
 		Timestamp:   time.Now()}
-
 	return sendDataToGA(track)
 }
 
@@ -83,6 +86,14 @@ func sendDataToGA(track analytics.Track) error {
 	client := analytics.New(TelemetryToken)
 	defer client.Close()
 	return client.Enqueue(track)
+}
+
+func ClusterID(ctx context.Context, client client.Client) string {
+	ns := &corev1.Namespace{}
+	if err := client.Get(ctx, types.NamespacedName{Name: "kube-system"}, ns); err != nil {
+		return MachineID()
+	}
+	return string(ns.UID)
 }
 
 // MachineID returns unique user machine ID

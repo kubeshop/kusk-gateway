@@ -41,7 +41,7 @@ func (m *MockCheckSuite) SetupTest() {
 	api.Spec.Fleet.Namespace = defaultNamespace
 
 	m.NoError(m.Cli.Create(context.TODO(), api, &client.CreateOptions{}))
-	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
+	time.Sleep(3 * time.Second) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (m *MockCheckSuite) TestEndpoint() {

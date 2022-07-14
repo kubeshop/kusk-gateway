@@ -33,6 +33,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
 	// +kubebuilder:scaffold:imports
 
 	"github.com/go-logr/logr"
@@ -205,7 +206,6 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 }
 
 func main() {
-	analytics.SendAnonymousInfo("kusk-gateway manager bootstrapping")
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
 		_ = fmt.Errorf("unable to init logger: %w", err)
@@ -232,6 +232,7 @@ func main() {
 		setupLog.Error(err, "Unable to create controller manager")
 		os.Exit(1)
 	}
+
 	// Envoy configuration manager (XDS service)
 	envoyManager := manager.New(ctx, config.EnvoyControlPlaneAddr, nil)
 	go func() {
@@ -260,6 +261,7 @@ func main() {
 		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 		WatchedSecretsChan: secretsChan,
 	}
+	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk-gateway manager bootstrapping")
 
 	// The watcher for k8s secrets to trigger the refresh of configuration in case certificates secrets change.
 	go func() {

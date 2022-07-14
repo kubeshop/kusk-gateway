@@ -62,12 +62,13 @@ func annotation(a string) string {
 	return fmt.Sprintf("kusk-gateway/%s", a)
 }
 
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=pods/finalizers,verbs=update
 func (r *ServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("service-reconciler")
-	analytics.SendAnonymousInfo("reconciling Service annotations for kusk")
+	analytics.SendAnonymousInfo(ctx, r.Client, "reconciling Service annotations for kusk")
 
 	l.Info("Reconciling changed Service resource", "changed", req.NamespacedName)
 

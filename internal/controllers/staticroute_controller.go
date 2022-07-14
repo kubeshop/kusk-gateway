@@ -53,6 +53,7 @@ type StaticRouteReconciler struct {
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=staticroutes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=staticroutes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=staticroutes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -60,7 +61,7 @@ type StaticRouteReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName("static-route-controller")
-	analytics.SendAnonymousInfo("reconciling Static route")
+	analytics.SendAnonymousInfo(ctx, r.Client, "reconciling Static route")
 
 	l.Info("Reconciling changed StaticRoute resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed StaticRoute resource", "changed", req.NamespacedName)

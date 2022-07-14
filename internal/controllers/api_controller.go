@@ -52,6 +52,7 @@ type APIReconciler struct {
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=apis,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=apis/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=gateway.kusk.io,resources=apis/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -59,7 +60,7 @@ type APIReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("api-controller")
-	analytics.SendAnonymousInfo("reconciling API")
+	analytics.SendAnonymousInfo(ctx, r.Client, "reconciling API")
 
 	l.Info("Reconciling changed API resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed API resource", "changed", req.NamespacedName)
