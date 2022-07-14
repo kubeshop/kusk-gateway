@@ -1,3 +1,5 @@
 # Ignore client credentials
 /*.json
 /secrets/*.json
+/secrets/**/*.json
+/secrets/**/*.sh

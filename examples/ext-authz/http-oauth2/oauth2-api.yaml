@@ -33,7 +33,7 @@ spec:
             client_secret: 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
             token_secret: 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
             hmac_secret: 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
-          redirect_uri: http://localhost
+          redirect_uri: "%REQ(:x-forwarded-proto)%://%REQ(:authority)%/callback"
           redirect_path_matcher: /oauth2/callback
           signout_path: /oauth2/signout
           forward_bearer_token: true

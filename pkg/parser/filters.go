@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"time"
 
-	v3 "github.com/cncf/xds/go/xds/core/v3"
+	//v3 "github.com/cncf/xds/go/xds/core/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
@@ -36,12 +36,18 @@ import (
 	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/google/uuid"
 
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
+)
+
+const (
+	ResourceApiVersion = envoy_config_core_v3.ApiVersion_V3
 )
 
 // https://github.com/envoyproxy/envoy/tree/main/examples/ext_authz
@@ -104,11 +110,12 @@ func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort ui
 }
 
 func NewFilterHTTPOAuth2(oauth2 *options.OAuth2) (*anypb.Any, error) {
-	const (
-		clusterName        = "token_endpoint"
-		resourceApiVersion = envoy_config_core_v3.ApiVersion_V3
-	)
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
 
+	clusterName := fmt.Sprintf("%s-%s", "token_endpoint", uuid.String())
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
 		Cluster: clusterName,
 	}
@@ -122,10 +129,10 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2) (*anypb.Any, error) {
 	tokenSecret := &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
 		Name: "token_secret",
 		SdsConfig: &envoy_config_core_v3.ConfigSource{
-			Authorities:           []*v3.Authority{},
+			// Authorities:           []*v3.Authority{},
 			ConfigSourceSpecifier: nil,
 			InitialFetchTimeout:   TimeoutDefault(),
-			ResourceApiVersion:    resourceApiVersion,
+			ResourceApiVersion:    ResourceApiVersion,
 		},
 	}
 	// tokenFormation := &envoy_config_filter_http_oauth2_v3.OAuth2Credentials_HmacSecret{
@@ -215,6 +222,88 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2) (*anypb.Any, error) {
 	}
 
 	return anyOAuth2, nil
+}
+
+const (
+	localhost = "127.0.0.1"
+
+	// XdsCluster is the cluster name for the control server (used by non-ADS set-up).
+	XdsCluster = "xds_cluster"
+
+	// AlsCluster is the clustername for gRPC access log service (ALS)
+	AlsCluster = "als_cluster"
+
+	// Ads mode for resources: one aggregated xDS service
+	Ads = "ads"
+
+	// Xds mode for resources: individual xDS services.
+	Xds = "xds"
+
+	// Rest mode for resources: polling using Fetch.
+	Rest = "rest"
+
+	// Delta mode for resources: individual delta xDS services.
+	Delta = "delta"
+
+	// Delta Ads mode for resource: one aggregated delta xDS service.
+	DeltaAds = "delta-ads"
+)
+
+var (
+	// RefreshDelay for the polling config source.
+	RefreshDelay = 500 * time.Millisecond
+)
+
+// data source configuration
+func configSource(mode string) *envoy_config_core_v3.ConfigSource {
+	source := &envoy_config_core_v3.ConfigSource{}
+	source.ResourceApiVersion = resource.DefaultAPIVersion
+	switch mode {
+	case Ads:
+		source.ConfigSourceSpecifier = &envoy_config_core_v3.ConfigSource_Ads{
+			Ads: &envoy_config_core_v3.AggregatedConfigSource{},
+		}
+	case DeltaAds:
+		source.ConfigSourceSpecifier = &envoy_config_core_v3.ConfigSource_Ads{
+			Ads: &envoy_config_core_v3.AggregatedConfigSource{},
+		}
+	case Xds:
+		source.ConfigSourceSpecifier = &envoy_config_core_v3.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
+				TransportApiVersion:       ResourceApiVersion,
+				ApiType:                   envoy_config_core_v3.ApiConfigSource_GRPC,
+				SetNodeOnFirstMessageOnly: true,
+				GrpcServices: []*envoy_config_core_v3.GrpcService{{
+					TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+						EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{ClusterName: XdsCluster},
+					},
+				}},
+			},
+		}
+	case Rest:
+		source.ConfigSourceSpecifier = &envoy_config_core_v3.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
+				ApiType:             envoy_config_core_v3.ApiConfigSource_REST,
+				TransportApiVersion: ResourceApiVersion,
+				ClusterNames:        []string{XdsCluster},
+				RefreshDelay:        durationpb.New(RefreshDelay),
+			},
+		}
+	case Delta:
+		source.ConfigSourceSpecifier = &envoy_config_core_v3.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
+				TransportApiVersion:       ResourceApiVersion,
+				ApiType:                   envoy_config_core_v3.ApiConfigSource_DELTA_GRPC,
+				SetNodeOnFirstMessageOnly: true,
+				GrpcServices: []*envoy_config_core_v3.GrpcService{{
+					TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+						EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{ClusterName: XdsCluster},
+					},
+				}},
+			},
+		}
+	}
+	return source
 }
 
 func IsRouterFilter(filter *http.HttpFilter) bool {
