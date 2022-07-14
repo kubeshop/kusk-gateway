@@ -20,13 +20,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package parser
+package options
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 )
 
-// each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func GenerateClusterName(name string, port uint32) string {
-	return fmt.Sprintf("%s-%d", name, port)
+func StringToPtr(str string) *string {
+	strPtr := &str
+	return strPtr
+}
+
+func ToCompactJSON(o interface{}) string {
+	src, err := json.Marshal(&o)
+	if err != nil {
+		return ""
+	}
+
+	dst := bytes.NewBufferString("")
+	if err := json.Compact(dst, src); err != nil {
+		return ""
+	}
+
+	return dst.String()
 }

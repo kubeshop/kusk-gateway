@@ -20,13 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package parser
+package debug
 
 import (
-	"fmt"
+	"github.com/davecgh/go-spew/spew"
 )
 
-// each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func GenerateClusterName(name string, port uint32) string {
-	return fmt.Sprintf("%s-%d", name, port)
+func init() {
+	spew.Config.Indent = ""
+	spew.Config.DisableCapacities = true
+	spew.Config.DisablePointerAddresses = true
+}
+
+func ToString(input interface{}) string {
+	configState := &spew.ConfigState{
+		Indent:                  "",
+		DisableCapacities:       true,
+		DisablePointerAddresses: true,
+	}
+
+	str := configState.Sdump(input)
+	// str = html.EscapeString(str)
+	return str
 }

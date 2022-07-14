@@ -23,28 +23,76 @@
 package parser
 
 import (
+	"fmt"
+
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/go-logr/logr"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-// RouteAuthzDisabled returns a per-route config to disable authorization.
-func RouteAuthzDisabled() (*anypb.Any, error) {
-	return anypb.New(
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
-				Disabled: true,
-			},
-		},
-	)
+var (
+	ErrorAuthIsNil                = fmt.Errorf("parser.auth.ParseAuthOptions: `auth` is nil")
+	ErrorMutuallyExclusiveOptions = fmt.Errorf("parser.auth.ParseAuthOptions: `auth.auth-upstream` and `auth.oauth2` are enabled but are mutually exclusive")
+)
+
+func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+	if finalOpts.Auth == nil {
+		return ErrorAuthIsNil
+	}
+
+	authUpstream := finalOpts.Auth.AuthUpstream
+	oauth2 := finalOpts.Auth.OAuth2
+
+	if authUpstream != nil && oauth2 != nil {
+		return ErrorMutuallyExclusiveOptions
+	}
+
+	if authUpstream != nil {
+		err := ParseAuthUpstreamOptions(authUpstream, envoyConfiguration, httpConnectionManagerBuilder)
+		if err != nil {
+			return err
+		}
+	}
+
+	if oauth2 != nil {
+		err := ParseOAuth2Options(oauth2, httpConnectionManagerBuilder)
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.
+		WithName("pkg/parser/auth.go:ParseAuthOptions").
+		Info("added filter", "HTTPConnectionManager.HttpFilters", len(httpConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
+
+	return nil
 }
 
-// ParseAuthOptions
-func ParseAuthOptions(finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
-	upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
-	upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
+func ParseOAuth2Options(oauth2 *options.OAuth2, httpConnectionManagerBuilder *config.HCMBuilder) error {
+	typedConfig, err := NewFilterHTTPOAuth2(oauth2)
+	if err != nil {
+		return err
+	}
+
+	filter := &http.HttpFilter{
+		Name: "envoy.filters.http.oauth2",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: typedConfig,
+		},
+	}
+
+	return httpConnectionManagerBuilder.AddFilter(filter)
+}
+
+func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+	upstreamServiceHost := authUpstream.Host.Hostname
+	upstreamServicePort := authUpstream.Host.Port
 
 	clusterName := GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
@@ -57,11 +105,11 @@ func ParseAuthOptions(finalOpts options.SubOptions, envoyConfiguration *config.E
 	}
 
 	pathPrefix := ""
-	if finalOpts.Auth.PathPrefix != nil {
-		pathPrefix = *finalOpts.Auth.PathPrefix
+	if authUpstream.PathPrefix != nil {
+		pathPrefix = *authUpstream.PathPrefix
 	}
 
-	httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+	typedConfig, err := NewFilterHTTPExternalAuthorization(
 		upstreamServiceHost,
 		upstreamServicePort,
 		clusterName,
@@ -71,7 +119,24 @@ func ParseAuthOptions(finalOpts options.SubOptions, envoyConfiguration *config.E
 		return err
 	}
 
-	httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+	filter := &http.HttpFilter{
+		Name: wellknown.HTTPExternalAuthorization,
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: typedConfig,
+		},
+	}
 
-	return nil
+	return httpConnectionManagerBuilder.AddFilter(filter)
+}
+
+// RouteAuthzDisabled
+// returns a per-route config to disable authorization.
+func RouteAuthzDisabled() (*anypb.Any, error) {
+	return anypb.New(
+		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+				Disabled: true,
+			},
+		},
+	)
 }

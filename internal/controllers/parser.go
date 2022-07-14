@@ -39,6 +39,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
@@ -79,6 +80,8 @@ func UpdateConfigFromAPIOpts(
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
 ) error {
+	logger := ctrl.Log.WithName("internal/controllers/parser.go")
+
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -305,7 +308,8 @@ func UpdateConfigFromAPIOpts(
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
-				err := parser.ParseAuthOptions(finalOpts, envoyConfiguration, httpConnectionManagerBuilder)
+				logger.Info("parsing `auth` options", "finalOpts.Auth", finalOpts.Auth)
+				err := parser.ParseAuthOptions(ctrl.Log, finalOpts, envoyConfiguration, httpConnectionManagerBuilder)
 				if err != nil {
 					return err
 				}
@@ -370,6 +374,8 @@ func UpdateConfigFromAPIOpts(
 						}
 
 						rt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+
+						logger.Info("disabled `auth` for route", "finalOpts.Auth", finalOpts.Auth, "vh", fmt.Sprintf("%q", string(vh)))
 					}
 
 					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
@@ -407,10 +413,12 @@ func UpdateConfigFromAPIOpts(
 
 				perRouteAuth, err := parser.RouteAuthzDisabled()
 				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: path=%q, %w", opts.OpenAPIPath, err)
+					return fmt.Errorf("cannot create per-route config to disable authorization: openapi-path=%q, %w", opts.OpenAPIPath, err)
 				}
 
 				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+
+				logger.Info("disabled `auth` for route", "openapi-path", opts.OpenAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
@@ -520,9 +528,9 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRoute
 			}
+
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}

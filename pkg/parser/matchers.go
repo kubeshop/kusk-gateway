@@ -23,10 +23,31 @@
 package parser
 
 import (
-	"fmt"
+	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 )
 
-// each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-func GenerateClusterName(name string, port uint32) string {
-	return fmt.Sprintf("%s-%d", name, port)
+func PathMatcherContains(contains string) *envoy_type_matcher_v3.PathMatcher {
+	return &envoy_type_matcher_v3.PathMatcher{
+		Rule: &envoy_type_matcher_v3.PathMatcher_Path{
+			Path: StringMatcherContains(contains, true),
+		},
+	}
+}
+
+func StringMatcherContains(contains string, ignoreCase bool) *envoy_type_matcher_v3.StringMatcher {
+	return &envoy_type_matcher_v3.StringMatcher{
+		MatchPattern: &envoy_type_matcher_v3.StringMatcher_Contains{
+			Contains: contains,
+		},
+		IgnoreCase: true,
+	}
+}
+
+func StringMatcherExact(exact string, ignoreCase bool) *envoy_type_matcher_v3.StringMatcher {
+	return &envoy_type_matcher_v3.StringMatcher{
+		MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{
+			Exact: exact,
+		},
+		IgnoreCase: ignoreCase,
+	}
 }

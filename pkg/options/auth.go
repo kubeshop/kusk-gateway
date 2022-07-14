@@ -38,8 +38,8 @@ const (
 //   ...
 //   auth:
 //     scheme: basic
-//     path_prefix: /login # optional
 //     auth-upstream:
+//       path_prefix: /login # optional
 //       host:
 //         hostname: example.com
 //         port: 80
@@ -53,6 +53,10 @@ type AuthOptions struct {
 	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
 	// REQUIRED, if `scheme == oauth2`. Mutually exclusive with `AuthUpstream`.
 	OAuth2 *OAuth2 `json:"oauth2,omitempty" yaml:"oauth2,omitempty"`
+}
+
+func (o AuthOptions) String() string {
+	return ToCompactJSON(o)
 }
 
 func (o AuthOptions) Validate() error {
@@ -79,6 +83,12 @@ func (o AuthOptions) Validate() error {
 type AuthUpstream struct {
 	// REQUIRED.
 	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`
+	// OPTIONAL.
+	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
+}
+
+func (o AuthUpstream) String() string {
+	return ToCompactJSON(o)
 }
 
 func (o AuthUpstream) Validate() error {
@@ -132,6 +142,10 @@ type OAuth2 struct {
 	// Optional resource parameter for authorization request RFC: https://tools.ietf.org/html/rfc8707.
 	// OPTIONAL.
 	Resources []string `json:"resources,omitempty" yaml:"resources,omitempty"`
+}
+
+func (o OAuth2) String() string {
+	return ToCompactJSON(o)
 }
 
 func (o OAuth2) Validate() error {

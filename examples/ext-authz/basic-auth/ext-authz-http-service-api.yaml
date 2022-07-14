@@ -22,15 +22,20 @@ spec:
         auth-upstream:
           host:
             hostname: ext-authz-http-service
-            port: 9002
+            port: 80
       upstream:
         service:
           name: httpbin
           namespace: default
-          port: 8080
+          port: 80
     paths:
       "/":
         get:
           description: Returns GET data.
           operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
           responses: {}

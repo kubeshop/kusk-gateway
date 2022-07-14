@@ -52,7 +52,7 @@ auth:
 `,
 			expected: &AuthOptions{
 				Scheme:     "basic",
-				PathPrefix: stringToPtr("/login"),
+				PathPrefix: StringToPtr("/login"),
 				AuthUpstream: &AuthUpstream{
 					Host: AuthUpstreamHost{
 						Hostname: "example.com",
@@ -135,7 +135,7 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
+		PathPrefix: StringToPtr("/login"),
 		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				Hostname: "example.com",
@@ -158,7 +158,7 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 
 	authOptions := &AuthOptions{
 		Scheme:     "basic",
-		PathPrefix: stringToPtr("/login"),
+		PathPrefix: StringToPtr("/login"),
 		AuthUpstream: &AuthUpstream{
 			Host: AuthUpstreamHost{
 				// Hostname: "example.com",
@@ -172,9 +172,4 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 	}
 
 	assert.EqualError(options.Validate(), "auth: (auth-upstream: (host: (hostname: cannot be blank; port: cannot be blank.).).).")
-}
-
-func stringToPtr(str string) *string {
-	strPtr := &str
-	return strPtr
 }

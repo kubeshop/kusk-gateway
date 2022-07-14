@@ -2,21 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: ext-auth-http-oauth2-httpbin
+  namespace: default
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-auth-http-oauth2-httpbin
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: httpbin
+  replicas: 1
   template:
     metadata:
       labels:
         app: httpbin
     spec:
       containers:
-        - image: kennethreitz/httpbin
+        - image: docker.io/kennethreitz/httpbin
           name: httpbin
           ports:
             - containerPort: 80
@@ -24,12 +25,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: ext-auth-http-oauth2-httpbin
+  namespace: default
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-auth-http-oauth2-httpbin
 spec:
-  ports:
-    - port: 80
-      targetPort: 80
   selector:
-    app: httpbin
+    app: ext-auth-http-oauth2-httpbin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

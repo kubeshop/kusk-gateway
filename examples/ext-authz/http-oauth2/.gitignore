@@ -1,2 +1,3 @@
 # Ignore client credentials
 /*.json
+/secrets/*.json
