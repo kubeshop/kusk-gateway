@@ -1,6 +1,6 @@
 # Ignore client credentials
-/*.json
-/secrets/*.json
-/secrets/**/*.json
-/secrets/**/*.sh
-/**/*
+/*/*
+!/*/*.yaml
+!/*/*.yml
+!/*/*.md
+!/*/openid-configuration

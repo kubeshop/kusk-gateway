@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ext-auth-http-oauth2-httpbin-oauth0
+  namespace: default
+  labels:
+    app: ext-auth-http-oauth2-httpbin-oauth0
+spec:
+  selector:
+    matchLabels:
+      app: ext-auth-http-oauth2-httpbin-oauth0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ext-auth-http-oauth2-httpbin-oauth0
+    spec:
+      containers:
+        - name: ext-auth-http-oauth2-httpbin-oauth0
+          image: docker.io/kennethreitz/httpbin
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-auth-http-oauth2-httpbin-oauth0
+  namespace: default
+  labels:
+    app: ext-auth-http-oauth2-httpbin-oauth0
+spec:
+  selector:
+    app: ext-auth-http-oauth2-httpbin-oauth0
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

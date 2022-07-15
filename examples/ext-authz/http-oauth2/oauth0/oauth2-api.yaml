@@ -1,0 +1,53 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: ext-auth-http-oauth2-oauth0
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: ext-auth-http-oauth2-oauth0
+      description: ext-auth-http-oauth2-oauth0
+      version: '0.0.1'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      upstream:
+        service:
+          name: ext-auth-http-oauth2-httpbin-oauth0
+          namespace: default
+          port: 80
+      auth:
+        scheme: oauth2
+        oauth2:
+          token_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token
+          authorization_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/authorize
+          credentials:
+            client_id: G6Yunm6fF6GGdfofpBSQL6hctCYpz5tk
+            # The Client Secret is not base64 encoded.
+            client_secret: a7IxJMV3cEyZu6CTVPfrrPVhG2e-vace2F-EQa3pQ2HSD7X_meih1WZAvIpvEWWQ
+            token_secret: a7IxJMV3cEyZu6CTVPfrrPVhG2e-vace2F-EQa3pQ2HSD7X_meih1WZAvIpvEWWQ
+            hmac_secret: a7IxJMV3cEyZu6CTVPfrrPVhG2e-vace2F-EQa3pQ2HSD7X_meih1WZAvIpvEWWQ
+          # redirect_uri: "%REQ(:x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback"
+          redirect_uri: "http://%REQ(:authority)%/oauth2/callback"
+          redirect_path_matcher: /oauth2/callback
+          signout_path: /oauth2/signout
+          forward_bearer_token: true
+          auth_scopes:
+            - openid
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}

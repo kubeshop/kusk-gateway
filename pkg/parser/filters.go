@@ -107,7 +107,7 @@ func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort ui
 	return anyAuthorization, nil
 }
 
-func NewFilterHTTPOAuth2(oauth2 *options.OAuth2, arguments ParseAuthArguments) (*anypb.Any, error) {
+func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, arguments ParseAuthArguments) (*anypb.Any, error) {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -116,6 +116,7 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2, arguments ParseAuthArguments) (
 	cluster := fmt.Sprintf("%s-%s-%s", "oauth", "token_endpoint", uuid.String())
 	upstreamServiceHost := "kubeshop-kusk-gateway-oauth2.eu.auth0.com"
 	upstreamServicePort := uint32(443)
+
 	if !arguments.EnvoyConfiguration.ClusterExist(cluster) {
 		arguments.EnvoyConfiguration.AddCluster(cluster, upstreamServiceHost, upstreamServicePort)
 	} else {
@@ -125,18 +126,17 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2, arguments ParseAuthArguments) (
 		fmt.Printf("upstreamServiceHost=%v\n", upstreamServiceHost)
 		fmt.Printf("upstreamServicePort=%v\n", upstreamServicePort)
 		fmt.Println("--------")
-		return nil, fmt.Errorf("parser.NewFilterHTTPOAuth2: cluster=%q already exists", cluster)
-
 	}
+
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
 		Cluster: cluster,
 	}
 	tokenEndpoint := &envoy_config_core_v3.HttpUri{
-		Uri:              oauth2.TokenEndpoint,
+		Uri:              oauth2Options.TokenEndpoint,
 		HttpUpstreamType: httpUpstreamType,
 		Timeout:          TimeoutDefault(),
 	}
-	authorizationEndpoint := oauth2.AuthorizationEndpoint
+	authorizationEndpoint := oauth2Options.AuthorizationEndpoint
 
 	configSourceSpecifier := &envoy_config_core_v3.ConfigSource_Ads{
 		Ads: &envoy_config_core_v3.AggregatedConfigSource{},
@@ -175,7 +175,7 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2, arguments ParseAuthArguments) (
 	}
 	credentials := &envoy_config_filter_http_oauth2_v3.OAuth2Credentials{
 		// The client_id to be used in the authorize calls. This value will be URL encoded when sent to the OAuth server.
-		ClientId: oauth2.Credentials.ClientID,
+		ClientId: oauth2Options.Credentials.ClientID,
 		// The secret used to retrieve the access token. This value will be URL encoded when sent to the OAuth server.
 		TokenSecret: tokenSecret,
 		// Configures how the secret token should be created.
@@ -187,15 +187,15 @@ func NewFilterHTTPOAuth2(oauth2 *options.OAuth2, arguments ParseAuthArguments) (
 		CookieNames: cookieNames,
 	}
 
-	redirectUri := oauth2.RedirectURI
-	redirectPathMatcher := PathMatcherContains(oauth2.RedirectPathMatcher)
-	signoutPath := PathMatcherContains(oauth2.SignoutPath)
-	forwardBearerToken := oauth2.ForwardBearerToken
+	redirectUri := oauth2Options.RedirectURI
+	redirectPathMatcher := PathMatcherContains(oauth2Options.RedirectPathMatcher)
+	signoutPath := PathMatcherContains(oauth2Options.SignoutPath)
+	forwardBearerToken := oauth2Options.ForwardBearerToken
 	// passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{
 	// 	{},
 	// }
-	authScopes := oauth2.AuthScopes
-	resources := oauth2.Resources
+	authScopes := oauth2Options.AuthScopes
+	resources := oauth2Options.Resources
 
 	config := &envoy_config_filter_http_oauth2_v3.OAuth2Config{
 		// Endpoint on the authorization server to retrieve the access token from.

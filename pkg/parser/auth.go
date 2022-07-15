@@ -79,8 +79,8 @@ func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, argument
 	return nil
 }
 
-func ParseOAuth2Options(oauth2 *options.OAuth2, arguments ParseAuthArguments) error {
-	typedConfig, err := NewFilterHTTPOAuth2(oauth2, arguments)
+func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments ParseAuthArguments) error {
+	typedConfig, err := NewFilterHTTPOAuth2(oauth2Options, arguments)
 	if err != nil {
 		return err
 	}
@@ -95,9 +95,9 @@ func ParseOAuth2Options(oauth2 *options.OAuth2, arguments ParseAuthArguments) er
 	return arguments.HTTPConnectionManagerBuilder.AddFilter(filter)
 }
 
-func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, arguments ParseAuthArguments) error {
-	upstreamServiceHost := authUpstream.Host.Hostname
-	upstreamServicePort := authUpstream.Host.Port
+func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, arguments ParseAuthArguments) error {
+	upstreamServiceHost := authUpstreamOptions.Host.Hostname
+	upstreamServicePort := authUpstreamOptions.Host.Port
 
 	clusterName := GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
@@ -110,8 +110,8 @@ func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, arguments Pars
 	}
 
 	pathPrefix := ""
-	if authUpstream.PathPrefix != nil {
-		pathPrefix = *authUpstream.PathPrefix
+	if authUpstreamOptions.PathPrefix != nil {
+		pathPrefix = *authUpstreamOptions.PathPrefix
 	}
 
 	typedConfig, err := NewFilterHTTPExternalAuthorization(

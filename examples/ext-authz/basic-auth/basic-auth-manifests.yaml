@@ -3,21 +3,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: ext-authz-http-service
-  name: ext-authz-http-service
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ext-authz-http-service
+      app: ext-authz-http-basic-auth
   template:
     metadata:
       labels:
-        app: ext-authz-http-service
+        app: ext-authz-http-basic-auth
     spec:
       containers:
         - image: docker.io/kubeshop/kusk-ext-authz-http-service
-          name: ext-authz-http-service
+          name: ext-authz-http-basic-auth
           ports:
             - containerPort: 9002
 ---
@@ -25,34 +25,34 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: ext-authz-http-service
-  name: ext-authz-http-service
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
 spec:
   ports:
     - port: 80
       targetPort: 9002
   selector:
-    app: ext-authz-http-service
+    app: ext-authz-http-basic-auth
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-auth-http-oauth2-httpbin-basic-auth
+  name: ext-auth-http-oauth2-httpbin-basic-auth
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpbin
+      app: ext-auth-http-oauth2-httpbin-basic-auth
   template:
     metadata:
       labels:
-        app: httpbin
+        app: ext-auth-http-oauth2-httpbin-basic-auth
     spec:
       containers:
-        - image: kennethreitz/httpbin
-          name: httpbin
+        - image: docker.io/kennethreitz/httpbin
+          name: ext-auth-http-oauth2-httpbin-basic-auth
           ports:
             - containerPort: 80
 ---
@@ -60,11 +60,11 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-auth-http-oauth2-httpbin-basic-auth
+  name: ext-auth-http-oauth2-httpbin-basic-auth
 spec:
   ports:
     - port: 80
       targetPort: 80
   selector:
-    app: httpbin
+    app: ext-auth-http-oauth2-httpbin-basic-auth
