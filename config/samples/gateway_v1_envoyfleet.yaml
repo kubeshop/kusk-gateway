@@ -3,7 +3,7 @@ kind: EnvoyFleet
 metadata:
   name: default
 spec:
-  image: "envoyproxy/envoy-alpine:v1.20.0"
+  image: "envoyproxy/envoy-alpine:v1.21-latest"
   service:
     # NodePort, ClusterIP, LoadBalancer
     type: LoadBalancer
@@ -13,23 +13,19 @@ spec:
     # Specify predefined static load balancer IP address if present
     #loadBalancerIP: 10.10.10.10
     ports:
-    - name: http
-      port: 80
-      targetPort: http
-    - name: https
-      port: 443
-      targetPort: http
+      - name: http
+        port: 80
+        targetPort: http
+      - name: https
+        port: 443
+        targetPort: http
+      - name: admin
+        port: 19000
+        targetPort: 19000
     # To preserve clients real ip addresses choose Local.
     # Note that this can make load balancing worse.
     #externalTrafficPolicy: Cluster|Local
     #externalTrafficPolicy: Local
-  resources:
-    # limits:
-    #   cpu: 1
-    #   memory: 100M
-    requests:
-      cpu: 10m
-      memory: 100M
   # Put annotations to scrape pods.
   # annotations:
   #   prometheus.io/scrape: 'true'
@@ -77,7 +73,7 @@ spec:
   # If the entry is missing no access logging will be done
   accesslog:
     # json|text
-    format: text
+    format: json
     # Depending on format we can specify our own log template or if template is not specified - default Kusk Gateway will be used
     # Below are specified the examples of similar and minimalistic formats for both text and json format types.
     # Text format fields order is preserved.

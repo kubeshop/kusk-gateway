@@ -26,7 +26,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
@@ -205,15 +204,15 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 
 // GRPCService returns a envoy_core_v3.GrpcService for the given parameters.
 func GrpcService(clusterName, sni string, timeout time.Duration) *envoy_core_v3.GrpcService {
-	authority := strings.ReplaceAll(clusterName, "/", ".")
-	if sni != "" {
-		authority = sni
-	}
+	// authority := strings.ReplaceAll(clusterName, "/", ".")
+	// if sni != "" {
+	// 	authority = sni
+	// }
 	return &envoy_core_v3.GrpcService{
 		TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 			EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 				ClusterName: clusterName,
-				Authority:   authority,
+				// Authority:   authority,
 			},
 		},
 		Timeout: durationpb.New(timeout),

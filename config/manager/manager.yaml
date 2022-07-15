@@ -8,7 +8,7 @@ data:
   ENABLE_LEADER_ELECTION: "false"
   ENVOY_CONTROL_PLANE_BIND_ADDR: :18000
   HEALTH_PROBE_BIND_ADDR: :8081
-  LOG_LEVEL: INFO
+  LOG_LEVEL: WARN
   METRICS_BIND_ADDR: :8080
   WEBHOOK_CERTS_DIR: /opt/manager/webhook/certs
   ANALYTICS_ENABLED: "false"
@@ -60,12 +60,5 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          limits:
-            cpu: 2000m
-            memory: 1024Mi
-          requests:
-            cpu: 500m
-            memory: 256Mi
       serviceAccountName: kusk-gateway-manager
       terminationGracePeriodSeconds: 10
