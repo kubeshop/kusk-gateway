@@ -126,14 +126,14 @@ run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your hos
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+	eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager ## Build docker images for all apps
 
 .PHONY: docker-build-manager-debug
 docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
+	eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 ##@ Deployment
 

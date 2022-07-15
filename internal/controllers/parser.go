@@ -309,7 +309,11 @@ func UpdateConfigFromAPIOpts(
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			case finalOpts.Auth != nil:
 				logger.Info("parsing `auth` options", "finalOpts.Auth", finalOpts.Auth)
-				err := parser.ParseAuthOptions(ctrl.Log, finalOpts, envoyConfiguration, httpConnectionManagerBuilder)
+				arguments := parser.ParseAuthArguments{
+					EnvoyConfiguration:           envoyConfiguration,
+					HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+				}
+				err := parser.ParseAuthOptions(ctrl.Log, finalOpts, arguments)
 				if err != nil {
 					return err
 				}

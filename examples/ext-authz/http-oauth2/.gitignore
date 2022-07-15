@@ -3,3 +3,4 @@
 /secrets/*.json
 /secrets/**/*.json
 /secrets/**/*.sh
+/**/*

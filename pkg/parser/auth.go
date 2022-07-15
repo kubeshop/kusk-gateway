@@ -41,7 +41,12 @@ var (
 	ErrorMutuallyExclusiveOptions = fmt.Errorf("parser.auth.ParseAuthOptions: `auth.auth-upstream` and `auth.oauth2` are enabled but are mutually exclusive")
 )
 
-func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+type ParseAuthArguments struct {
+	EnvoyConfiguration           *config.EnvoyConfiguration
+	HTTPConnectionManagerBuilder *config.HCMBuilder
+}
+
+func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, arguments ParseAuthArguments) error {
 	if finalOpts.Auth == nil {
 		return ErrorAuthIsNil
 	}
@@ -54,14 +59,14 @@ func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, envoyCon
 	}
 
 	if authUpstream != nil {
-		err := ParseAuthUpstreamOptions(authUpstream, envoyConfiguration, httpConnectionManagerBuilder)
+		err := ParseAuthUpstreamOptions(authUpstream, arguments)
 		if err != nil {
 			return err
 		}
 	}
 
 	if oauth2 != nil {
-		err := ParseOAuth2Options(oauth2, httpConnectionManagerBuilder)
+		err := ParseOAuth2Options(oauth2, arguments)
 		if err != nil {
 			return err
 		}
@@ -69,13 +74,13 @@ func ParseAuthOptions(logger logr.Logger, finalOpts options.SubOptions, envoyCon
 
 	logger.
 		WithName("pkg/parser/auth.go:ParseAuthOptions").
-		Info("added filter", "HTTPConnectionManager.HttpFilters", len(httpConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
+		Info("added filter", "HTTPConnectionManager.HttpFilters", len(arguments.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
 	return nil
 }
 
-func ParseOAuth2Options(oauth2 *options.OAuth2, httpConnectionManagerBuilder *config.HCMBuilder) error {
-	typedConfig, err := NewFilterHTTPOAuth2(oauth2)
+func ParseOAuth2Options(oauth2 *options.OAuth2, arguments ParseAuthArguments) error {
+	typedConfig, err := NewFilterHTTPOAuth2(oauth2, arguments)
 	if err != nil {
 		return err
 	}
@@ -87,17 +92,17 @@ func ParseOAuth2Options(oauth2 *options.OAuth2, httpConnectionManagerBuilder *co
 		},
 	}
 
-	return httpConnectionManagerBuilder.AddFilter(filter)
+	return arguments.HTTPConnectionManagerBuilder.AddFilter(filter)
 }
 
-func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, envoyConfiguration *config.EnvoyConfiguration, httpConnectionManagerBuilder *config.HCMBuilder) error {
+func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, arguments ParseAuthArguments) error {
 	upstreamServiceHost := authUpstream.Host.Hostname
 	upstreamServicePort := authUpstream.Host.Port
 
 	clusterName := GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
-	if !envoyConfiguration.ClusterExist(clusterName) {
-		envoyConfiguration.AddCluster(
+	if !arguments.EnvoyConfiguration.ClusterExist(clusterName) {
+		arguments.EnvoyConfiguration.AddCluster(
 			clusterName,
 			upstreamServiceHost,
 			upstreamServicePort,
@@ -126,7 +131,7 @@ func ParseAuthUpstreamOptions(authUpstream *options.AuthUpstream, envoyConfigura
 		},
 	}
 
-	return httpConnectionManagerBuilder.AddFilter(filter)
+	return arguments.HTTPConnectionManagerBuilder.AddFilter(filter)
 }
 
 // RouteAuthzDisabled
