@@ -1,6 +1,8 @@
 package common
 
 import (
+	"time"
+
 	"github.com/stretchr/testify/suite"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,4 +39,6 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 
 	s.Cli, err = client.New(config, client.Options{Scheme: scheme})
 	s.NoError(err)
+
+	time.Sleep(3 * time.Second)
 }

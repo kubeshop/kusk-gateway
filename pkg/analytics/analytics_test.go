@@ -24,8 +24,16 @@ SOFTWARE.
 package analytics
 
 import (
+	"context"
 	"os"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSendAnonymousInfo(t *testing.T) {
@@ -36,8 +44,29 @@ func TestSendAnonymousInfo(t *testing.T) {
 		return
 	}
 
-	if err := SendAnonymousInfo("analytics_test"); err != nil {
+	if err := SendAnonymousInfo(context.TODO(), getFakeClient(), "analytics_test"); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
+}
+
+func getFakeClient() client.Client {
+	scheme := runtime.NewScheme()
+	corev1.AddToScheme(scheme)
+
+	initObjects := []client.Object{
+
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kube-system",
+				UID:  types.UID("123"),
+			},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(initObjects...).
+		Build()
+	return fakeClient
 }

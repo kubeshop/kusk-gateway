@@ -57,6 +57,7 @@ type EnvoyFleetReconciler struct {
 // +kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet/finalizers,verbs=update
 // +kubebuilder:rbac:groups="";v1,resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -65,7 +66,7 @@ type EnvoyFleetReconciler struct {
 func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("envoy-fleet-controller")
 	l.Info("EnvoyFleet changed", "changed", req.NamespacedName)
-	analytics.SendAnonymousInfo("reconciling EnvoyFleet")
+	analytics.SendAnonymousInfo(ctx, r.Client, "reconciling EnvoyFleet")
 
 	ef := &gatewayv1alpha1.EnvoyFleet{}
 
