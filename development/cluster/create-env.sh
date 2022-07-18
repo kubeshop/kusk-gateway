@@ -30,11 +30,7 @@ echo "========> installing CRDs"
 make install
 
 echo "========> building control-plane docker image and installing into cluster"
-
-SHELL=/bin/bash
 make docker-build deploy
-
-kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 
 echo "========> Deploying default Envoy Fleet"
 make deploy-envoyfleet

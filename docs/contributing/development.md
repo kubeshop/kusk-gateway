@@ -59,10 +59,10 @@ make create-env
 
 This will do the following:
 
-- Start minikube with the profile name "kusk" and enable the Metallb add on. Metallb will expose the Envoy Fleet services "locally" without needing to port-forward to them.   
-- Install our CustomResourceDefinitions.   
-- Build the docker images, cache them for faster rebuilds and deploy them with Kustomize.   
-- Deploy an Envoy Fleet.   
+- Start minikube with the profile name "kusk" and enable the Metallb add on. Metallb will expose the Envoy Fleet services "locally" without needing to port-forward to them.
+- Install our CustomResourceDefinitions.
+- Build the docker images, cache them for faster rebuilds and deploy them with Kustomize.
+- Deploy an Envoy Fleet.
 
 ### **Launch Kusk Gateway in Your Cluster**
 If you opt to use a cluster offering that is not Minikube, you can use the following commands to launch Kusk Gateway in your cluster:
@@ -72,7 +72,7 @@ If you opt to use a cluster offering that is not Minikube, you can use the follo
 make install
 
 # Build and deploy the containers using Kustomize
-make docker-images-cache docker-build deploy
+make docker-build deploy
 
 # wait for rollout to complete
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system

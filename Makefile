@@ -76,6 +76,7 @@ create-env: ## Spin up a local development cluster with Minikube and install kus
 
 .PHONY: deploy-envoyfleet
 deploy-envoyfleet: ## Deploy k8s resources for the single Envoy Fleet
+	kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system --timeout=60s
 	kubectl apply -f config/samples/gateway_v1_envoyfleet.yaml
 
 .PHONY: delete-env
@@ -106,35 +107,23 @@ test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
 
-
-.PHONY: docker-images-cache
-docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
-	docker pull gcr.io/distroless/static:nonroot
-	docker pull docker.io/golang:1.17
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot --profile kgw
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17 --profile kgw
-
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager -ldflags="$(LD_FLAGS)" cmd/manager/main.go
+	go build -o bin/manager -ldflags="$(LD_FLAGS)" ./main.go
 
 .PHONY: run
 run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
-	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/manager ./main.go
 	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+	eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager ## Build docker images for all apps
-
-.PHONY: docker-build-manager-debug
-docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -162,7 +151,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default  | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: deploy-debug
 deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
@@ -174,9 +163,6 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: update
 update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
-
-.PHONY: update-debug
-update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
