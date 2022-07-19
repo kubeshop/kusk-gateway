@@ -30,11 +30,15 @@ echo "========> installing CRDs"
 make install
 
 echo "========> building control-plane docker image and installing into cluster"
-
-SHELL=/bin/bash
 make docker-build deploy
-
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 
+set +e
+
 echo "========> Deploying default Envoy Fleet"
-make deploy-envoyfleet
+until make deploy-envoyfleet; do
+  # A timing issue sometimes results in the below occuring:
+  # Error from server (InternalError): error when creating "config/samples/gateway_v1_envoyfleet.yaml": Internal error occurred: failed calling webhook "menvoyfleet.kb.io": failed to call webhook: Post "https://kusk-gateway-webhooks-service.kusk-system.svc:443/mutate-gateway-kusk-io-v1alpha1-envoyfleet?timeout=10s": dial tcp 10.109.220.117:443: connect: connection refused
+  echo 'sleeping for 2 seconds before trying `make deploy-envoyfleet`'
+  sleep 2
+done

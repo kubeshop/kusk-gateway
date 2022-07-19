@@ -130,8 +130,7 @@ func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthOK() {
 	t.JSONEq(bodyExpected, string(responseBody))
 }
 
-func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthForbidden() {
-	// Should return 403 - Forbidden, if auth credentials are not provided the `/uuid` route.
+func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthUnauthorized() {
 	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
 	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
 
@@ -145,7 +144,7 @@ func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthForbidden() {
 		t.NoError(res.Body.Close())
 	}()
 
-	t.Equal(http.StatusForbidden, res.StatusCode)
+	t.Equal(http.StatusUnauthorized, res.StatusCode)
 }
 
 func (t *OpenAPIPathTestSuite) TearDownSuite() {
