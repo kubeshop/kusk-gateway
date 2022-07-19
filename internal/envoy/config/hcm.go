@@ -30,10 +30,13 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	simplecache "github.com/envoyproxy/go-control-plane/envoy/extensions/cache/simple_http_cache/v3"
 	cachev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cache/v3"
+	cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -71,6 +74,18 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 		return nil, fmt.Errorf("cannot marshal cacheconfig configuration: %w", err)
 	}
 
+	cors := &cors_v3.Cors{}
+	anyCORS, err := anypb.New(cors)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal Cors configuration: %w", err)
+	}
+
+	router := &router_v3.Router{}
+	anyRouter, err := anypb.New(router)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal Router configuration: %w", err)
+	}
+
 	hcmBuilder := &HCMBuilder{
 		HTTPConnectionManager: &hcm.HttpConnectionManager{
 			CodecType:  hcm.HttpConnectionManager_AUTO,
@@ -96,9 +111,15 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 				},
 				{
 					Name: wellknown.CORS,
+					ConfigType: &hcm.HttpFilter_TypedConfig{
+						TypedConfig: anyCORS,
+					},
 				},
 				{
 					Name: wellknown.Router,
+					ConfigType: &hcm.HttpFilter_TypedConfig{
+						TypedConfig: anyRouter,
+					},
 				},
 			},
 		},
