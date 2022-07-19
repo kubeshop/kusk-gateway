@@ -44,7 +44,7 @@ func TestSendAnonymousInfo(t *testing.T) {
 		return
 	}
 
-	if err := SendAnonymousInfo(context.TODO(), getFakeClient(), "analytics_test"); err != nil {
+	if err := SendAnonymousInfo(context.TODO(), getFakeClient(), "test", "analytics_test"); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
