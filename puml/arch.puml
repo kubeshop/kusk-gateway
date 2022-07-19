@@ -1,0 +1,69 @@
+@startuml arch
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons2
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!define MATERIAL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/material
+!include DEVICONS/jenkins.puml
+!include DEVICONS/kubernetes.puml
+!include DEVICONS/html5.puml
+!include DEVICONS/go.puml
+!include DEVICONS/mongodb.puml
+!include FONTAWESOME/chart_line.puml
+!include FONTAWESOME/cogs.puml
+!include FONTAWESOME/network_wired.puml
+!include FONTAWESOME/globe.puml
+!include MATERIAL/wifi_tethering.puml
+!include MATERIAL/dashboard.puml
+
+
+LAYOUT_WITH_LEGEND()
+
+Person_Ext(developer, "Developer")
+System_Ext(world, "World", "", "globe")
+
+Boundary(kubernetes, "kubernetes cluster") {
+    Boundary(kuskoperator, "Kusk Operator") {
+        Container(kusk, "Kusk Operator", "Deployment", "", "kubernetes") {
+            System(xds, "xDS API Server", "", "wifi_tethering")
+            System(operator, "Operator", "", "cogs")
+            System_Ext(metrics, "Metrics", "", "chart_line")
+            System_Ext(dashboard, "Dashboard", "", "dashboard")
+        }
+    }
+
+
+    Boundary(envoyfleet, "envoy fleet") {
+        Container(envoy, "envoy", "Deployment", "", "kubernetes") {
+            System(envoy_pod_1, "envoy-1", "Pod", "kubernetes")
+            System(envoy_pod_2, "envoy-2", "Pod", "kubernetes")
+        }
+
+        Container(envoysvc, "envoy", "Service, type=LoadBalancer", "", "wifi_tethering")
+    }
+
+    Rel(envoy_pod_1, xds, "fetch settings", "xDS protocol")
+    Rel(envoy_pod_2, xds, "fetch settings", "xDS protocol")
+
+    Boundary(crds, "Custom Resources") {
+        System_Ext(apicrd, "API CRDs", "access to API services", "kubernetes")
+        System_Ext(envoycrd, "Envoy CRDs", "Envoy fleet instances", "kubernetes")
+    }
+
+    Rel(operator, crds, "watches")
+    Rel(developer, crds, "creates")
+
+    Rel(operator, envoyfleet, "deploys", "for each Envoy fleet CRD")
+
+
+    Rel(envoysvc, envoy, "exposes")
+    Rel(world, envoysvc, "accesses")
+
+    Container_Ext(usersvc, "api-svc", "Service", "Service targeted by API CRD", "wifi_tethering")
+
+    Rel_R(envoy, usersvc, "routes traffic")
+}
+
+@enduml

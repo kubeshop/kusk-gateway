@@ -1,0 +1,12 @@
+p {
+  font-size: .8rem;
+}
+
+.md-typeset code {
+  font-size: .85em;
+}
+
+.md-typeset .admonition.non-important,
+.md-typeset .non-important .admonition-title {
+  font-weight: normal;
+}
