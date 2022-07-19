@@ -180,7 +180,7 @@ func (e *EnvoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &snap, snap.Consistent()
+	return snap, snap.Consistent()
 }
 
 func (e *EnvoyConfiguration) makeRouteConfiguration(routeConfigName string) *route.RouteConfiguration {

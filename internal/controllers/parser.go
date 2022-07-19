@@ -546,7 +546,6 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 			}
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}
@@ -689,7 +688,7 @@ func generateRoute(
 	if websocket != nil && *websocket {
 		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
 	}
-	if err := routeRoute.Route.Validate(); err != nil {
+	if err := routeRoute.Route.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("incorrect Route Action: %w", err)
 	}
 
