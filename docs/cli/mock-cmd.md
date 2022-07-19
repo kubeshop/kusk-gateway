@@ -76,7 +76,7 @@ The mock server is now running and will watch for any changes you make to fake t
 Let's curl the endpoint for a JSON response
 
 ```shell
-➜ curl -H "Accept: application/json" localhost:8080/todos | jq
+$ curl -H "Accept: application/json" localhost:8080/todos | jq
 {
   "completed": true,
   "order": 507256954,
@@ -90,11 +90,11 @@ The response returns matches the schema that we defined under the `application/j
 Let's now curl for `application/xml` and `text/plain`
 
 ```shell
-➜ curl -H "Accept: application/xml" localhost:8080/todos
+$ curl -H "Accept: application/xml" localhost:8080/todos
 
 <doc><completed>true</completed><order>13</order><title>Mocked XML title</title><url>http://mockedURL.com</url></doc>
 
-➜ curl -H "Accept: text/plain" localhost:8080/todos
+$ curl -H "Accept: text/plain" localhost:8080/todos
 title: "Mocked Text title"
 completed: true
 order: 13
@@ -131,9 +131,9 @@ When a change is detected, the server is restarted to serve the upto date api.
 Now we can curl the `/foo` endpoint as before.
 
 ```
-curl -H "Accept: application/json" localhost:8080/foo
-curl -H "Accept: application/xml" localhost:8080/foo
-curl -H "Accept: text/plain" localhost:8080/foo
+$ curl -H "Accept: application/json" localhost:8080/foo
+$ curl -H "Accept: application/xml" localhost:8080/foo
+$ curl -H "Accept: text/plain" localhost:8080/foo
 ```
 
 ### Stop the server
