@@ -39,6 +39,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/robfig/cron"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
@@ -54,6 +55,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -261,7 +263,8 @@ func main() {
 		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 		WatchedSecretsChan: secretsChan,
 	}
-	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk-gateway manager bootstrapping")
+	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
+	heartBeat(ctx, controllerConfigManager.Client)
 
 	// The watcher for k8s secrets to trigger the refresh of configuration in case certificates secrets change.
 	go func() {
@@ -349,7 +352,15 @@ func main() {
 
 	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", fmt.Sprintf("kusk-gateway manager bootstrapping failed with error %s", err.Error()))
 		setupLog.Error(err, "Problem running manager")
 		os.Exit(1)
 	}
+}
+func heartBeat(ctx context.Context, client client.Client) {
+	c := cron.New()
+	c.AddFunc("@daily", func() {
+		analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", "kusk-gateway daily heartbeat")
+	})
+	c.Start()
 }

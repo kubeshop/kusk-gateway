@@ -42,14 +42,14 @@ var (
 	TelemetryToken = "" // value needs to be passed with LDFLAG set to github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken
 )
 
-func SendAnonymousInfo(ctx context.Context, client client.Client, event string) error {
+func SendAnonymousInfo(ctx context.Context, client client.Client, event string, message string) error {
 	properties := analytics.NewProperties()
-	properties.Set("event", event)
+	properties.Set("event", message)
 	properties.Set("version", build.Version)
 
 	track := analytics.Track{
 		AnonymousId: ClusterID(ctx, client),
-		Event:       "kusk-heartbeat",
+		Event:       event,
 		Properties:  properties,
 		Timestamp:   time.Now()}
 	return sendDataToGA(track)
