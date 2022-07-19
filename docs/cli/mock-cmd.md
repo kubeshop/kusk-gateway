@@ -61,6 +61,8 @@ It has a single path with 3 content types.
 - `applications/xml` and `text/plain` specifies examples which kusk will return as is.
 
 ### Launch Kusk Mocking Server
+![kusk mocking example](../img/kusk-mock.gif)
+
 ```shell
 $ kusk mock -i todo-backend-api.yaml
 🎉 successfully parsed OpenAPI spec
