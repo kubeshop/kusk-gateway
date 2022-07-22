@@ -35,7 +35,7 @@ import (
 // https://github.com/envoyproxy/envoy/tree/main/examples/ext_authz
 // https://github.com/envoyproxy/envoy/blob/main/docs/root/configuration/http/http_filters/ext_authz_filter.rst
 // https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter#config-http-filters-ext-authz
-func NewHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string) (*anypb.Any, error) {
+func NewHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string, authHeaders []*envoy_config_core_v3.HeaderValue) (*anypb.Any, error) {
 	uri := fmt.Sprintf("%s:%d", upstreamHostname, upstreamPort)
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
@@ -61,9 +61,32 @@ func NewHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamPort ui
 			},
 		},
 	}
+
+	var authorizationRequest *envoy_auth_v3.AuthorizationRequest
+	if len(authHeaders) != 0 {
+		authorizationRequest = &envoy_auth_v3.AuthorizationRequest{
+			AllowedHeaders: &envoy_type_matcher_v3.ListStringMatcher{
+				Patterns: []*envoy_type_matcher_v3.StringMatcher{
+					{
+						MatchPattern: &envoy_type_matcher_v3.StringMatcher_SafeRegex{
+							SafeRegex: &envoy_type_matcher_v3.RegexMatcher{
+								EngineType: &envoy_type_matcher_v3.RegexMatcher_GoogleRe2{
+									GoogleRe2: &envoy_type_matcher_v3.RegexMatcher_GoogleRE2{},
+								},
+								Regex: ".*",
+							},
+						},
+					},
+				},
+			},
+			HeadersToAdd: authHeaders,
+		}
+	}
+
 	httpService := &envoy_auth_v3.HttpService{
 		ServerUri:             serverUri,
 		PathPrefix:            pathPrefix,
+		AuthorizationRequest:  authorizationRequest,
 		AuthorizationResponse: authorizationResponse,
 	}
 	services := &envoy_auth_v3.ExtAuthz_HttpService{

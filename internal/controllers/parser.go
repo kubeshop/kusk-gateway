@@ -40,6 +40,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
@@ -78,6 +79,8 @@ func UpdateConfigFromAPIOpts(
 	opts *options.Options,
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
+	clBuilder *cloudentity.Builder,
+	name string,
 ) error {
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
@@ -96,6 +99,10 @@ func UpdateConfigFromAPIOpts(
 	// TODO: fetch kusk gateway validator service dynamically
 	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
 	var validatorPort uint32 = 17000
+	// fetch auth service host and port once
+	// TODO: fetch kusk gateway auth service dynamically
+	var cloudEntityHostname string = "kusk-gateway-auth-service.kusk-system.svc.cluster.local."
+	var cloudEntityPort uint32 = 19000
 
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -310,6 +317,23 @@ func UpdateConfigFromAPIOpts(
 
 				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
 
+				var authHeaders []*envoy_config_core_v3.HeaderValue
+
+				if finalOpts.Auth.Scheme == "cloudentity" {
+					clBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, name, name, routePath, method)
+					authHeaders = []*envoy_config_core_v3.HeaderValue{
+						{
+							Key:   cloudentity.HeaderAuthorizerURL,
+							Value: fmt.Sprintf("https://%s:%d", upstreamServiceHost, upstreamServicePort),
+						},
+						{
+							Key:   cloudentity.HeaderAPIGroup,
+							Value: name,
+						},
+					}
+					upstreamServiceHost = cloudEntityHostname
+					upstreamServicePort = cloudEntityPort
+				}
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(
 						clusterName,
@@ -328,6 +352,7 @@ func UpdateConfigFromAPIOpts(
 					upstreamServicePort,
 					clusterName,
 					pathPrefix,
+					authHeaders,
 				)
 				if err != nil {
 					return err

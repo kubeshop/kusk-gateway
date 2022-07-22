@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -95,6 +96,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
 	}
 
+	clBuilder := cloudentity.NewBuilder()
 	parser := spec.NewParser(nil)
 	for _, api := range apis {
 		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api.Name)
@@ -112,10 +114,21 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
+	}
+	if clBuilder.Len() != 0 {
+		l.Info("Processing CloudEntity API configuration")
+		m := clBuilder.BuildRequest()
+		for upstream, req := range m {
+			cl := cloudentity.New("https://" + upstream)
+			err := cl.PutAPIGroups(context.Background(), req)
+			if err != nil {
+				return fmt.Errorf("failed to call cloudentity: %w", err)
+			}
+		}
 	}
 
 	l.Info("Successfully processed APIs", "fleet", fleetIDstr)
