@@ -60,6 +60,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/internal/authz"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -249,6 +250,15 @@ func main() {
 	proxy := validation.NewProxy()
 	go func() {
 		if err := http.ListenAndServe(":17000", proxy); err != nil {
+			setupLog.Error(err, "Unable to start validation proxy")
+			os.Exit(1)
+		}
+	}()
+
+	// ext authz server
+	authServer := authz.NewServer(logger)
+	go func() {
+		if err := authServer.ListenAndServe(":19000"); err != nil {
 			setupLog.Error(err, "Unable to start validation proxy")
 			os.Exit(1)
 		}

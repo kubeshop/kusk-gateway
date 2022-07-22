@@ -23,7 +23,7 @@
 package options
 
 import (
-	"github.com/go-ozzo/ozzo-validation/v4"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
@@ -46,7 +46,7 @@ type AuthOptions struct {
 
 func (o AuthOptions) Validate() error {
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.Scheme, validation.Required, validation.In("basic")),
+		validation.Field(&o.Scheme, validation.Required, validation.In("basic", "cloudentity")),
 		validation.Field(&o.AuthUpstream, validation.Required),
 	)
 }

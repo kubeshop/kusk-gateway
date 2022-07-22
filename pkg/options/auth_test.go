@@ -84,6 +84,28 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	// assert.Equal(expected, options.Auth)
 }
 
+func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	authOptions := &AuthOptions{
+		Scheme:     "cloudentity",
+		PathPrefix: stringToPtr("/login"),
+		AuthUpstream: AuthUpstream{
+			Host: AuthUpstreamHost{
+				Hostname: "example.com",
+				Port:     80,
+			},
+		},
+	}
+
+	options := &SubOptions{
+		Auth: authOptions,
+	}
+
+	assert.NoError(options.Validate())
+}
+
 func Test_AuthOptions_Validate_Error(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
