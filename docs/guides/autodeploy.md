@@ -8,10 +8,10 @@ The following annotations are available:
 
 | Name                                    | Description                                                                   | Optional |
 |:----------------------------------------|:------------------------------------------------------------------------------|:--------:|
-| `kusk-gateway/openapi-url`              | The absolute URL to the OpenAPI definition to deploy.                          |          |
-| `kusk-gateway/envoy-fleet`              | Which EnvoyFleet to use.                                                       |    X     |
-| `kusk-gateway/path-prefix:`             | The path where your API will be hosted.                                         |    X     |
-| `kusk-gateway/path-prefix-substitution` | What to substitute the prefix with when forwarding the request to the service. |    X     |
+| `gateway.kusk.io/openapi-url`              | The absolute URL to the OpenAPI definition to deploy.                          |          |
+| `gateway.kusk.io/envoy-fleet`              | Which EnvoyFleet to use.                                                       |    X     |
+| `gateway.kusk.io/path-prefix:`             | The path where your API will be hosted.                                         |    X     |
+| `gateway.kusk.io/path-prefix-substitution` | What to substitute the prefix with when forwarding the request to the service. |    X     |
 
 For example, assuming that you have set up a deployment that is running your REST API, you could deploy 
 the following Kubernetes Service: 
@@ -22,7 +22,7 @@ kind: Service
 metadata:
   name: my-api
   annotations:
-    kusk-gateway/openapi-url: https://some-resolvablehost-name/path-to-openapi.yaml
+    gateway.kusk.io/openapi-url: https://some-resolvablehost-name/path-to-openapi.yaml
 spec:
   type: ClusterIP
   selector:
@@ -46,10 +46,10 @@ kind: Service
 metadata:
   name: my-api
   annotations:
-    kusk-gateway/openapi-url: https://gist.githubusercontent.com/jasmingacic/082849b29d0e06e5f018a66f4cd49ec3/raw/e91c94cc82e7591031399e0d8c563d28a62de460/openapi.yaml
-    kusk-gateway/path-prefix: /my-api
-    kusk-gateway/path-prefix-substitution: ""
-    kusk-gateway/envoy-fleet: my-private-fleet
+    gateway.kusk.io/openapi-url: https://gist.githubusercontent.com/jasmingacic/082849b29d0e06e5f018a66f4cd49ec3/raw/e91c94cc82e7591031399e0d8c563d28a62de460/openapi.yaml
+    gateway.kusk.io/path-prefix: /my-api
+    gateway.kusk.io/path-prefix-substitution: ""
+    gateway.kusk.io/envoy-fleet: my-private-fleet
 spec:
   type: ClusterIP
   selector:
