@@ -54,8 +54,8 @@ spec:
         scheme: basic
         auth-upstream:
           host:
-            hostname: ext-authz-http-service
-            port: 9002
+            hostname: ext-authz-http-basic-auth
+            port: 80
       cors:
         methods:
         - GET

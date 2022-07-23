@@ -21,7 +21,7 @@ spec:
         scheme: basic
         auth-upstream:
           host:
-            hostname: ext-authz-http-service-openapi-path-with-auth
+            hostname: ext-authz-http-basic-auth-openapi-path-with-auth
             port: 80
       upstream:
         service:
