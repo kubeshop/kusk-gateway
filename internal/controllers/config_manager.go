@@ -170,7 +170,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	if fleet.Spec.AccessLog != nil {
 		var accessLogBuilder *config.AccessLogBuilder
-		var err error
 		// Depending on the Format (text or json) we send different format templates or empty interface
 		switch fleet.Spec.AccessLog.Format {
 		case config.AccessLogFormatText:
@@ -190,9 +189,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			l.Error(err, "Failure adding access logger to Envoy configuration", "fleet", fleetIDstr)
 			return err
 		}
+
 		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
 	}
-	if err := httpConnectionManagerBuilder.Validate(); err != nil {
+
+	if err := httpConnectionManagerBuilder.ValidateAll(); err != nil {
 		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for HttpConnectionManager")
 	}
@@ -233,11 +234,11 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return err
 	}
 
-	if err := listenerBuilder.Validate(); err != nil {
+	if err := listenerBuilder.ValidateAll(); err != nil {
 		l.Error(err, "Failed validation for the Listener", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for Listener")
-
 	}
+
 	envoyConfig.AddListener(listenerBuilder.GetListener())
 	l.Info("Generating configuration snapshot", "fleet", fleetIDstr)
 	snapshot, err := envoyConfig.GenerateSnapshot()

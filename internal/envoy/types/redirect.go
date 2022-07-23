@@ -137,7 +137,7 @@ func (r *RouteRedirectBuilder) StripQuery(stripQuery *bool) *RouteRedirectBuilde
 }
 
 func (r *RouteRedirectBuilder) ValidateAndReturn() (*route.Route_Redirect, error) {
-	if err := r.redirect.Redirect.Validate(); err != nil {
+	if err := r.redirect.Redirect.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("failed to build Route_Redirect: %w", err)
 	}
 

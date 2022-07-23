@@ -48,8 +48,8 @@ type listenerBuilder struct {
 	lr *listener.Listener
 }
 
-func (l *listenerBuilder) Validate() error {
-	return l.lr.Validate()
+func (l *listenerBuilder) ValidateAll() error {
+	return l.lr.ValidateAll()
 }
 
 func NewListenerBuilder() *listenerBuilder {
@@ -108,7 +108,7 @@ func makeHTTPSFilterChain(
 		},
 	}
 
-	if err := tlsCert.Validate(); err != nil {
+	if err := tlsCert.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("invalid tls certificate: %w", err)
 	}
 
@@ -119,7 +119,7 @@ func makeHTTPSFilterChain(
 		},
 	}
 
-	if err := tlsDownstreamContext.Validate(); err != nil {
+	if err := tlsDownstreamContext.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("invalid tls downstream context: %w", err)
 	}
 
@@ -169,7 +169,7 @@ func getTLSParameters(tlsConfig TLS) (*tls.TlsParameters, error) {
 		tlsParams.TlsMaximumProtocolVersion = tls.TlsParameters_TlsProtocol(tlsProtocolValue)
 	}
 
-	if err := tlsParams.Validate(); err != nil {
+	if err := tlsParams.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("invalid tls parameters: %w", err)
 	}
 
