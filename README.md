@@ -21,6 +21,8 @@
   <a href=""><img title="Code builds" src="https://img.shields.io/github/workflow/status/kubeshop/kusk-gateway/build%20and%20test"/></a>
   <a href="https://github.com/kubeshop/kusk-gateway/releases"><img title="Release date" src="https://img.shields.io/github/release-date/kubeshop/kusk-gateway"/></a>
   <a href=""><img title="Stars" src="https://img.shields.io/github/stars/kubeshop/kusk-gateway?color=blueviolet&label=Stargazers"/></a>
+
+  [![Slack](https://img.shields.io/badge/slack-join%20chat-e01563.svg?logo=slack)](https://kubeshop-oss.slack.com/archives/C03R4JBTMUZ)
 </div>
 
 # Welcome to Kusk Gateway
