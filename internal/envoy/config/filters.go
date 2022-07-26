@@ -28,6 +28,7 @@ import (
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_auth_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -95,6 +96,9 @@ func NewHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamPort ui
 	authorization := &envoy_auth_v3.ExtAuthz{
 		Services:            services,
 		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+		StatusOnError: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode_ServiceUnavailable,
+		},
 	}
 	anyAuthorization, err := anypb.New(authorization)
 	if err != nil {
