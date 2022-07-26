@@ -3,21 +3,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: ext-authz-http-basic-auth-openapi-path-with-auth
-  name: ext-authz-http-basic-auth-openapi-path-with-auth
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
+  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ext-authz-http-basic-auth-openapi-path-with-auth
+      app: ext-authz-http-basic-auth
   template:
     metadata:
       labels:
-        app: ext-authz-http-basic-auth-openapi-path-with-auth
+        app: ext-authz-http-basic-auth
     spec:
       containers:
-        - image: docker.io/kubeshop/ext-authz-http-basic-auth
-          name: ext-authz-http-basic-auth
+        - name: ext-authz-http-basic-auth
+          image: docker.io/kubeshop/ext-authz-http-basic-auth:v0.1.0
           ports:
             - containerPort: 8080
 ---
@@ -25,30 +26,32 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: ext-authz-http-basic-auth-openapi-path-with-auth
-  name: ext-authz-http-basic-auth-openapi-path-with-auth
+    app: ext-authz-http-basic-auth
+  name: ext-authz-http-basic-auth
+  namespace: default
 spec:
   ports:
     - port: 80
       targetPort: 8080
   selector:
-    app: ext-authz-http-basic-auth-openapi-path-with-auth
+    app: ext-authz-http-basic-auth
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-authz-httpbin
+  name: ext-authz-httpbin
+  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpbin
+      app: ext-authz-httpbin
   template:
     metadata:
       labels:
-        app: httpbin
+        app: ext-authz-httpbin
     spec:
       containers:
         - image: docker.io/kennethreitz/httpbin
@@ -60,11 +63,13 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: ext-authz-httpbin
+  name: ext-authz-httpbin
+  namespace: default
 spec:
   ports:
     - port: 80
       targetPort: 80
   selector:
-    app: httpbin
+    app: ext-authz-httpbin
+---
