@@ -28,7 +28,8 @@ jobs:
         with:
           go-version: 1.17
       - name:
-        run: go test -v ./cmd/kusk/...
+        run: make test
+        working-directory: cmd/kusk
   compilation-and-unit-test-manager:
     name: Compile and Test Manager
     runs-on: ubuntu-latest
