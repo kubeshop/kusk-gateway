@@ -1,18 +1,45 @@
 #!/usr/bin/env bash
-set -e
+# Usage:
+# To disable metrics: development/minikube.sh
+# To enable metrics: METRICS=1 development/minikube.sh
+set -o errexit  # Used to exit upon error, avoiding cascading errors
+set -o pipefail # Unveils hidden failures
+set -o nounset  # Exposes unset variables
 
-echo "========> creating cluster..."
-minikube start --profile kgw --addons=metallb
+PROFILE="kgw"
+
+function print_separator() {
+  local header="${1} "
+  local separator_chars=""
+  separator_chars=$(printf -- '-%.0s' $(seq 1 $(($(tput cols) - ${#header}))))
+  printf "%b" "$(
+    tput bold
+    tput setaf 2
+  )" "${header}" "${separator_chars}" "$(tput sgr0)" "\n"
+}
+
+print_separator "creating cluster"
+# If `METRICS` environmental variable has been set, then enable metrics on the cluster.
+if [[ ! -z "${METRICS:=}" ]]; then
+  (
+    set -x
+    minikube start --profile "${PROFILE}" --addons metallb --addons metrics-server
+    kubectl -n kube-system rollout status deployment metrics-server
+  )
+else
+  (
+    set -x
+    minikube start --profile "${PROFILE}" --addons metallb
+  )
+fi
 
 # determine load balancer ingress range
-cidr_base_addr=$(minikube ip --profile kgw)
-ingress_first_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,2}' OFS='.')
-ingress_last_addr=$(echo "$cidr_base_addr" | awk -F'.' '{print $1,$2,$3,255}' OFS='.')
-ingress_range=$ingress_first_addr-$ingress_last_addr
+CIDR_BASE_ADDR="$(minikube ip --profile "${PROFILE}")"
+INGRESS_FIRST_ADDR="$(echo "${CIDR_BASE_ADDR}" | awk -F'.' '{print $1,$2,$3,2}' OFS='.')"
+INGRESS_LAST_ADDR="$(echo "${CIDR_BASE_ADDR}" | awk -F'.' '{print $1,$2,$3,255}' OFS='.')"
+INGRESS_RANGE="${INGRESS_FIRST_ADDR}-${INGRESS_LAST_ADDR}"
 
-# configure metallb ingress address range
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
+CONFIG_MAP="apiVersion: v1
 kind: ConfigMap
 metadata:
   namespace: metallb-system
@@ -23,22 +50,22 @@ data:
     - name: default
       protocol: layer2
       addresses:
-      - $ingress_range
-EOF
+      - $INGRESS_RANGE"
 
-echo "========> installing CRDs"
+# configure metallb ingress address range
+echo "${CONFIG_MAP}" | kubectl apply -f -
+
+print_separator "installing CRDs"
 make install
 
-echo "========> building control-plane docker image and installing into cluster"
+print_separator "building control-plane docker image and installing into cluster"
 make docker-build deploy
 kubectl rollout status -w deployment/kusk-gateway-manager -n kusk-system
 
-set +e
-
-echo "========> Deploying default Envoy Fleet"
+print_separator "Deploying default Envoy Fleet"
 until make deploy-envoyfleet; do
   # A timing issue sometimes results in the below occuring:
   # Error from server (InternalError): error when creating "config/samples/gateway_v1_envoyfleet.yaml": Internal error occurred: failed calling webhook "menvoyfleet.kb.io": failed to call webhook: Post "https://kusk-gateway-webhooks-service.kusk-system.svc:443/mutate-gateway-kusk-io-v1alpha1-envoyfleet?timeout=10s": dial tcp 10.109.220.117:443: connect: connection refused
-  echo 'sleeping for 2 seconds before trying `make deploy-envoyfleet`'
+  echo "sleeping for 2 seconds before trying 'make deploy-envoyfleet'"
   sleep 2
 done

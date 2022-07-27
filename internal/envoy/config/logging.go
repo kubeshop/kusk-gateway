@@ -85,8 +85,8 @@ type AccessLogBuilder struct {
 	al *accesslog.AccessLog
 }
 
-func (a *AccessLogBuilder) Validate() error {
-	return a.al.Validate()
+func (a *AccessLogBuilder) ValidateAll() error {
+	return a.al.ValidateAll()
 }
 
 func (a *AccessLogBuilder) GetAccessLog() *accesslog.AccessLog {
@@ -109,6 +109,7 @@ func NewJSONAccessLog(template map[string]string) (*AccessLogBuilder, error) {
 			return nil, fmt.Errorf("cannot convert log format template to struct")
 		}
 	}
+
 	accessLogFormatString := &core.SubstitutionFormatString{
 		Format: &core.SubstitutionFormatString_JsonFormat{
 			JsonFormat: formatTemplate,
@@ -156,8 +157,7 @@ func accessLogFinalize(accessLogFormatString *core.SubstitutionFormatString) (*A
 			TypedConfig: anyAccessLog,
 		},
 	}
-
-	if err := accessLog.Validate(); err != nil {
+	if err := accessLog.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("failed validation of the new access log: %w", err)
 	}
 
