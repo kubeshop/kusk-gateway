@@ -29,3 +29,7 @@ testbin/
 
 .tmp/
 /.tmp/
+
+# Ignore goreleaser output
+dist/
+
