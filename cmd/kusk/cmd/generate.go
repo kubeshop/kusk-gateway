@@ -34,9 +34,9 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 )
 
 var (

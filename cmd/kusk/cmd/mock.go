@@ -47,8 +47,8 @@ import (
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 
-	"github.com/kubeshop/kusk-gateway/pkg/spec"
 	mockingServer "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/server"
+	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 var mockServerPort uint32
