@@ -3,7 +3,7 @@ kind: EnvoyFleet
 metadata:
   name: test
 spec:
-  image: "envoyproxy/envoy-alpine:v1.20.0"
+  image: "docker.io/envoyproxy/envoy:v1.23.0"
   service:
     type: LoadBalancer
     ports:

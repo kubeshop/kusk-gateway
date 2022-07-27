@@ -29,7 +29,6 @@ import (
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	accesslogstream "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/stream/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/conversion"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -97,7 +96,6 @@ func (a *AccessLogBuilder) GetAccessLog() *accesslog.AccessLog {
 func NewJSONAccessLog(template map[string]string) (*AccessLogBuilder, error) {
 	// Default template on the start
 	var formatTemplate *structpb.Struct = defaultJsonLogTemplate
-	var err error
 
 	if len(template) != 0 {
 		// convert map[string]string to map[string]interface{} for the structpb.Struct conversion
@@ -105,6 +103,8 @@ func NewJSONAccessLog(template map[string]string) (*AccessLogBuilder, error) {
 		for k, v := range template {
 			interfaceMap[k] = v
 		}
+
+		var err error
 		if formatTemplate, err = structpb.NewStruct(interfaceMap); err != nil {
 			return nil, fmt.Errorf("cannot convert log format template to struct")
 		}
@@ -114,6 +114,7 @@ func NewJSONAccessLog(template map[string]string) (*AccessLogBuilder, error) {
 			JsonFormat: formatTemplate,
 		},
 	}
+
 	return accessLogFinalize(accessLogFormatString)
 }
 
@@ -132,33 +133,33 @@ func NewTextAccessLog(template string) (*AccessLogBuilder, error) {
 			},
 		},
 	}
+
 	return accessLogFinalize(accessLogFormatString)
 }
 
 // This block is shared between JSON and Text types of AccessLog creation
 func accessLogFinalize(accessLogFormatString *core.SubstitutionFormatString) (*AccessLogBuilder, error) {
-	accessLogConfig, err := conversion.MessageToStruct(
-		&accesslogstream.StdoutAccessLog{
-			AccessLogFormat: &accesslogstream.StdoutAccessLog_LogFormat{
-				LogFormat: accessLogFormatString,
-			},
+	accessLogConfig := &accesslogstream.StdoutAccessLog{
+		AccessLogFormat: &accesslogstream.StdoutAccessLog_LogFormat{
+			LogFormat: accessLogFormatString,
 		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert access log config to struct: %w", err)
 	}
+
 	anyAccessLog, err := anypb.New(accessLogConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert access log config to Any message type: %w", err)
 	}
+
 	accessLog := &accesslog.AccessLog{
 		Name: AccessLogStdoutName,
 		ConfigType: &accesslog.AccessLog_TypedConfig{
 			TypedConfig: anyAccessLog,
 		},
 	}
+
 	if err := accessLog.Validate(); err != nil {
 		return nil, fmt.Errorf("failed validation of the new access log: %w", err)
 	}
+
 	return &AccessLogBuilder{al: accessLog}, nil
 }
