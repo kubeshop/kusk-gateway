@@ -62,4 +62,4 @@ build:
 # `build-goreleaser` is just for local testing.
 .PHONY: build-goreleaser
 build-goreleaser:
-	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" GA_SECRET="${GA_SECRET}" goreleaser release --rm-dist --skip-publish --skip-validate
+	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" goreleaser release --rm-dist --skip-publish --skip-validate
