@@ -48,11 +48,11 @@ _download_url() {
   local version=$kusk_VERSION
 
   if [ -z "$kusk_VERSION" ]; then
-    version=$(curl -s https://api.github.com/repos/kubeshop/kusk/releases/latest 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    version=$(curl -s https://api.github.com/repos/kubeshop/kusk-gateway/releases/latest 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
   fi
 
   local trailedVersion=$(echo $version | tr -d v)
-  echo "https://github.com/kubeshop/kusk/releases/download/${version}/kusk_${trailedVersion}_${os}_${arch}.tar.gz"
+  echo "https://github.com/kubeshop/kusk-gateway/releases/download/${version}/kusk_${trailedVersion}_${os}_${arch}.tar.gz"
 }
 
 echo "Downloading kusk from URL: $(_download_url)"
