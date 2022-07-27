@@ -146,8 +146,8 @@ func (h *HCMBuilder) AppendFilterHTTPExternalAuthorizationFilterToStart(anyAutho
 	)
 }
 
-func (h *HCMBuilder) Validate() error {
-	return h.HTTPConnectionManager.Validate()
+func (h *HCMBuilder) ValidateAll() error {
+	return h.HTTPConnectionManager.ValidateAll()
 }
 
 func (h *HCMBuilder) AddAccessLog(al *accesslog.AccessLog) *HCMBuilder {

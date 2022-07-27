@@ -54,7 +54,7 @@ func GenerateCORSPolicy(
 		}
 	}
 
-	if err := corsPolicy.Validate(); err != nil {
+	if err := corsPolicy.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("unable to validate cors policy: %w", err)
 	}
 

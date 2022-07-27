@@ -714,7 +714,7 @@ func generateRoute(
 	if websocket != nil && *websocket {
 		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
 	}
-	if err := routeRoute.Route.Validate(); err != nil {
+	if err := routeRoute.Route.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("incorrect Route Action: %w", err)
 	}
 

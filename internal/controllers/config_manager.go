@@ -192,7 +192,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 		httpConnectionManagerBuilder.AddAccessLog(accessLogBuilder.GetAccessLog())
 	}
-	if err := httpConnectionManagerBuilder.Validate(); err != nil {
+	if err := httpConnectionManagerBuilder.ValidateAll(); err != nil {
 		l.Error(err, "Failed validation for HttpConnectionManager", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for HttpConnectionManager")
 	}
@@ -233,7 +233,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return err
 	}
 
-	if err := listenerBuilder.Validate(); err != nil {
+	if err := listenerBuilder.ValidateAll(); err != nil {
 		l.Error(err, "Failed validation for the Listener", "fleet", fleetIDstr)
 		return fmt.Errorf("failed validation for Listener")
 
