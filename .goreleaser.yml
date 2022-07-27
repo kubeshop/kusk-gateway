@@ -6,8 +6,10 @@ builds:
   - id: kusk-gateway
     skip: true
   - id: kusk
+    main: ./cmd/kusk/
     env:
       - CGO_ENABLED=0
+    binary: kusk
     goos:
       - linux
       - windows
@@ -19,10 +21,14 @@ builds:
 archives:
   - replacements:
       darwin: macOS
-      linux: Linux
+      linux: Linuxs
       windows: Windows
       386: i386
       amd64: x86_64
+    id: kusk
+    name_template: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
+    builds:
+    - kusk
 checksum:
   name_template: "checksums.txt"
 changelog:
@@ -52,5 +58,6 @@ brews:
     homepage: https://kusk.io
     license: "MIT"
     name: kusk
+    install: bin.install "kusk"
     ids:
     - kusk
