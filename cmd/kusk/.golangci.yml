@@ -1,0 +1,45 @@
+# Copied from https://github.com/uber-go/guide/blob/dc025303c14891f54d1847396379548773e6123e/.golangci.yml
+#
+# Refer to golangci-lint's example config file for more options and information:
+# https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  # Allow multiple parallel golangci-lint instances running.
+  # If false (default) - golangci-lint acquires file lock on start.
+  allow-parallel-runners: false
+  # Define the Go version limit.
+  # Mainly related to generics support in go1.18.
+  # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.17
+  go: "1.17"
+
+linters:
+  # Run only fast linters from enabled linters set (first run won't be fast)
+  # Default: false
+  fast: true
+  # Disable all linters.
+  # Default: false
+  disable-all: true
+  # Enable all available linters.
+  # Default: false
+  # enable-all: true
+  # Enable specific linter
+  # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
+  enable:
+    - errcheck
+    - goimports
+    - golint
+    - govet
+    - staticcheck
+    - gofmt
+
+linters-settings:
+  gofmt:
+    # Simplify code: gofmt with `-s` option.
+    simplify: true
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

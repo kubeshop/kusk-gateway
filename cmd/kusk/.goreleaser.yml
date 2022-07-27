@@ -1,0 +1,41 @@
+before:
+  hooks:
+    - go mod tidy
+    - go mod verify
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    ldflags:
+      - -w -s
+      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
+      - -X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}
+archives:
+  - replacements:
+      darwin: macOS
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: "checksums.txt"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+release:
+  # Tags that have the format v1.0.0-rc1 will mark the release as a pre-release (i.e. not ready for production)
+  # Other tags will be marked as ready for production
+  prerelease: auto
+brews:
+  - tap:
+      owner: kubeshop
+      name: homebrew-kusk
+    description: Make your OpenAPI definition the source of truth for API resources in cluster
+    homepage: https://kusk.io
+    license: "MIT"
