@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/kubeshop/kusk/k8s"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/k8s"
 )
 
 var (

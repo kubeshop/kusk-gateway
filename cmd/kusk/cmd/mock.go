@@ -41,14 +41,14 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/kubeshop/kusk/internal/config"
-	"github.com/kubeshop/kusk/internal/mocking"
-	fileWatcher "github.com/kubeshop/kusk/internal/mocking/filewatcher"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/config"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking"
+	fileWatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
-	mockingServer "github.com/kubeshop/kusk/internal/mocking/server"
+	mockingServer "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/server"
 )
 
 var mockServerPort uint32

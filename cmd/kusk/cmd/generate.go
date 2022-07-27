@@ -36,7 +36,7 @@ import (
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
-	"github.com/kubeshop/kusk/templates"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 )
 
 var (
