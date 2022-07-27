@@ -1,4 +1,4 @@
-module github.com/kubeshop/kusk
+module github.com/kubeshop/kusk-gateway/cmd/kusk
 
 go 1.18
 
