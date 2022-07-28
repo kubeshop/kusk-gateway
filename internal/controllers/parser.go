@@ -149,6 +149,54 @@ func UpdateConfigFromAPIOpts(
 				},
 				)
 			}
+			if finalOpts.Auth != nil {
+				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
+				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
+
+				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
+
+				var authHeaders []*envoy_config_core_v3.HeaderValue
+				if finalOpts.Auth.Scheme == "cloudentity" {
+					clBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, name, name, routePath, method)
+					authHeaders = []*envoy_config_core_v3.HeaderValue{
+						{
+							Key:   cloudentity.HeaderAuthorizerURL,
+							Value: fmt.Sprintf("https://%s:%d", upstreamServiceHost, upstreamServicePort),
+						},
+						{
+							Key:   cloudentity.HeaderAPIGroup,
+							Value: name,
+						},
+					}
+					upstreamServiceHost = cloudEntityHostname
+					upstreamServicePort = cloudEntityPort
+				}
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(
+						clusterName,
+						upstreamServiceHost,
+						upstreamServicePort,
+					)
+				}
+
+				pathPrefix := ""
+				if finalOpts.Auth.PathPrefix != nil {
+					pathPrefix = *finalOpts.Auth.PathPrefix
+				}
+
+				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
+					upstreamServiceHost,
+					upstreamServicePort,
+					clusterName,
+					pathPrefix,
+					authHeaders,
+				)
+				if err != nil {
+					return err
+				}
+				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
+			}
+
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
 			// Redirect -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
@@ -253,7 +301,6 @@ func UpdateConfigFromAPIOpts(
 						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
 					}
 				}
-
 			// // Validate and Proxy to the upstream
 			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -311,54 +358,6 @@ func UpdateConfigFromAPIOpts(
 				rt.Action = routeRoute
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
-			case finalOpts.Auth != nil:
-				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
-				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
-
-				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
-
-				var authHeaders []*envoy_config_core_v3.HeaderValue
-
-				if finalOpts.Auth.Scheme == "cloudentity" {
-					clBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, name, name, routePath, method)
-					authHeaders = []*envoy_config_core_v3.HeaderValue{
-						{
-							Key:   cloudentity.HeaderAuthorizerURL,
-							Value: fmt.Sprintf("https://%s:%d", upstreamServiceHost, upstreamServicePort),
-						},
-						{
-							Key:   cloudentity.HeaderAPIGroup,
-							Value: name,
-						},
-					}
-					upstreamServiceHost = cloudEntityHostname
-					upstreamServicePort = cloudEntityPort
-				}
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(
-						clusterName,
-						upstreamServiceHost,
-						upstreamServicePort,
-					)
-				}
-
-				pathPrefix := ""
-				if finalOpts.Auth.PathPrefix != nil {
-					pathPrefix = *finalOpts.Auth.PathPrefix
-				}
-
-				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
-					upstreamServiceHost,
-					upstreamServicePort,
-					clusterName,
-					pathPrefix,
-					authHeaders,
-				)
-				if err != nil {
-					return err
-				}
-				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
-				fallthrough
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
