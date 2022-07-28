@@ -120,7 +120,7 @@ func (cm *cacheManager) setNodeSnapshot(nodeID string, fleet string) error {
 	if !ok {
 		return fmt.Errorf("no such %s Envoy fleet (cluster) configuration exist", fleet)
 	}
-	return cm.SetSnapshot(context.Background(), nodeID, snapshot)
+	return cm.SetSnapshot(context.Background(), nodeID, *snapshot)
 }
 
 // applyNewFleetSnapshot assigns active snapshot and updates all nodes with it
