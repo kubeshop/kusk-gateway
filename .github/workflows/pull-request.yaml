@@ -29,6 +29,8 @@ jobs:
           go-version: 1.17
       - name: Compile and Test manager
         run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+      - name: Compile and Test Kusk CLI
+        run: pushd cmd/kusk && make build TelemetryToken=${{ secrets.TELEMETRY_TOKEN }} && popd
 
   build-docker:
     needs: [compilation-and-unit-test]
