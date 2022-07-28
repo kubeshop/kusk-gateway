@@ -21,7 +21,9 @@ bin
 
 # Binary file if built to the root
 kusk-gateway
-.vscode/
+
+# kusk cli binary file
+cmd/kusk/kusk
 testbin/
 
 # mkdocs built site
