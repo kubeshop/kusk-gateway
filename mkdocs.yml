@@ -53,10 +53,10 @@ nav:
     - OpenAPI Extension: reference/extension.md
     - Architecture: reference/architecture.md
     - Dashboard API: reference/openapi.md
-    - Analytics: reference/analytics.md
   - Contributing:
     - Development: 'contributing/development.md'
     - Roadmap: 'contributing/roadmap.md'
+  - Privacy Policy: 'privacy.md'
 
 extra:
   analytics:
