@@ -71,7 +71,7 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 2 * time.Second
+	duration := 5 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
 	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
