@@ -1,11 +1,10 @@
 # Kusk CLI
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=shields)](http://makeapullrequest.com)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kubeshop/kusk)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/kubeshop/kusk)
-![GitHub Release Date](https://img.shields.io/github/release-date/kubeshop/kusk)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/kubeshop/kusk/Go?label=Go)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/kubeshop/kusk/goreleaser?label=release)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kubeshop/kusk-gateway)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/kubeshop/kusk-gateway)
+![GitHub Release Date](https://img.shields.io/github/release-date/kubeshop/kusk-gateway)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/kubeshop/kusk-gateway/Go?label=Go)
 
 ----
 
@@ -222,7 +221,7 @@ brew install kubeshop/kusk/kusk
 ## Go install the latest release on Github
 
 ```sh
-go install github.com/kubeshop/kusk@latest
+go install github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
 To install a particular version: replace `latest` with the version number
@@ -234,7 +233,7 @@ You can get a list of the available kusk versions from our [releases page](https
 This will install `kusk` into `/usr/local/bin/kusk`
 
 ```sh
-$ curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh | sh
+$ curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | sh
 ...
 kusk installed in /usr/local/bin/kusk
 ```
@@ -242,8 +241,8 @@ kusk installed in /usr/local/bin/kusk
 ## From source
 
 ```sh
-git clone git@github.com:kubeshop/kusk.git && \
-  cd kusk && \
+git clone git@github.com:kubeshop/kusk-gateway.git && \
+  cd kusk-gateway/cmd/kusk && \
   go install
 ```
 
@@ -255,7 +254,7 @@ If you don't like automatic scripts you can always use the manual install:
 2. Unpack it (`tar -zxvf kusk_0.1.0_Linux_arm64.tar.gz`).
 3. Move it to a location in the `PATH`. For example `mv kusk_0.1.0_Linux_arm64/kusk /usr/local/bin/kusk`.
 
-For Windows, download the binary from [here](https://github.com/kubeshop/kusk/releases), unpack the binary and add it to `%PATH%`.
+For Windows, download the binary from [here](https://github.com/kubeshop/kusk-gateway/releases), unpack the binary and add it to `%PATH%`.
 
 # Updating
 
@@ -268,7 +267,7 @@ brew upgrade kubeshop/kusk/kusk
 ## Latest release on Github
 
 ```sh
-go install github.com/kubeshop/kusk@latest
+go install github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
 ## From source
