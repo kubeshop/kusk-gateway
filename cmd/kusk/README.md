@@ -226,7 +226,7 @@ go install github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 
 To install a particular version: replace `latest` with the version number
 
-You can get a list of the available kusk versions from our [releases page](https://github.com/kubeshop/kusk/releases)
+You can get a list of the available kusk versions from our [releases page](https://github.com/kubeshop/kusk-gateway/releases)
 
 ## Easy install script
 
