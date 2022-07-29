@@ -191,16 +191,11 @@ func GetWebhookServiceDNSNames(ctx context.Context, clientSet *kubernetes.Client
 	service := servicesList.Items[0]
 	serviceName := service.GetName()
 	serviceNamespace := service.GetNamespace()
-	serviceCluster := service.GetClusterName()
-	// Default case
-	if serviceCluster == "" {
-		serviceCluster = "cluster.local"
-	}
 
 	dnsNames = append(dnsNames, serviceName)
 	dnsNames = append(dnsNames, strings.Join([]string{serviceName, serviceNamespace}, "."))
 	dnsNames = append(dnsNames, strings.Join([]string{serviceName, serviceNamespace, "svc"}, "."))
-	dnsNames = append(dnsNames, strings.Join([]string{serviceName, serviceNamespace, "svc", serviceCluster}, "."))
+	dnsNames = append(dnsNames, strings.Join([]string{serviceName, serviceNamespace, "svc", "cluster", "local"}, "."))
 
 	return dnsNames, nil
 }

@@ -18,7 +18,19 @@ on:
       - smoketests/**
 
 jobs:
-  compilation-and-unit-test:
+  test-kusk-cli:
+    name: Compile and Test Kusk CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+      - name:
+        run: make test
+        working-directory: cmd/kusk
+  compilation-and-unit-test-manager:
     name: Compile and Test Manager
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +43,7 @@ jobs:
         run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
 
   build-docker:
-    needs: [compilation-and-unit-test]
+    needs: [compilation-and-unit-test-manager]
     name: "Build Image"
     runs-on: ubuntu-latest
     steps:
