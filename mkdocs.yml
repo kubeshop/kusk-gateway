@@ -56,7 +56,7 @@ nav:
   - Contributing:
     - Development: 'contributing/development.md'
     - Roadmap: 'contributing/roadmap.md'
-  - Privacy Policy: privacy.md
+  - Privacy Policy: 'privacy.md'
 
 extra:
   analytics:

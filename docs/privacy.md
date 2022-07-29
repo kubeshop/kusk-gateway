@@ -43,7 +43,7 @@ The telemetry data we use in our metrics is limited to:
  - The number of unique active cluster installations.
  - The number of people who disable telemetry.
  - The number of unique sessions in the UI.
- - The number of API, StaticRoute and EnvoyFleet creations
+ - The number of API, StaticRoute and EnvoyFleet creations.
 
 ## How to opt out
 
