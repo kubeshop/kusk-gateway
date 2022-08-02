@@ -80,15 +80,15 @@ func (o Options) Validate() error {
 	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
 	for pathAndMethod, op := range o.OperationFinalSubOptions {
 		if op.Mocking != nil {
-			return o.Mocking.Validate()
+			return op.Mocking.Validate()
 		}
 
 		if op.Upstream != nil {
-			return o.Upstream.Validate()
+			return op.Upstream.Validate()
 		}
 
 		if op.Redirect != nil {
-			return o.Redirect.Validate()
+			return op.Redirect.Validate()
 		}
 
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
