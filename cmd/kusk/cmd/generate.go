@@ -25,15 +25,22 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
@@ -53,6 +60,9 @@ var (
 
 	envoyFleetName      string
 	envoyFleetNamespace string
+
+	apply  bool
+	output string
 )
 
 // generateCmd represents the generate command
@@ -119,6 +129,13 @@ var generateCmd = &cobra.Command{
 	This will fetch the OpenAPI document from the provided URL and generate a Kusk Gateway API resource
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(envoyFleetName) == 0 {
+			if err := promptForFleet(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		}
+		cmd.SilenceUsage = true
 		parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -133,6 +150,7 @@ var generateCmd = &cobra.Command{
 		if name == "" {
 			// kubernetes manifests cannot have . in the name so replace them
 			name = strings.ReplaceAll(parsedApiSpec.Info.Title, ".", "-")
+			name = strings.ReplaceAll(parsedApiSpec.Info.Title, "_", "-")
 		}
 
 		// override top level upstream service if undefined.
@@ -159,7 +177,8 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if err := apiTemplate.Execute(os.Stdout, templates.APITemplateArgs{
+		var manifest bytes.Buffer
+		if err := apiTemplate.Execute(&manifest, templates.APITemplateArgs{
 			Name:                name,
 			Namespace:           namespace,
 			EnvoyfleetName:      envoyFleetName,
@@ -169,9 +188,62 @@ var generateCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+
+		if !apply {
+			writeOrPrint(output, manifest)
+			return
+		}
+
+		prompt := promptui.Prompt{
+			Label:     "Do you want to proceed apply provide API to your cluster",
+			IsConfirm: true,
+			Default:   "y",
+		}
+
+		result, _ := prompt.Run()
+
+		if result == "y" || result == "Y" || result == "" { // if enter is hit i.e. pick default results is an empty string
+			api := &kuskv1.API{}
+			if err := yaml.Unmarshal(manifest.Bytes(), api); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+
+			k8sclient, err := utils.GetK8sClient()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+
+			if err := k8sclient.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
+				if err.Error() == fmt.Sprintf(`apis.gateway.kusk.io "%s" already exists`, api.Name) { // fugly way to check if the object already exists
+					fmt.Println(err)
+					os.Exit(0)
+				}
+
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			} else {
+				fmt.Printf("api.gateway.kusk.io/%s created\n", api.Name)
+			}
+		} else {
+			writeOrPrint(output, manifest)
+		}
 	},
 }
 
+func writeOrPrint(output string, manifest bytes.Buffer) {
+	if len(output) > 0 {
+		if err := os.WriteFile(output, manifest.Bytes(), 0644); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		} else {
+			fmt.Printf("Successfully saved the API to %q\n", output)
+		}
+	} else {
+		fmt.Println(manifest.String()) // if giving up on applying print it out
+	}
+}
 func validateExtensionOptions(extension interface{}) error {
 	b, err := yaml.Marshal(extension)
 	if err != nil {
@@ -265,7 +337,6 @@ func init() {
 		"",
 		"name of envoyfleet to use for this API",
 	)
-	generateCmd.MarkFlagRequired("envoyfleet.name")
 
 	generateCmd.Flags().StringVarP(
 		&envoyFleetNamespace,
@@ -275,5 +346,73 @@ func init() {
 		"namespace of envoyfleet to use for this API. Default: kusk-system",
 	)
 
+	generateCmd.Flags().BoolVarP(
+		&apply,
+		"apply",
+		"a",
+		false,
+		"to automatically apply the manifest to the cluster set value to true. Default: false",
+	)
+
+	generateCmd.Flags().StringVarP(
+		&output,
+		"output",
+		"o",
+		"",
+		"path to the location where to save the output of the command",
+	)
+
 	apiTemplate = template.Must(template.New("api").Parse(templates.APITemplate))
+}
+
+func promptForFleet() error {
+	if len(envoyFleetName) > 0 {
+		return nil
+	}
+	k8sclient, err := utils.GetK8sClient()
+	if err != nil {
+		return err
+	}
+	fleets := &kuskv1.EnvoyFleetList{}
+
+	if err := k8sclient.List(context.TODO(), fleets, &client.ListOptions{}); err != nil {
+		return err
+	}
+	fmt.Println("Envoyfleets:")
+	for i, f := range fleets.Items {
+		fmt.Printf("%d. %s/%s\n", i+1, f.Namespace, f.Name)
+	}
+
+	fleet := promptGetInput("Please pick a fleet from the list above", len(fleets.Items))
+
+	envoyFleetName = fleets.Items[fleet-1].Name
+	envoyFleetNamespace = fleets.Items[fleet-1].Namespace
+
+	return nil
+}
+
+func promptGetInput(message string, length int) int {
+	index := 0
+	validate := func(input string) (err error) {
+		if index, err = strconv.Atoi(input); err != nil {
+			return fmt.Errorf("%q is not a number", input)
+		} else if index > length {
+			return fmt.Errorf(fmt.Sprintf("you can only pick values between 1 and %d", length))
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:     message,
+		AllowEdit: true,
+		Validate:  validate,
+	}
+
+	_, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		os.Exit(1)
+	}
+
+	return index
 }
