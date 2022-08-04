@@ -207,11 +207,12 @@ See all available redirect configuration options in the [Extension Reference](..
 
 Often you will want to prefix your API path with something like "/api" externally, although your
 internal API implementation is running on the root path "/". Kusk allows you to specify a 
-`path` property for this, which you can use together with the rewrite described above in this scenario:
+`path.prefix` property for this, which you can use together with the rewrite described above in this scenario:
 
 ```yaml
 x-kusk:
-  path: /api
+  path:
+    prefix: /api
   upstream:
     service: 
       ...

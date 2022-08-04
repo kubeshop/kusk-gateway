@@ -193,7 +193,7 @@ The path object contains the following properties to configure service endpoints
 
 | Name     | Description                                                                              |
 |:---------|------------------------------------------------------------------------------------------|
-| `prefix` | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/". |
+| `path.prefix` | Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/". |
 
 If the `upstream.rewrite` option is not specified, the upstream service will receive the request "as is" with this prefix
 still appended to the URL. If the upstream application doesn't know about this path, usually `404` is returned.
@@ -203,7 +203,8 @@ still appended to the URL. If the upstream application doesn't know about this p
 ```yaml
 ...
 x-kusk:
-  prefix: /foo
+  path:
+    prefix: /v1
 ...
 ```
 
