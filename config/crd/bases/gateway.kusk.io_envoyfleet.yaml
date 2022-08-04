@@ -888,10 +888,6 @@ spec:
                   type: string
                 description: Additional Envoy Deployment annotations, optional
                 type: object
-              default:
-                default: false
-                description: Default describes Envoyfleet instance as default or not
-                type: boolean
               image:
                 description: Envoy image tag
                 type: string
@@ -1137,7 +1133,6 @@ spec:
                   type: object
                 type: array
             required:
-            - default
             - image
             - service
             type: object
