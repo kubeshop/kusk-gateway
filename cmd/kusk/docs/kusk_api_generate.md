@@ -71,12 +71,14 @@ kusk api generate [flags]
 ### Options
 
 ```
+  -a, --apply                         to automatically apply the manifest to the cluster. Default: false
       --envoyfleet.name string        name of envoyfleet to use for this API
       --envoyfleet.namespace string   namespace of envoyfleet to use for this API. Default: kusk-system (default "kusk-system")
   -h, --help                          help for generate
   -i, --in string                     file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml
       --name string                   the name to give the API resource e.g. --name my-api
   -n, --namespace string              the namespace of the API resource e.g. --namespace my-namespace, -n my-namespace (default "default")
+  -o, --output string                 path to the location where to save the output of the command
       --upstream.namespace string     namespace of upstream service (default "default")
       --upstream.port uint32          port of upstream service (default 80)
       --upstream.service string       name of upstream service

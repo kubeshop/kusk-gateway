@@ -1,6 +1,6 @@
 ## kusk docs
 
-parent command for api related functions
+Command to generate CLI documentation
 
 ```
 kusk docs [flags]

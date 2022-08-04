@@ -42,7 +42,7 @@ kusk dashboard [flags]
       --envoyfleet.namespace string   kusk gateway dashboard envoy fleet namespace (default "kusk-system")
       --external-port int             external port to access dashboard at (default 8080)
   -h, --help                          help for dashboard
-      --kubeconfig string             absolute path to kube config (default "$HOME/.kube/config")
+      --kubeconfig string             absolute path to kube config (default "/root/.kube/config")
 ```
 
 ### Options inherited from parent commands

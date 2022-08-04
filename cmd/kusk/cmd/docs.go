@@ -32,7 +32,7 @@ import (
 // apiCmd represents the api command
 var docsCmd = &cobra.Command{
 	Use:   "docs",
-	Short: "parent command for api related functions",
+	Short: "Command to generate CLI documentation",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root := cmd.Root()

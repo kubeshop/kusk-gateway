@@ -351,7 +351,7 @@ func init() {
 		"apply",
 		"a",
 		false,
-		"to automatically apply the manifest to the cluster set value to true. Default: false",
+		"to automatically apply the manifest to the cluster. Default: false",
 	)
 
 	generateCmd.Flags().StringVarP(
