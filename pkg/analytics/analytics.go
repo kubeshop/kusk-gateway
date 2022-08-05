@@ -44,7 +44,7 @@ var (
 
 func SendAnonymousInfo(ctx context.Context, client client.Client, event string, message string) error {
 	properties := analytics.NewProperties()
-	properties.Set("event", message)
+	properties.Set("message", message)
 	properties.Set("version", build.Version)
 
 	track := analytics.Track{
