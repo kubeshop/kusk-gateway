@@ -75,7 +75,8 @@ var generateCmd = &cobra.Command{
 	You must specify the name of the envoyfleet you wish to use to expose your API. This is because Kusk Gateway could be managing more than one.
 	In the future, we will add the notion of a default envoyfleet which kusk gateway will use when none is specified.
 
-	If you do not specify the envoyfleet namespace, it will default to kusk-system.
+	In case you don't specify envoyfleet name, it will default to kusk-gateway-envoy-fleet.
+	If you do not specify the envoyfleet namespace, it will default to kusk-system. 
 
 	Sample usage
 
@@ -262,10 +263,9 @@ func init() {
 		&envoyFleetName,
 		"envoyfleet.name",
 		"",
-		"",
-		"name of envoyfleet to use for this API",
+		"kusk-gateway-envoy-fleet",
+		"name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet",
 	)
-	generateCmd.MarkFlagRequired("envoyfleet.name")
 
 	generateCmd.Flags().StringVarP(
 		&envoyFleetNamespace,
