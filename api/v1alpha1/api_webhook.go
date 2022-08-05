@@ -77,14 +77,23 @@ func (a *APIMutator) Handle(ctx context.Context, req admission.Request) admissio
 		switch l := len(fleets.Items); {
 		case l == 0:
 			apilog.Error(err, "cannot update API spec.fleet to the default fleet in the cluster - we found no deployed Envoy Fleets")
-			return admission.Errored(http.StatusConflict, fmt.Errorf("API spec.fleet is not set and there is no deployed Envoy Fleets in the cluster to set as the default, deploy at least one to the cluster before trying to submit the API resource."))
-		case l > 1:
-			apilog.Error(err, "cannot update API spec.fleet to the default fleet in the cluster - found more than one deployed Envoy Fleets")
-			return admission.Errored(http.StatusConflict, fmt.Errorf("API spec.fleet is not set and there are multiple deployed Envoy Fleets, set spec.fleet to the desired one."))
+			return admission.Errored(http.StatusConflict, fmt.Errorf("API spec.fleet is not set and there is no deployed Envoy Fleets in the cluster to set as the default, deploy at least one to the cluster before trying to submit the API resource"))
 		default:
-			fl := fleets.Items[0]
-			apilog.Info("API spec.fleet is not set, defaulting to the deployed %s.%s Envoy Fleet in the cluster", fl.Name, fl.Namespace)
-			apiObj.Spec.Fleet = &EnvoyFleetID{Name: fl.Name, Namespace: fl.Namespace}
+			var defaultFleet *EnvoyFleet
+			for _, fleet := range fleets.Items {
+				if fleet.Spec.Default {
+					defaultFleet = &fleet
+					break
+				}
+			}
+
+			if defaultFleet == nil {
+				apilog.Error(err, "cannot update API spec.fleet to the default fleet in the cluster - there is no default envoyfleet")
+				return admission.Errored(http.StatusConflict, fmt.Errorf("cannot update API spec.fleet to the default fleet in the cluster - there is no default envoyfleet"))
+			}
+
+			apilog.Info("API spec.fleet is not set, defaulting to the deployed %s.%s Envoy Fleet in the cluster", defaultFleet.Name, defaultFleet.Namespace)
+			apiObj.Spec.Fleet = &EnvoyFleetID{Name: defaultFleet.Name, Namespace: defaultFleet.Namespace}
 		}
 	}
 
@@ -138,11 +147,6 @@ func (a *APIValidator) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (r *API) validate() error {
-
-	if r.Spec.Fleet == nil {
-		return fmt.Errorf("spec.fleet is not set")
-	}
-
 	parser := spec.NewParser(nil)
 
 	apiSpec, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))

@@ -118,6 +118,12 @@ func (e *EnvoyFleetValidator) Handle(ctx context.Context, req admission.Request)
 
 func (e *EnvoyFleetValidator) validate(ctx context.Context, envoyFleet *EnvoyFleet) admission.Response {
 
+	if envoyFleet.Spec.Default {
+		if resp := e.defaultFleetExists(ctx, envoyFleet); !resp.Allowed {
+			return resp
+		}
+	}
+
 	if resp := e.validateNameWithinSizeBound(envoyFleet.Name); !resp.Allowed {
 		return resp
 	}
@@ -234,6 +240,21 @@ func (e *EnvoyFleetValidator) validateNoOverlappingSANSInTLS(ctx context.Context
 			sanSet[dnsName] = secret
 		}
 
+	}
+
+	return admission.Allowed("")
+}
+
+func (e *EnvoyFleetValidator) defaultFleetExists(ctx context.Context, fleet *EnvoyFleet) admission.Response {
+	fleets := &EnvoyFleetList{}
+
+	if err := e.Client.List(context.TODO(), fleets, &client.ListOptions{}); err != nil {
+		return admission.Errored(1, err)
+	}
+	for _, fleet := range fleets.Items {
+		if fleet.Spec.Default {
+			return admission.Denied(fmt.Sprintf("fleet '%s/%s' is already set as default envoyfleet", fleet.Namespace, fleet.Name))
+		}
 	}
 
 	return admission.Allowed("")

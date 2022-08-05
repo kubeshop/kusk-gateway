@@ -4,6 +4,7 @@ metadata:
   name: default
 spec:
   image: "docker.io/envoyproxy/envoy:v1.23.0"
+  default: true
   service:
     # NodePort, ClusterIP, LoadBalancer
     type: LoadBalancer

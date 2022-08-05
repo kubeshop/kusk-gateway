@@ -888,6 +888,9 @@ spec:
                   type: string
                 description: Additional Envoy Deployment annotations, optional
                 type: object
+              default:
+                description: Default marks fleet as the default one in the cluster
+                type: boolean
               image:
                 description: Envoy image tag
                 type: string
@@ -1133,7 +1136,6 @@ spec:
                   type: object
                 type: array
             required:
-            - image
             - service
             type: object
           status:
