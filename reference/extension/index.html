@@ -1,0 +1,1842 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="OpenAPI for Kubernetes done right">
+      
+      
+        <meta name="author" content="Kubeshop Kusk team">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.3.9">
+    
+    
+      
+        <title>OpenAPI Extension - Kusk Gateway</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/base.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+
+  <script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-204665550-4","auto"),ga("set","anonymizeIp",!0),ga("send","pageview"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){var e;this.value&&(e=document.location.pathname,ga("send","pageview",e+"?q="+this.value))}),"undefined"!=typeof location$&&location$.subscribe(function(e){ga("send","pageview",e.pathname)})})</script>
+  <script async src="https://www.google-analytics.com/analytics.js"></script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#openapi-extension-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Kusk Gateway" class="md-header__button md-logo" aria-label="Kusk Gateway" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kusk Gateway
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              OpenAPI Extension
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kubeshop/kusk-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kubeshop/kusk-gateway
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Kusk Gateway" class="md-nav__button md-logo" aria-label="Kusk Gateway" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Kusk Gateway
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kubeshop/kusk-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kubeshop/kusk-gateway
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Welcome
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Getting Started" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Getting Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        Installing Kusk Gateway
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/deploy-an-api/" class="md-nav__link">
+        Deploy an OpenAPI definition
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/connect-a-service-to-the-api/" class="md-nav__link">
+        Connect a Service to the API
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Guides
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Guides" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Guides
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/working-with-extension/" class="md-nav__link">
+        OpenAPI Extension
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/mocking/" class="md-nav__link">
+        Mocking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/validation/" class="md-nav__link">
+        Validation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cors/" class="md-nav__link">
+        CORS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/routing/" class="md-nav__link">
+        Routing & Disabling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/timeouts/" class="md-nav__link">
+        Timeouts
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/basic-auth/" class="md-nav__link">
+        Basic Auth
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rate-limit/" class="md-nav__link">
+        Rate Limiting
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cache/" class="md-nav__link">
+        Caching
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cert-manager/" class="md-nav__link">
+        Using Cert Manager
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/observability/" class="md-nav__link">
+        Observability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4">
+          Kusk CLI
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Kusk CLI" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Kusk CLI
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/overview/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/install-cmd/" class="md-nav__link">
+        Install Kusk Gateway
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/generate-cmd/" class="md-nav__link">
+        Generating API CRDs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/mock-cmd/" class="md-nav__link">
+        Mocking your API
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/dashboard-cmd/" class="md-nav__link">
+        Accessing Kusk Gateway's Dashboard
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5">
+          Kusk Dashboard
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Kusk Dashboard" data-md-level="1">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Kusk Dashboard
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard/overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard/inspecting-apis/" class="md-nav__link">
+        Inspecting APIs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard/deploying-apis/" class="md-nav__link">
+        Deploying APIs
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6">
+          Kusk Resources
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Kusk Resources" data-md-level="1">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Kusk Resources
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../customresources/overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../customresources/api/" class="md-nav__link">
+        API
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../customresources/envoyfleet/" class="md-nav__link">
+        Envoy Fleet
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../customresources/staticroute/" class="md-nav__link">
+        Static Route
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          OpenAPI Extension
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        OpenAPI Extension
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#available-properties" class="md-nav__link">
+    Available Properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabled" class="md-nav__link">
+    Disabled
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hosts" class="md-nav__link">
+    Hosts
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cors" class="md-nav__link">
+    CORS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qos" class="md-nav__link">
+    QoS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#websocket" class="md-nav__link">
+    Websocket
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upstream" class="md-nav__link">
+    Upstream
+  </a>
+  
+    <nav class="md-nav" aria-label="Upstream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rewrite" class="md-nav__link">
+    Rewrite
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service" class="md-nav__link">
+    Service
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    Host
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path" class="md-nav__link">
+    Path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirect" class="md-nav__link">
+    Redirect
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    Validation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mocking" class="md-nav__link">
+    Mocking
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    Rate limiting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    Caching
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    Authentication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exposing-openapi-defintion" class="md-nav__link">
+    Exposing OpenAPI defintion
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        Architecture
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openapi/" class="md-nav__link">
+        Dashboard API
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8">
+          Contributing
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Contributing" data-md-level="1">
+        <label class="md-nav__title" for="__nav_8">
+          <span class="md-nav__icon md-icon"></span>
+          Contributing
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/development/" class="md-nav__link">
+        Development
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/roadmap/" class="md-nav__link">
+        Roadmap
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy/" class="md-nav__link">
+        Privacy Policy
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#available-properties" class="md-nav__link">
+    Available Properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabled" class="md-nav__link">
+    Disabled
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hosts" class="md-nav__link">
+    Hosts
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cors" class="md-nav__link">
+    CORS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qos" class="md-nav__link">
+    QoS
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#websocket" class="md-nav__link">
+    Websocket
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upstream" class="md-nav__link">
+    Upstream
+  </a>
+  
+    <nav class="md-nav" aria-label="Upstream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rewrite" class="md-nav__link">
+    Rewrite
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service" class="md-nav__link">
+    Service
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    Host
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path" class="md-nav__link">
+    Path
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirect" class="md-nav__link">
+    Redirect
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    Validation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mocking" class="md-nav__link">
+    Mocking
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    Rate limiting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    Caching
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    Authentication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exposing-openapi-defintion" class="md-nav__link">
+    Exposing OpenAPI defintion
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/kubeshop/kusk-gateway/blob/main/docs/reference/extension.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<h1 id="openapi-extension-reference">OpenAPI Extension Reference</h1>
+<p>Kusk Gateway comes with an <a href="https://swagger.io/specification/#specification-extensions">OpenAPI extension</a> to accommodate everything within
+an OpenAPI spec to create a source of truth for the operational behaviour of your API.</p>
+<p>Check out the <a href="../../guides/working-with-extension/">OpenAPI Extension Guide</a> to configure the operational aspects of your API.</p>
+<h2 id="available-properties"><strong>Available Properties</strong></h2>
+<h3 id="disabled"><strong>Disabled</strong></h3>
+<p>This boolean property allows you to disable the corresponding path/operation, "hiding" internal operations from being published to end users.</p>
+<p>When set to true at the top level, all paths will be hidden; you will have to override specific paths/operations with
+<code>disabled: false</code> to make those operations visible.</p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="w">  </span><span class="nt">/path</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">disabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="hosts"><strong>Hosts</strong></h3>
+<p>This string array property configures the hosts (i.e. <code>Host</code> HTTP header) list the Gateway will listen traffic for. Wildcard hosts are supported in the suffix or prefix form, exclusively, i.e.:</p>
+<ul>
+<li>*.example.org</li>
+<li>example.*</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">onehost.com</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>Read more in the <a href="../../guides/routing/#using-hosts-for-multi-hosting-scenarios">guide on Routing</a>.</p>
+<h3 id="cors"><strong>CORS</strong></h3>
+<p>The <code>CORS</code> object sets properties for configuring <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">CORS</a> for your API.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>cors.origins</code></td>
+<td align="left">List of HTTP origins accepted by the configured operations.</td>
+</tr>
+<tr>
+<td align="left"><code>cors.methods</code></td>
+<td align="left">List of HTTP methods accepted by the configured operations.</td>
+</tr>
+<tr>
+<td align="left"><code>cors.headers</code></td>
+<td align="left">List of HTTP headers accepted by the configured operations.</td>
+</tr>
+<tr>
+<td align="left"><code>cors.expose_headers</code></td>
+<td align="left">List of HTTP headers exposed by the configured operations.</td>
+</tr>
+<tr>
+<td align="left"><code>cors.credentials</code></td>
+<td align="left">Boolean flag for requiring credentials.</td>
+</tr>
+<tr>
+<td align="left"><code>cors.max_age</code></td>
+<td align="left">Indicates how long results of a preflight request can be cached.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">cors</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">origins</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;*&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POST</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GET</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPTIONS</span><span class="w"></span>
+<span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Content-Type</span><span class="w"></span>
+<span class="w">    </span><span class="nt">credentials</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="w">    </span><span class="nt">max_age</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">86200</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>Read more in the <a href="../../guides/cors/">guide on CORS</a>.</p>
+<h3 id="qos"><strong>QoS</strong></h3>
+<p>Options for configuring QoS settings, such as retries and timeouts.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>qos.retries</code></td>
+<td align="left">Maximum number of retries (0 by default).</td>
+</tr>
+<tr>
+<td align="left"><code>qos.request_timeout</code></td>
+<td align="left">Total request timeout (in seconds).</td>
+</tr>
+<tr>
+<td align="left"><code>qos.idle_timeout</code></td>
+<td align="left">Timeout for idle connections (in seconds).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">qos</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">request_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>Read more in the <a href="../../guides/timeouts/">guide on Timeouts</a>.</p>
+<h3 id="websocket"><strong>Websocket</strong></h3>
+<p>An optional boolean field that defines whether to enable handling of "Upgrade: websocket" and other actions related to Websocket HTTP headers in the request to create a Websocket tunnel to the backend. The default value is false.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"> </span>
+<span class="w">  </span><span class="nt">websocket</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="upstream"><strong>Upstream</strong></h3>
+<p>This setting configures where the traffic goes. <code>service</code> and <code>host</code> are available and are mutually exclusive.
+The <code>upstream</code> setting is mutually exclusive with <code>redirect</code> setting.</p>
+<p><code>service</code> is a reference to a Kubernetes Service inside the cluster, while <code>host</code> can reference any hostname, even
+outside the cluster.</p>
+<p>See the <a href="../../guides/routing/">guide on Routing</a> to learn more about this functionality.</p>
+<h4 id="rewrite"><strong>Rewrite</strong></h4>
+<p>Additionally, <code>upstream</code> has an optional object <code>rewrite</code>. This allows modification of the URL of the request before forwarding
+it to the upstream service.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>upstream.rewrite.pattern</code></td>
+<td>Regular expression.</td>
+</tr>
+<tr>
+<td align="left"><code>upstream.rewrite.substitution</code></td>
+<td>Regular expression substitution.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"> </span>
+<span class="w">  </span><span class="nt">upstream</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w"></span>
+<span class="w">    </span><span class="c1"># /foo/bar/... -&gt; to upstream: /bar/...</span><span class="w"></span>
+<span class="w">    </span><span class="nt">rewrite</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;^/foo&quot;</span><span class="w"></span>
+<span class="w">      </span><span class="nt">substitution</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h4 id="service"><strong>Service</strong></h4>
+<p>The service object sets the target Kubernetes service to receive traffic. It contains the following properties:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>namespace</code></td>
+<td align="left">The namespace containing the upstream Service.</td>
+</tr>
+<tr>
+<td align="left"><code>name</code></td>
+<td align="left">The upstream Service's name.</td>
+</tr>
+<tr>
+<td align="left"><code>port</code></td>
+<td align="left">The upstream Service's port. Default value is 80.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">upstream</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span><span class="w"></span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">svc-name</span><span class="w"></span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h4 id="host"><strong>Host</strong></h4>
+<p>The host object sets the target host to receive traffic. It contains the following properties:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>hostname</code></td>
+<td align="left">The hostname to route traffic to.</td>
+</tr>
+<tr>
+<td align="left"><code>port</code></td>
+<td align="left">The target port to route traffic to.</td>
+</tr>
+</tbody>
+</table>
+<p>Note: <code>service</code> and <code>host</code> are mutually exclusive since they define the same thing (the upstream host to route to).</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">upstream</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">domain</span><span class="w"></span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="path"><strong>Path</strong></h3>
+<p>The path object contains the following properties to configure service endpoints paths:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>path.prefix</code></td>
+<td>Prefix for the route  ( i.e. /your-prefix/here/rest/of/the/route ). Default value is "/".</td>
+</tr>
+</tbody>
+</table>
+<p>If the <code>upstream.rewrite</code> option is not specified, the upstream service will receive the request "as is" with this prefix
+still appended to the URL. If the upstream application doesn't know about this path, usually <code>404</code> is returned.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/v1</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>See the <a href="../../guides/routing/">guide on Routing</a> to learn more about this functionality.</p>
+<h3 id="redirect"><strong>Redirect</strong></h3>
+<p>Configures where to redirect the request. The redirect and upstream options are mutually exclusive.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>redirect.scheme_redirect</code></td>
+<td>Redirect scheme (http/https).</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.host_redirect</code></td>
+<td>Host to redirect to.</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.port_redirect</code></td>
+<td>Port to redirect to.</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.path_redirect</code></td>
+<td>Path to redirect to.</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.rewrite_regex.pattern</code></td>
+<td>Regular expression (mutually exclusive with path_redirect).</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.rewrite_regex.substitution</code></td>
+<td>Regular expression substitution.</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.strip_query</code></td>
+<td>Boolean, configures whether to strip the query from the URL (default false).</td>
+</tr>
+<tr>
+<td align="left"><code>redirect.response_code</code></td>
+<td>Redirect response code (301, 302, 303, 307, 308).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">redirect</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">scheme_redirect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https</span><span class="w"></span>
+<span class="w">    </span><span class="nt">host_redirect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">thenewhost.com</span><span class="w"></span>
+<span class="w">    </span><span class="nt">response_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">302</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>See the <a href="../../guides/routing/">guide on Routing</a> to learn more about this functionality.</p>
+<h3 id="validation"><strong>Validation</strong></h3>
+<p>The validation objects contain the following properties to configure automatic request validation:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>validation.request.enabled</code></td>
+<td>Boolean flag to enable request validation.</td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="../../guides/validation/">guide on Validation</a> to learn more about this functionality.</p>
+<p>Note: Currently, <code>mocking</code> is incompatible with the <code>validation</code> option - the configuration deployment will fail if both are enabled.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">validation</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">request</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="mocking"><strong>Mocking</strong></h3>
+<p>The validation objects contain the following properties to configure automatic request validation:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>mocking.enabled</code></td>
+<td>Boolean flag to enable mocking.</td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="../../guides/mocking/">guide on Mocking</a> to learn more about this functionality.</p>
+<p>Note: Currently <code>mocking</code> is incompatible with the <code>validation</code> option - the configuration deployment will fail if both are enabled.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">mocking</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="rate-limiting"><strong>Rate limiting</strong></h3>
+<p>The rate_limit object contains the following properties to configure request rate limiting:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>rate_limit.requests_per_unit</code></td>
+<td>How many requests API can handle per unit of time.</td>
+</tr>
+<tr>
+<td align="left"><code>rate_limit.unit</code></td>
+<td>Unit of time, can be one of the following: second, minute, hour .</td>
+</tr>
+<tr>
+<td align="left"><code>rate_limit.per_connection</code></td>
+<td>Boolean flag, that specifies whether the rate limiting, should be applied per connection or in total. Default: false.</td>
+</tr>
+<tr>
+<td align="left"><code>rate_limit.response_code</code></td>
+<td>HTTP response code, which is returned when rate limiting. Default: 429, Too Many Requests.</td>
+</tr>
+</tbody>
+</table>
+<p>Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the <code>spec.size</code> attribute of <a href="../../customresources/envoyfleet/">EnvoyFleet object</a>.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">rate_limit</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">requests_per_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w"></span>
+<span class="w">    </span><span class="nt">rate_limit.unit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">minute</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="caching"><strong>Caching</strong></h3>
+<p>The cache object contains the following properties to configure HTTP caching:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>cache.enabled</code></td>
+<td>Boolean flag to enable request validation.</td>
+</tr>
+<tr>
+<td align="left"><code>cache.max_age</code></td>
+<td>Indicates how long (in seconds) results of a request can be cached.</td>
+</tr>
+</tbody>
+</table>
+<p>Note: current support for caching is experimental. Check out <a href="Envoy documentation">https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/cache_filter</a> to learn more about how it works.</p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">cache</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+<span class="w">    </span><span class="nt">max_age</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="authentication">Authentication</h3>
+<p>The <code>auth</code> object contains the following properties to configure HTTP authentication:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>auth.scheme</code></td>
+<td><strong>Required</strong>. The authentication scheme. Only <code>basic</code> authentication is supported at the moment.</td>
+</tr>
+<tr>
+<td align="left"><code>auth.path_prefix</code></td>
+<td><strong>Optional</strong>. The prefix to attach to <code>auth-upstream.host.hostname</code></td>
+</tr>
+<tr>
+<td align="left"><code>auth.auth-upstream</code></td>
+<td><strong>Required</strong>. Defines the upstream authentication host.</td>
+</tr>
+<tr>
+<td align="left"><code>auth.auth-upstream.host</code></td>
+<td><strong>Required</strong>. Defines how to reach the authentication server.</td>
+</tr>
+<tr>
+<td align="left"><code>auth.auth-upstream.host.hostname</code></td>
+<td><strong>Required</strong>. Defines the <code>hostname</code> the authentication server is running on.</td>
+</tr>
+<tr>
+<td align="left"><code>auth.auth-upstream.host.port</code></td>
+<td><strong>Required</strong>. Defines the port the authentication server is running on, for the given <code>auth-upstream.host.hostname</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+<span class="w">  </span><span class="nt">auth</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">scheme</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">basic</span><span class="w"></span>
+<span class="w">    </span><span class="nt">path_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/login</span><span class="w"> </span><span class="c1"># optional</span><span class="w"></span>
+<span class="w">    </span><span class="nt">auth-upstream</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="nt">host</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example.com</span><span class="w"></span>
+<span class="w">        </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<h3 id="exposing-openapi-defintion">Exposing OpenAPI defintion</h3>
+<p>The <code>openapi-path</code> field takes the a path name and will expose your OpenAPI defintion in defined path. </p>
+<p><strong>Sample:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nn">...</span><span class="w"></span>
+<span class="nt">x-kusk</span><span class="p">:</span><span class="w"></span>
+<span class="w"> </span><span class="nt">openapi-path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openapi.json</span><span class="w"></span>
+<span class="nn">...</span><span class="w"></span>
+</code></pre></div>
+<p>This will expose your entire OpenAPI defintion, without the Kusk extensions, on <code>yourdomain.com/openapi.json</code>. </p>
+<p>To remove some paths or operations from the exposed OpenAPI, use the <a href="./#disabled"><code>disabled</code> option</a>.</p>
+
+              
+            </article>
+            
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="../../customresources/staticroute/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Static Route" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Static Route
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Architecture
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2022 <a href="https://kubeshop.io">Kubeshop</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.6c7ad80a.min.js"></script>
+      
+    
+  </body>
+</html>
