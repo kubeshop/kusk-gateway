@@ -39,21 +39,28 @@ type EnvoyFleetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Default marks fleet as the default one in the cluster
+	Default bool `json:"default,omitempty"`
+
 	// Service describes Envoy K8s service settings
 	Service *ServiceConfig `json:"service"`
 
 	// Envoy image tag
-	Image string `json:"image"`
+	Image string `json:"image,omitempty"`
+
 	// Node Selector is used to schedule the Envoy pod(s) to the specificly labeled nodes, optional
 	// This is the map of "key: value" labels (e.g. "disktype": "ssd")
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// Affinity is used to schedule Envoy pod(s) to specific nodes, optional
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
 	// Tolerations allow pod to be scheduled to the nodes that has specific toleration labels, optional
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
 	// Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request.
 	// Value must be non-negative integer. The value zero indicates stop immediately via
 	// the kill signal (no opportunity to shut down).
@@ -64,9 +71,11 @@ type EnvoyFleetSpec struct {
 	// Defaults to 30 seconds.
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+
 	// Additional Envoy Deployment annotations, optional
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// Resources allow to set CPU and Memory resource requests and limits, optional
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
