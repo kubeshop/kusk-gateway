@@ -30,7 +30,6 @@ nav:
       - Basic Auth: guides/basic-auth.md
       - Rate Limiting: guides/rate-limit.md
       - Caching: guides/cache.md
-      - Automatic API deployment: guides/autodeploy.md
       - Using Cert Manager: guides/cert-manager.md
       - Observability: guides/observability.md
       - Troubleshooting: guides/troubleshooting.md
