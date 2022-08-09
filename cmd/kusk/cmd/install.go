@@ -32,7 +32,7 @@ import (
 	"strings"
 
 	"github.com/kubeshop/testkube/pkg/process"
-	"github.com/kubeshop/testkube/pkg/ui"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -73,101 +73,136 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		spinner := NewSpinner("Looking for Helm...")
 		helmPath, err := exec.LookPath("helm")
-		ui.ExitOnError("looking for helm", err)
+		if err != nil {
+			spinner.Fail("Looking for Helm: ", err)
+			os.Exit(1)
+		}
+		spinner.Success()
 
-		ui.Info("adding the kubeshop helm repository")
+		spinner = NewSpinner("Adding Kubeshop repository...")
 		err = addKubeshopHelmRepo(helmPath)
-		ui.ExitOnError("adding kubeshop repo", err)
-		ui.Info(ui.Green("done"))
+		if err != nil {
+			spinner.Fail("Adding Kubeshop repository: ", err)
+			os.Exit(1)
+		}
+		spinner.Success()
 
-		ui.Info("fetching the latest charts")
+		spinner = NewSpinner("Fetching the latest charts...")
 		err = updateHelmRepos(helmPath)
-		ui.ExitOnError("updating helm repositories", err)
-		ui.Info(ui.Green("done"))
+		if err != nil {
+			spinner.Fail("Fetching the latest charts: ", err)
+			os.Exit(1)
+		}
+		spinner.Success()
 
 		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
-		ui.ExitOnError("listing existing releases", err)
+		if err != nil {
+			pterm.Error.Println("Listing existing releases: ", err)
+			os.Exit(1)
+		}
 
 		if _, kuskGatewayInstalled := releases[releaseName]; !kuskGatewayInstalled {
-			ui.Info("installing Kusk Gateway")
+			spinner = NewSpinner("Installing Kusk Gateway")
 			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
-			ui.ExitOnError("Installing kusk gateway", err)
-			ui.Info(ui.Green("done"))
+			if err != nil {
+				spinner.Fail("Installing Kusk Gateway: ", err)
+				os.Exit(1)
+			}
+
+			spinner.Success()
 		} else {
-			ui.Info("kusk gateway already installed, skipping. To upgrade to a new version run kusk upgrade")
+			pterm.Info.Println("Kusk Gateway already installed, skipping... To upgrade to a new version run `kusk upgrade`")
 		}
 
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
 
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
-				ui.Info("installing Envoy Fleet")
+				spinner = NewSpinner("Installing Envoy Fleet...")
 				err = installPublicEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
-				ui.ExitOnError("Installing envoy fleet", err)
-				ui.Info(ui.Green("done"))
+				if err != nil {
+					spinner.Fail("Installing Envoy Fleet: ", err)
+					os.Exit(1)
+				}
+				spinner.Success()
 			} else {
-				ui.Info(ui.LightYellow("--no-envoy-fleet set - skipping envoy fleet installation"))
+				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
 		} else {
-			ui.Info("envoy fleet already installed, skipping. To upgrade to a new version run kusk upgrade")
+			pterm.Info.Println("Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
 
 		if noApi {
-			ui.Info(ui.LightYellow("--no-api set - skipping api installation"))
+			pterm.Info.Println("--no-api set - skipping api installation")
 			return
 		}
 
 		if !noEnvoyFleet {
 			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+			spinner = NewSpinner("Installing private Envoy Fleet...")
 
 			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
 				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
-				ui.ExitOnError("Installing envoy fleet", err)
+				if err != nil {
+					spinner.Fail("Installing private Envoy Fleet: ", err)
+					os.Exit(1)
+				}
 			} else {
-				ui.Info("private envoy fleet already installed, skipping. To upgrade to a new version run kusk upgrade")
+				pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 			}
+			spinner.Success()
 		}
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
-			ui.Info("installing Kusk API")
+			spinner = NewSpinner("Installing Kusk API server...")
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
-			ui.ExitOnError("Installing api", err)
-			ui.Info(ui.Green("done"))
+			if err != nil {
+				spinner.Fail("Installing Kusk API server: ", err)
+				os.Exit(1)
+			}
+
+			spinner.Success()
 		} else {
-			ui.Info("api already installed, skipping. To upgrade to a new version run kusk upgrade")
+			pterm.Info.Println("api already installed, skipping. To upgrade to a new version run kusk upgrade")
 		}
 
 		if noDashboard {
-			ui.Info(ui.LightYellow("--no-dashboard set - skipping dashboard installation"))
+			pterm.Info.Println("--no-dashboard set - skipping dashboard installation")
 			printPortForwardInstructions("api", releaseNamespace, envoyFleetName)
 			return
 		}
 
 		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
-			ui.Info("installing Kusk Dashboard")
+			spinner = NewSpinner("Installing Kusk Dashboard...")
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
-			ui.ExitOnError("Installing dashboard", err)
+			if err != nil {
+				spinner.Fail("Installing Kusk Dashboard...", err)
+				os.Exit(1)
+			}
 
-			ui.Info(ui.Green("done"))
+			spinner.Success()
 		} else {
-			ui.Info("dashboard already installed, skipping. To upgrade to a new version run kusk upgrade")
+			pterm.Info.Println("Kusk Dashboard already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
 		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 	},
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
-	ui.Info(ui.Green("To access the " + service + ", port forward to the envoy-fleet service that exposes it"))
-	ui.Info(ui.LightBlue(fmt.Sprintf("\t$ kubectl port-forward -n %s svc/%s 8080:80", releaseNamespace, envoyFleetName)))
-
 	endpoint := "http://localhost:8080/"
 	if service == "api" {
 		endpoint += "api"
 	}
-	ui.Info(ui.LightBlue("\tand go " + endpoint))
+
+	pterm.Info.Println(
+		fmt.Sprintf("To access the %s , port forward to the envoy-fleet service that exposes it\n", service) +
+			fmt.Sprintf("\t$ kubectl port-forward -n %s svc/%s 8080:80\n", releaseNamespace, envoyFleetName) +
+			fmt.Sprintf("\tand go %s", endpoint),
+	)
 }
 
 func addKubeshopHelmRepo(helmPath string) error {
@@ -240,7 +275,7 @@ func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
 		return err
 	}
 
-	ui.Debug("helm install kusk gateway output", string(out))
+	pterm.Debug.Println("Helm install kusk gateway output: ", string(out))
 
 	return nil
 }
@@ -272,7 +307,7 @@ func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType stri
 		return err
 	}
 
-	ui.Debug("helm install envoy fleet output", string(out))
+	pterm.Debug.Println("Helm install envoy fleet output: ", string(out))
 
 	return nil
 }
@@ -297,7 +332,7 @@ func installApi(helmPath, releaseName, releaseNamespace, envoyFleetName string) 
 		return err
 	}
 
-	ui.Debug("helm install api output", string(out))
+	pterm.Debug.Println("Helm install api output", string(out))
 
 	return nil
 }
@@ -322,7 +357,7 @@ func installDashboard(helmPath, releaseName, releaseNamespace, envoyFleetName st
 		return err
 	}
 
-	ui.Debug("helm install dashboard output", string(out))
+	pterm.Debug.Println("helm install dashboard output", string(out))
 
 	return nil
 }
