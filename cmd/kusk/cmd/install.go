@@ -37,15 +37,16 @@ import (
 )
 
 var (
-	noApi                         bool
-	noDashboard                   bool
-	noEnvoyFleet                  bool
-	releaseName, releaseNamespace string
+	noApi            bool
+	noDashboard      bool
+	noEnvoyFleet     bool
+	releaseNamespace string
 )
+
+const releaseName = "kusk-gateway"
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
@@ -219,7 +220,12 @@ func updateHelmRepos(helmPath string) error {
 	return err
 }
 
-func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]string, error) {
+type ReleaseDetails struct {
+	chart   string
+	version string
+}
+
+func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*ReleaseDetails, error) {
 	command := []string{
 		"ls",
 		"-n", releaseNamespace,
@@ -232,19 +238,23 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]st
 	}
 
 	var releases []struct {
-		Name  string `json:"name"`
-		Chart string `json:"chart"`
+		Name       string `json:"name"`
+		Chart      string `json:"chart"`
+		AppVersion string `json:"app_version"`
 	}
 
 	if err := json.Unmarshal(out, &releases); err != nil {
 		return nil, err
 	}
 
-	releaseMap := make(map[string]string)
+	releaseMap := make(map[string]*ReleaseDetails)
 
 	for _, release := range releases {
 		if strings.HasPrefix(release.Name, releaseName) {
-			releaseMap[release.Name] = release.Chart
+			releaseMap[release.Name] = &ReleaseDetails{
+				version: release.AppVersion,
+				chart:   release.Chart,
+			}
 		}
 	}
 
