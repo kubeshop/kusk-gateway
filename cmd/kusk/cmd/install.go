@@ -37,16 +37,17 @@ import (
 )
 
 var (
-	noApi            bool
-	noDashboard      bool
-	noEnvoyFleet     bool
-	releaseNamespace string
+	noApi                               bool
+	noDashboard                         bool
+	noEnvoyFleet                        bool
+	customReleaseName, releaseNamespace string
 )
 
 const releaseName = "kusk-gateway"
 
 func init() {
 	rootCmd.AddCommand(installCmd)
+	installCmd.Flags().StringVar(&customReleaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
@@ -74,6 +75,8 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		installReleaseName := getInstallReleaseName(customReleaseName, releaseName)
+
 		spinner := NewSpinner("Looking for Helm...")
 		helmPath, err := exec.LookPath("helm")
 		if err != nil {
@@ -98,15 +101,15 @@ var installCmd = &cobra.Command{
 		}
 		spinner.Success()
 
-		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
+		releases, err := listReleases(helmPath, installReleaseName, releaseNamespace)
 		if err != nil {
 			pterm.Error.Println("Listing existing releases: ", err)
 			os.Exit(1)
 		}
 
-		if _, kuskGatewayInstalled := releases[releaseName]; !kuskGatewayInstalled {
+		if _, kuskGatewayInstalled := releases[installReleaseName]; !kuskGatewayInstalled {
 			spinner = NewSpinner("Installing Kusk Gateway")
-			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
+			err = installKuskGateway(helmPath, installReleaseName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Installing Kusk Gateway: ", err)
 				os.Exit(1)
@@ -117,7 +120,7 @@ var installCmd = &cobra.Command{
 			pterm.Info.Println("Kusk Gateway already installed, skipping... To upgrade to a new version run `kusk upgrade`")
 		}
 
-		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
+		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", installReleaseName)
 
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
@@ -141,7 +144,7 @@ var installCmd = &cobra.Command{
 		}
 
 		if !noEnvoyFleet {
-			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", installReleaseName)
 			spinner = NewSpinner("Installing private Envoy Fleet...")
 
 			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
@@ -150,13 +153,13 @@ var installCmd = &cobra.Command{
 					spinner.Fail("Installing private Envoy Fleet: ", err)
 					os.Exit(1)
 				}
+				spinner.Success()
 			} else {
 				pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 			}
-			spinner.Success()
 		}
 
-		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
+		apiReleaseName := fmt.Sprintf("%s-api", installReleaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
 			spinner = NewSpinner("Installing Kusk API server...")
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
@@ -176,7 +179,7 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
+		dashboardReleaseName := fmt.Sprintf("%s-dashboard", installReleaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
 			spinner = NewSpinner("Installing Kusk Dashboard...")
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
@@ -191,6 +194,13 @@ var installCmd = &cobra.Command{
 		}
 		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 	},
+}
+
+func getInstallReleaseName(customReleaseName, releaseName string) string {
+	if customReleaseName != releaseName {
+		return customReleaseName
+	}
+	return releaseName
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
