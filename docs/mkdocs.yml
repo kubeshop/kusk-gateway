@@ -1,7 +1,7 @@
 site_name: Kusk Gateway
 site_description: 'OpenAPI for Kubernetes done right'
 site_author: 'Kubeshop Kusk team'
-docs_dir: docs/
+docs_dir: docs_root/
 repo_name: 'kubeshop/kusk-gateway'
 repo_url: 'https://github.com/kubeshop/kusk-gateway'
 edit_uri: blob/main/docs/
