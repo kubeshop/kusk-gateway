@@ -37,16 +37,15 @@ import (
 )
 
 var (
-	noApi            bool
-	noDashboard      bool
-	noEnvoyFleet     bool
-	releaseNamespace string
+	noApi                         bool
+	noDashboard                   bool
+	noEnvoyFleet                  bool
+	releaseName, releaseNamespace string
 )
-
-const releaseName = "kusk-gateway"
 
 func init() {
 	rootCmd.AddCommand(installCmd)
+	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
@@ -118,7 +117,6 @@ var installCmd = &cobra.Command{
 		}
 
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
-
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
 				spinner = NewSpinner("Installing Envoy Fleet...")
@@ -140,20 +138,21 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		if !noEnvoyFleet {
-			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
-			spinner = NewSpinner("Installing private Envoy Fleet...")
-
-			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
+		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
+			if !noEnvoyFleet {
+				spinner = NewSpinner("Installing Private Envoy Fleet...")
 				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
-					spinner.Fail("Installing private Envoy Fleet: ", err)
+					spinner.Fail("Installing Envoy Fleet: ", err)
 					os.Exit(1)
 				}
+				spinner.Success()
 			} else {
-				pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
-			spinner.Success()
+		} else {
+			pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
