@@ -117,7 +117,6 @@ var installCmd = &cobra.Command{
 		}
 
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
-
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
 				spinner = NewSpinner("Installing Envoy Fleet...")
@@ -139,26 +138,27 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		if !noEnvoyFleet {
-			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
-			spinner = NewSpinner("Installing private Envoy Fleet...")
-
-			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
-				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
+		privateEnvoyFleetName := fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+		if _, privateEnvoyFleetInstalled := releases[privateEnvoyFleetName]; !privateEnvoyFleetInstalled {
+			if !noEnvoyFleet {
+				spinner = NewSpinner("Installing Private Envoy Fleet...")
+				err = installPrivateEnvoyFleet(helmPath, privateEnvoyFleetName, releaseNamespace)
 				if err != nil {
-					spinner.Fail("Installing private Envoy Fleet: ", err)
+					spinner.Fail("Installing Envoy Fleet: ", err)
 					os.Exit(1)
 				}
 				spinner.Success()
 			} else {
-				pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
+		} else {
+			pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
 			spinner = NewSpinner("Installing Kusk API server...")
-			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
+			err = installApi(helmPath, apiReleaseName, releaseNamespace, privateEnvoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk API server: ", err)
 				os.Exit(1)
@@ -171,14 +171,14 @@ var installCmd = &cobra.Command{
 
 		if noDashboard {
 			pterm.Info.Println("--no-dashboard set - skipping dashboard installation")
-			printPortForwardInstructions("api", releaseNamespace, envoyFleetName)
+			printPortForwardInstructions("api", releaseNamespace, privateEnvoyFleetName)
 			return
 		}
 
 		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
 			spinner = NewSpinner("Installing Kusk Dashboard...")
-			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
+			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, privateEnvoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk Dashboard...", err)
 				os.Exit(1)
@@ -188,7 +188,7 @@ var installCmd = &cobra.Command{
 		} else {
 			pterm.Info.Println("Kusk Dashboard already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
-		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
+		printPortForwardInstructions("dashboard", releaseNamespace, privateEnvoyFleetName)
 	},
 }
 
