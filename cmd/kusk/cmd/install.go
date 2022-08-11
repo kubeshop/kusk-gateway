@@ -37,17 +37,15 @@ import (
 )
 
 var (
-	noApi                               bool
-	noDashboard                         bool
-	noEnvoyFleet                        bool
-	customReleaseName, releaseNamespace string
+	noApi                         bool
+	noDashboard                   bool
+	noEnvoyFleet                  bool
+	releaseName, releaseNamespace string
 )
-
-const releaseName = "kusk-gateway"
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVar(&customReleaseName, "name", "kusk-gateway", "installation name")
+	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
@@ -75,8 +73,6 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		installReleaseName := getInstallReleaseName(customReleaseName, releaseName)
-
 		spinner := NewSpinner("Looking for Helm...")
 		helmPath, err := exec.LookPath("helm")
 		if err != nil {
@@ -101,15 +97,15 @@ var installCmd = &cobra.Command{
 		}
 		spinner.Success()
 
-		releases, err := listReleases(helmPath, installReleaseName, releaseNamespace)
+		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
 		if err != nil {
 			pterm.Error.Println("Listing existing releases: ", err)
 			os.Exit(1)
 		}
 
-		if _, kuskGatewayInstalled := releases[installReleaseName]; !kuskGatewayInstalled {
+		if _, kuskGatewayInstalled := releases[releaseName]; !kuskGatewayInstalled {
 			spinner = NewSpinner("Installing Kusk Gateway")
-			err = installKuskGateway(helmPath, installReleaseName, releaseNamespace)
+			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Installing Kusk Gateway: ", err)
 				os.Exit(1)
@@ -120,7 +116,7 @@ var installCmd = &cobra.Command{
 			pterm.Info.Println("Kusk Gateway already installed, skipping... To upgrade to a new version run `kusk upgrade`")
 		}
 
-		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", installReleaseName)
+		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
 
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
@@ -144,7 +140,7 @@ var installCmd = &cobra.Command{
 		}
 
 		if !noEnvoyFleet {
-			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", installReleaseName)
+			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
 			spinner = NewSpinner("Installing private Envoy Fleet...")
 
 			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
@@ -159,7 +155,7 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		apiReleaseName := fmt.Sprintf("%s-api", installReleaseName)
+		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
 			spinner = NewSpinner("Installing Kusk API server...")
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
@@ -179,7 +175,7 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		dashboardReleaseName := fmt.Sprintf("%s-dashboard", installReleaseName)
+		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
 			spinner = NewSpinner("Installing Kusk Dashboard...")
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
@@ -194,13 +190,6 @@ var installCmd = &cobra.Command{
 		}
 		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 	},
-}
-
-func getInstallReleaseName(customReleaseName, releaseName string) string {
-	if customReleaseName != releaseName {
-		return customReleaseName
-	}
-	return releaseName
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
