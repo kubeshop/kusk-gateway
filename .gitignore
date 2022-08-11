@@ -27,7 +27,8 @@ cmd/kusk/kusk
 testbin/
 
 # mkdocs built site
-/site
+site
+env
 
 .tmp/
 /.tmp/
