@@ -138,11 +138,11 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		privateEnvoyFleetName := fmt.Sprintf("%s-private-envoy-fleet", releaseName)
-		if _, privateEnvoyFleetInstalled := releases[privateEnvoyFleetName]; !privateEnvoyFleetInstalled {
+		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
 			if !noEnvoyFleet {
 				spinner = NewSpinner("Installing Private Envoy Fleet...")
-				err = installPrivateEnvoyFleet(helmPath, privateEnvoyFleetName, releaseNamespace)
+				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
 					spinner.Fail("Installing Envoy Fleet: ", err)
 					os.Exit(1)
@@ -158,7 +158,7 @@ var installCmd = &cobra.Command{
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
 			spinner = NewSpinner("Installing Kusk API server...")
-			err = installApi(helmPath, apiReleaseName, releaseNamespace, privateEnvoyFleetName)
+			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk API server: ", err)
 				os.Exit(1)
@@ -171,14 +171,14 @@ var installCmd = &cobra.Command{
 
 		if noDashboard {
 			pterm.Info.Println("--no-dashboard set - skipping dashboard installation")
-			printPortForwardInstructions("api", releaseNamespace, privateEnvoyFleetName)
+			printPortForwardInstructions("api", releaseNamespace, envoyFleetName)
 			return
 		}
 
 		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
 			spinner = NewSpinner("Installing Kusk Dashboard...")
-			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, privateEnvoyFleetName)
+			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk Dashboard...", err)
 				os.Exit(1)
@@ -188,7 +188,7 @@ var installCmd = &cobra.Command{
 		} else {
 			pterm.Info.Println("Kusk Dashboard already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
-		printPortForwardInstructions("dashboard", releaseNamespace, privateEnvoyFleetName)
+		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 	},
 }
 
