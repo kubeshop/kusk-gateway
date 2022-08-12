@@ -171,8 +171,8 @@ The host object sets the target host to receive traffic. It contains the followi
 
 | Name       | Description                      |
 |:-----------|:---------------------------------|
-| `hostname` | The hostname to route traffic to. |
-| `port`     | The target port to route traffic to.  |
+| `upstream.host.hostname` | The hostname to route traffic to. |
+| `upstream.host.port`     | The target port to route traffic to.  |
 
 Note: `service` and `host` are mutually exclusive since they define the same thing (the upstream host to route to).
 
@@ -182,8 +182,9 @@ Note: `service` and `host` are mutually exclusive since they define the same thi
 ...
 x-kusk:
   upstream:
-    hostname: domain
-    port: 80
+    host:
+      hostname: example.org
+      port: 80
 ...
 ```
 
