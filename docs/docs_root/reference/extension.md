@@ -149,9 +149,9 @@ The service object sets the target Kubernetes service to receive traffic. It con
 
 | Name        | Description                                      |
 |:------------|:-------------------------------------------------|
-| `namespace` | The namespace containing the upstream Service.    |
-| `name`      | The upstream Service's name.                      |
-| `port`      | The upstream Service's port. Default value is 80. |
+| `upstream.service.namespace` | The namespace containing the upstream Service.    |
+| `upstream.service.name`      | The upstream Service's name.                      |
+| `upstream.service.port`      | The upstream Service's port. Default value is 80. |
 
 **Sample:**
 
@@ -159,9 +159,10 @@ The service object sets the target Kubernetes service to receive traffic. It con
 ...
 x-kusk:
   upstream:
-    namespace: default
-    name: svc-name
-    port: 8080
+    service:
+      namespace: default
+      name: svc-name
+      port: 8080
 ...
 ```
 
@@ -171,8 +172,8 @@ The host object sets the target host to receive traffic. It contains the followi
 
 | Name       | Description                      |
 |:-----------|:---------------------------------|
-| `hostname` | The hostname to route traffic to. |
-| `port`     | The target port to route traffic to.  |
+| `upstream.host.hostname` | The hostname to route traffic to. |
+| `upstream.host.port`     | The target port to route traffic to.  |
 
 Note: `service` and `host` are mutually exclusive since they define the same thing (the upstream host to route to).
 
@@ -182,8 +183,9 @@ Note: `service` and `host` are mutually exclusive since they define the same thi
 ...
 x-kusk:
   upstream:
-    hostname: domain
-    port: 80
+    host:
+      hostname: example.org
+      port: 80
 ...
 ```
 
