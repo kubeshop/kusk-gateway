@@ -29,7 +29,7 @@ You can get a list of the available Kusk Gateway versions from our [releases pag
 Install `kusk` into `/usr/local/bin/kusk`:
 
 ```sh
-bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
+bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh)
 ```
 
 ### **From Source**

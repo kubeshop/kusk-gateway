@@ -20,7 +20,7 @@ Tools needed for the installation:
 You can find other installation methods (like Homebrew) [here](../cli/overview.md).
 
 ```sh
-bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk/main/scripts/install.sh)
+bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh)
 ```
 
 ### **2. Install Kusk Gateway**
