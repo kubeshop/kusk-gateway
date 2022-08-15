@@ -25,6 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -231,9 +232,30 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 		"-o", "json",
 	}
 
-	out, err := process.Execute(helmPath, command...)
-	if err != nil {
-		return nil, err
+	cmd := exec.Command(helmPath, command...)
+
+	buffer := new(bytes.Buffer)
+	errBuffer := new(bytes.Buffer)
+	cmd.Stdout = buffer
+	cmd.Stderr = errBuffer
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("could not start process: %w", err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		// TODO clean error output (currently it has buffer too - need to refactor in cmd)
+		return nil, fmt.Errorf("process error: %w\noutput: %s", err, buffer.String())
+	}
+
+	if errBuffer.Len() > 0 {
+		strError := errBuffer.String()
+		// if errBuffer contains an actual error, then return. Otherwise it's a warning
+		// so output to user
+		if !strings.Contains(strError, "WARNING") {
+			return nil, fmt.Errorf("helm list error: %s", errBuffer.String())
+		}
+		pterm.Warning.Print(strError)
 	}
 
 	var releases []struct {
@@ -242,7 +264,7 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 		AppVersion string `json:"app_version"`
 	}
 
-	if err := json.Unmarshal(out, &releases); err != nil {
+	if err := json.Unmarshal(buffer.Bytes(), &releases); err != nil {
 		return nil, err
 	}
 
