@@ -37,6 +37,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/kubeshop/kusk-gateway",
+          routeBasePath: "/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -93,9 +94,9 @@ const config = {
             position: "right",
           },
           {
-            href: "https://github.com/kubeshop/kusk-gateway",
-            label: "GitHub",
+            type: "html",
             position: "right",
+            value: `<iframe src="https://ghbtns.com/github-btn.html?user=kubeshop&repo=kusk-gateway&type=star&count=true&size=large" margin="0" frameborder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>`
           },
         ],
       },
@@ -107,7 +108,7 @@ const config = {
             items: [
               {
                 label: "Docs",
-                to: "/docs/intro",
+                to: "/intro",
               },
             ],
           },
