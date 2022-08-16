@@ -1,48 +1,64 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require("prism-react-renderer/themes/github");
+const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Kusk Gateway',
-  tagline: 'OpenAPI for Kubernetes',
-  url: 'https://kusk.io',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/kusk.svg',
+  title: "Kusk Gateway",
+  tagline: "OpenAPI for Kubernetes",
+  url: "https://kusk.io",
+  baseUrl: "/",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+  favicon: "img/kusk.svg",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'kubeshop', // Usually your GitHub org/user name.
-  projectName: 'kusk-gateway', // Usually your repo name.
+  organizationName: "kubeshop", // Usually your GitHub org/user name.
+  projectName: "kusk-gateway", // Usually your repo name.
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
 
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/kubeshop/kusk-gateway',
+          editUrl: "https://github.com/kubeshop/kusk-gateway",
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
+    ],
+    [
+      "redocusaurus",
+      {
+        // Plugin Options for loading OpenAPI files
+        specs: [
+          {
+            spec: "https://raw.githubusercontent.com/kubeshop/kuskgateway-api-server/main/api/openapi.yaml",
+            route: "/docs/reference/kusk-api-server",
+          },
+        ],
+        // Theme Options for modifying how redoc renders them
+        theme: {
+          // Change with your site colors
+          primaryColor: "#1890ff",
+        },
+      },
     ],
   ],
 
@@ -50,71 +66,71 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Kusk',
+        title: "Kusk",
         logo: {
-          alt: 'Kusk Logo',
-          src: 'img/kusk.svg',
+          alt: "Kusk Logo",
+          src: "img/kusk.svg",
         },
         items: [
           {
-            type: 'doc',
-            docId: 'getting-started/installation',
-            position: 'right',
-            label: 'Get Started',
+            type: "doc",
+            docId: "getting-started/installation",
+            position: "right",
+            label: "Get Started",
           },
           {
-            type: 'doc',
-            docId: 'intro',
-            position: 'right',
-            label: 'Documentation',
+            type: "doc",
+            docId: "intro",
+            position: "right",
+            label: "Documentation",
           },
           {
-            href: 'https://discord.gg/6zupCZFQbe',
-            label: 'Discord',
-            position: 'right',
+            href: "https://discord.gg/6zupCZFQbe",
+            label: "Discord",
+            position: "right",
           },
           {
-            href: 'https://github.com/kubeshop/kusk-gateway',
-            label: 'GitHub',
-            position: 'right',
+            href: "https://github.com/kubeshop/kusk-gateway",
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Developers',
+            title: "Developers",
             items: [
               {
-                label: 'Docs',
-                to: '/docs/intro',
+                label: "Docs",
+                to: "/docs/intro",
               },
             ],
           },
           {
-            title: 'Community',
+            title: "Community",
             items: [
               {
-                label: 'Discord',
-                href: 'https://discord.gg/6zupCZFQbe',
+                label: "Discord",
+                href: "https://discord.gg/6zupCZFQbe",
               },
               {
-                label: 'Twitter',
-                href: 'https://twitter.com/kusk_io',
+                label: "Twitter",
+                href: "https://twitter.com/kusk_io",
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'Blog',
-                to: 'https://kusk.io/blog',
+                label: "Blog",
+                to: "https://kusk.io/blog",
               },
               {
-                label: 'GitHub',
-                href: 'https://github.com/kubeshop/kusk-gateway',
+                label: "GitHub",
+                href: "https://github.com/kubeshop/kusk-gateway",
               },
             ],
           },

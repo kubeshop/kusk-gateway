@@ -79,7 +79,11 @@ const sidebars = {
       label: "Reference",
       items: [
         "reference/extension",
-        "reference/openapi",
+        {
+          type: "link",
+          label: "Dashboard API",
+          href: "/docs/reference/kusk-api-server"
+        },
         {
           type: "category",
           label: "Kusk Resources",
