@@ -16,6 +16,7 @@ on:
       - internal/**
       - pkg/**
       - smoketests/**
+    
 
 jobs:
   test-kusk-cli:
