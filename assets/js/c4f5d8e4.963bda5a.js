@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkkusk_gateway_docs_2=self.webpackChunkkusk_gateway_docs_2||[]).push([[195],{2841:(e,s,a)=>{a.r(s),a.d(s,{default:()=>c});var t=a(7294),k=a(6775);const c=()=>t.createElement(k.l_,{to:"/kusk-gateway/docs/intro"})}}]);
