@@ -42,6 +42,8 @@ var (
 	noDashboard                   bool
 	noEnvoyFleet                  bool
 	releaseName, releaseNamespace string
+
+	analyticsEnabled = "true"
 )
 
 func init() {
@@ -52,6 +54,10 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+
+	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
+		analyticsEnabled = enabled
+	}
 }
 
 var installCmd = &cobra.Command{
@@ -283,11 +289,6 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 }
 
 func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
-	analyticsEnabled := "true"
-	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
-		analyticsEnabled = enabled
-	}
-
 	command := []string{
 		"upgrade",
 		"--install",
@@ -354,6 +355,7 @@ func installApi(helmPath, releaseName, releaseNamespace, envoyFleetName string) 
 		"--set", fmt.Sprintf("fullnameOverride=%s", releaseName),
 		"--set", fmt.Sprintf("envoyfleet.name=%s", envoyFleetName),
 		"--set", fmt.Sprintf("envoyfleet.namespace=%s", releaseNamespace),
+		"--set", fmt.Sprintf("analytics.enabled=%s", analyticsEnabled),
 		releaseName,
 		"kubeshop/kusk-gateway-api",
 	}
