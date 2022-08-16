@@ -22,7 +22,7 @@ const sidebars = {
     {
       type: "doc",
       id: "intro",
-      label: "Introduction"
+      label: "Introduction",
     },
     {
       type: "category",
@@ -38,14 +38,36 @@ const sidebars = {
       label: "Guides",
       items: [
         "guides/working-with-extension",
-        "guides/cors",
-        "guides/mocking",
-        "guides/validation",
+        {
+          type: "doc",
+          id: "guides/cors",
+          label: "CORS",
+        },
+        {
+          type: "doc",
+          id: "guides/mocking",
+          label: "Mocking",
+        },
+        {
+          type: "doc",
+          id: "guides/validation",
+          label: "Validation",
+        },
+        {
+          type: "doc",
+          id: "guides/cache",
+          label: "Caching",
+        },
+        {
+          type: "doc",
+          id: "guides/routing",
+          label: "Routing",
+        },
+        "guides/timeouts",
+        "guides/routing",
         "guides/rate-limit",
         "guides/basic-auth",
-        "guides/cache",
-        "guides/routing",
-        "guides/timeouts",
+        "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",
       ],
@@ -57,7 +79,7 @@ const sidebars = {
         {
           type: "doc",
           id: "cli/overview",
-          label: "Installation"
+          label: "Installation",
         },
         "cli/install-cmd",
         "cli/mock-cmd",
@@ -82,7 +104,7 @@ const sidebars = {
         {
           type: "link",
           label: "Dashboard API",
-          href: "/docs/reference/kusk-api-server"
+          href: "/docs/reference/kusk-api-server",
         },
         {
           type: "category",
@@ -99,12 +121,12 @@ const sidebars = {
     {
       type: "doc",
       label: "Contributing",
-      id: "contributing"
+      id: "contributing",
     },
     {
       type: "doc",
       id: "privacy",
-      label: "Privacy"
+      label: "Privacy",
     },
   ],
 };
