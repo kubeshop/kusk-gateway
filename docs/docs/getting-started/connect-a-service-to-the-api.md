@@ -5,7 +5,7 @@ This section explains how you would connect your services to Kusk-gateway.
 
 ## **1. Deploy a Service**
 
-Create a `deployment.yaml` file:
+Let's deploy a hello-world Deployment. Create `deployment.yaml` file:
 
 ```sh 
 apiVersion: apps/v1
@@ -53,7 +53,7 @@ kubectl apply -f deployment.yaml
 
 Once you have finished implementing and deploying the service, you will need to stop the mocking of the API endpoint and connect the service to the gateway. 
 
-Stop the API mocking by deleting the `mocking` section: 
+Stop the API mocking by deleting the `mocking` section from the `openapi.yaml` file: 
 
 ```diff
 ...
@@ -62,17 +62,15 @@ Stop the API mocking by deleting the `mocking` section:
 ...
 ```
 
-Add the `upstream` details, which are the details of the service we just created, under the `x-kusk` section to connect the gateway to the service. 
+Add the `upstream` policy to the top of the `x-kusk` section of the `openapi.yaml` file, which contains the details of the service we just created:
 
-```diff
-...
+```yaml
 x-kusk:
-+ upstream:
-+  service:
-+   name: hello-world-svc
-+   namespace: default
-+   port: 8080
-...
+ upstream:
+  service:
+    name: hello-world-svc
+    namespace: default
+    port: 8080
 ```
 
 ## **3. Apply the Changes**
@@ -86,8 +84,14 @@ kubectl apply -f api.yaml
 Get the External IP of Kusk-gateway as indicated in [installing Kusk-gateway section](./installation/#get-the-gateways-external-ip) and run:
 
 ```
-$ curl EXTERNAL_IP/hello
+$ curl 104.198.194.37/hello
 Hello from an implemented service!
 ```
 
-And now you have successfully deployed an API! The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API to and later implemented the services and connected them to the API.
+Now you have successfully deployed an API! 
+
+## Next Steps
+
+The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API to and later implemented the services and connected them to the API.
+
+Check out the [available OpenAPI extensions](../guides/working-with-extension.md) to see all the features that you can enable in your gateway through OpenAPI. And, if you want, connect with us on [Discord](https://discord.gg/6zupCZFQbe) to tell us about your experience!
