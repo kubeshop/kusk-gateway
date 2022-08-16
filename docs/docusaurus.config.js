@@ -77,26 +77,19 @@ const config = {
         },
         items: [
           {
-            type: "doc",
-            docId: "getting-started/installation",
-            position: "right",
+            to: "/getting-started/installation",
             label: "Get Started",
-          },
-          {
-            type: "doc",
-            docId: "intro",
-            position: "right",
-            label: "Documentation",
+            position: "left"
           },
           {
             href: "https://discord.gg/6zupCZFQbe",
             label: "Discord",
-            position: "right",
+            position: "left",
           },
           {
             type: "html",
             position: "right",
-            value: `<iframe src="https://ghbtns.com/github-btn.html?user=kubeshop&repo=kusk-gateway&type=star&count=true&size=large" margin="0" frameborder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>`
+            value: `<iframe src="https://ghbtns.com/github-btn.html?user=kubeshop&repo=kusk-gateway&type=star&count=true&size=large" style='margin-top: 6px' frameborder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>`,
           },
         ],
       },
