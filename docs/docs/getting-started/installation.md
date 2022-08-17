@@ -1,5 +1,5 @@
 # Installing Kusk Gateway
-# **1. Install Kusk CLI** 
+## **1. Install Kusk CLI** 
 
 To install Kusk CLI, you will need the following tools available in your terminal:
 
