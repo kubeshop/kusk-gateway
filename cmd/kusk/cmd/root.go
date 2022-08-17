@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 	Use:   "kusk",
 	Short: "",
 	Long:  ``,
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		analytics.SendAnonymousCMDInfo()
 	},
 }
