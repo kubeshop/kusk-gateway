@@ -21,7 +21,7 @@ const sidebars = {
   tutorialSidebar: [
     {
       type: "doc",
-      id: "intro",
+      id: "index",
       label: "Introduction",
     },
     {
