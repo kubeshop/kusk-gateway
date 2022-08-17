@@ -9,7 +9,7 @@ const config = {
   title: "Kusk Gateway",
   tagline: "OpenAPI for Kubernetes",
   url: "https://kusk.io",
-  baseUrl: "/kusk-gateway/",
+  baseUrl: "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   favicon: "img/kusk.svg",
