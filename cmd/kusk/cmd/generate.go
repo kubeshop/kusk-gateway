@@ -136,6 +136,17 @@ var generateCmd = &cobra.Command{
 			name = strings.ReplaceAll(parsedApiSpec.Info.Title, ".", "-")
 		}
 
+		opts, err := spec.GetOptions(parsedApiSpec)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		if err := opts.Validate(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
 		// override top level upstream service if undefined.
 		if serviceName != "" && serviceNamespace != "" && servicePort != 0 {
 			xKusk := parsedApiSpec.ExtensionProps.Extensions["x-kusk"].(options.Options)
