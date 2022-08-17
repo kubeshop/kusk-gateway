@@ -25,6 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -37,21 +38,26 @@ import (
 )
 
 var (
-	noApi            bool
-	noDashboard      bool
-	noEnvoyFleet     bool
-	releaseNamespace string
-)
+	noApi                         bool
+	noDashboard                   bool
+	noEnvoyFleet                  bool
+	releaseName, releaseNamespace string
 
-const releaseName = "kusk-gateway"
+	analyticsEnabled = "true"
+)
 
 func init() {
 	rootCmd.AddCommand(installCmd)
+	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+
+	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
+		analyticsEnabled = enabled
+	}
 }
 
 var installCmd = &cobra.Command{
@@ -118,7 +124,6 @@ var installCmd = &cobra.Command{
 		}
 
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
-
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
 				spinner = NewSpinner("Installing Envoy Fleet...")
@@ -140,20 +145,21 @@ var installCmd = &cobra.Command{
 			return
 		}
 
-		if !noEnvoyFleet {
-			envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
-			spinner = NewSpinner("Installing private Envoy Fleet...")
-
-			if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
+		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
+			if !noEnvoyFleet {
+				spinner = NewSpinner("Installing Private Envoy Fleet...")
 				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
-					spinner.Fail("Installing private Envoy Fleet: ", err)
+					spinner.Fail("Installing Envoy Fleet: ", err)
 					os.Exit(1)
 				}
+				spinner.Success()
 			} else {
-				pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
-			spinner.Success()
+		} else {
+			pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
 		}
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
@@ -232,9 +238,30 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 		"-o", "json",
 	}
 
-	out, err := process.Execute(helmPath, command...)
-	if err != nil {
-		return nil, err
+	cmd := exec.Command(helmPath, command...)
+
+	buffer := new(bytes.Buffer)
+	errBuffer := new(bytes.Buffer)
+	cmd.Stdout = buffer
+	cmd.Stderr = errBuffer
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("could not start process: %w", err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		// TODO clean error output (currently it has buffer too - need to refactor in cmd)
+		return nil, fmt.Errorf("process error: %w\noutput: %s", err, buffer.String())
+	}
+
+	if errBuffer.Len() > 0 {
+		strError := errBuffer.String()
+		// if errBuffer contains an actual error, then return. Otherwise it's a warning
+		// so output to user
+		if !strings.Contains(strError, "WARNING") {
+			return nil, fmt.Errorf("helm list error: %s", errBuffer.String())
+		}
+		pterm.Warning.Print(strError)
 	}
 
 	var releases []struct {
@@ -243,7 +270,7 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 		AppVersion string `json:"app_version"`
 	}
 
-	if err := json.Unmarshal(out, &releases); err != nil {
+	if err := json.Unmarshal(buffer.Bytes(), &releases); err != nil {
 		return nil, err
 	}
 
@@ -262,11 +289,6 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 }
 
 func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
-	analyticsEnabled := "true"
-	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
-		analyticsEnabled = enabled
-	}
-
 	command := []string{
 		"upgrade",
 		"--install",
@@ -333,6 +355,7 @@ func installApi(helmPath, releaseName, releaseNamespace, envoyFleetName string) 
 		"--set", fmt.Sprintf("fullnameOverride=%s", releaseName),
 		"--set", fmt.Sprintf("envoyfleet.name=%s", envoyFleetName),
 		"--set", fmt.Sprintf("envoyfleet.namespace=%s", releaseNamespace),
+		"--set", fmt.Sprintf("analytics.enabled=%s", analyticsEnabled),
 		releaseName,
 		"kubeshop/kusk-gateway-api",
 	}
