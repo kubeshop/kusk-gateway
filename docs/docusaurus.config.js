@@ -27,6 +27,8 @@ const config = {
     locales: ["en"],
   },
 
+  plugins: [require.resolve("@cmfcmf/docusaurus-search-local")],
+
   presets: [
     [
       "classic",
@@ -79,7 +81,7 @@ const config = {
           {
             to: "/getting-started/installation",
             label: "Get Started",
-            position: "left"
+            position: "left",
           },
           {
             href: "https://discord.gg/6zupCZFQbe",
