@@ -54,6 +54,7 @@ jobs:
           context: .
           file: build/manager/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
           labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
           build-args: |
