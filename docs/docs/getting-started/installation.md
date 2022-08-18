@@ -12,6 +12,9 @@ brew install kubeshop/kusk/kusk
 
 # Linux
 curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
+
+# Windows (go binary needed)
+go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
 ## **2. Install Kusk Gateway**

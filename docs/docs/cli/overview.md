@@ -18,12 +18,12 @@ brew install kubeshop/kusk/kusk
 ### **Using Golang Installation**
 
 ```
-go install github.com/kubeshop/kusk@latest
+go install github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
 To install a particular version replace `latest` with the version number.
 
-You can get a list of the available Kusk Gateway versions from our [releases page](https://github.com/kubeshop/kusk/releases).
+You can get a list of the available Kusk Gateway versions from our [releases page](https://github.com/kubeshop/kusk-gateway/releases).
 
 ### **Install Script**
 Install `kusk` into `/usr/local/bin/kusk`:
@@ -47,7 +47,7 @@ If you don't like automatic scripts you can install the CLI manually:
 2. Upack it (tar -zxvf kusk_0.1.0_Linux_arm64.tar.gz).
 3. Move it to a location in the PATH. For example `mv kusk_0.1.0_Linux_arm64/kusk /usr/local/bin/kusk`.
 
-For Windows, download the binary from [here](https://github.com/kubeshop/kusk/releases), unpack the binary and add it to `%PATH%`. 
+For Windows, download the binary from [here](https://github.com/kubeshop/kusk-gateway/releases), unpack the binary and add it to `%PATH%`. 
 
 ## **Updating**
 ### **Homebrew**
