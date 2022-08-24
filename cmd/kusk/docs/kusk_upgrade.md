@@ -29,7 +29,7 @@ kusk upgrade [flags]
 ```
   -h, --help               help for upgrade
       --install            install components if not installed
-      --name string        installation name (default "kusk-gateway")
+      --name string        name of release to update (default "kusk-gateway")
       --namespace string   namespace to upgrade in (default "kusk-system")
 ```
 
