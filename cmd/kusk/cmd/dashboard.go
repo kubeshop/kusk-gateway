@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"sync"
 	"syscall"
@@ -21,7 +20,6 @@ import (
 )
 
 var (
-	kubeConfig                      string
 	dashboardEnvoyFleetName         string
 	dashboardEnvoyFleetNamespace    string
 	dashboardEnvoyFleetExternalPort int
@@ -30,12 +28,6 @@ var (
 func init() {
 	rootCmd.AddCommand(dashboardCmd)
 
-	kubeConfigDefault := ""
-	if home := homeDir(); home != "" {
-		kubeConfigDefault = filepath.Join(home, ".kube", "config")
-	}
-
-	dashboardCmd.Flags().StringVarP(&kubeConfig, "kubeconfig", "", kubeConfigDefault, "absolute path to kube config")
 	dashboardCmd.Flags().StringVarP(&dashboardEnvoyFleetNamespace, "envoyfleet.namespace", "", "kusk-system", "kusk gateway dashboard envoy fleet namespace")
 	dashboardCmd.Flags().StringVarP(&dashboardEnvoyFleetName, "envoyfleet.name", "", "kusk-gateway-private-envoy-fleet", "kusk gateway dashboard envoy fleet service name")
 	dashboardCmd.Flags().IntVarP(&dashboardEnvoyFleetExternalPort, "external-port", "", 8080, "external port to access dashboard at")
@@ -60,12 +52,14 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 	$ kusk dashboard --external-port=9090
 
 	Expose dashboard on port 9090
-
-	$ kusk dashboard --kubeconfig=/path/to/kube/config
-
-	Specify path to kube config. $HOME/.kube/config is used by default.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		kubeConfig, err := k8s.GetKubeConfig()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to get kube config: %v\n", err)
+			os.Exit(1)
+		}
 
 		// use the current context in kubeconfig
 		config, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
@@ -164,11 +158,4 @@ func getBrowserOpenCmdAndArgs(url string) (string, []string) {
 	args = append(args, url)
 
 	return cmd, args
-}
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
 }
