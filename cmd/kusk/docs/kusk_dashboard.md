@@ -28,10 +28,6 @@ kusk dashboard [flags]
 	$ kusk dashboard --external-port=9090
 
 	Expose dashboard on port 9090
-
-	$ kusk dashboard --kubeconfig=/path/to/kube/config
-
-	Specify path to kube config. $HOME/.kube/config is used by default.
 	
 ```
 
@@ -42,7 +38,6 @@ kusk dashboard [flags]
       --envoyfleet.namespace string   kusk gateway dashboard envoy fleet namespace (default "kusk-system")
       --external-port int             external port to access dashboard at (default 8080)
   -h, --help                          help for dashboard
-      --kubeconfig string             absolute path to kube config (default "$HOME/.kube/config")
 ```
 
 ### Options inherited from parent commands
