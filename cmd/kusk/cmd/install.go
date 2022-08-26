@@ -200,15 +200,15 @@ var installCmd = &cobra.Command{
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
-	endpoint := "http://localhost:8080/"
-	if service == "api" {
-		endpoint += "api"
+	if service == "dashboard" {
+		pterm.Info.Println("kusk dashboard is now available. To access it run: kusk dashboard")
+		return
 	}
 
 	pterm.Info.Println(
-		fmt.Sprintf("To access the %s , port forward to the envoy-fleet service that exposes it\n", service) +
+		"To access the api , port forward to the envoy-fleet service that exposes it\n" +
 			fmt.Sprintf("\t$ kubectl port-forward -n %s svc/%s 8080:80\n", releaseNamespace, envoyFleetName) +
-			fmt.Sprintf("\tand go %s", endpoint),
+			"\tand go http://localhost:8080/api",
 	)
 }
 
