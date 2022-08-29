@@ -31,6 +31,7 @@ import (
 	simplecache "github.com/envoyproxy/go-control-plane/envoy/extensions/cache/simple_http_cache/v3"
 	cachev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cache/v3"
 	cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -86,7 +87,36 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 		return nil, fmt.Errorf("cannot marshal Router configuration: %w", err)
 	}
 
-	hcmBuilder := &HCMBuilder{
+	proc := &extproc.ExternalProcessor{
+		FailureModeAllow: false,
+		GrpcService: &core.GrpcService{
+			TargetSpecifier: &core.GrpcService_GoogleGrpc_{
+				GoogleGrpc: &core.GrpcService_GoogleGrpc{
+					TargetUri:  "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000",
+					StatPrefix: "external_proc",
+				},
+			},
+			Timeout: nil,
+		},
+		ProcessingMode: &extproc.ProcessingMode{
+			RequestHeaderMode:   extproc.ProcessingMode_SKIP,
+			ResponseHeaderMode:  extproc.ProcessingMode_SKIP,
+			RequestBodyMode:     extproc.ProcessingMode_NONE,
+			ResponseBodyMode:    extproc.ProcessingMode_NONE,
+			RequestTrailerMode:  extproc.ProcessingMode_SKIP,
+			ResponseTrailerMode: extproc.ProcessingMode_SKIP,
+		},
+		AsyncMode:      false,
+		MessageTimeout: nil,
+		StatPrefix:     "",
+	}
+
+	anyExternal, err := anypb.New(proc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal External Processor configuration: %w", err)
+	}
+
+	return &HCMBuilder{
 		HTTPConnectionManager: &hcm.HttpConnectionManager{
 			CodecType:  hcm.HttpConnectionManager_AUTO,
 			StatPrefix: "http",
@@ -116,6 +146,12 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 					},
 				},
 				{
+					Name: "envoy.filters.http.ext_proc",
+					ConfigType: &hcm.HttpFilter_TypedConfig{
+						TypedConfig: anyExternal,
+					},
+				},
+				{
 					Name: wellknown.Router,
 					ConfigType: &hcm.HttpFilter_TypedConfig{
 						TypedConfig: anyRouter,
@@ -123,9 +159,8 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 				},
 			},
 		},
-	}
+	}, nil
 
-	return hcmBuilder, nil
 }
 
 // AppendFilterHTTPExternalAuthorizationFilterToStart - `HTTPExternalAuthorization` needs to come before `CORS` and `Router`,

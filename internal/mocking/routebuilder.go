@@ -65,20 +65,20 @@ type MockedRouteBuilder interface {
 // - application/xml
 // - text/plain
 // if the mediaType is not supported, an error is returned
-func NewRouteBuilder(mediaType string) (MockedRouteBuilder, error) {
-	baseMockedRouteBuilder := baseMockedRouteBuilder{}
+func NewRouteBuilder(mediaType string, rt *route.Route) (MockedRouteBuilder, error) {
+	baseMockedRouteBuilder := &baseMockedRouteBuilder{rt}
 
 	switch {
 	case jsonMediaTypePattern.MatchString(mediaType):
-		return mockedJsonRouteBuilder{
+		return &mockedJsonRouteBuilder{
 			baseMockedRouteBuilder,
 		}, nil
 	case xmlMediaTypePattern.MatchString(mediaType):
-		return mockedXmlRouteBuilder{
+		return &mockedXmlRouteBuilder{
 			baseMockedRouteBuilder,
 		}, nil
 	case textMediaTypePattern.MatchString(mediaType):
-		return mockedTextRouteBuilder{
+		return &mockedTextRouteBuilder{
 			baseMockedRouteBuilder,
 		}, nil
 	default:
@@ -86,9 +86,11 @@ func NewRouteBuilder(mediaType string) (MockedRouteBuilder, error) {
 	}
 }
 
-type baseMockedRouteBuilder struct{}
+type baseMockedRouteBuilder struct {
+	rt *route.Route
+}
 
-func (b baseMockedRouteBuilder) getRoute(
+func (b *baseMockedRouteBuilder) getRoute(
 	contentType string,
 	patternStr string,
 	responseContent string,
@@ -109,17 +111,19 @@ func (b baseMockedRouteBuilder) getRoute(
 				types.GetHeaderMatcherConfig([]string{args.Method}, false),
 			},
 		},
-		ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
-			{
-				Header: &envoy_config_core_v3.HeaderValue{
-					Key:   "x-kusk-mocked",
-					Value: "true",
+		ResponseHeadersToAdd: append(b.rt.ResponseHeadersToAdd,
+			[]*envoy_config_core_v3.HeaderValueOption{
+				{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "x-kusk-mocked",
+						Value: "true",
+					},
+					Append: &wrapperspb.BoolValue{
+						Value: true,
+					},
 				},
-				Append: &wrapperspb.BoolValue{
-					Value: true,
-				},
-			},
-		},
+			}...),
+		TypedPerFilterConfig: b.rt.TypedPerFilterConfig,
 	}
 
 	if args.RequireAcceptHeader {

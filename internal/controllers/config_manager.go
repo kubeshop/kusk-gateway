@@ -56,7 +56,7 @@ type KubeEnvoyConfigManager struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	EnvoyManager *manager.EnvoyConfigManager
-	Validator    *validation.Proxy
+	Validator    validation.ValidationUpdater
 	m            sync.Mutex
 
 	WatchedSecretsChan chan *v1.Secret

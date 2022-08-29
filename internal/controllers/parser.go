@@ -30,6 +30,7 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
@@ -75,7 +76,7 @@ Domain search order:
 // UpdateConfigFromAPIOpts updates Envoy configuration from OpenAPI spec and x-kusk options
 func UpdateConfigFromAPIOpts(
 	envoyConfiguration *config.EnvoyConfiguration,
-	proxy *validation.Proxy,
+	proxy validation.ValidationUpdater,
 	opts *options.Options,
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
@@ -95,10 +96,6 @@ func UpdateConfigFromAPIOpts(
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
 
-	// fetch validation service host and port once
-	// TODO: fetch kusk gateway validator service dynamically
-	var validatorHostname string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local."
-	var validatorPort uint32 = 17000
 	// fetch auth service host and port once
 	// TODO: fetch kusk gateway auth service dynamically
 	var cloudEntityHostname string = "kusk-gateway-auth-service.kusk-system.svc.cluster.local."
@@ -149,6 +146,7 @@ func UpdateConfigFromAPIOpts(
 				},
 				)
 			}
+
 			if finalOpts.Auth != nil {
 				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
 				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
@@ -197,6 +195,62 @@ func UpdateConfigFromAPIOpts(
 				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 			}
 
+			// // Validate and Proxy to the upstream
+			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
+
+				var (
+					upstreamHostname string
+					upstreamPort     uint32
+				)
+				if finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled {
+					upstreamHostname = types.GenerateRouteName(routePath, method)
+					upstreamPort = 0
+				} else {
+					upstreamHostname, upstreamPort = getUpstreamHost(finalOpts.Upstream)
+				}
+				// create proxied service if needed
+				serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
+				if _, ok := proxiedServices[serviceID]; !ok {
+					proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
+					if err != nil {
+						return fmt.Errorf("failed to create proxied service: %w", err)
+					}
+
+					proxiedServices[serviceID] = proxiedService
+				}
+
+				// attach service id and operation id headers so that validator will know which service should
+				// serve this request
+				operationID := validation.GenerateOperationID(method, path)
+
+				headers := []*envoy_config_core_v3.HeaderValue{
+					{
+						Key:   validation.HeaderOperationName,
+						Value: "validate",
+					},
+					{
+						Key:   validation.HeaderOperationID,
+						Value: operationID,
+					},
+					{
+						Key:   validation.HeaderServiceID,
+						Value: serviceID,
+					},
+				}
+
+				extProc := mapExternalProcessorConfig(headers)
+
+				anyExtProc, err := anypb.New(extProc)
+				if err != nil {
+					return fmt.Errorf("failure marshalling ext_proc configuration: %w ", err)
+				}
+
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = make(map[string]*any.Any)
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = anyExtProc
+			}
+
 			// Create the decision what to do with the request, in order.
 			// Some inherited options might be conflicting, so we implicitly define the decision order - the first detected wins:
 			// Redirect -> Mock -> Validate and Proxy to the upstream -> Proxy (Route) to the upstream
@@ -212,11 +266,6 @@ func UpdateConfigFromAPIOpts(
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			// Mock
 			case finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled:
-				// TODO: make them compatible
-				if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil {
-					return fmt.Errorf("mocking and validation are enabled but are mutually exclusive")
-				}
-
 				for respCode, respRef := range operation.Responses {
 					// We don't handle non 2xx codes, skip if found
 					if !strings.HasPrefix(respCode, "2") {
@@ -238,7 +287,7 @@ func UpdateConfigFromAPIOpts(
 							continue
 						}
 
-						mockedRouteBuilder, err := mocking.NewRouteBuilder(mediaType)
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(mediaType, rt)
 						if err != nil {
 							return fmt.Errorf("cannot build mocked route: %w", err)
 						}
@@ -281,7 +330,7 @@ func UpdateConfigFromAPIOpts(
 							break
 						}
 
-						mockedRouteBuilder, err := mocking.NewRouteBuilder(singleMediaType)
+						mockedRouteBuilder, err := mocking.NewRouteBuilder(singleMediaType, rt)
 						if err != nil {
 							return fmt.Errorf("cannot build mocked route: %w", err)
 						}
@@ -301,63 +350,6 @@ func UpdateConfigFromAPIOpts(
 						routesToAddToVirtualHost = append(routesToAddToVirtualHost, mockedRoute)
 					}
 				}
-			// // Validate and Proxy to the upstream
-			case finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled:
-				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
-
-				// create proxied service if needed
-				serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
-				if _, ok := proxiedServices[serviceID]; !ok {
-					proxiedService, err := validation.NewService(serviceID, upstreamHostname, upstreamPort, spec, opts)
-					if err != nil {
-						return fmt.Errorf("failed to create proxied service: %w", err)
-					}
-
-					proxiedServices[serviceID] = proxiedService
-				}
-
-				// attach service id and operation id headers so that validator will know which service should
-				// serve this request
-				operationID := validation.GenerateOperationID(method, path)
-
-				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-					Header: &envoy_config_core_v3.HeaderValue{
-						Key:   validation.HeaderServiceID,
-						Value: serviceID,
-					},
-					Append: wrapperspb.Bool(false),
-				})
-
-				rt.RequestHeadersToAdd = append(rt.RequestHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
-					Header: &envoy_config_core_v3.HeaderValue{
-						Key:   validation.HeaderOperationID,
-						Value: operationID,
-					},
-					Append: wrapperspb.Bool(false),
-				})
-
-				clusterName := generateClusterName(validatorHostname, validatorPort)
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, validatorHostname, validatorPort)
-				}
-				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
-					rewriteOpts = &finalOpts.Upstream.Rewrite
-				}
-				routeRoute, err := generateRoute(
-					clusterName,
-					corsPolicy,
-					rewriteOpts,
-					finalOpts.QoS,
-					finalOpts.Websocket,
-				)
-				if err != nil {
-					return err
-				}
-
-				rt.Action = routeRoute
-
-				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			// Default - proxy to the upstream
 			default:
 				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
@@ -420,6 +412,15 @@ func UpdateConfigFromAPIOpts(
 						rt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 					}
 
+					if finalOpts.Validation == nil || finalOpts.Validation.Request == nil || finalOpts.Validation.Request.Enabled == nil || *finalOpts.Validation.Request.Enabled == false {
+						extProc, err := externalProcessorConfigDisabled()
+						if err != nil {
+							return fmt.Errorf("cannot create per-route config to disable external processing: vh=%q, %w", string(vh), err)
+						}
+
+						rt.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = extProc
+					}
+
 					if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 						return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 					}
@@ -430,7 +431,7 @@ func UpdateConfigFromAPIOpts(
 
 	if opts.OpenAPIPath != "" {
 		for _, vh := range opts.Hosts {
-			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json")
+			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json", &route.Route{})
 			if err != nil {
 				return fmt.Errorf("cannot build mocked route: %w", err)
 			}
@@ -770,4 +771,45 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 	}
 
 	return rl
+}
+
+// fetch validation service host and port once
+// TODO: fetch kusk gateway validator service dynamically
+const validatorURL string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000"
+
+func mapExternalProcessorConfig(headers []*envoy_config_core_v3.HeaderValue) *extproc.ExtProcPerRoute {
+	proc := &extproc.ExtProcPerRoute{
+		Override: &extproc.ExtProcPerRoute_Overrides{
+			Overrides: &extproc.ExtProcOverrides{
+				GrpcService: &envoy_config_core_v3.GrpcService{
+					TargetSpecifier: &envoy_config_core_v3.GrpcService_GoogleGrpc_{
+						GoogleGrpc: &envoy_config_core_v3.GrpcService_GoogleGrpc{
+							TargetUri:  validatorURL,
+							StatPrefix: "external_proc",
+						},
+					},
+					InitialMetadata: headers,
+					Timeout:         nil,
+				},
+				ProcessingMode: &extproc.ProcessingMode{
+					RequestHeaderMode:   extproc.ProcessingMode_SEND,
+					ResponseHeaderMode:  extproc.ProcessingMode_SKIP,
+					RequestBodyMode:     extproc.ProcessingMode_BUFFERED,
+					ResponseBodyMode:    extproc.ProcessingMode_NONE,
+					RequestTrailerMode:  extproc.ProcessingMode_SKIP,
+					ResponseTrailerMode: extproc.ProcessingMode_SKIP,
+				},
+			},
+		},
+	}
+
+	return proc
+}
+
+func externalProcessorConfigDisabled() (*anypb.Any, error) {
+	return anypb.New(
+		&extproc.ExtProcPerRoute{
+			Override: &extproc.ExtProcPerRoute_Disabled{Disabled: true},
+		})
+
 }

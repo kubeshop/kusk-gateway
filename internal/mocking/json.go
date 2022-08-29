@@ -30,10 +30,10 @@ import (
 )
 
 type mockedJsonRouteBuilder struct {
-	baseMockedRouteBuilder
+	*baseMockedRouteBuilder
 }
 
-func (m mockedJsonRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+func (m *mockedJsonRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
 	j, err := json.Marshal(args.ExampleContent)
 	if err != nil {
 		return nil, err

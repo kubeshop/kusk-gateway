@@ -27,7 +27,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"reflect"
@@ -247,9 +246,9 @@ func main() {
 	}()
 
 	// Validation proxy
-	proxy := validation.NewProxy()
+	proxy := validation.NewServer()
 	go func() {
-		if err := http.ListenAndServe(":17000", proxy); err != nil {
+		if err := proxy.Start(":17000"); err != nil {
 			setupLog.Error(err, "Unable to start validation proxy")
 			os.Exit(1)
 		}

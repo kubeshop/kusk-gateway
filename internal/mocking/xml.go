@@ -29,10 +29,10 @@ import (
 )
 
 type mockedXmlRouteBuilder struct {
-	baseMockedRouteBuilder
+	*baseMockedRouteBuilder
 }
 
-func (m mockedXmlRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
+func (m *mockedXmlRouteBuilder) BuildMockedRoute(args *BuildMockedRouteArgs) (*route.Route, error) {
 	x, err := marshalXml(args.ExampleContent)
 	if err != nil {
 		return nil, err
