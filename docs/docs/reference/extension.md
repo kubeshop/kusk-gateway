@@ -251,8 +251,6 @@ The validation objects contain the following properties to configure automatic r
 
 See the [guide on Validation](../guides/validation.md) to learn more about this functionality.
 
-Note: Currently, `mocking` is incompatible with the `validation` option - the configuration deployment will fail if both are enabled.
-
 **Sample:**
 
 ```yaml
@@ -273,8 +271,6 @@ The validation objects contain the following properties to configure automatic r
 | `mocking.enabled`    | Boolean flag to enable mocking. |
 
 See the [guide on Mocking](../guides/mocking.md) to learn more about this functionality.
-
-Note: Currently `mocking` is incompatible with the `validation` option - the configuration deployment will fail if both are enabled.
 
 **Sample:**
 
