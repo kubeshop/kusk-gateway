@@ -53,5 +53,3 @@ paths:
                   type: integer
                   format: int32l
 ```
-
-Note: Currently, `mocking` is incompatible with the `validation` option, the configuration deployment will fail if both are enabled.
