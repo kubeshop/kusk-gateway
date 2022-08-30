@@ -171,7 +171,8 @@ kubectl apply -f ./api.yml
 **Note:**
 
 * The commands assume you are running Linux.
-* `192.168.49.2` is the `LoadBalancer` IP assigned to Envoy.
+* The Envoy Fleet is running in the `default` namespace, and the service is named `default`.
+* `192.168.49.2` is the `LoadBalancer` IP assigned to Envoy, _or_ you are port forwarding the admin port on the Envoy Fleet to `19000` using ``kubectl port-forward --namespace default service/default 19000:19000`.
 
 The secrets need to be part of the static Envoy Fleet configuration. The way to inject the `client_secret` and `hmac_secret` is as follows:
 

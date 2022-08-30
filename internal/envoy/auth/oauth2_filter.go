@@ -69,7 +69,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 			return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed on `arguments.EnvoyConfiguration.AddClusterWithTLS`, err=%w", err)
 		}
 	} else {
-		args.Logger.Info("auth.NewFilterHTTPOAuth2: already existing cluster", "cluster", cluster, "upstreamServiceHost", upstreamServiceHost, "upstreamServicePort", upstreamServicePort)
+		args.Logger.V(1).Info("auth.NewFilterHTTPOAuth2: already existing cluster", "cluster", cluster, "upstreamServiceHost", upstreamServiceHost, "upstreamServicePort", upstreamServicePort)
 	}
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{

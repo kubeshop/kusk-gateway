@@ -43,25 +43,25 @@ func NewCallbacks(cacheManager *cacheManager, logger logr.Logger) *Callbacks {
 }
 
 func (c *Callbacks) OnStreamOpen(ctx context.Context, id int64, typeUrl string) error {
-	c.logger.Info("OnStreamOpen", "id", id, "typeUrl", typeUrl)
+	c.logger.V(1).Info("OnStreamOpen", "id", id, "typeUrl", typeUrl)
 	return nil
 }
 func (c *Callbacks) OnStreamClosed(id int64) {
-	c.logger.Info("OnStreamClosed", "id", id)
+	c.logger.V(1).Info("OnStreamClosed", "id", id)
 }
 
 func (c *Callbacks) OnDeltaStreamOpen(ctx context.Context, id int64, typeUrl string) error {
-	c.logger.Info("OnDeltaStreamOpen", "id", id, "typeUrl", typeUrl)
+	c.logger.V(1).Info("OnDeltaStreamOpen", "id", id, "typeUrl", typeUrl)
 	return nil
 }
 
 func (c *Callbacks) OnDeltaStreamClosed(id int64) {
 	// `l.logger.V(1)` is effectively debug level.
-	c.logger.Info("OnDeltaStreamClosed", "id", id)
+	c.logger.V(1).Info("OnDeltaStreamClosed", "id", id)
 }
 
 func (c *Callbacks) OnStreamRequest(id int64, request *envoy_discovery_v3.DiscoveryRequest) error {
-	c.logger.Info("OnStreamRequest", "id", id, "request.TypeUrl", request.TypeUrl)
+	c.logger.V(1).Info("OnStreamRequest", "id", id, "request.TypeUrl", request.TypeUrl)
 	if c.cacheManager.IsNodeExist(request.Node.Id) {
 		return nil
 	}
@@ -75,23 +75,23 @@ func (c *Callbacks) OnStreamRequest(id int64, request *envoy_discovery_v3.Discov
 }
 
 func (c *Callbacks) OnStreamResponse(ctx context.Context, id int64, request *envoy_discovery_v3.DiscoveryRequest, response *envoy_discovery_v3.DiscoveryResponse) {
-	c.logger.Info("OnStreamResponse", "id", id, "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
+	c.logger.V(1).Info("OnStreamResponse", "id", id, "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
 }
 
 func (c *Callbacks) OnStreamDeltaResponse(id int64, request *envoy_discovery_v3.DeltaDiscoveryRequest, response *envoy_discovery_v3.DeltaDiscoveryResponse) {
-	c.logger.Info("OnStreamDeltaResponse", "id", id, "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
+	c.logger.V(1).Info("OnStreamDeltaResponse", "id", id, "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
 }
 
 func (c *Callbacks) OnStreamDeltaRequest(id int64, request *envoy_discovery_v3.DeltaDiscoveryRequest) error {
-	c.logger.Info("OnStreamDeltaRequest", "id", id, "request.TypeUrl", request.TypeUrl)
+	c.logger.V(1).Info("OnStreamDeltaRequest", "id", id, "request.TypeUrl", request.TypeUrl)
 	return nil
 }
 
 func (c *Callbacks) OnFetchRequest(ctx context.Context, request *envoy_discovery_v3.DiscoveryRequest) error {
-	c.logger.Info("OnFetchRequest", "request.TypeUrl", request.TypeUrl)
+	c.logger.V(1).Info("OnFetchRequest", "request.TypeUrl", request.TypeUrl)
 	return nil
 }
 
 func (c *Callbacks) OnFetchResponse(request *envoy_discovery_v3.DiscoveryRequest, response *envoy_discovery_v3.DiscoveryResponse) {
-	c.logger.Info("OnFetchResponse", "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
+	c.logger.V(1).Info("OnFetchResponse", "request.TypeUrl", request.TypeUrl, "response.TypeUrl", response.TypeUrl)
 }
