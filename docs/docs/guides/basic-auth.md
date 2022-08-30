@@ -1,6 +1,7 @@
 # Authentication
 
 Currently you can use any Header based authentication methods. This includes:
+
 - Basic Authentication
 - JWT Tokens
 - Bearer Tokens
@@ -40,7 +41,7 @@ paths:
       ..
 ```
 
-In the example, in the `hostname` section we're referencing an upstream service in our cluster that will handle request authentication. The flow is as follows: 
+In the example, in the `hostname` section we're referencing an upstream service in our cluster that will handle request authentication. The flow is as follows:
 
 ![kusk-gateway basic-auth diagram](./img/basic-auth.png)
 

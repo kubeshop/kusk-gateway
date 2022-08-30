@@ -1,0 +1,49 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: auth-oauth2-oauth0-authorization-code-grant
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: auth-oauth2-oauth0-authorization-code-grant
+      description: auth-oauth2-oauth0-authorization-code-grant
+      version: '0.1.0'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      upstream:
+        service:
+          name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+          namespace: default
+          port: 80
+      auth:
+        scheme: oauth2
+        oauth2:
+          token_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token
+          authorization_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/authorize
+          credentials:
+            client_id: upRN78W8GzV4TwFRp0ekZfLx2UnqJJs8
+            client_secret: Z6MX7NreJumWLmf6unsQ5uiEUrTBxfNtqG9Vy5Kjktnvfj-_fRCBO9EU1mL1YzAJ
+          redirect_uri: /oauth2/callback
+          redirect_path_matcher: /oauth2/callback
+          signout_path: /oauth2/signout
+          forward_bearer_token: true
+          auth_scopes:
+            - openid
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}

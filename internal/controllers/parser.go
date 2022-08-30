@@ -1,26 +1,25 @@
-/*
-MIT License
+// MIT License
+//
+// Copyright (c) 2022 Kubeshop
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-Copyright (c) 2022 Kubeshop
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
 package controllers
 
 import (
@@ -40,14 +39,15 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/auth"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
-	"github.com/kubeshop/kusk-gateway/pkg/parser"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
@@ -83,6 +83,8 @@ func UpdateConfigFromAPIOpts(
 	clBuilder *cloudentity.Builder,
 	name string,
 ) error {
+	logger := ctrl.Log.WithName("internal/controllers/parser.go")
+
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -95,11 +97,6 @@ func UpdateConfigFromAPIOpts(
 
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
-
-	// fetch auth service host and port once
-	// TODO: fetch kusk gateway auth service dynamically
-	var cloudEntityHostname string = "kusk-gateway-auth-service.kusk-system.svc.cluster.local."
-	var cloudEntityPort uint32 = 19000
 
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
@@ -148,51 +145,22 @@ func UpdateConfigFromAPIOpts(
 			}
 
 			if finalOpts.Auth != nil {
-				upstreamServiceHost := finalOpts.Auth.AuthUpstream.Host.Hostname
-				upstreamServicePort := finalOpts.Auth.AuthUpstream.Host.Port
-
-				clusterName := generateClusterName(upstreamServiceHost, upstreamServicePort)
-
-				var authHeaders []*envoy_config_core_v3.HeaderValue
-				if finalOpts.Auth.Scheme == "cloudentity" {
-					clBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, name, name, routePath, method)
-					authHeaders = []*envoy_config_core_v3.HeaderValue{
-						{
-							Key:   cloudentity.HeaderAuthorizerURL,
-							Value: fmt.Sprintf("https://%s:%d", upstreamServiceHost, upstreamServicePort),
-						},
-						{
-							Key:   cloudentity.HeaderAPIGroup,
-							Value: name,
-						},
-					}
-					upstreamServiceHost = cloudEntityHostname
-					upstreamServicePort = cloudEntityPort
-				}
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(
-						clusterName,
-						upstreamServiceHost,
-						upstreamServicePort,
-					)
-				}
-
-				pathPrefix := ""
-				if finalOpts.Auth.PathPrefix != nil {
-					pathPrefix = *finalOpts.Auth.PathPrefix
-				}
-
-				httpExternalAuthorizationFilter, err := config.NewHTTPExternalAuthorizationFilter(
-					upstreamServiceHost,
-					upstreamServicePort,
-					clusterName,
-					pathPrefix,
-					authHeaders,
+				logger.Info("parsing `auth` options", "finalOpts.Auth", fmt.Sprintf("%+#v", finalOpts.Auth))
+				arguments := auth.NewParseAuthOptionsArguments(
+					ctrl.Log,
+					envoyConfiguration,
+					httpConnectionManagerBuilder,
+					name,
+					routePath,
+					method,
+					clBuilder,
+					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 				)
+
+				err := auth.ParseAuthOptions(finalOpts, arguments)
 				if err != nil {
 					return err
 				}
-				httpConnectionManagerBuilder.AppendFilterHTTPExternalAuthorizationFilterToStart(httpExternalAuthorizationFilter)
 			}
 
 			// // Validate and Proxy to the upstream
@@ -404,12 +372,14 @@ func UpdateConfigFromAPIOpts(
 					}
 
 					if finalOpts.Auth == nil {
-						perRouteAuth, err := parser.RouteAuthzDisabled()
+						perRouteAuth, err := auth.RouteAuthzDisabled()
 						if err != nil {
 							return fmt.Errorf("cannot create per-route config to disable authorization: vh=%q, %w", string(vh), err)
 						}
 
 						rt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+
+						logger.Info("disabled `auth` for route", "finalOpts.Auth", finalOpts.Auth, "vh", fmt.Sprintf("%q", string(vh)))
 					}
 
 					if finalOpts.Validation == nil || finalOpts.Validation.Request == nil || finalOpts.Validation.Request.Enabled == nil || *finalOpts.Validation.Request.Enabled == false {
@@ -454,12 +424,14 @@ func UpdateConfigFromAPIOpts(
 					openapiRt.TypedPerFilterConfig = map[string]*any.Any{}
 				}
 
-				perRouteAuth, err := parser.RouteAuthzDisabled()
+				perRouteAuth, err := auth.RouteAuthzDisabled()
 				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: path=%q, %w", opts.OpenAPIPath, err)
+					return fmt.Errorf("cannot create per-route config to disable authorization: openapi-path=%q, %w", opts.OpenAPIPath, err)
 				}
 
 				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+
+				logger.Info("disabled `auth` for route", "openapi-path", opts.OpenAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
@@ -569,9 +541,9 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRoute
 			}
+
 			// For the list of vhosts that we create exactly THIS configuration for, update the routes
 			for _, vh := range opts.Hosts {
-
 				if err := envoyConfiguration.AddRouteToVHost(string(vh), rt); err != nil {
 					return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 				}

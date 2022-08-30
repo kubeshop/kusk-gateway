@@ -32,10 +32,13 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	cacheTypes "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/gofrs/uuid"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
@@ -130,37 +133,89 @@ func (e *EnvoyConfiguration) ClusterExist(name string) bool {
 // For the simplicity right now we don't support endpoints assignments separately, i.e. one cluster - one endpoint, not multiple load balanced
 // Cluster with the same name will be overwritten
 func (e *EnvoyConfiguration) AddCluster(clusterName, upstreamServiceHost string, upstreamServicePort uint32) {
-	upstreamEndpoint := &endpoint.ClusterLoadAssignment{
-		ClusterName: clusterName,
-		Endpoints: []*endpoint.LocalityLbEndpoints{{
-			LbEndpoints: []*endpoint.LbEndpoint{{
-				HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-					Endpoint: &endpoint.Endpoint{
-						Address: &core.Address{
-							Address: &core.Address_SocketAddress{
-								SocketAddress: &core.SocketAddress{
-									Protocol: core.SocketAddress_TCP,
-									Address:  upstreamServiceHost,
-									PortSpecifier: &core.SocketAddress_PortValue{
-										PortValue: upstreamServicePort,
-									},
-								},
-							},
-						},
-					},
-				},
-			}},
-		}},
-	}
+	loadAssignment := createLoadAssignment(clusterName, upstreamServiceHost, upstreamServicePort)
 
 	e.clusters[clusterName] = &cluster.Cluster{
 		Name:                 clusterName,
 		ConnectTimeout:       &durationpb.Duration{Seconds: 5},
 		ClusterDiscoveryType: &cluster.Cluster_Type{Type: cluster.Cluster_LOGICAL_DNS},
 		LbPolicy:             cluster.Cluster_ROUND_ROBIN,
-		LoadAssignment:       upstreamEndpoint,
+		LoadAssignment:       loadAssignment,
 		DnsLookupFamily:      cluster.Cluster_V4_ONLY,
 	}
+}
+
+// AddClusterWithTLS - AddCluster with SNI or rather `AutoSni` enabled`.
+// Example SNI : "kubeshop-kusk-gateway-oauth2.eu.auth0.com" -> "eu.auth0.com"
+func (e *EnvoyConfiguration) AddClusterWithTLS(clusterName, upstreamServiceHost string, upstreamServicePort uint32) error {
+	loadAssignment := createLoadAssignment(clusterName, upstreamServiceHost, upstreamServicePort)
+
+	upstreamTlsContext := &envoy_extensions_transport_sockets_tls_v3.UpstreamTlsContext{}
+	anyUpstreamTlsContext, err := anypb.New(upstreamTlsContext)
+	if err != nil {
+		return fmt.Errorf("EnvoyConfiguration.AddClusterWithTLS: failed on `anypb.New(upstreamTlsContext)`, %w", err)
+	}
+
+	transportSocket := &core.TransportSocket{
+		Name: "envoy.transport_sockets.tls",
+		ConfigType: &core.TransportSocket_TypedConfig{
+			TypedConfig: anyUpstreamTlsContext,
+		},
+	}
+
+	cluster := &cluster.Cluster{
+		Name:                 clusterName,
+		ConnectTimeout:       &durationpb.Duration{Seconds: 5},
+		ClusterDiscoveryType: &cluster.Cluster_Type{Type: cluster.Cluster_LOGICAL_DNS},
+		LbPolicy:             cluster.Cluster_ROUND_ROBIN,
+		LoadAssignment:       loadAssignment,
+		DnsLookupFamily:      cluster.Cluster_V4_ONLY,
+		TransportSocket:      transportSocket,
+		UpstreamHttpProtocolOptions: &core.UpstreamHttpProtocolOptions{
+			// Set transport socket `SNI <https://en.wikipedia.org/wiki/Server_Name_Indication>`_ for new
+			// upstream connections based on the downstream HTTP host/authority header or any other arbitrary
+			// header when :ref:`override_auto_sni_header <envoy_v3_api_field_config.core.v3.UpstreamHttpProtocolOptions.override_auto_sni_header>`
+			// is set, as seen by the :ref:`router filter <config_http_filters_router>`.
+			AutoSni: true,
+		},
+	}
+
+	if err := cluster.ValidateAll(); err != nil {
+		return fmt.Errorf("EnvoyConfiguration.AddClusterWithTLS: failed to validate cluster=%v, %w", cluster, err)
+	}
+
+	e.clusters[clusterName] = cluster
+
+	return nil
+}
+
+func createLoadAssignment(clusterName string, upstreamServiceHost string, upstreamServicePort uint32) *endpoint.ClusterLoadAssignment {
+	upstreamEndpoint := &endpoint.ClusterLoadAssignment{
+		ClusterName: clusterName,
+		Endpoints: []*endpoint.LocalityLbEndpoints{{
+			LbEndpoints: []*endpoint.LbEndpoint{
+				{
+					HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+						Endpoint: &endpoint.Endpoint{
+							Address: &core.Address{
+								Address: &core.Address_SocketAddress{
+									SocketAddress: &core.SocketAddress{
+										Protocol: core.SocketAddress_TCP,
+										Address:  upstreamServiceHost,
+										PortSpecifier: &core.SocketAddress_PortValue{
+											PortValue: upstreamServicePort,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}},
+	}
+
+	return upstreamEndpoint
 }
 
 func (e *EnvoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {

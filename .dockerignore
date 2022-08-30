@@ -8,3 +8,7 @@ deploy/
 .idea
 .vscode
 docker-compose.yaml
+.tmp
+.tmp/
+.github
+.github/

@@ -102,7 +102,8 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 
 	if err := envconfig.Process("manager", &config); err != nil {
-		panic(fmt.Errorf("unable to process config %w", err))
+		fmt.Fprintln(os.Stderr, fmt.Errorf("unable to process config, %w", err))
+		os.Exit(1)
 	}
 
 	fmt.Println(config)
@@ -111,7 +112,7 @@ func init() {
 func initLogger(development bool, level string) (logr.Logger, error) {
 	var l zapcore.Level
 	if err := l.UnmarshalText([]byte(level)); err != nil {
-		return logr.Logger{}, fmt.Errorf("unable to determine log level: %w", err)
+		return logr.Logger{}, fmt.Errorf("unable to determine log level, level=%q: %w", level, err)
 	}
 
 	var config zap.Config
@@ -210,7 +211,7 @@ func initWebhookCerts(ctx context.Context, webhookCertsDir string, webhookServer
 func main() {
 	logger, err := initLogger(false, config.LogLevel)
 	if err != nil {
-		_ = fmt.Errorf("unable to init logger: %w", err)
+		fmt.Fprintln(os.Stderr, fmt.Errorf("unable to initialise logger: %w", err))
 		os.Exit(1)
 	}
 	ctrl.SetLogger(logger)
@@ -236,7 +237,7 @@ func main() {
 	}
 
 	// Envoy configuration manager (XDS service)
-	envoyManager := manager.New(ctx, config.EnvoyControlPlaneAddr, nil)
+	envoyManager := manager.NewEnvoyConfigManager(ctx, config.EnvoyControlPlaneAddr, logger)
 	go func() {
 		setupLog.Info("Starting Envoy xDS API Server")
 		if err := envoyManager.Start(); err != nil {

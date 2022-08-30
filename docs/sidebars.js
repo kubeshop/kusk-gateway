@@ -67,6 +67,7 @@ const sidebars = {
         "guides/routing",
         "guides/rate-limit",
         "guides/basic-auth",
+        "guides/oauth2",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",

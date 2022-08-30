@@ -246,6 +246,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 			},
 		},
 	}
+
 	return nil
 }
 
@@ -301,48 +302,3 @@ func envoyFleetAsOwner(cr *gateway.EnvoyFleet) metav1.OwnerReference {
 func labelSelectors(labels map[string]string) *metav1.LabelSelector {
 	return &metav1.LabelSelector{MatchLabels: labels}
 }
-
-var envoyConfigTemplate = `
-node:
-  cluster: %s
-
-dynamic_resources:
-  ads_config:
-    api_type: GRPC
-    transport_api_version: V3
-    grpc_services:
-    - envoy_grpc:
-        cluster_name: xds_cluster
-  cds_config:
-    resource_api_version: V3
-    ads: {}
-  lds_config:
-    resource_api_version: V3
-    ads: {}
-
-static_resources:
-  clusters:
-  - type: STRICT_DNS
-    typed_extension_protocol_options:
-      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-        explicit_http_config:
-          http2_protocol_options: {}
-    name: xds_cluster
-    load_assignment:
-      cluster_name: xds_cluster
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: %s
-                port_value: %d
-
-admin:
-  address:
-    socket_address:
-      address: 0.0.0.0
-      port_value: 19000
-
-`

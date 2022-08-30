@@ -13,6 +13,7 @@ PROTOC_GEN_GO := ${BINARIES_DIR}/protoc-gen-go
 PROTOC_GEN_GO_GRPC := ${BINARIES_DIR}/protoc-gen-go-grpc
 ENVTEST := ${BINARIES_DIR}/setup-envtest
 KTUNNEL := ${BINARIES_DIR}/ktunnel
+STERN := $(shell go env GOPATH)/bin/stern
 
 VERSION ?= $(shell git describe --tags)
 
@@ -43,7 +44,7 @@ LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$(VERSION)'
 # https://github.com/kubeshop/kusk-gateway/issues/431
 LD_FLAGS += -s -w
 
-export DOCKER_BUILDKIT 	?=	1
+export DOCKER_BUILDKIT ?= 1
 
 .PHONY: all
 all: build
@@ -66,6 +67,44 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
+
+ifeq ($(shell uname -s),Linux)
+  DOCS_PREVIEWER := xdg-open
+else ifeq ($(shell uname -s),Darwin)
+  DOCS_PREVIEWER := open
+else
+  $(error unsupported system: $(shell uname -s))
+endif
+
+.PHONY: docs-preview
+docs-preview: ## Preview the documentation
+	{ cd docs; npm install; ${DOCS_PREVIEWER} http://localhost:3000; npm start & }; wait
+
+.PHONY: tail-logs
+tail-logs: $(STERN) ## Tail logs of all containers across all namespaces
+	stern --all-namespaces --selector app.kubernetes.io/name
+
+.PHONY: tail-xds
+tail-xds: ## Tail logs of kusk-manager
+	kubectl logs --follow --namespace kusk-system services/kusk-gateway-xds-service
+
+.PHONY: tail-envoyfleet
+tail-envoyfleet: ## Tail logs of envoy
+	kubectl logs --follow --namespace default service/default
+
+.PHONY: enable-logging
+enable-logging: ## Set some particular logger's level
+	kubectl port-forward --namespace default service/default 19000:19000 &
+	curl -X POST "http://localhost:19000/logging?http=trace"
+	curl -X POST "http://localhost:19000/logging?http2=trace"
+	curl -X POST "http://localhost:19000/logging?secret=trace"
+	curl -X POST "http://localhost:19000/logging?grpc=trace"
+	curl -X POST "http://localhost:19000/logging?conn_handler=trace"
+	curl -X POST "http://localhost:19000/logging?connection=trace"
+	curl -X POST "http://localhost:19000/logging?envoy_bug=trace"
+	curl -X POST "http://localhost:19000/logging?backtrace=trace"
+	curl -X POST "http://localhost:19000/logging?assert=trace"
+	curl -X POST "http://localhost:19000/logging?admin=trace"
 
 .PHONY: dev-update
 dev-update: docker-build update cycle deploy-envoyfleet ## Update cluster with local changes (usually after you have modified the code).
@@ -106,14 +145,6 @@ test: manifests generate fmt vet $(ENVTEST) ## Run tests.
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
 	development/testing/runtest.sh all delete
 
-
-.PHONY: docker-images-cache
-docker-images-cache: ## Saves locally frequently used container images and uploads them to Minikube to speed up the development.
-	docker pull gcr.io/distroless/static:nonroot
-	docker pull docker.io/golang:1.17
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true gcr.io/distroless/static:nonroot --profile kgw
-	minikube image load --pull=false --remote=false --overwrite=false --daemon=true docker.io/golang:1.17 --profile kgw
-
 ##@ Build
 
 .PHONY: build
@@ -127,14 +158,10 @@ run: $(KTUNNEL) install-local generate fmt vet ## Run a controller from your hos
 
 .PHONY: docker-build-manager
 docker-build-manager: ## Build docker image with the manager.
-	@eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
+	eval $$(minikube docker-env --profile kgw); docker build -t ${MANAGER_IMG} -f ./build/manager/Dockerfile .
 
 .PHONY: docker-build
 docker-build: docker-build-manager ## Build docker images for all apps
-
-.PHONY: docker-build-manager-debug
-docker-build-manager-debug: ## Build docker image with the manager and debugger.
-	@eval $$(minikube docker-env --profile kgw); docker build -t "${MANAGER_IMG}-debug" -f ./build/manager/Dockerfile-debug .
 
 ##@ Deployment
 
@@ -175,9 +202,6 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 .PHONY: update
 update: docker-build-manager deploy cycle ## Runs deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
 
-.PHONY: update-debug
-update-debug: docker-build-manager-debug deploy-debug cycle ## Runs Debug configuration deploy, docker build and restarts kusk-gateway-manager deployment to pick up the change
-
 .PHONY: cycle
 cycle: ## Triggers kusk-gateway-manager deployment rollout restart to pick up the new container image with the same tag
 	kubectl rollout restart deployment/kusk-gateway-manager -n kusk-system
@@ -194,6 +218,10 @@ $(KUSTOMIZE): ## Download kustomize locally if necessary.
 
 $(CONTROLLER_GEN): ## Download controller-gen locally if necessary.
 	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
+
+$(STERN): ## Download stern (https://github.com/stern/stern) locally if necessary.
+	go install github.com/stern/stern@latest
+	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
 
 # Protoc and friends installation and generation
 $(PROTOC):
@@ -219,9 +247,6 @@ ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
-
-run-docs:
-	docker-compose -f docs/docker-compose.yml up
 
 .PHONY: tools
 tools: $(KTUNNEL) $(ENVTEST) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_GO) $(PROTOC) $(CONTROLLER_GEN) $(KUSTOMIZE) ## Install all tools
