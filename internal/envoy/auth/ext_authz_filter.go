@@ -25,7 +25,6 @@ package auth
 import (
 	"fmt"
 
-	// xds_core_v3 "github.com/cncf/xds/go/xds/core/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 

@@ -23,7 +23,6 @@
 package auth
 
 import (
-	// xds_core_v3 "github.com/cncf/xds/go/xds/core/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
