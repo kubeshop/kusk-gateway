@@ -172,7 +172,7 @@ kubectl apply -f ./api.yml
 
 * The commands assume you are running Linux.
 * The Envoy Fleet is running in the `default` namespace, and the service is named `default`.
-* `192.168.49.2` is the `LoadBalancer` IP assigned to Envoy, _or_ you are port forwarding the admin port on the Envoy Fleet to `19000` using ``kubectl port-forward --namespace default service/default 19000:19000`.
+* `192.168.49.2` is the `LoadBalancer` IP assigned to Envoy, _or_ you are port forwarding the admin port on the Envoy Fleet to `19000` using `kubectl port-forward --namespace default deployments/default 19000:19000`.
 
 The secrets need to be part of the static Envoy Fleet configuration. The way to inject the `client_secret` and `hmac_secret` is as follows:
 
@@ -188,11 +188,11 @@ The secrets need to be part of the static Envoy Fleet configuration. The way to 
 
 And modify `inline_string`.
 
-2. Port forward the admin port: `kubectl port-forward --namespace default service/default 19000:19000 &`
-3. Restart Envoy by using `curl -X POST 'http: //localhost:19000/quitquitquit'`.
+2. Port forward the admin port: `kubectl port-forward --namespace default deployments/default 19000:19000`
+3. Restart Envoy by using `curl -X POST 'http://localhost:19000/quitquitquit'`.
 4. Wait until the changes to be propogated, this could take a while.
 5. Delete and create the API again using `kubectl delete -f ./api.yml && kubectl apply -f ./api.yml`
-6. Navigate to the protected route(s) in a browser, i.e., <http://localhost/uuid> or <https://localhost/uuid>.
+6. Navigate to the protected route(s) in a browser, i.e., <http://localhost/uuid> or <https://localhost/uuid>. **Note:** Replace `localhost` with whatever the `Envoy_LoadBalancer_IP` is, when you've deployed `kusk-gateway` using `minikube`.
 
 The commands are listed below:
 
@@ -201,7 +201,9 @@ $ kubectl edit configmap/default
 $ curl -X POST 'http: //localhost:19000/quitquitquit'
 OK
 $ kubectl delete -f ./api.yml && kubectl apply -f ./api.yml
-$ # Open http://localhost/uuid or https://localhost/uuid in a browser.
+$ # Open http://Envoy_LoadBalancer_IP/uuid or https://Envoy_LoadBalancer_IP/uuid
+  # or http://localhost/uuid or https://localhost/uuid in a browser. Depending on
+  # how you deployed `kusk-gateway`
 ```
 
 ### Complete End-2-End Run
