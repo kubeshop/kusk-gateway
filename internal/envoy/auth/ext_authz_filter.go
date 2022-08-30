@@ -36,7 +36,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func NewFilterHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string, authHeaders []*envoy_config_core_v3.HeaderValue) (*anypb.Any, error) {
+func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string, authHeaders []*envoy_config_core_v3.HeaderValue) (*anypb.Any, error) {
 	// https://github.com/envoyproxy/envoy/tree/main/examples/ext_authz
 	// https://github.com/envoyproxy/envoy/blob/main/docs/root/configuration/http/http_filters/ext_authz_filter.rst
 	// https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter#config-http-filters-ext-authz
@@ -96,27 +96,18 @@ func NewFilterHTTPExternalAuthorizationFilter(upstreamHostname string, upstreamP
 	services := &envoy_extensions_filter_http_ext_authz_v3.ExtAuthz_HttpService{
 		HttpService: httpService,
 	}
-	// withRequestBody := &envoy_extensions_filter_http_ext_authz_v3.BufferSettings{
-	// 	MaxRequestBytes:     10,
-	// 	AllowPartialMessage: true,
-	// 	PackAsBytes:         true,
-	// }
+
 	authorization := &envoy_extensions_filter_http_ext_authz_v3.ExtAuthz{
 		Services:               services,
 		TransportApiVersion:    TransportApiVersion,
 		IncludePeerCertificate: true,
-		// WithRequestBody:        withRequestBody,
 		StatusOnError: &envoy_type_v3.HttpStatus{
 			Code: envoy_type_v3.StatusCode_ServiceUnavailable,
 		},
-		// // Pretty sure we always want this. Why have an
-		// // external auth service if it is not going to affect
-		// // routing decisions?
-		// ClearRouteCache: false,
 	}
 	anyAuthorization, err := anypb.New(authorization)
 	if err != nil {
-		return nil, fmt.Errorf("auth.NewFilterHTTPExternalAuthorizationFilter: cannot marshal authorization=%+v configuration: %w", authorization, err)
+		return nil, fmt.Errorf("auth.NewFilterHTTPExternalAuthorization: cannot marshal authorization=%+v configuration: %w", authorization, err)
 	}
 
 	return anyAuthorization, nil

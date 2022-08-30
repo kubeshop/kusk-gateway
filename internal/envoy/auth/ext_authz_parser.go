@@ -76,7 +76,7 @@ func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *p
 		pathPrefix = *authUpstreamOptions.PathPrefix
 	}
 
-	typedConfig, err := NewFilterHTTPExternalAuthorizationFilter(
+	typedConfig, err := NewFilterHTTPExternalAuthorization(
 		upstreamServiceHost,
 		upstreamServicePort,
 		clusterName,

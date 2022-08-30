@@ -170,7 +170,7 @@ kubectl apply -f ./api.yml
 
 **Note:**
 
-* The commands assume you are Linux.
+* The commands assume you are running Linux.
 * `192.168.49.2` is the `LoadBalancer` IP assigned to Envoy.
 
 The secrets need to be part of the static Envoy Fleet configuration. The way to inject the `client_secret` and `hmac_secret` is as follows:
@@ -182,24 +182,25 @@ The secrets need to be part of the static Envoy Fleet configuration. The way to 
   - name: token
     generic_secret:
       secret:
-        inline_string: "Z6MX7NreJumWLmf6unsQ5uiEUrTBxfNtqG9Vy5Kjktnvfj-_fRCBO9EU1mL1YzAJ"
+        inline_string: "<stub_token_secret>"
 ```
 
 And modify `inline_string`.
 
-2. Restart Envoy by using `curl -X POST 'http: //192.168.49.2:19000/quitquitquit'`.
-3. Wait until the changes to be propogated, this could take a while.
-4. Delete and create the API again using `kubectl delete -f ./api.yml && kubectl apply -f ./api.yml`
-5. Navigate to the protected route(s) in a browser, i.e., <http://192.168.49.2/uuid> or <https://192.168.49.2/uuid>.
+2. Port forward the admin port: `kubectl port-forward --namespace default service/default 19000:19000 &`
+3. Restart Envoy by using `curl -X POST 'http: //localhost:19000/quitquitquit'`.
+4. Wait until the changes to be propogated, this could take a while.
+5. Delete and create the API again using `kubectl delete -f ./api.yml && kubectl apply -f ./api.yml`
+6. Navigate to the protected route(s) in a browser, i.e., <http://localhost/uuid> or <https://localhost/uuid>.
 
 The commands are listed below:
 
 ```sh
 $ kubectl edit configmap/default
-$ curl -X POST 'http: //192.168.49.2:19000/quitquitquit'
+$ curl -X POST 'http: //localhost:19000/quitquitquit'
 OK
 $ kubectl delete -f ./api.yml && kubectl apply -f ./api.yml
-$ # Open http://192.168.49.2/uuid or https://192.168.49.2/uuid in a browser.
+$ # Open http://localhost/uuid or https://localhost/uuid in a browser.
 ```
 
 ### Complete End-2-End Run

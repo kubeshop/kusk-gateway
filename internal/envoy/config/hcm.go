@@ -244,7 +244,7 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 				RequestTimeout:            durationpb.New(defaultRequestTimeout),
 				SetNodeOnFirstMessageOnly: true,
 				GrpcServices: []*envoy_core_v3.GrpcService{
-					GrpcService(cluster, "", defaultResponseTimeout),
+					makeGrpcService(cluster, "", defaultResponseTimeout),
 				},
 			},
 		},
@@ -253,17 +253,12 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 	return source
 }
 
-// GRPCService returns a envoy_core_v3.GrpcService for the given parameters.
-func GrpcService(clusterName, sni string, timeout time.Duration) *envoy_core_v3.GrpcService {
-	// authority := strings.ReplaceAll(clusterName, "/", ".")
-	// if sni != "" {
-	// 	authority = sni
-	// }
+// GRPCService returns a envoy_core_v3.makeGrpcService for the given parameters.
+func makeGrpcService(clusterName, sni string, timeout time.Duration) *envoy_core_v3.GrpcService {
 	return &envoy_core_v3.GrpcService{
 		TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 			EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 				ClusterName: clusterName,
-				// Authority:   authority,
 			},
 		},
 		Timeout: durationpb.New(timeout),

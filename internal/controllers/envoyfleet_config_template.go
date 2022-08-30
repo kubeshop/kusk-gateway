@@ -45,7 +45,7 @@ static_resources:
   - name: token
     generic_secret:
       secret:
-        inline_string: "Z6MX7NreJumWLmf6unsQ5uiEUrTBxfNtqG9Vy5Kjktnvfj-_fRCBO9EU1mL1YzAJ"
+        inline_string: "<stub_token_secret>"
   - name: hmac
     generic_secret:
       secret:

@@ -94,16 +94,17 @@ tail-envoyfleet: ## Tail logs of envoy
 
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?http=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?http2=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?secret=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?grpc=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?conn_handler=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?connection=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?envoy_bug=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?backtrace=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?assert=trace"
-	curl -X POST "http://$(shell minikube ip --profile kgw):19000/logging?admin=trace"
+	kubectl port-forward --namespace default service/default 19000:19000 &
+	curl -X POST "http://localhost:19000/logging?http=trace"
+	curl -X POST "http://localhost:19000/logging?http2=trace"
+	curl -X POST "http://localhost:19000/logging?secret=trace"
+	curl -X POST "http://localhost:19000/logging?grpc=trace"
+	curl -X POST "http://localhost:19000/logging?conn_handler=trace"
+	curl -X POST "http://localhost:19000/logging?connection=trace"
+	curl -X POST "http://localhost:19000/logging?envoy_bug=trace"
+	curl -X POST "http://localhost:19000/logging?backtrace=trace"
+	curl -X POST "http://localhost:19000/logging?assert=trace"
+	curl -X POST "http://localhost:19000/logging?admin=trace"
 
 .PHONY: dev-update
 dev-update: docker-build update cycle deploy-envoyfleet ## Update cluster with local changes (usually after you have modified the code).

@@ -50,13 +50,6 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		return nil, err
 	}
 
-	// // cluster := "kubeshop-kusk-gateway-oauth2.eu.auth0.com"
-	// cluster := "eu.auth0.com"
-	// sni := "eu.auth0.com"
-	// // sni := "kubeshop-kusk-gateway-oauth2.eu.auth0.com"
-	// // upstreamServiceHost := "kubeshop-kusk-gateway-oauth2.eu.auth0.com"
-	// upstreamServiceHost := "eu.auth0.com"
-
 	cluster := url.Hostname()
 	upstreamServiceHost := url.Hostname()
 	upstreamServicePort := uint32(443)
@@ -75,24 +68,14 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		if err != nil {
 			return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed on `arguments.EnvoyConfiguration.AddClusterWithTLS`, err=%w", err)
 		}
-		// args.EnvoyConfiguration.AddCluster(cluster, upstreamServiceHost, upstreamServicePort)
 	} else {
-		fmt.Println("----------------")
-		fmt.Printf("auth.NewFilterHTTPOAuth2\n")
-		fmt.Println("")
-		fmt.Printf("cluster=%q exists\n", cluster)
-		fmt.Printf("upstreamServiceHost=%q\n", upstreamServiceHost)
-		fmt.Printf("upstreamServicePort=%v\n", upstreamServicePort)
-		fmt.Printf("cluster=%q\n", cluster)
-		// fmt.Printf("sni=%q\n", sni)
-		fmt.Println("----------------")
+		args.Logger.Info("auth.NewFilterHTTPOAuth2: already existing cluster", "cluster", cluster, "upstreamServiceHost", upstreamServiceHost, "upstreamServicePort", upstreamServicePort)
 	}
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
 		Cluster: cluster,
 	}
 	tokenEndpoint := &envoy_config_core_v3.HttpUri{
-		// Uri:              "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token",
 		Uri:              oauth2Options.TokenEndpoint,
 		HttpUpstreamType: httpUpstreamType,
 		Timeout:          TimeoutDefault(),
@@ -101,43 +84,11 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 
 	tokenSecret := &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
 		Name: "token",
-		// SdsConfig: &envoy_config_core_v3.ConfigSource{
-		// 	Authorities:         authorities,
-		// 	ResourceApiVersion:  ResourceApiVersion,
-		// 	InitialFetchTimeout: TimeoutDefault(),
-		// 	ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_PathConfigSource{
-		// 		PathConfigSource: &envoy_config_core_v3.PathConfigSource{
-		// 			Path: "/etc/envoy/envoy.yaml",
-		// 			WatchedDirectory: &envoy_config_core_v3.WatchedDirectory{
-		// 				Path: "/etc/envoy",
-		// 			},
-		// 		},
-		// 	},
-		// 	// 	ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Path{
-		// 	// 		Path: "/etc/envoy/token-secret.yaml.yaml",
-		// 	// 	},
-		// },
 	}
 
 	tokenFormation := &envoy_extensions_filter_http_oauth2_v3.OAuth2Credentials_HmacSecret{
 		HmacSecret: &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
 			Name: "hmac",
-			// SdsConfig: &envoy_config_core_v3.ConfigSource{
-			// 	Authorities:         authorities,
-			// 	ResourceApiVersion:  ResourceApiVersion,
-			// 	InitialFetchTimeout: TimeoutDefault(),
-			// 	ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_PathConfigSource{
-			// 		PathConfigSource: &envoy_config_core_v3.PathConfigSource{
-			// 			Path: "/etc/envoy/envoy.yaml",
-			// 			WatchedDirectory: &envoy_config_core_v3.WatchedDirectory{
-			// 				Path: "/etc/envoy",
-			// 			},
-			// 		},
-			// 	},
-			// 	// 	ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Path{
-			// 	// 		Path: "/etc/envoy/hmac-secret.yaml",
-			// 	// 	},
-			// },
 		},
 	}
 	credentials := &envoy_extensions_filter_http_oauth2_v3.OAuth2Credentials{
@@ -152,14 +103,11 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		TokenFormation: tokenFormation,
 	}
 
-	// Becomes: "http://192.168.49.2/oauth2/callback"
+	// For example, `redirectUri` becomes "http://192.168.49.2/oauth2/callback"
 	redirectUri := fmt.Sprintf("%s://%s%s", "%REQ(x-forwarded-proto)%", "%REQ(:authority)%", oauth2Options.RedirectURI)
 	redirectPathMatcher := PathMatcherExact(oauth2Options.RedirectPathMatcher, false)
 	signoutPath := PathMatcherExact(oauth2Options.SignoutPath, false)
 	forwardBearerToken := oauth2Options.ForwardBearerToken
-	// passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{
-	// 	{},
-	// }
 	authScopes := oauth2Options.AuthScopes
 	resources := oauth2Options.Resources
 

@@ -37,6 +37,7 @@ func TimeoutDefault() *durationpb.Duration {
 	return &durationpb.Duration{
 		Seconds: 16,
 	}
+	// Intentionally kept the code below commented out to serve as future documentation.
 	// // Envoy will wait indefinitely for the first xDS config.
 	// return durationpb.New(time.Second * 0)
 }

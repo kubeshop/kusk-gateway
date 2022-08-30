@@ -163,7 +163,7 @@ func (e *EnvoyConfiguration) AddClusterWithTLS(clusterName, upstreamServiceHost 
 		},
 	}
 
-	e.clusters[clusterName] = &cluster.Cluster{
+	cluster := &cluster.Cluster{
 		Name:                 clusterName,
 		ConnectTimeout:       &durationpb.Duration{Seconds: 5},
 		ClusterDiscoveryType: &cluster.Cluster_Type{Type: cluster.Cluster_LOGICAL_DNS},
@@ -172,9 +172,19 @@ func (e *EnvoyConfiguration) AddClusterWithTLS(clusterName, upstreamServiceHost 
 		DnsLookupFamily:      cluster.Cluster_V4_ONLY,
 		TransportSocket:      transportSocket,
 		UpstreamHttpProtocolOptions: &core.UpstreamHttpProtocolOptions{
+			// Set transport socket `SNI <https://en.wikipedia.org/wiki/Server_Name_Indication>`_ for new
+			// upstream connections based on the downstream HTTP host/authority header or any other arbitrary
+			// header when :ref:`override_auto_sni_header <envoy_v3_api_field_config.core.v3.UpstreamHttpProtocolOptions.override_auto_sni_header>`
+			// is set, as seen by the :ref:`router filter <config_http_filters_router>`.
 			AutoSni: true,
 		},
 	}
+
+	if err := cluster.ValidateAll(); err != nil {
+		return fmt.Errorf("EnvoyConfiguration.AddClusterWithTLS: failed to validate cluster=%v, %w", cluster, err)
+	}
+
+	e.clusters[clusterName] = cluster
 
 	return nil
 }

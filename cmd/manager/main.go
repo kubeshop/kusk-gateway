@@ -77,7 +77,7 @@ type managerConfig struct {
 	ProbeAddr             string `envconfig:"HEALTH_PROBE_BIND_ADDR" default:":8081"`
 	EnvoyControlPlaneAddr string `envconfig:"ENVOY_CONTROL_PLANE_BIND_ADDR" default:":18000"`
 	EnableLeaderElection  bool   `envconfig:"ENABLE_LEADER_ELECTION" default:"false"`
-	LogLevel              string `envconfig:"LOG_LEVEL" default:"DEBUG"`
+	LogLevel              string `envconfig:"LOG_LEVEL" default:"INFO"`
 	WebhookCertsDir       string `envconfig:"WEBHOOK_CERTS_DIR" default:"/opt/manager/webhook/certs"`
 	AnalyticsEnabled      string `envconfig:"ANALYTICS_ENABLED" default:"true"`
 }
