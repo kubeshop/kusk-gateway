@@ -33,7 +33,7 @@ const (
 	TransportApiVersion = envoy_config_core_v3.ApiVersion_V3
 )
 
-func TimeoutDefault() *durationpb.Duration {
+func timeoutDefault() *durationpb.Duration {
 	return &durationpb.Duration{
 		Seconds: 16,
 	}

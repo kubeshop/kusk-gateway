@@ -1,7 +1,3 @@
-.PHONY: update-client_secret
-update-client_secret:
-	echo 'TODO(MBana): Update `client_secret` in the envoy config.'
-
 .PHONY: recreate-api
 recreate-api:
 	-kubectl delete -f ./api.yaml

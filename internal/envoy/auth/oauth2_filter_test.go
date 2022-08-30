@@ -23,7 +23,6 @@
 package auth
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,15 +34,14 @@ func TestGenerateHMAC(t *testing.T) {
 
 	hmac1, err := GenerateHMAC()
 	assert.NoError(err)
-	// Assert that it 32 bytes long
 	assert.NotEqual("", hmac1)
-	fmt.Println(hmac1)
+	// Assert that it 32 bytes long
 	assert.Len(hmac1, 44)
 
 	hmac2, err := GenerateHMAC()
 	assert.NoError(err)
-	// Assert that it 32 bytes long
 	assert.NotEqual("", hmac2)
+	// Assert that it 32 bytes long
 	assert.Len(hmac2, 44)
 
 	// Assert that the first and second are different

@@ -78,7 +78,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	tokenEndpoint := &envoy_config_core_v3.HttpUri{
 		Uri:              oauth2Options.TokenEndpoint,
 		HttpUpstreamType: httpUpstreamType,
-		Timeout:          TimeoutDefault(),
+		Timeout:          timeoutDefault(),
 	}
 	authorizationEndpoint := oauth2Options.AuthorizationEndpoint
 
@@ -143,6 +143,10 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	oAuth2 := &envoy_extensions_filter_http_oauth2_v3.OAuth2{
 		// Leave this empty to disable OAuth2 for a specific route, using per filter config.
 		Config: config,
+	}
+
+	if err := oAuth2.ValidateAll(); err != nil {
+		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed to validate oAuth2=%+#v, %w", oAuth2, err)
 	}
 
 	anyOAuth2, err := anypb.New(oAuth2)
