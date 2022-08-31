@@ -28,8 +28,11 @@ check-openapi-path:
 check-auth_oauth2:
 	kubectl apply -f ../examples/auth/oauth2/authorization-code-grant/manifests.yaml
 	kubectl wait deployment --namespace default auth-oauth2-oauth0-authorization-code-grant-go-httpbin --for condition=Available=True --timeout=3m
+	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-check-auth_oauth2.pid
+	sleep 2
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 	kubectl delete -f ../examples/auth/oauth2/authorization-code-grant/manifests.yaml
+	bash -c "trap 'pkill -F /tmp/kube-port-forward-check-auth_oauth2.pid' SIGINT SIGTERM ERR EXIT"
 
 sandbox:
 	@docker build samples/hello-world/hello-world-container/ -t localhost:50000/hello-world:smoke

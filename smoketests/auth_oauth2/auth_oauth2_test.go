@@ -28,7 +28,9 @@ package auth_oauth2
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -83,7 +85,7 @@ func (t *AuthOAuth2TestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 5 * time.Second
+	duration := 4 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
 	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
@@ -136,6 +138,45 @@ func (t *AuthOAuth2TestSuite) TestRootPathReturnsARedirect() {
 	redirect, err := response.Location()
 	t.NoError(err)
 	t.Contains(redirect.String(), redirectExpected)
+}
+
+func (t *AuthOAuth2TestSuite) TestSecretsAreDynamicActiveSecrets() {
+	t.T().Skipf("Skipping %s due to potential Envoy bug", t.T().Name())
+
+	const ExpectedDynamicActiveSecretsCount = 4
+
+	// 1. Secrets should appear as `dynamic_active_secrets` and not as `dynamic_warming_secrets` in the admin `/config_dump` page.
+	// 2. There should be a total of 4 secrets.
+
+	url := "http://localhost:19000/"
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	t.NoError(err)
+
+	client := makeHTTPClient()
+	response, err := client.Do(request)
+	t.NoError(err)
+	t.Equal(http.StatusOK, response.StatusCode)
+
+	defer func() {
+		t.NoError(response.Body.Close())
+	}()
+
+	responseBody, err := io.ReadAll(response.Body)
+	t.NoError(err)
+
+	body := map[string][]interface{}{}
+	t.NoError(json.Unmarshal(responseBody, &body))
+
+	configs := body["configs"]
+	t.Len(configs, 1)
+
+	config := configs[0]
+	t.T().Logf("config=%+v\n", config)
+
+	// Ensure that all secrets appear under `dynamic_active_secrets` and that there are no `dynamic_warming_secrets`
+	// TODO(MBana): I've intentionally left this code commented out.
+	// dynamicActiveSecrets := []interface{}{}
+	// t.Len(dynamicActiveSecrets, ExpectedDynamicActiveSecretsCount)
 }
 
 func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {

@@ -267,15 +267,16 @@ func main() {
 	}()
 
 	secretsChan := make(chan *corev1.Secret)
-	controllerConfigManager := controllers.KubeEnvoyConfigManager{
-		Client:             mgr.GetClient(),
-		Scheme:             mgr.GetScheme(),
-		EnvoyManager:       envoyManager,
-		Validator:          proxy,
-		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
-		WatchedSecretsChan: secretsChan,
-		OpenApiParser:      spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}),
-	}
+
+	controllerConfigManager := controllers.NewKubeEnvoyConfigManager(
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		envoyManager,
+		proxy,
+		secretsChan,
+		map[string]gateway.EnvoyFleetID{},
+		spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}),
+	)
 
 	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
 	heartBeat(ctx, controllerConfigManager.Client)
@@ -294,7 +295,7 @@ func main() {
 	if err = (&controllers.EnvoyFleetReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		ConfigManager: &controllerConfigManager,
+		ConfigManager: controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "EnvoyFleet").
@@ -316,7 +317,7 @@ func main() {
 	if err = (&controllers.APIReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		ConfigManager: &controllerConfigManager,
+		ConfigManager: controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "API").
@@ -332,7 +333,7 @@ func main() {
 	if err = (&controllers.StaticRouteReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		ConfigManager: &controllerConfigManager,
+		ConfigManager: controllerConfigManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.
 			WithValues("controller", "StaticRoute").

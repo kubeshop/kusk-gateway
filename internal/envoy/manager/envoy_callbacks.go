@@ -21,6 +21,8 @@
 // SOFTWARE.
 
 // Callbacks are called by GRPC server on new events.
+//
+// `l.logger.V(1)` is effectively debug level.
 package manager
 
 import (
@@ -56,21 +58,11 @@ func (c *Callbacks) OnDeltaStreamOpen(ctx context.Context, id int64, typeUrl str
 }
 
 func (c *Callbacks) OnDeltaStreamClosed(id int64) {
-	// `l.logger.V(1)` is effectively debug level.
 	c.logger.V(1).Info("OnDeltaStreamClosed", "id", id)
 }
 
 func (c *Callbacks) OnStreamRequest(id int64, request *envoy_discovery_v3.DiscoveryRequest) error {
-	c.logger.V(1).Info("OnStreamRequest", "id", id, "request.TypeUrl", request.TypeUrl)
-	if c.cacheManager.IsNodeExist(request.Node.Id) {
-		return nil
-	}
-
-	if err := c.cacheManager.setNodeSnapshot(request.Node.Id, request.Node.Cluster); err != nil {
-		c.logger.Error(err, "OnStreamRequest", "id", id, "request.TypeUrl", request.TypeUrl)
-		return err
-	}
-
+	c.logger.Info("OnStreamRequest", "id", id, "request.TypeUrl", request.TypeUrl, "request.Node.Cluster", request.Node.Cluster, "request.Node.Id", request.Node.Id)
 	return nil
 }
 

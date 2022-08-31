@@ -28,13 +28,16 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_filter_http_oauth2_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/oauth2/v3"
 	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
@@ -81,15 +84,35 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	}
 	authorizationEndpoint := oauth2Options.AuthorizationEndpoint
 
+	sdsConfig := makeConfigSource()
+
+	tokenSecretName, err := args.EnvoyConfiguration.AddGenericSecretString(oauth2Options.Credentials.ClientSecret)
+	if err != nil {
+		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed to add %q, %w", types.TokenSecretType, err)
+	}
+
 	tokenSecret := &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
-		Name: "token",
+		Name:      tokenSecretName,
+		SdsConfig: sdsConfig,
+	}
+
+	hmac, err := GenerateHMAC()
+	if err != nil {
+		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: cannot generate HMAC, %w", err)
+	}
+
+	hmacSecretName, err := args.EnvoyConfiguration.AddGenericSecretBytes([]byte(hmac))
+	if err != nil {
+		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed to add %q, %w", types.HMACSecretType, err)
 	}
 
 	tokenFormation := &envoy_extensions_filter_http_oauth2_v3.OAuth2Credentials_HmacSecret{
 		HmacSecret: &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
-			Name: "hmac",
+			Name:      hmacSecretName,
+			SdsConfig: sdsConfig,
 		},
 	}
+
 	credentials := &envoy_extensions_filter_http_oauth2_v3.OAuth2Credentials{
 		// The client_id to be used in the authorize calls. This value will be URL encoded when sent to the OAuth server.
 		ClientId: oauth2Options.Credentials.ClientID,
@@ -102,8 +125,10 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		TokenFormation: tokenFormation,
 	}
 
+	// // For example, `redirectUri` becomes "http://192.168.49.2/oauth2/callback"
+	// redirectUri := fmt.Sprintf("%s://%s%s", "%REQ(x-forwarded-proto)%", "%REQ(:authority)%", oauth2Options.RedirectURI)
 	// For example, `redirectUri` becomes "http://192.168.49.2/oauth2/callback"
-	redirectUri := fmt.Sprintf("%s://%s%s", "%REQ(x-forwarded-proto)%", "%REQ(:authority)%", oauth2Options.RedirectURI)
+	redirectUri := oauth2Options.RedirectURI
 	redirectPathMatcher := PathMatcherExact(oauth2Options.RedirectPathMatcher, false)
 	signoutPath := PathMatcherExact(oauth2Options.SignoutPath, false)
 	forwardBearerToken := oauth2Options.ForwardBearerToken
@@ -154,6 +179,16 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	}
 
 	return anyOAuth2, nil
+}
+
+func makeConfigSource() *envoy_config_core_v3.ConfigSource {
+	return &envoy_config_core_v3.ConfigSource{
+		ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{
+			Ads: &envoy_config_core_v3.AggregatedConfigSource{},
+		},
+		InitialFetchTimeout: durationpb.New(time.Second * 128),
+		ResourceApiVersion:  ResourceApiVersion,
+	}
 }
 
 func GenerateHMAC() (string, error) {
