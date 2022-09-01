@@ -44,6 +44,7 @@ import (
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -84,14 +85,33 @@ var deployCmd = &cobra.Command{
 		}
 
 		api := &v1alpha1.API{}
+
 		yaml.Unmarshal([]byte(originalManifest), api)
 		if len(api.Namespace) == 0 {
 			api.Namespace = envoyFleetNamespace
 		}
+		if len(api.Name) == 0 {
+			api.Name = name
+		}
 
 		if err := k8sclient.Create(ctx, api, &client.CreateOptions{}); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			if apierrors.IsAlreadyExists(err) {
+				ap := &v1alpha1.API{}
+				if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
+				}
+				api.SetResourceVersion(ap.GetResourceVersion())
+				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
+				}
+			} else {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		} else {
+			fmt.Printf("api.gateway.kusk.io/%s created\n", api.Name)
 		}
 
 		if watch {
@@ -111,7 +131,7 @@ var deployCmd = &cobra.Command{
 			signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 			if watcher != nil {
-				ui.Info(ui.White("⏳ watching for file changes in " + file))
+				ui.Info(ui.White("⏳ watching for API changes in " + file))
 				go watcher.Watch(func() {
 					ui.Info("✍️ change detected in " + file)
 					manifest, err := getParsedAndValidatedOpenAPISpec(file)
@@ -125,6 +145,21 @@ var deployCmd = &cobra.Command{
 
 					if len(api.Namespace) == 0 {
 						api.Namespace = envoyFleetNamespace
+					}
+					if len(api.Name) == 0 {
+						api.Name = name
+					}
+					ap := &v1alpha1.API{}
+					if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						os.Exit(1)
+					}
+					api.SetResourceVersion(ap.GetResourceVersion())
+
+					if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+						fmt.Fprintln(os.Stderr, err)
+					} else {
+						fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
 					}
 
 				}, done)
@@ -192,6 +227,5 @@ func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	}); err != nil {
 		return "", err
 	}
-
 	return manifest.String(), nil
 }
