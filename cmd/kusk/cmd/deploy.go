@@ -36,7 +36,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	fileWatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
+	filewatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
@@ -61,7 +61,7 @@ func init() {
 	deployCmd.MarkFlagRequired("file")
 
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
-	deployCmd.Flags().StringVar(&name, "name", "", "name to name API with ")
+	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
 
 }
 
@@ -70,18 +70,17 @@ var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "deploy command to deploy your apis",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		cmd.SilenceUsage = true
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return err
 		}
+
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return err
 		}
 
 		api := &v1alpha1.API{}
@@ -98,32 +97,29 @@ var deployCmd = &cobra.Command{
 			if apierrors.IsAlreadyExists(err) {
 				ap := &v1alpha1.API{}
 				if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					os.Exit(1)
+					return err
 				}
 				api.SetResourceVersion(ap.GetResourceVersion())
 				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					os.Exit(1)
+					return err
 				}
 			} else {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				return err
 			}
 		} else {
 			fmt.Printf("api.gateway.kusk.io/%s created\n", api.Name)
 		}
 
 		if watch {
-			var watcher *fileWatcher.FileWatcher
+			var watcher *filewatcher.FileWatcher
 			absoluteApiSpecPath := file
 			if err != nil {
-				ui.Fail(err)
+				return err
 			}
 
-			watcher, err = fileWatcher.New(absoluteApiSpecPath)
+			watcher, err = filewatcher.New(absoluteApiSpecPath)
 			if err != nil {
-				ui.Fail(err)
+				return err
 			}
 			defer watcher.Close()
 
@@ -152,7 +148,6 @@ var deployCmd = &cobra.Command{
 					ap := &v1alpha1.API{}
 					if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
 						fmt.Fprintln(os.Stderr, err)
-						os.Exit(1)
 					}
 					api.SetResourceVersion(ap.GetResourceVersion())
 
@@ -166,7 +161,7 @@ var deployCmd = &cobra.Command{
 			}
 			<-done
 		}
-
+		return nil
 	},
 }
 
