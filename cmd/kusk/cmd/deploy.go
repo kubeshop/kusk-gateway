@@ -27,6 +27,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -34,12 +35,16 @@ import (
 	"syscall"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	fileWatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -65,15 +70,29 @@ var deployCmd = &cobra.Command{
 	Short: "deploy command to deploy your apis",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
 		cmd.SilenceUsage = true
-		manifest, err := getParsedAndValidatedOpenAPISpec(file)
+		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
-		//apply
-		fmt.Println(manifest)
+		api := &v1alpha1.API{}
+		yaml.Unmarshal([]byte(originalManifest), api)
+		if len(api.Namespace) == 0 {
+			api.Namespace = envoyFleetNamespace
+		}
+
+		if err := k8sclient.Create(ctx, api, &client.CreateOptions{}); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 
 		if watch {
 			var watcher *fileWatcher.FileWatcher
@@ -95,11 +114,19 @@ var deployCmd = &cobra.Command{
 				ui.Info(ui.White("⏳ watching for file changes in " + file))
 				go watcher.Watch(func() {
 					ui.Info("✍️ change detected in " + file)
-					_, err := getParsedAndValidatedOpenAPISpec(file)
+					manifest, err := getParsedAndValidatedOpenAPISpec(file)
 					if err != nil {
 						ui.Fail(err)
 					}
-					fmt.Println("update")
+					api := &v1alpha1.API{}
+					if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
+						ui.Info("there has been an error in API manifest", err.Error())
+					}
+
+					if len(api.Namespace) == 0 {
+						api.Namespace = envoyFleetNamespace
+					}
+
 				}, done)
 			}
 			<-done
