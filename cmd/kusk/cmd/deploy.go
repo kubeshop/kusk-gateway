@@ -119,12 +119,8 @@ var deployCmd = &cobra.Command{
 		if _, e := url.ParseRequestURI(file); e != nil {
 			if watch {
 				var watcher *filewatcher.FileWatcher
-				absoluteApiSpecPath := file
-				if err != nil {
-					return err
-				}
 
-				watcher, err = filewatcher.New(absoluteApiSpecPath)
+				watcher, err = filewatcher.New(file)
 				if err != nil {
 					return err
 				}
@@ -143,7 +139,7 @@ var deployCmd = &cobra.Command{
 						}
 						api := &v1alpha1.API{}
 						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
-							ui.Info("there has been an error in API manifest", err.Error())
+							ui.Err(err)
 						}
 
 						if len(api.Namespace) == 0 {
