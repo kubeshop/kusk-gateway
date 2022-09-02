@@ -57,11 +57,12 @@ func init() {
 	//add to root command
 	rootCmd.AddCommand(deployCmd)
 
-	deployCmd.Flags().StringVarP(&file, "file", "f", "", "file to deploy")
+	deployCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
 	deployCmd.MarkFlagRequired("file")
 
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
 	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
+	deployCmd.Flags().StringVar(&namespace, "namespace", "default", "name of the API")
 
 }
 
@@ -87,7 +88,7 @@ var deployCmd = &cobra.Command{
 
 		yaml.Unmarshal([]byte(originalManifest), api)
 		if len(api.Namespace) == 0 {
-			api.Namespace = envoyFleetNamespace
+			api.Namespace = "default"
 		}
 		if len(api.Name) == 0 {
 			api.Name = name
@@ -140,7 +141,7 @@ var deployCmd = &cobra.Command{
 					}
 
 					if len(api.Namespace) == 0 {
-						api.Namespace = envoyFleetNamespace
+						api.Namespace = "default"
 					}
 					if len(api.Name) == 0 {
 						api.Name = name
