@@ -107,6 +107,7 @@ var deployCmd = &cobra.Command{
 				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
 					return err
 				}
+				fmt.Println("Updated", api.Name, "API")
 			} else {
 				return err
 			}
