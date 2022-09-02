@@ -29,6 +29,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -107,6 +108,7 @@ var deployCmd = &cobra.Command{
 				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
 					return err
 				}
+				fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
 			} else {
 				return err
 			}
@@ -114,56 +116,60 @@ var deployCmd = &cobra.Command{
 			fmt.Printf("api.gateway.kusk.io/%s created\n", api.Name)
 		}
 
-		if watch {
-			var watcher *filewatcher.FileWatcher
-			absoluteApiSpecPath := file
-			if err != nil {
-				return err
+		if _, e := url.ParseRequestURI(file); e != nil {
+			if watch {
+				var watcher *filewatcher.FileWatcher
+				absoluteApiSpecPath := file
+				if err != nil {
+					return err
+				}
+
+				watcher, err = filewatcher.New(absoluteApiSpecPath)
+				if err != nil {
+					return err
+				}
+				defer watcher.Close()
+
+				done := make(chan os.Signal, 1)
+				signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+
+				if watcher != nil {
+					ui.Info(ui.White("⏳ watching for API changes in " + file))
+					go watcher.Watch(func() {
+						ui.Info("✍️ change detected in " + file)
+						manifest, err := getParsedAndValidatedOpenAPISpec(file)
+						if err != nil {
+							ui.Fail(err)
+						}
+						api := &v1alpha1.API{}
+						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
+							ui.Info("there has been an error in API manifest", err.Error())
+						}
+
+						if len(api.Namespace) == 0 {
+							api.Namespace = "default"
+						}
+						if len(api.Name) == 0 {
+							api.Name = name
+						}
+						ap := &v1alpha1.API{}
+						if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+							fmt.Fprintln(os.Stderr, err)
+						}
+						api.SetResourceVersion(ap.GetResourceVersion())
+
+						if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+							fmt.Fprintln(os.Stderr, err)
+						} else {
+							fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
+						}
+
+					}, done)
+				}
+				<-done
 			}
-
-			watcher, err = filewatcher.New(absoluteApiSpecPath)
-			if err != nil {
-				return err
-			}
-			defer watcher.Close()
-
-			done := make(chan os.Signal, 1)
-			signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
-
-			if watcher != nil {
-				ui.Info(ui.White("⏳ watching for API changes in " + file))
-				go watcher.Watch(func() {
-					ui.Info("✍️ change detected in " + file)
-					manifest, err := getParsedAndValidatedOpenAPISpec(file)
-					if err != nil {
-						ui.Fail(err)
-					}
-					api := &v1alpha1.API{}
-					if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
-						ui.Info("there has been an error in API manifest", err.Error())
-					}
-
-					if len(api.Namespace) == 0 {
-						api.Namespace = "default"
-					}
-					if len(api.Name) == 0 {
-						api.Name = name
-					}
-					ap := &v1alpha1.API{}
-					if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
-						fmt.Fprintln(os.Stderr, err)
-					}
-					api.SetResourceVersion(ap.GetResourceVersion())
-
-					if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-						fmt.Fprintln(os.Stderr, err)
-					} else {
-						fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
-					}
-
-				}, done)
-			}
-			<-done
+		} else if e == nil {
+			ui.Warn("Warning: cannot watch URL. '--watch, -w' flag ignored!")
 		}
 		return nil
 	},
