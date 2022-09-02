@@ -25,6 +25,7 @@ package controllers
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,6 +41,12 @@ const (
 	envoyHTTPListenerPort       int32 = 8080
 	envoyAdminListenerPort      int32 = 19000
 	kuskGatewayManagerImageName       = "kusk-gateway"
+)
+
+var (
+	// envoyConfigTemplate - contains the contents of `envoy.yaml`.
+	//go:embed envoy.yaml
+	envoyConfigTemplate string
 )
 
 // EnvoyFleetResources is a collection of related Envoy Fleet K8s resources
