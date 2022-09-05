@@ -7,48 +7,11 @@ This section explains how you would connect your services to Kusk-gateway.
 
 Let's deploy a hello-world Deployment. Create `deployment.yaml` file:
 
-```sh 
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: hello-world
-spec:
-  selector:
-    matchLabels:
-      app: hello-world
-  template:
-    metadata:
-      labels:
-        app: hello-world
-    spec:
-      containers:
-      - name: hello-world
-        image: aabedraba/kusk-hello-world:1.0
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        ports:
-        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hello-world-svc
-spec:
-  selector:
-    app: hello-world
-  ports:
-  - port: 8080
-    targetPort: 8080
-```
-
-And apply it with: 
-
 ```sh
-kubectl apply -f deployment.yaml
-```
+kubectl create deployment hello-world --image=kubeshop/kusk-hello-world:v1.0.0
 
+kubectl expose deployment hello-world --name hello-world-svc --port=8080
+```
 ## **2. Update the API Manifest to Connect the Service to the Gateway**
 
 Once you have finished implementing and deploying the service, you will need to stop the mocking of the API endpoint and connect the service to the gateway. 
