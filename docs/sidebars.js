@@ -30,10 +30,14 @@ const sidebars = {
       label: "Getting Started",
     },
     {
+      type: "doc",
+      id: "extension",
+      label: "Kusk OpenAPI Extension",
+    },
+    {
       type: "category",
       label: "Guides",
       items: [
-        "guides/working-with-extension",
         {
           type: "doc",
           id: "guides/cors",
@@ -71,41 +75,40 @@ const sidebars = {
     },
     {
       type: "category",
-      label: "Kusk CLI",
-      items: [
-        {
-          type: "doc",
-          id: "cli/overview",
-          label: "Installation",
-        },
-        "cli/install-cmd",
-        "cli/mock-cmd",
-        "cli/generate-cmd",
-        "cli/dashboard-cmd",
-      ],
-    },
-    {
-      type: "category",
-      label: "Kusk Dashboard",
-      items: [
-        "dashboard/overview",
-        "dashboard/deploying-apis",
-        "dashboard/inspecting-apis",
-      ],
-    },
-    {
-      type: "category",
       label: "Reference",
       items: [
-        "reference/extension",
+        {
+          type: "category",
+          label: "Kusk CLI",
+          items: [
+            {
+              type: "doc",
+              id: "reference/cli/overview",
+              label: "Installation",
+            },
+            "reference/cli/install-cmd",
+            "reference/cli/mock-cmd",
+            "reference/cli/generate-cmd",
+            "reference/cli/dashboard-cmd",
+          ],
+        },
+        {
+          type: "category",
+          label: "Kusk Dashboard",
+          items: [
+            "reference/dashboard/overview",
+            "reference/dashboard/deploying-apis",
+            "reference/dashboard/inspecting-apis",
+          ],
+        },
         {
           type: "link",
-          label: "Dashboard API",
+          label: "Kusk API playground",
           href: "/docs/reference/kusk-api-server",
         },
         {
           type: "category",
-          label: "Kusk Resources",
+          label: "Kusk Kubernetes Resources",
           items: [
             "reference/customresources/overview",
             "reference/customresources/api",

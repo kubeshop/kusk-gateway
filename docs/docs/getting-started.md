@@ -25,7 +25,7 @@ go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 
 ### **2. Install Kusk Gateway in your cluster**
 
-Use the Kusk CLIs [install command](../cli/install-cmd.md) to install Kusk Gateway components in your cluster. 
+Use the Kusk CLIs [install command](./reference/cli/install-cmd.md) to install Kusk Gateway components in your cluster. 
 
 ```sh
 kusk install
@@ -168,4 +168,4 @@ This response is served from the deployed application. Now you have successfully
 
 The approach from this "Getting Started" section of the documentation follows a [design-first](https://kubeshop.io/blog/from-design-first-to-automated-deployment-with-openapi) approach where you deployed the API first, mocked the API later deployed an application and connected them to Kusk Gateway.
 
-Check out the [available OpenAPI extensions](../guides/working-with-extension.md) to see all the features that you can enable in your gateway through OpenAPI. And, if you want, connect with us on [Discord](https://discord.gg/6zupCZFQbe) to tell us about your experience!
+Check out the [available OpenAPI extensions](./guides/working-with-extension.md) to see all the features that you can enable in your gateway through OpenAPI. And, if you want, connect with us on [Discord](https://discord.gg/6zupCZFQbe) to tell us about your experience!

@@ -17,4 +17,4 @@ Kusk Gateway is for you if:
 - You want to ramp-up time when deploying a new REST api to a cluster and you don't want to spend lots of time configuring ingress controllers that require a dedicated Ops Engineer.
 - You want your REST API endpoints traffic to be observable and controllable with the easy to use settings.
 
-Proceed with our [Installation](getting-started/installation.md) instructions for installing to the generic Kubernetes cluster
+Proceed with our [Installation](getting-started.md) instructions for installing to the generic Kubernetes cluster

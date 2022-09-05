@@ -43,4 +43,4 @@ paths:
       ..
 ```
 
-See all available CORS configuration options in the [Extension Reference](../reference/extension/#cors).
+See all available CORS configuration options in the [Extension Reference](../extension/#cors).
