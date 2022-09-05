@@ -3,7 +3,7 @@
 Kusk Gateway comes with an [OpenAPI extension](https://swagger.io/specification/#specification-extensions) to accommodate everything within
 an OpenAPI spec to create a source of truth for the operational behaviour of your API.
 
-Check out the [OpenAPI Extension Guide](../guides/working-with-extension.md) to configure the operational aspects of your API.
+Check out the [OpenAPI Extension Guide](./guides/working-with-extension.md) to configure the operational aspects of your API.
 
 ## **Available Properties**
 
@@ -37,7 +37,7 @@ x-kusk:
 ...
 ```
 
-Read more in the [guide on Routing](../guides/routing.md#using-hosts-for-multi-hosting-scenarios).
+Read more in the [guide on Routing](./guides/routing.md#using-hosts-for-multi-hosting-scenarios).
 
 ### **CORS**
 
@@ -71,7 +71,7 @@ x-kusk:
 ...
 ```
 
-Read more in the [guide on CORS](../guides/cors.md).
+Read more in the [guide on CORS](./guides/cors.md).
 
 ### **QoS**
 
@@ -93,7 +93,7 @@ x-kusk:
 ...
 ```
 
-Read more in the [guide on Timeouts](../guides/timeouts.md).
+Read more in the [guide on Timeouts](./guides/timeouts.md).
 
 ### **Websocket**
 
@@ -116,7 +116,7 @@ The `upstream` setting is mutually exclusive with `redirect` setting.
 `service` is a reference to a Kubernetes Service inside the cluster, while `host` can reference any hostname, even
 outside the cluster.
 
-See the [guide on Routing](../guides/routing.md) to learn more about this functionality.
+See the [guide on Routing](./guides/routing.md) to learn more about this functionality.
 
 #### **Rewrite**
 
@@ -210,7 +210,7 @@ x-kusk:
 ...
 ```
 
-See the [guide on Routing](../guides/routing.md) to learn more about this functionality.
+See the [guide on Routing](./guides/routing.md) to learn more about this functionality.
 
 ### **Redirect**
 
@@ -239,7 +239,7 @@ x-kusk:
 ...
 ```
 
-See the [guide on Routing](../guides/routing.md) to learn more about this functionality.
+See the [guide on Routing](./guides/routing.md) to learn more about this functionality.
 
 ### **Validation**
 
@@ -249,7 +249,7 @@ The validation objects contain the following properties to configure automatic r
 |:-----------------------------|-------------------------------------------|
 | `validation.request.enabled` | Boolean flag to enable request validation. |
 
-See the [guide on Validation](../guides/validation.md) to learn more about this functionality.
+See the [guide on Validation](./guides/validation.md) to learn more about this functionality.
 
 **Sample:**
 
@@ -270,7 +270,7 @@ The validation objects contain the following properties to configure automatic r
 |:---------------------|--------------------------------|
 | `mocking.enabled`    | Boolean flag to enable mocking. |
 
-See the [guide on Mocking](../guides/mocking.md) to learn more about this functionality.
+See the [guide on Mocking](./guides/mocking.md) to learn more about this functionality.
 
 **Sample:**
 
@@ -293,7 +293,7 @@ The rate_limit object contains the following properties to configure request rat
 | `rate_limit.per_connection`       | Boolean flag, that specifies whether the rate limiting, should be applied per connection or in total. Default: false.    |
 | `rate_limit.response_code`        | HTTP response code, which is returned when rate limiting. Default: 429, Too Many Requests.                               |
 
-Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](../reference/customresources/envoyfleet.md).
+Note: Currently, rate limiting is applied per Envoy pod - if you have more than a single Envoy pod the total request capacity will be bigger than specified in the rate_limit object. You can check how many Envoy pods you run in the `spec.size` attribute of [EnvoyFleet object](./reference/customresources/envoyfleet.md).
 
 **Sample:**
 

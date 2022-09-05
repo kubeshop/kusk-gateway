@@ -35,4 +35,4 @@ paths:
       ..
 ```
 
-See all available Caching configuration options in the [Extension Reference](../reference/extension#rate-limiting).
+See all available Caching configuration options in the [Extension Reference](../extension#rate-limiting).

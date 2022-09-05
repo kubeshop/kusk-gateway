@@ -1,11 +1,11 @@
 # API
 
 This resource uses an OpenAPI file with x-kusk annotations as the source of truth to configure routing.
-Refer to [OpenAPI Extension Reference](../../reference/extension.md) for the further information on how to add routing information to OpenAPI file.
+Refer to [OpenAPI Extension Reference](../../extension.md) for the further information on how to add routing information to OpenAPI file.
 
 The required field of API resource is `spec.**spec**` where `x-kusk`-enhanced OpenAPI file is supplied as an embedded string. 
 You can generate API resources from an OpenAPI definition (and integrate into your CI) using the Kusk CLI - see 
-[Generating API CRDs](../../cli/generate-cmd.md).
+[Generating API CRDs](../cli/generate-cmd.md).
 
 ## **Using fleet**
 

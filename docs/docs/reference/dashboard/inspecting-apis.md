@@ -30,7 +30,7 @@ deployed OpenAPI definition - making it easy to understand how the API has been 
 The Public API Definition tab contains the "post-processed" OpenAPI definition as you would provide publicly to consumers of your API. This differs from the deployed OpenAPI definition in the following ways:
 
 - All `x-kusk` extensions have been removed.
-- All disabled operations have been removed - see [Disabling Operations](../guides/routing.md#disabling-operations).
+- All disabled operations have been removed - see [Disabling Operations](../../guides/routing.md#disabling-operations).
 
 A Table of Contents is available as in the API Definition tab. 
 

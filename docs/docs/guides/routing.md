@@ -125,7 +125,7 @@ upstream:
     substitution: ""
 ```
 
-See all available upstream configuration options in the [Extension Reference](../reference/extension/#upstream).
+See all available upstream configuration options in the [Extension Reference](../extension/#upstream).
 
 ## Redirecting Requests to a Different Host/Path
 
@@ -201,7 +201,7 @@ path:
 ..
 ```
 
-See all available redirect configuration options in the [Extension Reference](../reference/extension/#redirect).
+See all available redirect configuration options in the [Extension Reference](../extension/#redirect).
 
 ## **Specifying an External Path for Your API**
 

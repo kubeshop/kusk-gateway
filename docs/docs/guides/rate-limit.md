@@ -33,4 +33,4 @@ paths:
       ..
 ```
 
-See all available Rate Limiting configuration options in the [Extension Reference](../reference/extension/#rate-limiting).
+See all available Rate Limiting configuration options in the [Extension Reference](../extension/#rate-limiting).
