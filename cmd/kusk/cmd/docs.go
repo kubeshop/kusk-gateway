@@ -39,6 +39,7 @@ var docsCmd = &cobra.Command{
 		root.DisableAutoGenTag = true
 		return doc.GenMarkdownTree(root, "docs")
 	},
+	Hidden: true,
 }
 
 func init() {
