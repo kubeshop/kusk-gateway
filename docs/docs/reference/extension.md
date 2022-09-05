@@ -475,7 +475,7 @@ The example above ensures the whole API is protected via OAuth2, and that `auth-
 
 ### Exposing OpenAPI defintion
 
-The `openapi-path` field takes the a path name and will expose your OpenAPI defintion in defined path.
+The `openapi-path` field takes a path name and will expose your OpenAPI definition at the defined path.
 
 **Sample:**
 
@@ -486,6 +486,6 @@ x-kusk:
 ...
 ```
 
-This will expose your entire OpenAPI defintion, without the Kusk extensions, on `yourdomain.com/openapi.json`.
+This will expose your entire OpenAPI definition, without the Kusk extensions, on `yourdomain.com/openapi.json`.
 
 To remove some paths or operations from the exposed OpenAPI, use the [`disabled` option](./#disabled).
