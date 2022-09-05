@@ -58,11 +58,6 @@ const sidebars = {
           id: "guides/cache",
           label: "Caching",
         },
-        {
-          type: "doc",
-          id: "guides/routing",
-          label: "Routing",
-        },
         "guides/timeouts",
         "guides/routing",
         "guides/rate-limit",
