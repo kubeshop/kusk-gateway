@@ -25,13 +25,9 @@ const sidebars = {
       label: "Introduction",
     },
     {
-      type: "category",
+      type: "doc",
+      id: "getting-started",
       label: "Getting Started",
-      items: [
-        "getting-started/installation",
-        "getting-started/deploy-an-api",
-        "getting-started/connect-a-service-to-the-api",
-      ],
     },
     {
       type: "category",
