@@ -149,13 +149,13 @@ paths:
 
 
 
-## **9. Apply the new changes**
+### **9. Apply the new changes**
 
 ```
 kusk api generate -i openapi.yaml | kubectl apply -f -
 ```
 
-## **10. Test the deploy application**
+### **10. Test the deploy application**
 
 ```
 $ curl 104.198.194.37/hello
