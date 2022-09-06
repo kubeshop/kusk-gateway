@@ -68,7 +68,7 @@ var installCmd = &cobra.Command{
 
 	$ kusk install
 
-	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api) 
+	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
 	$ kusk install --name=my-release --namespace=my-namespace
@@ -313,14 +313,14 @@ func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
 }
 
 func installPublicEnvoyFleet(helmPath, releaseName, releaseNamespace string) error {
-	return installEnvoyFleet(helmPath, releaseName, releaseNamespace, "LoadBalancer")
+	return installEnvoyFleet(helmPath, releaseName, releaseNamespace, "LoadBalancer", true)
 }
 
 func installPrivateEnvoyFleet(helmPath, releaseName, releaseNamespace string) error {
-	return installEnvoyFleet(helmPath, releaseName, releaseNamespace, "ClusterIP")
+	return installEnvoyFleet(helmPath, releaseName, releaseNamespace, "ClusterIP", false)
 }
 
-func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType string) error {
+func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType string, isDefaultFleet bool) error {
 	command := []string{
 		"upgrade",
 		"--install",
@@ -330,6 +330,7 @@ func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType stri
 		releaseNamespace,
 		"--set", fmt.Sprintf("fullnameOverride=%s", releaseName),
 		"--set", fmt.Sprintf("service.type=%s", serviceType),
+		"--set", fmt.Sprintf("default=%t", isDefaultFleet),
 		releaseName,
 		"kubeshop/kusk-gateway-envoyfleet",
 	}
