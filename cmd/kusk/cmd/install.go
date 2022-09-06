@@ -30,7 +30,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/kubeshop/testkube/pkg/process"
@@ -331,7 +330,7 @@ func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType stri
 		releaseNamespace,
 		"--set", fmt.Sprintf("fullnameOverride=%s", releaseName),
 		"--set", fmt.Sprintf("service.type=%s", serviceType),
-		"--set", fmt.Sprintf("default=%s", strconv.FormatBool(isDefaultFleet)),
+		"--set", fmt.Sprintf("default=%t", isDefaultFleet),
 		releaseName,
 		"kubeshop/kusk-gateway-envoyfleet",
 	}
