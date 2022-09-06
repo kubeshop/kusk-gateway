@@ -12,7 +12,7 @@ available to help you make the most of them.
 - [Routing](routing) - How to configure routing of API requests.
 - [Validation](validation) - How work with automatic request validation.
 - [Timeouts](timeouts) - How to set request timeouts.
-- [Authentication](basic-auth) - How to set authentication of your API.
+- [Authentication](authentication/custom-auth-upstream) - How to set authentication of your API.
 
 #### Extensions that work with responses: 
 - [Mocking](mocking) - How to mock all or parts of your API.

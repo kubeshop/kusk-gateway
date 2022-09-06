@@ -44,6 +44,14 @@ const sidebars = {
           label: "Working with the extensions",
         },
         {
+          type: "category",
+          label: "Authentication",
+          items: [
+            "guides/authentication/custom-auth-upstream",
+            "guides/authentication/oauth2",
+          ],
+        },
+        {
           type: "doc",
           id: "guides/cors",
           label: "CORS",
@@ -54,8 +62,6 @@ const sidebars = {
         "guides/timeouts",
         "guides/routing",
         "guides/rate-limit",
-        "guides/basic-auth",
-        "guides/oauth2",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",

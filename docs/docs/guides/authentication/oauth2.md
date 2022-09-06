@@ -1,6 +1,6 @@
 # OAuth2
 
-OAuth2 ensures that your application (upstream) doesn't get requests which are not authenticated and authorized. It effectively helps to protect your API. See the [`References`](./#references) section for further information.
+OAuth2 ensures that your application (upstream) doesn't get requests which are not authenticated and authorized. It effectively helps to protect your API.
 
 :::caution
 
