@@ -7,21 +7,6 @@ Check out the [OpenAPI Extension Guide](./guides/working-with-extension.md) to c
 
 ## **Available Properties**
 
-### **Disabled**
-
-This boolean property allows you to disable the corresponding path/operation, "hiding" internal operations from being published to end users.
-
-When set to true at the top level, all paths will be hidden; you will have to override specific paths/operations with
-`disabled: false` to make those operations visible.
-
-```yaml
-...
-  /path:
-    x-kusk:
-      disabled: true
-...
-```
-
 ### **Hosts**
 
 This string array property configures the hosts (i.e. `Host` HTTP header) list the Gateway will listen traffic for. Wildcard hosts are supported in the suffix or prefix form, exclusively, i.e.:
@@ -327,7 +312,7 @@ x-kusk:
 ...
 ```
 
-### Authentication
+### **Authentication**
 
 The `auth` object contains the following properties to configure HTTP authentication:
 
@@ -335,23 +320,23 @@ The `auth` object contains the following properties to configure HTTP authentica
 |:-----------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `auth.scheme`                      | **Required**. The authentication scheme. `basic`, `cloudentity` and `oauth2` are valid values.                                                                                                                   |
 | `auth.path_prefix`                 | **Optional**. The prefix to attach to `auth-upstream.host.hostname`                                                                                                                                              |
-| `auth-upstream`                    | **Required, if `scheme` is `basic`**. Defines the upstream authentication host.                                                                                                                                  |
-| `auth-upstream.host`               | **Required, if `scheme` is `basic`**. Defines how to reach the authentication server.                                                                                                                            |
-| `auth-upstream.host.hostname`      | **Required, if `scheme` is `basic`**. Defines the `hostname` the authentication server is running on.                                                                                                            |
-| `auth-upstream.host.port`          | **Required, if `scheme` is `basic`**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`.                                                                     |
-| `oauth2`                           | **Required, if `scheme` is `oauth2`**. Defines the OAuth2 configuration.                                                                                                                                         |
-| `oauth2.token_endpoint`            | **Required, if `scheme` is `oauth2`**. Defines the `token_endpoint`, e.g., the field `token_endpoint` from <https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/openid-configuration>.                 |
-| `oauth2.authorization_endpoint`    | **Required, if `scheme` is `oauth2`**. Defines the `authorization_endpoint`, e.g., the field `authorization_endpoint` from <https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/openid-configuration>. |
-| `oauth2.credentials.client_id`     | **Required, if `scheme` is `oauth2`**. Defines the Client ID. |
-| `oauth2.credentials.client_secret` | **Required, if `scheme` is `oauth2`**. Defines the Client Secret. |
-| `oauth2.redirect_uri`              | **Required, if `scheme` is `oauth2`**. The redirect URI passed to the authorization endpoint. |
-| `oauth2.signout_path`              | **Required, if `scheme` is `oauth2`**. The path to sign a user out, clearing their credential cookies. |
-| `oauth2.redirect_path_matcher`     | **Required, if `scheme` is `oauth2`**. After a redirecting the user back to the `redirect_uri`, using this new grant and the `token_secret`, the `kusk-gateway` then attempts to retrieve an access token from the `token_endpoint`. The `kusk-gateway` knows it has to do this instead of reinitiating another login because the incoming request has a path that matches the `redirect_path_matcher` criteria. |
-| `oauth2.forward_bearer_token`      | **Required, if `scheme` is `oauth2`**. If the Bearer Token should be forwarded, you generally want this to be `true`. When the authn server validates the client and returns an authorization token back to `kusk-gateway`, no matter what format that token is, if `forward_bearer_token` is set to true `kusk-gateway` will send over a cookie named `BearerToken` to the upstream. Additionally, the `Authorization` header will be populated with the same value, i.e., Forward the OAuth token as a Bearer to upstream web service. |
-| `oauth2.auth_scopes`               | **Optional, if `scheme` is `oauth2`**. Optional list of OAuth scopes to be claimed in the authorization request. If not specified, defaults to `user` scope. OAuth RFC <https://tools.ietf.org/html/rfc6749#section-3.3>. |
-| `oauth2.resources`                 | **Optional, if `scheme` is `oauth2`**. Optional list of resource parameters for authorization request RFC: <https://tools.ietf.org/html/rfc8707>. |
+| `auth.auth-upstream`                    | **Required, if `scheme` is `basic`**. Defines the upstream authentication host.                                                                                                                                  |
+| `auth.auth-upstream.host`               | **Required, if `scheme` is `basic`**. Defines how to reach the authentication server.                                                                                                                            |
+| `auth.auth-upstream.host.hostname`      | **Required, if `scheme` is `basic`**. Defines the `hostname` the authentication server is running on.                                                                                                            |
+| `auth.auth-upstream.host.port`          | **Required, if `scheme` is `basic`**. Defines the port the authentication server is running on, for the given `auth-upstream.host.hostname`.                                                                     |
+| `auth.oauth2`                           | **Required, if `scheme` is `oauth2`**. Defines the OAuth2 configuration.                                                                                                                                         |
+| `auth.oauth2.token_endpoint`            | **Required, if `scheme` is `oauth2`**. Defines the `token_endpoint`, e.g., the field `token_endpoint` from <https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/openid-configuration>.                 |
+| `auth.oauth2.authorization_endpoint`    | **Required, if `scheme` is `oauth2`**. Defines the `authorization_endpoint`, e.g., the field `authorization_endpoint` from <https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/openid-configuration>. |
+| `auth.oauth2.credentials.client_id`     | **Required, if `scheme` is `oauth2`**. Defines the Client ID. |
+| `auth.oauth2.credentials.client_secret` | **Required, if `scheme` is `oauth2`**. Defines the Client Secret. |
+| `auth.oauth2.redirect_uri`              | **Required, if `scheme` is `oauth2`**. The redirect URI passed to the authorization endpoint. |
+| `auth.oauth2.signout_path`              | **Required, if `scheme` is `oauth2`**. The path to sign a user out, clearing their credential cookies. |
+| `auth.oauth2.redirect_path_matcher`     | **Required, if `scheme` is `oauth2`**. After a redirecting the user back to the `redirect_uri`, using this new grant and the `token_secret`, the `kusk-gateway` then attempts to retrieve an access token from the `token_endpoint`. The `kusk-gateway` knows it has to do this instead of reinitiating another login because the incoming request has a path that matches the `redirect_path_matcher` criteria. |
+| `auth.oauth2.forward_bearer_token`      | **Required, if `scheme` is `oauth2`**. If the Bearer Token should be forwarded, you generally want this to be `true`. When the authn server validates the client and returns an authorization token back to `kusk-gateway`, no matter what format that token is, if `forward_bearer_token` is set to true `kusk-gateway` will send over a cookie named `BearerToken` to the upstream. Additionally, the `Authorization` header will be populated with the same value, i.e., Forward the OAuth token as a Bearer to upstream web service. |
+| `auth.oauth2.auth_scopes`               | **Optional, if `scheme` is `oauth2`**. Optional list of OAuth scopes to be claimed in the authorization request. If not specified, defaults to `user` scope. OAuth RFC <https://tools.ietf.org/html/rfc6749#section-3.3>. |
+| `auth.oauth2.resources`                 | **Optional, if `scheme` is `oauth2`**. Optional list of resource parameters for authorization request RFC: <https://tools.ietf.org/html/rfc8707>. |
 
-`auth-upstream` (named as `basic` and `cloudentity`) are mutually exclusive with `oauth2`: The two cannot be specified together.
+`auth.auth-upstream` (named as `basic` and `cloudentity`) are mutually exclusive with `oauth2`: The two cannot be specified together.
 
 #### References
 
@@ -376,104 +361,31 @@ x-kusk:
 
 #### `oauth2` Sample
 
-An example `API` specification and associated deployments to be applied via `kubectl apply -f api.yaml`.
+The example below ensures the whole API is protected via OAuth2.
 
 **api.yml**:
 
 ```yaml
-apiVersion: gateway.kusk.io/v1alpha1
-kind: API
-metadata:
-  name: auth-oauth2-oauth0-authorization-code-grant
-  namespace: default
-spec:
-  fleet:
-    name: default
-    namespace: default
-  spec: |
-    openapi: 3.0.0
-    info:
-      title: auth-oauth2-oauth0-authorization-code-grant
-      description: auth-oauth2-oauth0-authorization-code-grant
-      version: '0.1.0'
-    schemes:
-    - http
-    - https
-    x-kusk:
-      upstream:
-        service:
-          name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-          namespace: default
-          port: 80
-      auth:
-        scheme: oauth2
-        oauth2:
-          token_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token
-          authorization_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/authorize
-          credentials:
-            client_id: upRN78W8GzV4TwFRp0ekZfLx2UnqJJs8
-            client_secret: Z6MX7NreJumWLmf6unsQ5uiEUrTBxfNtqG9Vy5Kjktnvfj-_fRCBO9EU1mL1YzAJ
-          redirect_uri: /oauth2/callback
-          redirect_path_matcher: /oauth2/callback
-          signout_path: /oauth2/signout
-          forward_bearer_token: true
-          auth_scopes:
-            - openid
-    paths:
-      "/":
-        get:
-          description: Returns GET data.
-          operationId: "/get"
-          responses: {}
-      "/uuid":
-        get:
-          description: Returns UUID4.
-          operationId: "/uuid"
-          responses: {}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-  namespace: default
-  labels:
-    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-spec:
-  selector:
-    matchLabels:
-      app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-    spec:
-      containers:
-        - name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-          image: docker.io/mccutchen/go-httpbin:v2.4.1
-          ports:
-            - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-  namespace: default
-  labels:
-    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-spec:
-  selector:
-    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 8080
+...
+x-kusk:
+  auth:
+    scheme: oauth2
+    oauth2:
+      token_endpoint: *TOKEN_ENDPOINT* # <- for example https://yourdomain.eu.auth0.com/oauth/token
+      authorization_endpoint: *AUTHORIZATION_ENDPOINT* # <- for example https://yourdomain.eu.auth0.com/authorize
+      credentials:
+        client_id: *CLIENT_ID*
+        client_secret: *CLIENT_SECRET*
+      redirect_uri: /oauth2/callback
+      redirect_path_matcher: /oauth2/callback
+      signout_path: /oauth2/signout
+      forward_bearer_token: true
+      auth_scopes:
+        - openid
+...
 ```
 
-The example above ensures the whole API is protected via OAuth2, and that `auth-oauth2-oauth0-authorization-code-grant-go-httpbin` can be only accessed when authenticated and authorized.
-
-### Exposing OpenAPI defintion
+### **Exposing OpenAPI defintion**
 
 The `openapi-path` field takes a path name and will expose your OpenAPI definition at the defined path.
 
@@ -489,3 +401,18 @@ x-kusk:
 This will expose your entire OpenAPI definition, without the Kusk extensions, on `yourdomain.com/openapi.json`.
 
 To remove some paths or operations from the exposed OpenAPI, use the [`disabled` option](./#disabled).
+
+### **Disabled**
+
+This boolean property allows you to disable the corresponding path/operation, "hiding" internal operations from being published to end users.
+
+When set to true at the top level, all paths will be hidden; you will have to override specific paths/operations with
+`disabled: false` to make those operations visible.
+
+```yaml
+...
+  /path:
+    x-kusk:
+      disabled: true
+...
+```

@@ -40,29 +40,28 @@ const sidebars = {
       items: [
         {
           type: "doc",
+          id: "guides/working-with-extension",
+          label: "Working with the extensions",
+        },
+        {
+          type: "category",
+          label: "Authentication",
+          items: [
+            "guides/authentication/custom-auth-upstream",
+            "guides/authentication/oauth2",
+          ],
+        },
+        {
+          type: "doc",
           id: "guides/cors",
           label: "CORS",
         },
-        {
-          type: "doc",
-          id: "guides/mocking",
-          label: "Mocking",
-        },
-        {
-          type: "doc",
-          id: "guides/validation",
-          label: "Validation",
-        },
-        {
-          type: "doc",
-          id: "guides/cache",
-          label: "Caching",
-        },
+        "guides/mocking",
+        "guides/validation",
+        "guides/cache",
         "guides/timeouts",
         "guides/routing",
         "guides/rate-limit",
-        "guides/basic-auth",
-        "guides/oauth2",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",

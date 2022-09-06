@@ -1,12 +1,12 @@
-# Authentication
+# Custom Authentication Upstream
 
-Currently you can use any Header based authentication methods. This includes:
+Currently you can use any **Header based authentication** methods by means of custom Authentication Upstream . This includes:
 
 - Basic Authentication
 - JWT Tokens
 - Bearer Tokens
 
-To set up authentication, add the following section to your `x-kusk` settings block:
+To set up a custom authentication upstream, add the following section to your `x-kusk` settings block:
 
 ```yaml
 openapi: 3.0.0
@@ -18,9 +18,13 @@ x-kusk:
     type: basic
     auth-upstream:
       host:
-        hostname: basic-auth-svc.default
+        hostname: auth-upstream-svc.default
         port:8080
 ```
+
+:::info
+The `hostname` field can contain internal cluster domains but also external domains to your cluster that can handle your header based authentication.
+:::
 
 The example above authenticates requests to the whole API.
 
@@ -36,17 +40,13 @@ paths:
         type: basic
         auth-upstream:
           host:
-            hostname: basic-auth-svc.default
+            hostname: auth-upstream-svc.default
             port:8080
       ..
 ```
 
 In the example, in the `hostname` section we're referencing an upstream service in our cluster that will handle request authentication. The flow is as follows:
 
-![kusk-gateway basic-auth diagram](./img/basic-auth.png)
+![kusk-gateway custom-upstream diagram](../img/basic-auth.png)
 
-:::info
-The `hostname` field can contain internal cluster domains but also external domains to your cluster that can handle your header based authentication.
-:::
-
-See all available Authentication configuration options in the [Extension Reference](../extension/#authentication).
+See all available Authentication configuration options in the [Extension Reference](../../extension/#authentication).
