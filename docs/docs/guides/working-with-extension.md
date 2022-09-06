@@ -4,15 +4,19 @@ Kusk Gateway comes with an `x-kusk` [OpenAPI extension](https://swagger.io/speci
 an OpenAPI definition to be the source of truth for both operational and functional aspects of your APIs.
 
 The [extension reference](../extension) describes all available properties and the following guides are 
-available to help you make the most of them:
+available to help you make the most of them.
 
-- [Mocking](mocking.md) - How to mock all or parts of your API.
-- [Validation](validation.md) - How work with automatic request validation.
+#### Extensions that work with requests:
 - [CORS](cors.md) - How to specify CORS settings.
-- [Routing](routing.md) - How to configure routing of API requests.
-- [Timeouts](timeouts.md) - How to set request timeouts.
-- [Authentication](authentication.mdn) - How to set authentication of your API.
+- [Rate-Limiting](rate-limit) - How to rate-limit requests to your API.
+- [Routing](routing) - How to configure routing of API requests.
+- [Validation](validation) - How work with automatic request validation.
+- [Timeouts](timeouts) - How to set request timeouts.
+- [Authentication](basic-auth) - How to set authentication of your API.
 
+#### Extensions that work with responses: 
+- [Mocking](mocking) - How to mock all or parts of your API.
+- [Cache](cache) - How to cache your API responses.
 ## **Properties Overview**
 
 `x-kusk` extension can be applied at (not exclusively):
