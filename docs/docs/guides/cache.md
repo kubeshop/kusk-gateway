@@ -1,4 +1,4 @@
-# Caching
+# Response Caching
 
 The HTTP Cache stores a response associated with a request and reuses the stored response for subsequent requests. Caches reduce latency and network traffic, as the response is directly returned from the gateway. 
 

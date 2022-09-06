@@ -11,6 +11,7 @@ available to help you make the most of them:
 - [CORS](cors.md) - How to specify CORS settings.
 - [Routing](routing.md) - How to configure routing of API requests.
 - [Timeouts](timeouts.md) - How to set request timeouts.
+- [Authentication](authentication.mdn) - How to set authentication of your API.
 
 ## **Properties Overview**
 
