@@ -15,7 +15,7 @@ info:
   version: 0.1.0
 x-kusk:
   auth:
-    type: basic
+    scheme: basic
     auth-upstream:
       host:
         hostname: auth-upstream-svc.default
@@ -37,7 +37,7 @@ paths:
     get:
       operationId: getHello
       auth:
-        type: basic
+        scheme: basic
         auth-upstream:
           host:
             hostname: auth-upstream-svc.default
