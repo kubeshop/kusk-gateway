@@ -251,9 +251,11 @@ func (e *EnvoyFleetValidator) defaultFleetExists(ctx context.Context, fleet *Env
 	if err := e.Client.List(context.TODO(), fleets, &client.ListOptions{}); err != nil {
 		return admission.Errored(1, err)
 	}
-	for _, fleet := range fleets.Items {
+	for _, f := range fleets.Items {
 		if fleet.Spec.Default {
-			return admission.Denied(fmt.Sprintf("fleet '%s/%s' is already set as default envoyfleet", fleet.Namespace, fleet.Name))
+			if fleet.Name != f.Name && fleet.Namespace != f.Namespace {
+				return admission.Denied(fmt.Sprintf("fleet '%s/%s' is already set as default envoyfleet", f.Namespace, f.Name))
+			}
 		}
 	}
 
