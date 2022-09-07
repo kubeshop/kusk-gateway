@@ -287,7 +287,7 @@ Note: Currently, rate limiting is applied per Envoy pod - if you have more than 
 x-kusk:
   rate_limit:
     requests_per_limit: 2
-    rate_limit.unit: minute
+    unit: minute
 ...
 ```
 ### **Caching**
