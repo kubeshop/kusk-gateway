@@ -72,9 +72,10 @@ func init() {
 
 // apiCmd represents the api command
 var deployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: "deploy command to deploy your apis",
-	Long:  ``,
+	Use:           "deploy",
+	Short:         "deploy command to deploy your apis",
+	SilenceErrors: true,
+	Long:          ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		cmd.SilenceUsage = true

@@ -67,7 +67,7 @@ func SendAnonymousCMDInfo() error {
 	properties := analytics.NewProperties()
 	properties.Set("event", event)
 	properties.Set("command", command)
-	properties.Set("version", analytics.Version)
+	properties.Set("version", build.Version)
 	track := analytics.Track{
 		AnonymousId: MachineID(),
 		UserId:      MachineID(),
