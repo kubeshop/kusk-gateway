@@ -892,6 +892,7 @@ spec:
                 description: Default marks fleet as the default one in the cluster
                 type: boolean
               image:
+                default: docker.io/envoyproxy/envoy:v1.23.1
                 description: Envoy image tag
                 type: string
               nodeSelector:
