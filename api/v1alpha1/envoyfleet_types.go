@@ -46,6 +46,7 @@ type EnvoyFleetSpec struct {
 	Service *ServiceConfig `json:"service"`
 
 	// Envoy image tag
+	// +kubebuilder:default:="docker.io/envoyproxy/envoy:v1.23.1"
 	Image string `json:"image,omitempty"`
 
 	// Node Selector is used to schedule the Envoy pod(s) to the specificly labeled nodes, optional
