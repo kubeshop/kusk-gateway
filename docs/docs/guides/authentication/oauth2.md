@@ -16,9 +16,10 @@ We'll go through step-by-step of configuring OAuth2. In this example we'll be us
 
 1. Signup for an account at [Auth0](https://auth0.com/).
 2. Create an Auth0 Application
-3. Configure the following Auth0 Application fields:
-    1. Allowed Callback URLs (e.g. `http://localhost:8080/oauth2/callback`)
-    2. Allowed Logout URLs (e.g. `http://localhost:8080/oauth2/signout`)
+3. Configure the following Auth0 Application fields: 
+    1. Allowed Callback URLs (e.g. `http://**KUSK_IP**/oauth2/callback`)
+    2. Allowed Logout URLs (e.g. `http://**KUSK_IP**/oauth2/signout`)
+(**KUSK_IP** is the IP of the Kusk's LoadBalancer, you can obtain it by running `kusk ip`)
 4. Take note of the credentials as we will need this later on:
 
 ```json
@@ -79,7 +80,7 @@ You are required to change:
 After that, deploy the API by running: 
 
 ```
-kusk api generate -i api.yaml | kubectl apply -f -
+kusk deploy -i api.yaml | kubectl apply -f -
 ```
 
 ### 4. Update EnvoyFleet ConfigMap
@@ -100,6 +101,8 @@ And then update the field `inline_string` replacing it with the `client_secret` 
         inline_string: "<stub_token_secret>" # <- replace with "CLIENT_SECRET"
 ```
 
+Finally, you should save the configuration and the changes will be applied. 
+
 ### 5. Restart Envoy Fleet
 
 As we currently have upstream issues with Envoy waiting to be fixed, the temporal solution is to restart Envoy manually (this only needs to be done once): 
@@ -109,7 +112,7 @@ For this:
 1. Port-Forward into Envoy's control plane: 
 
 ```sh
-kubectl port-forward --namespace kusk-system svc/kusk-gateway-envoy-fleet 19000:19000
+kubectl port-forward --namespace kusk-system deployment/kusk-gateway-envoy-fleet 19000:19000
 ```
 2. Restart Envoy by making a POST request to `/quitquitquit`
 
@@ -130,18 +133,13 @@ kusk-gateway-envoy-fleet-6f9ff68bcd-jxlwk   1/1     <b>Running</b>   1 (30s ago)
 
 ### 6. Test using the browser
 
-You're all set now, test your OAuth2 implementation through the browser by visiting Kusk's LoadBalancer. 
+You're all set now, test your OAuth2 implementation through the browser by visiting Kusk's LoadBalancer. Get the URL with: 
 
-You can get the Kusk Gateway's External-IP with the following command:
+```sh
+kusk ip
 
-<pre>
-kubectl get service -n kusk-system kusk-gateway-envoy-fleet
-<br />
-<br />
-NAME                       TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)                      AGE
-<br />
-kusk-gateway-envoy-fleet   LoadBalancer   10.100.15.213   <b>104.198.194.37</b>   80:31833/TCP,443:3083
-</pre>
+100.12.34.56
+```
 
 --- 
 
