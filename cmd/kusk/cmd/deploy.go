@@ -81,18 +81,7 @@ var deployCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"watch":           watch,
-					"name":            name,
-					"namespace":       namespace,
-					"envoyfleet.name": envoyFleetName,
-					"args":            args,
-					"os.Args":         os.Args,
-					"config":          cfgFile,
-					"env":             os.Environ(),
-				}
-				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

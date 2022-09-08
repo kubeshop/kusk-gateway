@@ -57,17 +57,7 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 	Run: func(cmd *cobra.Command, args []string) {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"envoyfleet.namespace": dashboardEnvoyFleetNamespace,
-					"envoyfleet.name":      dashboardEnvoyFleetName,
-					"external-port":        dashboardEnvoyFleetExternalPort,
-					"args":                 args,
-					"os.Args":              os.Args,
-					"config":               cfgFile,
-					"env":                  os.Environ(),
-				}
-				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

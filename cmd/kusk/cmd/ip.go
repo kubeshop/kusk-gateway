@@ -28,7 +28,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -51,14 +50,7 @@ var ipCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"args":    args,
-					"os.Args": os.Args,
-					"config":  cfgFile,
-					"env":     os.Environ(),
-				}
-				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

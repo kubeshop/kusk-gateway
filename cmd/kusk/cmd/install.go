@@ -85,19 +85,7 @@ var installCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"name":           releaseName,
-					"namespace":      releaseNamespace,
-					"no-dashboard":   noDashboard,
-					"no-api":         noApi,
-					"no-envoy-fleet": noEnvoyFleet,
-					"args":           args,
-					"os.Args":        os.Args,
-					"config":         cfgFile,
-					"env":            os.Environ(),
-				}
-				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

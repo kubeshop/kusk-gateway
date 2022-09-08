@@ -43,7 +43,7 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		analytics.SendAnonymousCMDInfo()
+		analytics.SendAnonymousCMDInfo(nil)
 	},
 }
 
@@ -53,13 +53,7 @@ func Execute() {
 	err := rootCmd.Execute()
 
 	if err != nil {
-		// Report error
-		miscInfo := map[string]interface{}{
-			"os.Args": os.Args,
-			"config":  cfgFile,
-			"env":     os.Environ(),
-		}
-		errors.NewErrorReporter(rootCmd, err, miscInfo).Report()
+		errors.NewErrorReporter(rootCmd, err).Report()
 	}
 
 	cobra.CheckErr(err)

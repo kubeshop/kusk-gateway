@@ -20,17 +20,15 @@ type ErrorReporter interface {
 }
 
 type errorReporter struct {
-	cmd      *cobra.Command
-	err      error
-	miscInfo map[string]interface{}
+	cmd *cobra.Command
+	err error
 }
 
 // NewErrorReporter ...
-func NewErrorReporter(cmd *cobra.Command, err error, miscInfo map[string]interface{}) ErrorReporter {
+func NewErrorReporter(cmd *cobra.Command, err error) ErrorReporter {
 	return &errorReporter{
-		cmd:      cmd,
-		err:      err,
-		miscInfo: miscInfo,
+		cmd: cmd,
+		err: err,
 	}
 }
 
@@ -39,7 +37,12 @@ func (r *errorReporter) Report() {
 	commandName := r.cmd.Use
 	if debug {
 		err := strings.ReplaceAll(r.err.Error(), "\n", " - ")
-		fmt.Fprintf(os.Stderr, "kusk: reporting error - command=%q, err=%q, miscInfo=%v\n", commandName, err, r.miscInfo)
+		fmt.Fprintf(os.Stderr, "analytics: reporting error - command=%v, err=%v\n", commandName, err)
 	}
-	analytics.SendAnonymousCommandError(commandName, r.err, r.miscInfo)
+
+	err := analytics.SendAnonymousCMDInfo(r.err)
+
+	if debug && err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: report error failed - command=%v, err=%v, %w", commandName, r.err, err))
+	}
 }

@@ -123,23 +123,7 @@ var generateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"watch":                watch,
-					"name":                 name,
-					"namespace":            namespace,
-					"in":                   apiSpecPath,
-					"upstream.service":     serviceName,
-					"upstream.namespace":   serviceNamespace,
-					"upstream.port":        servicePort,
-					"envoyfleet.name":      envoyFleetName,
-					"envoyfleet.namespace": envoyFleetNamespace,
-					"args":                 args,
-					"os.Args":              os.Args,
-					"config":               cfgFile,
-					"env":                  os.Environ(),
-				}
-				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

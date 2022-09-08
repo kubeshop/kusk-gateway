@@ -119,16 +119,7 @@ $ kusk mock -i https://url.to.api.com
 	Run: func(cmd *cobra.Command, args []string) {
 		reportError := func(err error) {
 			if err != nil {
-				// Report error
-				miscInfo := map[string]interface{}{
-					"in":      apiSpecPath,
-					"port":    mockServerPort,
-					"args":    args,
-					"os.Args": os.Args,
-					"config":  cfgFile,
-					"env":     os.Environ(),
-				}
-				error_reporter.NewErrorReporter(cmd, err, miscInfo).Report()
+				error_reporter.NewErrorReporter(cmd, err).Report()
 			}
 		}
 

@@ -58,7 +58,7 @@ func SendAnonymousInfo(ctx context.Context, client client.Client, event string, 
 }
 
 // SendAnonymouscmdInfo will send CLI event to GA
-func SendAnonymousCMDInfo() error {
+func SendAnonymousCMDInfo(err error) error {
 	event := "command"
 	command := []string{}
 	if len(os.Args) > 1 {
@@ -70,6 +70,11 @@ func SendAnonymousCMDInfo() error {
 	properties.Set("event", event)
 	properties.Set("command", command)
 	properties.Set("version", build.Version)
+
+	if err != nil {
+		properties.Set("error", err)
+	}
+
 	track := analytics.Track{
 		AnonymousId: MachineID(),
 		UserId:      MachineID(),
@@ -77,33 +82,7 @@ func SendAnonymousCMDInfo() error {
 		Properties:  properties,
 	}
 	return sendDataToGA(track)
-}
 
-// SendAnonymousCommandError will send CLI event to GA
-func SendAnonymousCommandError(command string, err error, miscInfo map[string]interface{}) {
-	properties := analytics.NewProperties()
-	properties.Set("event", "command")
-	properties.Set("command", command)
-	properties.Set("error", err)
-	properties.Set("version", build.Version)
-
-	for key, value := range miscInfo {
-		// Make sure we are not overwriting any previously set property
-		if _, ok := properties[key]; !ok {
-			properties.Set(key, value)
-		}
-	}
-
-	track := analytics.Track{
-		AnonymousId: MachineID(),
-		UserId:      MachineID(),
-		Event:       "kusk-cli",
-		Properties:  properties,
-	}
-
-	if sendError := sendDataToGA(track); sendError != nil {
-		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to report error - command=%v, err=%v, miscInfo=%v, %w", command, err, miscInfo, sendError))
-	}
 }
 
 func sendDataToGA(track analytics.Track) error {
