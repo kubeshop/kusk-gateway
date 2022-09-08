@@ -75,12 +75,9 @@ const sidebars = {
           type: "category",
           label: "Kusk CLI",
           items: [
-            {
-              type: "doc",
-              id: "reference/cli/overview",
-              label: "Installation",
-            },
+            "reference/cli/overview",
             "reference/cli/install-cmd",
+            "reference/cli/deploy-cmd",
             "reference/cli/mock-cmd",
             "reference/cli/generate-cmd",
             "reference/cli/dashboard-cmd",
