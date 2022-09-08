@@ -1,11 +1,14 @@
-# Kusk CLI
+# Install Kusk CLI
 
 Kusk is a CLI tool designed to help you manage common tasks related to Kusk Gateway.
 
 The CLI supports the following commands:
 
-- `install` - Installs Kusk Gateway and all its components with a single command - [Read more](install-cmd.md).  
-- `api generate` - Generates Kusk Gateway API resources from OpenAPI - [Read more](generate-cmd.md).
+- `install` - Installs Kusk Gateway and all its components with a single command - [Read more](install-cmd.md).
+- `deploy` - Deploys your API and configures Kusk Gateway using OpenAPI - [Read more](deploy-cmd.md).
+- `ip` - Provides the IP address of the default Kusk LoadBalancer
+- `generate` - Generates Kusk Gateway API resources from OpenAPI - [Read more](generate-cmd.md).
+- `dashboard` - Opens a port-forward to access Kusk Dashboard  - [Read more](dashboard-cmd.md).
 
 ## **Installation**
 
@@ -29,7 +32,7 @@ You can get a list of the available Kusk Gateway versions from our [releases pag
 Install `kusk` into `/usr/local/bin/kusk`:
 
 ```sh
-bash < <(curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh)
+curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
 ```
 
 ### **From Source**
@@ -59,7 +62,13 @@ brew upgrade kubeshop/kusk/kusk
 ### **Latest Release on GitHub**
 
 ```
-go install github.com/kubeshop/kusk@$VERSION
+curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
+```
+
+### **Using go**
+
+```
+go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
 ### **From Source**
@@ -68,4 +77,6 @@ Inside of the kusk repository directory:
 
 ```
 git clone https://github.com/kubeshop/kusk.git
+cd kusk/cmd/kusk
+go install
 ```

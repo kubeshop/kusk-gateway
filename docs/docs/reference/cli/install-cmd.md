@@ -1,4 +1,4 @@
-# Installing Kusk Gateway with the Kusk CLI
+# `kusk install`
 
 The `install` command will install Kusk Gateway and all its components with a single command. 
 Kusk uses Helm to do this, so you will need to have [Helm installed](https://helm.sh/docs/intro/install/).

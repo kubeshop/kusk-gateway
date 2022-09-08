@@ -73,7 +73,7 @@ kusk deploy -i openapi.yaml
 Get the IP of Kusk's LoadBalancer with: 
 
 ```sh
-kusk ip
+$ kusk ip
 
 10.12.34.56
 ```
