@@ -37,7 +37,6 @@ var clusterCmd = &cobra.Command{
 	Short: "parent command for cluster related functions",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Currently api only has one sub command
 		fmt.Fprint(os.Stderr, "The cluster command cannot be run directly. Please run: 'kusk cluster install' or 'kusk cluster upgrade'\n")
 	},
 }
