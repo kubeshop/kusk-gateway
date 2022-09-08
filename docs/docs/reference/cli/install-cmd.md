@@ -15,37 +15,29 @@ Kusk uses Helm to do this, so you will need to have [Helm installed](https://hel
 The default `kusk install` command will install Kusk Gateway, a public (for your APIs) and private (for the Kusk dashboard and API)
 envoy-fleet, api, and dashboard in the kusk-system namespace using Helm and using the current kubeconfig context.
 
-```shell
+```sh
 $ kusk install
-adding the kubeshop helm repository
-done
-fetching the latest charts
-done
-installing Kusk Gateway
-done
-installing Envoy Fleet
-done
-installing Kusk API
-done
-installing Kusk Dashboard
-done
-
-To access the dashboard, port forward to the envoy-fleet service that exposes it:
-        $ kubectl port-forward -n            kusk-system svc/kusk-gateway-private-envoy-fleet 8080:80
-
-Then go http://localhost:8080/
+  ✔  Looking for Helm...
+  ✔  Adding Kubeshop repository...
+  ✔  Fetching the latest charts...
+  ✔  Installing Kusk Gateway
+  ✔  Installing Envoy Fleet...
+  ✔  Installing Private Envoy Fleet...
+  ✔  Installing Kusk API server...
+  ✔  Installing Kusk Dashboard...
+  •  kusk dashboard is now available. To access it run: $ kusk dashboard
 ```
 
 The following command will create a Helm release named with **--name** in the namespace specified by **--namespace**.
 
-```shell
+```sh
 $ kusk install --name=my-release --namespace=my-namespace
 ...
 ```
 
 The following command will install Kusk Gateway, but not the dashboard, api, or envoy-fleet.
 
-```shell
+```sh
 $ kusk install --no-dashboard --no-api --no-envoy-fleet
 ...
 ```

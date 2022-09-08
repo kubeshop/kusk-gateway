@@ -80,7 +80,7 @@ You are required to change:
 After that, deploy the API by running: 
 
 ```
-kusk api generate -i api.yaml | kubectl apply -f -
+kusk deploy -i api.yaml | kubectl apply -f -
 ```
 
 ### 4. Update EnvoyFleet ConfigMap
