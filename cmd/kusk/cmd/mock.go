@@ -41,11 +41,13 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/config"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking"
-	fileWatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
+
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/config"
+	error_reporter "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 
 	mockingServer "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/server"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
@@ -115,48 +117,65 @@ To mock an api from a url
 $ kusk mock -i https://url.to.api.com
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		reportError := func(err error) {
+			if err != nil {
+				error_reporter.NewErrorReporter(cmd, err).Report()
+			}
+		}
+
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			ui.Fail(fmt.Errorf("unable to fetch user's home directory: %w", err))
+			err := fmt.Errorf("unable to fetch user's home directory: %w", err)
+			reportError(err)
+			ui.Fail(err)
 		}
 
 		if err := config.CreateDirectoryIfNotExists(homeDir); err != nil {
+			reportError(err)
 			ui.Fail(err)
 		}
 
 		mockingConfigFilePath := path.Join(homeDir, ".kusk", "openapi-mock.yaml")
 		if err := writeMockingConfigIfNotExists(mockingConfigFilePath); err != nil {
+			reportError(err)
 			ui.Fail(err)
 		}
 
 		spec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
 		if err != nil {
-			ui.Fail(fmt.Errorf("error when parsing openapi spec: %w", err))
+			err := fmt.Errorf("error when parsing openapi spec: %w", err)
+			reportError(err)
+			ui.Fail(err)
 		}
 
 		if err := spec.Validate(context.Background()); err != nil {
-			ui.Fail(fmt.Errorf("openapi spec failed validation: %w", err))
+			err := fmt.Errorf("openapi spec failed validation: %w", err)
+			reportError(err)
+			ui.Fail(err)
 		}
 
 		ui.Info(ui.Green("🎉 successfully parsed OpenAPI spec"))
 
 		u, err := url.Parse(apiSpecPath)
 		if err != nil {
+			reportError(err)
 			ui.Fail(err)
 		}
 
-		var watcher *fileWatcher.FileWatcher
+		var watcher *filewatcher.FileWatcher
 		absoluteApiSpecPath := apiSpecPath
 		if apiOnFileSystem := u.Host == ""; apiOnFileSystem {
 			// we need the absolute path of the file in the filesystem
 			// to properly mount the file into the mocking container
 			absoluteApiSpecPath, err = filepath.Abs(apiSpecPath)
 			if err != nil {
+				reportError(err)
 				ui.Fail(err)
 			}
 
-			watcher, err = fileWatcher.New(absoluteApiSpecPath)
+			watcher, err = filewatcher.New(absoluteApiSpecPath)
 			if err != nil {
+				reportError(err)
 				ui.Fail(err)
 			}
 			defer watcher.Close()
@@ -166,12 +185,15 @@ $ kusk mock -i https://url.to.api.com
 
 		cli, err := client.NewClientWithOpts(client.FromEnv)
 		if err != nil {
-			ui.Fail(fmt.Errorf("unable to create new docker client from environment: %w", err))
+			err := fmt.Errorf("unable to create new docker client from environment: %w", err)
+			reportError(err)
+			ui.Fail(err)
 		}
 
 		if mockServerPort == 0 {
 			mockServerPort, err = scanForNextAvailablePort(8080)
 			if err != nil {
+				reportError(err)
 				ui.Fail(err)
 			}
 		}
@@ -179,11 +201,13 @@ $ kusk mock -i https://url.to.api.com
 		ctx := context.Background()
 		mockServer, err := mockingServer.New(ctx, cli, mockingConfigFilePath, absoluteApiSpecPath, mockServerPort)
 		if err != nil {
+			reportError(err)
 			ui.Fail(err)
 		}
 
 		mockServerId, err := mockServer.Start(ctx)
 		if err != nil {
+			reportError(err)
 			ui.Fail(err)
 		}
 
@@ -205,7 +229,9 @@ $ kusk mock -i https://url.to.api.com
 			go watcher.Watch(func() {
 				ui.Info("✍️ change detected in " + apiSpecPath)
 				if err := mockServer.Stop(ctx, mockServerId); err != nil {
-					ui.Fail(fmt.Errorf("unable to update mocking server"))
+					err := fmt.Errorf("unable to update mocking server")
+					reportError(err)
+					ui.Fail(err)
 				}
 			}, sigs)
 		}
@@ -219,7 +245,9 @@ $ kusk mock -i https://url.to.api.com
 				if status.Error == nil && status.StatusCode > 0 {
 					mockServerId, err = mockServer.Start(ctx)
 					if err != nil {
-						ui.Fail(fmt.Errorf("unable to update mocking server"))
+						err := fmt.Errorf("unable to update mocking server")
+						reportError(err)
+						ui.Fail(err)
 					}
 					ui.Info("☀️ mock server restarted")
 
@@ -234,7 +262,9 @@ $ kusk mock -i https://url.to.api.com
 				if !ok {
 					return
 				}
-				ui.Fail(fmt.Errorf("an unexpected error occured: %w", err))
+				err = fmt.Errorf("an unexpected error occured: %w", err)
+				reportError(err)
+				ui.Fail(err)
 			case logEntry, ok := <-mockServer.LogCh:
 				if !ok {
 					return
@@ -248,7 +278,9 @@ $ kusk mock -i https://url.to.api.com
 			case <-sigs:
 				ui.Info("😴 shutting down mocking server")
 				if err := mockServer.Stop(ctx, mockServerId); err != nil {
-					ui.Fail(fmt.Errorf("unable to stop mocking server: %w", err))
+					err := fmt.Errorf("unable to stop mocking server: %w", err)
+					reportError(err)
+					ui.Fail(err)
 				}
 				return
 			}

@@ -27,15 +27,17 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/denisbrodbeck/machineid"
-	"github.com/kubeshop/kusk-gateway/pkg/build"
 	"github.com/segmentio/analytics-go"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeshop/kusk-gateway/pkg/build"
 )
 
 var (
@@ -56,7 +58,7 @@ func SendAnonymousInfo(ctx context.Context, client client.Client, event string, 
 }
 
 // SendAnonymouscmdInfo will send CLI event to GA
-func SendAnonymousCMDInfo() error {
+func SendAnonymousCMDInfo(err error) error {
 	event := "command"
 	command := []string{}
 	if len(os.Args) > 1 {
@@ -68,6 +70,11 @@ func SendAnonymousCMDInfo() error {
 	properties.Set("event", event)
 	properties.Set("command", command)
 	properties.Set("version", build.Version)
+
+	if err != nil {
+		properties.Set("error", err)
+	}
+
 	track := analytics.Track{
 		AnonymousId: MachineID(),
 		UserId:      MachineID(),
@@ -75,6 +82,7 @@ func SendAnonymousCMDInfo() error {
 		Properties:  properties,
 	}
 	return sendDataToGA(track)
+
 }
 
 func sendDataToGA(track analytics.Track) error {
@@ -84,8 +92,16 @@ func sendDataToGA(track analytics.Track) error {
 	}
 
 	client := analytics.New(TelemetryToken)
-	defer client.Close()
-	return client.Enqueue(track)
+	if err := client.Enqueue(track); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to enqueue track=%v, %w", track, err))
+		return err
+	}
+	if err := client.Close(); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to close client, %w", err))
+		return err
+	}
+
+	return nil
 }
 
 func ClusterID(ctx context.Context, client client.Client) string {
