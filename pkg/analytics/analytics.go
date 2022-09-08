@@ -27,15 +27,17 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/denisbrodbeck/machineid"
-	"github.com/kubeshop/kusk-gateway/pkg/build"
 	"github.com/segmentio/analytics-go"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeshop/kusk-gateway/pkg/build"
 )
 
 var (
@@ -77,6 +79,33 @@ func SendAnonymousCMDInfo() error {
 	return sendDataToGA(track)
 }
 
+// SendAnonymousCommandError will send CLI event to GA
+func SendAnonymousCommandError(command string, err error, miscInfo map[string]interface{}) {
+	properties := analytics.NewProperties()
+	properties.Set("event", "command")
+	properties.Set("command", command)
+	properties.Set("error", err)
+	properties.Set("version", build.Version)
+
+	for key, value := range miscInfo {
+		// Make sure we are not overwriting any previously set property
+		if _, ok := properties[key]; !ok {
+			properties.Set(key, value)
+		}
+	}
+
+	track := analytics.Track{
+		AnonymousId: MachineID(),
+		UserId:      MachineID(),
+		Event:       "kusk-cli",
+		Properties:  properties,
+	}
+
+	if sendError := sendDataToGA(track); sendError != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to report error - command=%v, err=%v, miscInfo=%v, %w", command, err, miscInfo, sendError))
+	}
+}
+
 func sendDataToGA(track analytics.Track) error {
 	// enabled by default, dont send anything if explicitely disabled
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok && enabled == "false" {
@@ -84,8 +113,16 @@ func sendDataToGA(track analytics.Track) error {
 	}
 
 	client := analytics.New(TelemetryToken)
-	defer client.Close()
-	return client.Enqueue(track)
+	if err := client.Enqueue(track); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to enqueue track=%v, %w", track, err))
+		return err
+	}
+	if err := client.Close(); err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Errorf("analytics: failed to close client, %w", err))
+		return err
+	}
+
+	return nil
 }
 
 func ClusterID(ctx context.Context, client client.Client) string {

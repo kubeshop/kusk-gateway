@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
 
@@ -49,7 +50,19 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	cobra.CheckErr(rootCmd.Execute())
+	err := rootCmd.Execute()
+
+	if err != nil {
+		// Report error
+		miscInfo := map[string]interface{}{
+			"os.Args": os.Args,
+			"config":  cfgFile,
+			"env":     os.Environ(),
+		}
+		errors.NewErrorReporter(rootCmd, err, miscInfo).Report()
+	}
+
+	cobra.CheckErr(err)
 }
 
 func init() {

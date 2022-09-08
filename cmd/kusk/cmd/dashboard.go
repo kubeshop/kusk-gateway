@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/k8s"
 )
 
@@ -54,10 +55,26 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 	Expose dashboard on port 9090
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		reportError := func(err error) {
+			if err != nil {
+				// Report error
+				miscInfo := map[string]interface{}{
+					"envoyfleet.namespace": dashboardEnvoyFleetNamespace,
+					"envoyfleet.name":      dashboardEnvoyFleetName,
+					"external-port":        dashboardEnvoyFleetExternalPort,
+					"args":                 args,
+					"os.Args":              os.Args,
+					"config":               cfgFile,
+					"env":                  os.Environ(),
+				}
+				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+			}
+		}
 
 		kubeConfig, err := k8s.GetKubeConfig()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to get kube config: %v\n", err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -65,12 +82,14 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 		config, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
 		clientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -79,6 +98,7 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 		})
 		if err != nil || len(podList.Items) == 0 {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -92,6 +112,7 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 
 		if chosenPod == nil {
 			fmt.Fprintln(os.Stderr, "no running pods found for envoyfleet: ", dashboardEnvoyFleetName)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -129,6 +150,7 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 			})
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
+				reportError(err)
 				os.Exit(1)
 			}
 		}()

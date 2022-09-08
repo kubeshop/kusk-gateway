@@ -36,17 +36,19 @@ import (
 	"syscall"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	filewatcher "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
-	"github.com/kubeshop/kusk-gateway/pkg/options"
-	"github.com/kubeshop/kusk-gateway/pkg/spec"
 	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
+	"github.com/kubeshop/kusk-gateway/pkg/options"
+	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 var (
@@ -77,15 +79,34 @@ var deployCmd = &cobra.Command{
 	SilenceErrors: true,
 	Long:          ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		reportError := func(err error) {
+			if err != nil {
+				// Report error
+				miscInfo := map[string]interface{}{
+					"watch":           watch,
+					"name":            name,
+					"namespace":       namespace,
+					"envoyfleet.name": envoyFleetName,
+					"args":            args,
+					"os.Args":         os.Args,
+					"config":          cfgFile,
+					"env":             os.Environ(),
+				}
+				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+			}
+		}
+
 		ctx := context.Background()
 		cmd.SilenceUsage = true
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
+			reportError(err)
 			return err
 		}
 
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
+			reportError(err)
 			return err
 		}
 
@@ -103,14 +124,17 @@ var deployCmd = &cobra.Command{
 			if apierrors.IsAlreadyExists(err) {
 				ap := &v1alpha1.API{}
 				if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+					reportError(err)
 					return err
 				}
 				api.SetResourceVersion(ap.GetResourceVersion())
 				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+					reportError(err)
 					return err
 				}
 				fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
 			} else {
+				reportError(err)
 				return err
 			}
 		} else {
@@ -123,6 +147,7 @@ var deployCmd = &cobra.Command{
 
 				watcher, err = filewatcher.New(file)
 				if err != nil {
+					reportError(err)
 					return err
 				}
 				defer watcher.Close()
@@ -136,10 +161,12 @@ var deployCmd = &cobra.Command{
 						ui.Info("✍️ change detected in " + file)
 						manifest, err := getParsedAndValidatedOpenAPISpec(file)
 						if err != nil {
+							reportError(err)
 							ui.Fail(err)
 						}
 						api := &v1alpha1.API{}
 						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
+							reportError(err)
 							ui.Err(err)
 						}
 
@@ -151,11 +178,13 @@ var deployCmd = &cobra.Command{
 						}
 						ap := &v1alpha1.API{}
 						if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+							reportError(err)
 							fmt.Fprintln(os.Stderr, err)
 						}
 						api.SetResourceVersion(ap.GetResourceVersion())
 
 						if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+							reportError(err)
 							fmt.Fprintln(os.Stderr, err)
 						} else {
 							fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
@@ -173,13 +202,15 @@ var deployCmd = &cobra.Command{
 }
 
 func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
+	const KuskExtensionKey = "x-kusk"
+
 	parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
 	if err != nil {
 		return "", err
 	}
 
-	if _, ok := parsedApiSpec.ExtensionProps.Extensions["x-kusk"]; !ok {
-		parsedApiSpec.ExtensionProps.Extensions["x-kusk"] = options.Options{}
+	if _, ok := parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey]; !ok {
+		parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey] = options.Options{}
 	}
 
 	if name == "" {
@@ -198,7 +229,7 @@ func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 
 	// override top level upstream service if undefined.
 	if serviceName != "" && serviceNamespace != "" && servicePort != 0 {
-		xKusk := parsedApiSpec.ExtensionProps.Extensions["x-kusk"].(options.Options)
+		xKusk := parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey].(options.Options)
 		xKusk.Upstream = &options.UpstreamOptions{
 			Service: &options.UpstreamService{
 				Name:      serviceName,
@@ -207,10 +238,10 @@ func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 			},
 		}
 
-		parsedApiSpec.ExtensionProps.Extensions["x-kusk"] = xKusk
+		parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey] = xKusk
 	}
 
-	if err := validateExtensionOptions(parsedApiSpec.ExtensionProps.Extensions["x-kusk"]); err != nil {
+	if err := validateExtensionOptions(parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey]); err != nil {
 		return "", err
 	}
 

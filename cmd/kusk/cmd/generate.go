@@ -34,6 +34,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
@@ -76,7 +77,7 @@ var generateCmd = &cobra.Command{
 	In the future, we will add the notion of a default envoyfleet which kusk gateway will use when none is specified.
 
 	In case you don't specify envoyfleet name, it will default to kusk-gateway-envoy-fleet.
-	If you do not specify the envoyfleet namespace, it will default to kusk-system. 
+	If you do not specify the envoyfleet namespace, it will default to kusk-system.
 
 	Sample usage
 
@@ -120,9 +121,32 @@ var generateCmd = &cobra.Command{
 	This will fetch the OpenAPI document from the provided URL and generate a Kusk Gateway API resource
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		reportError := func(err error) {
+			if err != nil {
+				// Report error
+				miscInfo := map[string]interface{}{
+					"watch":                watch,
+					"name":                 name,
+					"namespace":            namespace,
+					"in":                   apiSpecPath,
+					"upstream.service":     serviceName,
+					"upstream.namespace":   serviceNamespace,
+					"upstream.port":        servicePort,
+					"envoyfleet.name":      envoyFleetName,
+					"envoyfleet.namespace": envoyFleetNamespace,
+					"args":                 args,
+					"os.Args":              os.Args,
+					"config":               cfgFile,
+					"env":                  os.Environ(),
+				}
+				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+			}
+		}
+
 		parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -139,11 +163,13 @@ var generateCmd = &cobra.Command{
 		opts, err := spec.GetOptions(parsedApiSpec)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
 		if err := opts.Validate(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -163,11 +189,13 @@ var generateCmd = &cobra.Command{
 
 		if err := validateExtensionOptions(parsedApiSpec.ExtensionProps.Extensions["x-kusk"]); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
 		if apiSpec, err = getAPISpecString(parsedApiSpec); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 
@@ -179,6 +207,7 @@ var generateCmd = &cobra.Command{
 			Spec:                strings.Split(apiSpec, "\n"),
 		}); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
 			os.Exit(1)
 		}
 	},

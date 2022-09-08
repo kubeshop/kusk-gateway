@@ -28,13 +28,16 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
 func init() {
@@ -45,21 +48,38 @@ var ipCmd = &cobra.Command{
 	Use:           "ip",
 	Short:         "return IP address of the default envoyfleet",
 	SilenceErrors: true,
-	RunE: func(cmd *cobra.Command, arg []string) error {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		reportError := func(err error) {
+			if err != nil {
+				// Report error
+				miscInfo := map[string]interface{}{
+					"args":    args,
+					"os.Args": os.Args,
+					"config":  cfgFile,
+					"env":     os.Environ(),
+				}
+				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+			}
+		}
+
 		cmd.SilenceUsage = true
 
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
+			reportError(err)
 			return err
 		}
 
 		envoyFleets := &kuskv1.EnvoyFleetList{}
 
 		if err := k8sclient.List(context.TODO(), envoyFleets, &client.ListOptions{}); err != nil {
+			reportError(err)
 			return err
 		}
 		if len(envoyFleets.Items) == 0 {
-			return fmt.Errorf("there are no envoyfleets in your cluster")
+			err := fmt.Errorf("there are no envoyfleets in your cluster")
+			reportError(err)
+			return err
 		}
 		defaultFleet := kuskv1.EnvoyFleet{}
 		for _, f := range envoyFleets.Items {
@@ -70,17 +90,20 @@ var ipCmd = &cobra.Command{
 		}
 
 		if len(defaultFleet.Name) == 0 {
-			return fmt.Errorf("there is no default envoyfleet in your cluster")
+			err := fmt.Errorf("there is no default envoyfleet in your cluster")
+			reportError(err)
 		}
 
 		list := &corev1.ServiceList{}
 
 		labelSelector, err := labels.Parse("app.kubernetes.io/managed-by=kusk-gateway-manager,fleet=" + defaultFleet.Name + "." + defaultFleet.Namespace)
 		if err != nil {
+			reportError(err)
 			return err
 		}
 
 		if err := k8sclient.List(context.TODO(), list, &client.ListOptions{LabelSelector: labelSelector}); err != nil {
+			reportError(err)
 			return err
 		}
 
@@ -98,9 +121,11 @@ var ipCmd = &cobra.Command{
 		if ip == "" {
 			//kubectl port-forward svc/kusk-gateway-dashboard -n kusk-system 8080:80
 			if svc.Spec.Type == "ClusterIP" {
-				return fmt.Errorf("your envoyfleet doesn't have IP address assigned. Try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				err := fmt.Errorf("your envoyfleet doesn't have IP address assigned. Try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				reportError(err)
 			} else {
-				return fmt.Errorf("your envoyfleet doesn't have IP address assigned yet retry or try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				err := fmt.Errorf("your envoyfleet doesn't have IP address assigned yet retry or try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				reportError(err)
 			}
 		}
 		fmt.Println(ip)

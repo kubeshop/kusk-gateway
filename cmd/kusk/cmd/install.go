@@ -35,6 +35,9 @@ import (
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
 var (
@@ -80,26 +83,47 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		spinner := NewSpinner("Looking for Helm...")
+		reportError := func(err error) {
+			if err != nil {
+				// Report error
+				miscInfo := map[string]interface{}{
+					"name":           releaseName,
+					"namespace":      releaseNamespace,
+					"no-dashboard":   noDashboard,
+					"no-api":         noApi,
+					"no-envoy-fleet": noEnvoyFleet,
+					"args":           args,
+					"os.Args":        os.Args,
+					"config":         cfgFile,
+					"env":            os.Environ(),
+				}
+				errors.NewErrorReporter(cmd, err, miscInfo).Report()
+			}
+		}
+
+		spinner := utils.NewSpinner("Looking for Helm...")
 		helmPath, err := exec.LookPath("helm")
 		if err != nil {
 			spinner.Fail("Looking for Helm: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 		spinner.Success()
 
-		spinner = NewSpinner("Adding Kubeshop repository...")
+		spinner = utils.NewSpinner("Adding Kubeshop repository...")
 		err = addKubeshopHelmRepo(helmPath)
 		if err != nil {
 			spinner.Fail("Adding Kubeshop repository: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 		spinner.Success()
 
-		spinner = NewSpinner("Fetching the latest charts...")
+		spinner = utils.NewSpinner("Fetching the latest charts...")
 		err = updateHelmRepos(helmPath)
 		if err != nil {
 			spinner.Fail("Fetching the latest charts: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 		spinner.Success()
@@ -107,14 +131,16 @@ var installCmd = &cobra.Command{
 		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
 		if err != nil {
 			pterm.Error.Println("Listing existing releases: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 
 		if _, kuskGatewayInstalled := releases[releaseName]; !kuskGatewayInstalled {
-			spinner = NewSpinner("Installing Kusk Gateway")
+			spinner = utils.NewSpinner("Installing Kusk Gateway")
 			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Installing Kusk Gateway: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 
@@ -126,10 +152,11 @@ var installCmd = &cobra.Command{
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; !publicEnvoyFleetInstalled {
 			if !noEnvoyFleet {
-				spinner = NewSpinner("Installing Envoy Fleet...")
+				spinner = utils.NewSpinner("Installing Envoy Fleet...")
 				err = installPublicEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
 					spinner.Fail("Installing Envoy Fleet: ", err)
+					reportError(err)
 					os.Exit(1)
 				}
 				spinner.Success()
@@ -148,10 +175,11 @@ var installCmd = &cobra.Command{
 		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
 		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; !privateEnvoyFleetInstalled {
 			if !noEnvoyFleet {
-				spinner = NewSpinner("Installing Private Envoy Fleet...")
+				spinner = utils.NewSpinner("Installing Private Envoy Fleet...")
 				err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
 					spinner.Fail("Installing Envoy Fleet: ", err)
+					reportError(err)
 					os.Exit(1)
 				}
 				spinner.Success()
@@ -164,10 +192,11 @@ var installCmd = &cobra.Command{
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; !apiInstalled {
-			spinner = NewSpinner("Installing Kusk API server...")
+			spinner = utils.NewSpinner("Installing Kusk API server...")
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk API server: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 
@@ -184,10 +213,11 @@ var installCmd = &cobra.Command{
 
 		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, ok := releases[dashboardReleaseName]; !ok {
-			spinner = NewSpinner("Installing Kusk Dashboard...")
+			spinner = utils.NewSpinner("Installing Kusk Dashboard...")
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Installing Kusk Dashboard...", err)
+				reportError(err)
 				os.Exit(1)
 			}
 
