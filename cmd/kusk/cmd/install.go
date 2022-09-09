@@ -47,7 +47,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(installCmd)
+	clusterCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
