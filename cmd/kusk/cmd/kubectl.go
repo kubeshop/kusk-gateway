@@ -39,8 +39,6 @@ import (
 	kubectl "k8s.io/kubectl/pkg/cmd"
 )
 
-// type CmdOpts config.CLIOptions
-
 type kubectlPluginHandler struct{}
 
 func (h *kubectlPluginHandler) Lookup(filename string) (string, bool) {
@@ -76,10 +74,6 @@ func (h *kubectlPluginHandler) Execute(executablePath string, cmdArgs, environme
 	// append executablePath to cmdArgs, as execve will make first argument the "binary name".
 	return syscall.Exec(executablePath, append([]string{executablePath}, cmdArgs...), environment)
 }
-
-// func init() {
-// 	rootCmd.AddCommand(NewKubectlCmd())
-// }
 
 func NewKubectlCmd() *cobra.Command {
 	_ = pflag.CommandLine.MarkHidden("log-flush-frequency")

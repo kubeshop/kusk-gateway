@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pterm/pterm"
@@ -38,11 +39,10 @@ import (
 )
 
 var (
-	noApi                         bool
-	noDashboard                   bool
-	noEnvoyFleet                  bool
-	releaseName, releaseNamespace string
-
+	noApi            bool
+	noDashboard      bool
+	noEnvoyFleet     bool
+	latest           bool
 	analyticsEnabled = "true"
 )
 
@@ -54,6 +54,7 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+	installCmd.Flags().BoolVar(&latest, "latest", false, "if set latest version of kusk-gateway will be installed")
 
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
@@ -87,14 +88,8 @@ var installCmd = &cobra.Command{
 		}
 
 		spinner := utils.NewSpinner("Installing kusk")
-		instCmd := NewKubectlCmd()
 
-		kusk, _ := manifest.ReadFile("manifests/kusk.yaml")
-		kuskfile, _ := ioutil.TempFile("", "kusk-man")
-		kuskfile.Write(kusk)
-
-		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", kuskfile.Name())})
-		if err := instCmd.Execute(); err != nil {
+		if err := apply("deployment.yaml"); err != nil {
 			spinner.Fail("failed installing kusk", err)
 			reportError(err)
 			return err
@@ -108,69 +103,77 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute))
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute)); err != nil {
+			spinner.Fail("failed installing kusk", err)
+			reportError(err)
+			return err
+		}
 		spinner.Success()
 
 		if !noEnvoyFleet {
-			instCmd := NewKubectlCmd()
+			spinner = utils.NewSpinner("Installing Envoy Fleets...")
 
-			spinner = utils.NewSpinner("Installing Envoy Fleet...")
-			fleets, _ := manifest.ReadFile("manifests/fleets.yaml")
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
-			tmpfile.Write(fleets)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("fleets.yaml"); err != nil {
+				spinner.Fail("failed installing Envoy Fleets", err)
 				reportError(err)
 				return err
 			}
 			spinner.Success()
-
 		}
 
 		if !noApi {
-			instCmd := NewKubectlCmd()
 			spinner = utils.NewSpinner("Installing API Server...")
 
-			apis, _ := manifest.ReadFile("manifests/apis.yaml")
-
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
-			tmpfile.Write(apis)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("apis.yaml"); err != nil {
+				spinner.Fail("failed installing API Server", err)
 				reportError(err)
 				return err
 			}
+			spinner.Success()
 		} else if noApi {
 			return nil
 		}
 
-		spinner.Success()
-
 		if !noDashboard {
-			instCmd := NewKubectlCmd()
 			spinner = utils.NewSpinner("Installing Dashboard...")
-			apis, _ := manifest.ReadFile("manifests/dashboard.yaml")
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
 
-			tmpfile.Write(apis)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("dashboard.yaml"); err != nil {
+				spinner.Fail("failed installing Dashboard", err)
 				reportError(err)
 				return err
 			}
-
 			spinner.Success()
-
 			printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 		}
 		return nil
 	},
+}
+
+func apply(filename string) error {
+	instCmd := NewKubectlCmd()
+	if !latest {
+		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
+	} else {
+		ghclient, _ := utils.NewGithubClient("", nil)
+		i, _, err := ghclient.GetTags()
+		if err != nil {
+			return err
+		}
+		if len(i) > 0 {
+			ref_str := strings.Split(i[len(i)-1].Ref, "/")
+			ref := ref_str[len(ref_str)-1]
+			url := fmt.Sprintf("https://raw.githubusercontent.com/kubeshop/kusk-gateway/v%s/cmd/kusk/cmd/manifests/%s", ref, filename)
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", url)})
+		}
+	}
+	return instCmd.Execute()
+}
+func getEmbeddedFile(filename string) string {
+	apis, _ := manifest.ReadFile(fmt.Sprintf("manifests/%s", filename))
+	tmpfile, _ := ioutil.TempFile("", "kusk-man")
+
+	tmpfile.Write(apis)
+	return tmpfile.Name()
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {

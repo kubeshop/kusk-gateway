@@ -147,7 +147,7 @@ vet: ## Run go vet against code.
 	go vet $(shell go list ./... | grep -v /examples/)
 
 .PHONY: test
-test: manifests generate fmt vet $(ENVTEST) ## Run tests.
+test: manifests fmt vet $(ENVTEST) ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
 
 .PHONY: testing
@@ -196,10 +196,12 @@ install: manifests $(KUSTOMIZE) ## Install CRDs into the K8s cluster specified i
 uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+generate-deployment:
+	$(KUSTOMIZE) build config/default > cmd/kusk/cmd/manifests/deployment.yaml
+
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	echo $(MANAGER_IMG)
-	$(KUSTOMIZE) build config/default  > tttdeploy.yaml
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: deploy-debug
 deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
@@ -227,7 +229,7 @@ $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.4
 
 $(CONTROLLER_GEN): ## Download controller-gen locally if necessary.
-	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
+	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
 
 $(STERN): ## Download stern (https://github.com/stern/stern) locally if necessary.
 	go install github.com/stern/stern@latest

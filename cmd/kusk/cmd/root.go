@@ -26,7 +26,6 @@ package cmd
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
 	"os"
 	"strings"
