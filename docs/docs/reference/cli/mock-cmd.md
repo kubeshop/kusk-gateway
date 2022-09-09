@@ -1,4 +1,4 @@
-# Mock your API locally using Kusk
+# `kusk mock`
 
 Spin up a local mocking server that generates responses from your content schema or returns your defined examples.
 

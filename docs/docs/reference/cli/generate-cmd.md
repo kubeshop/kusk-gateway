@@ -1,4 +1,4 @@
-# Generating API CRDs
+# `kusk generate`
 
 The `generate` command accepts your OpenAPI definition as input, either as a local file or a URL pointing to your file
 and generates a Kusk Gateway compatible API resource that you can apply directly into your cluster. Use this command to automate 

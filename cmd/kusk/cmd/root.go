@@ -26,15 +26,19 @@ package cmd
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
+	"github.com/kubeshop/kusk-gateway/pkg/build"
+	"github.com/kubeshop/testkube/pkg/ui"
 )
 
 //go:embed manifests/*
@@ -49,6 +53,35 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		analytics.SendAnonymousCMDInfo(nil)
+		if cmd.Name() != generateCmd.Name() {
+
+			if len(build.Version) != 0 {
+				ghclient, _ := utils.NewGithubClient("", nil)
+				i, _, err := ghclient.GetTags()
+				if err != nil {
+					errors.NewErrorReporter(cmd, err).Report()
+				}
+
+				if len(i) > 0 {
+					ref_str := strings.Split(i[len(i)-1].Ref, "/")
+					ref := ref_str[len(ref_str)-1]
+
+					latestVersion, err := version.NewVersion(ref)
+					if err != nil {
+						errors.NewErrorReporter(cmd, err).Report()
+					}
+
+					currentVersion, err := version.NewVersion(build.Version)
+					if err != nil {
+						errors.NewErrorReporter(cmd, err).Report()
+					}
+
+					if currentVersion.LessThan(latestVersion) {
+						ui.Warn(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s\n", currentVersion, latestVersion), "Please follow instructions to update you installation: https://docs.kusk.io/reference/cli/overview/#updating")
+					}
+				}
+			}
+		}
 	},
 }
 
@@ -98,6 +131,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		fmt.Fprintln(os.Stderr, fmt.Errorf("failed to read config file %q, %w", viper.ConfigFileUsed(), err))
 	}
 }

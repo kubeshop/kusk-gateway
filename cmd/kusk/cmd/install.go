@@ -47,7 +47,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(installCmd)
+	clusterCmd.AddCommand(installCmd)
 	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
 	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
@@ -87,14 +87,8 @@ var installCmd = &cobra.Command{
 		}
 
 		spinner := utils.NewSpinner("Installing kusk")
-		instCmd := NewKubectlCmd()
 
-		kusk, _ := manifest.ReadFile("manifests/kusk.yaml")
-		kuskfile, _ := ioutil.TempFile("", "kusk-man")
-		kuskfile.Write(kusk)
-
-		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", kuskfile.Name())})
-		if err := instCmd.Execute(); err != nil {
+		if err := apply("deployment.yaml"); err != nil {
 			spinner.Fail("failed installing kusk", err)
 			reportError(err)
 			return err
@@ -108,69 +102,63 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute))
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute)); err != nil {
+			spinner.Fail("failed installing kusk", err)
+			reportError(err)
+			return err
+		}
 		spinner.Success()
 
 		if !noEnvoyFleet {
-			instCmd := NewKubectlCmd()
+			spinner = utils.NewSpinner("Installing Envoy Fleets...")
 
-			spinner = utils.NewSpinner("Installing Envoy Fleet...")
-			fleets, _ := manifest.ReadFile("manifests/fleets.yaml")
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
-			tmpfile.Write(fleets)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("fleets.yaml"); err != nil {
+				spinner.Fail("failed installing Envoy Fleets", err)
 				reportError(err)
 				return err
 			}
 			spinner.Success()
-
 		}
 
 		if !noApi {
-			instCmd := NewKubectlCmd()
 			spinner = utils.NewSpinner("Installing API Server...")
 
-			apis, _ := manifest.ReadFile("manifests/apis.yaml")
-
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
-			tmpfile.Write(apis)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("apis.yaml"); err != nil {
+				spinner.Fail("failed installing API Server", err)
 				reportError(err)
 				return err
 			}
+			spinner.Success()
 		} else if noApi {
 			return nil
 		}
 
-		spinner.Success()
-
 		if !noDashboard {
-			instCmd := NewKubectlCmd()
 			spinner = utils.NewSpinner("Installing Dashboard...")
-			apis, _ := manifest.ReadFile("manifests/dashboard.yaml")
-			tmpfile, _ := ioutil.TempFile("", "kusk-man")
 
-			tmpfile.Write(apis)
-
-			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
-			if err := instCmd.Execute(); err != nil {
-				spinner.Fail("failed installing kusk", err)
+			if err := apply("dashboard.yaml"); err != nil {
+				spinner.Fail("failed installing Dashboard", err)
 				reportError(err)
 				return err
 			}
-
 			spinner.Success()
-
 			printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 		}
 		return nil
 	},
+}
+
+func apply(filename string) error {
+	instCmd := NewKubectlCmd()
+	instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
+	return instCmd.Execute()
+}
+func getEmbeddedFile(filename string) string {
+	apis, _ := manifest.ReadFile(fmt.Sprintf("manifests/%s", filename))
+	tmpfile, _ := ioutil.TempFile("", "kusk-man")
+
+	tmpfile.Write(apis)
+	return tmpfile.Name()
 }
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {

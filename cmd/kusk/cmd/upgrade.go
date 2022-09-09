@@ -181,7 +181,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(upgradeCmd)
+	clusterCmd.AddCommand(upgradeCmd)
 
 	upgradeCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "name of release to update")
 	upgradeCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to upgrade in")

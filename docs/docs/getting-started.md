@@ -65,31 +65,25 @@ This approach of deploying an API and mocking it fits great in an **Design-First
 ### **4. Deploy the API**
 
 ```sh
-kusk api generate -i openapi.yaml | kubectl apply -f -
+kusk deploy -i openapi.yaml
 ```
-
-### **5. Get Kusk Gateway External-IP**
-
-The `kusk-gateway-envoy-fleet` LoadBalancer is the default entry point of the gateway. Copy the External-IP and have it handy for the next steps!
-
-<pre>
-kubectl get service -n kusk-system kusk-gateway-envoy-fleet
-<br />
-<br />
-NAME                       TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)                      AGE
-<br />
-kusk-gateway-envoy-fleet   LoadBalancer   10.100.15.213   <b>104.198.194.37</b>   80:31833/TCP,443:3083
-</pre>
-
-### **6. Test the API**
 
 **Given we have enabled gateway-level mocks**, we don't need to have any applications deployed to test the API. Kusk Gateway will provide with mock responses.
 
+Get the IP of Kusk's LoadBalancer with: 
+
 ```sh
-$ curl 104.198.194.37/hello
+$ kusk ip
+
+10.12.34.56
+```
+
+```sh
+$ curl 10.12.34.56/hello
+
 Hello from a mocked response!
 ```
-### **7. Deploy an application**
+### **6. Deploy an application**
 
 Once you have created and API and mocked its results using Kusk Gateway, the next step is to deploy an applications and connect it to Kusk Gateway.
 
@@ -100,7 +94,7 @@ kubectl create deployment hello-world --image=kubeshop/kusk-hello-world:v1.0.0
 
 kubectl expose deployment hello-world --name hello-world-svc --port=8080
 ```
-### **8. Update the OpenAPI definition to connect the application to Kusk Gateway**
+### **7. Update the OpenAPI definition to connect the application to Kusk Gateway**
 
 First, you will need to stop the mocking of the API. Delete the `mocking` section from the `openapi.yaml` file: 
 
@@ -149,16 +143,16 @@ paths:
 
 
 
-### **9. Apply the new changes**
+### **8. Apply the new changes**
 
 ```
-kusk api generate -i openapi.yaml | kubectl apply -f -
+kusk deploy -i openapi.yaml
 ```
 
-### **10. Test the deploy application**
+### **9. Test the deploy application**
 
 ```
-$ curl 104.198.194.37/hello
+$ curl 100.12.34.56/hello
 Hello from an implemented service!
 ```
 
