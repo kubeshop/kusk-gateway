@@ -9,6 +9,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/hashicorp/go-version v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kubeshop/testkube v1.3.43
 	github.com/mitchellh/copystructure v1.2.0
