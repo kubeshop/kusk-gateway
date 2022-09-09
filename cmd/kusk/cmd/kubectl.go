@@ -20,7 +20,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
@@ -109,10 +108,6 @@ func NewKubectlCmd() *cobra.Command {
 			}
 		}
 
-		if err := fallbackToKuskKubeconfig(args); err != nil {
-			return err
-		}
-
 		return originalPreRunE(cmd, args)
 	}
 	cmd.PersistentFlags().AddFlagSet(config.GetKubeCtlFlagSet())
@@ -130,35 +125,4 @@ func NewKubectlCmd() *cobra.Command {
 
 	logs.AddFlags(cmd.PersistentFlags())
 	return cmd
-}
-
-func fallbackToKuskKubeconfig(args []string) error {
-	for _, arg := range args {
-		if arg == "--" {
-			// no more options
-			break
-		}
-		if arg == "--kubeconfig" || strings.HasPrefix(arg, "--kubeconfig=") {
-			return nil
-		}
-	}
-
-	if _, envSet := os.LookupEnv("KUBECONFIG"); envSet {
-		// kubeconfig environment variable set, don't override
-		return nil
-	}
-
-	kubeconfig := config.GetCmdOpts().K0sVars.AdminKubeConfigPath
-	// verify that k0s's kubeconfig is readable before pushing it to the env
-	file, err := os.Open(kubeconfig)
-	if err != nil {
-		return fmt.Errorf("cannot read k0s kubeconfig, is the server running? (%w)", err)
-	}
-	file.Close()
-
-	if err := os.Setenv("KUBECONFIG", kubeconfig); err != nil {
-		return fmt.Errorf("failed to set k0s kubeconfig as default: %w", err)
-	}
-
-	return nil
 }

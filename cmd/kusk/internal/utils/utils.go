@@ -23,10 +23,14 @@
 package utils
 
 import (
+	"context"
 	"os"
 	"path"
+	"time"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -77,4 +81,67 @@ func getConfig() (*rest.Config, error) {
 	config.Burst = 400.0
 
 	return config, err
+}
+
+func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace string, instance string, timeout time.Duration) error {
+	p := &corev1.PodList{}
+
+	labelSelector, err := labels.Parse("app.kubernetes.io/component=" + instance)
+	if err != nil {
+		return err
+	}
+
+	err = k8sClient.List(ctx, p, &client.ListOptions{LabelSelector: labelSelector, Namespace: namespace}) // metav1.ListOptions{LabelSelector: "app.kubernetes.io/instance=" + instance})
+	if err != nil {
+		return err
+	}
+	for _, pod := range p.Items {
+		if err := wait.PollImmediate(time.Second, timeout, IsPodRunning(ctx, k8sClient, pod.Name, namespace)); err != nil {
+			return err
+		}
+		if err := wait.PollImmediate(time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// IsPodReady check if the pod in question is running state
+func IsPodReady(ctx context.Context, c client.Client, podName, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		pod := &corev1.Pod{}
+		err := c.Get(ctx, client.ObjectKey{Name: podName, Namespace: namespace}, pod)
+		if err != nil {
+			return false, nil
+		}
+		if len(pod.Status.ContainerStatuses) == 0 {
+			return false, nil
+		}
+
+		for _, c := range pod.Status.ContainerStatuses {
+			if !c.Ready {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+}
+
+// IsPodRunning check if the pod in question is running state
+func IsPodRunning(ctx context.Context, c client.Client, podName, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		pod := &corev1.Pod{}
+		err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: podName}, pod)
+		if err != nil {
+			return false, err
+		}
+
+		switch pod.Status.Phase {
+		case corev1.PodRunning, corev1.PodSucceeded:
+			return true, nil
+		case corev1.PodFailed:
+			return false, nil
+		}
+		return false, nil
+	}
 }

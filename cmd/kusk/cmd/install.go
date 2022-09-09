@@ -25,20 +25,16 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var (
@@ -92,7 +88,12 @@ var installCmd = &cobra.Command{
 
 		spinner := utils.NewSpinner("Installing kusk")
 		instCmd := NewKubectlCmd()
-		instCmd.SetArgs([]string{"apply", "-f=https://raw.githubusercontent.com/jasmingacic/jasmingacic/main/test.yaml"})
+
+		kusk, _ := manifest.ReadFile("manifests/kusk.yaml")
+		kuskfile, _ := ioutil.TempFile("", "kusk-man")
+		kuskfile.Write(kusk)
+
+		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", kuskfile.Name())})
 		if err := instCmd.Execute(); err != nil {
 			spinner.Fail("failed installing kusk", err)
 			reportError(err)
@@ -107,38 +108,67 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute))
-
+		utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute))
 		spinner.Success()
 
 		if !noEnvoyFleet {
+			instCmd := NewKubectlCmd()
+
 			spinner = utils.NewSpinner("Installing Envoy Fleet...")
-			instCmd.SetArgs([]string{"apply", "-f=https://raw.githubusercontent.com/jasmingacic/jasmingacic/main/envoyfleet.yaml"})
+			fleets, _ := manifest.ReadFile("manifests/fleets.yaml")
+			tmpfile, _ := ioutil.TempFile("", "kusk-man")
+			tmpfile.Write(fleets)
+
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
 			if err := instCmd.Execute(); err != nil {
 				spinner.Fail("failed installing kusk", err)
 				reportError(err)
 				return err
 			}
 			spinner.Success()
+
 		}
 
-		if noApi {
-			fmt.Println("--no-api set - skipping api installation")
+		if !noApi {
+			instCmd := NewKubectlCmd()
+			spinner = utils.NewSpinner("Installing API Server...")
+
+			apis, _ := manifest.ReadFile("manifests/apis.yaml")
+
+			tmpfile, _ := ioutil.TempFile("", "kusk-man")
+			tmpfile.Write(apis)
+
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
+			if err := instCmd.Execute(); err != nil {
+				spinner.Fail("failed installing kusk", err)
+				reportError(err)
+				return err
+			}
+		} else if noApi {
 			return nil
 		}
 
-		spinner = utils.NewSpinner("Installing Envoy Fleet...")
-		instCmd.SetArgs([]string{"apply", "-f=https://raw.githubusercontent.com/jasmingacic/jasmingacic/main/envoyfleet.yaml"})
-		if err := instCmd.Execute(); err != nil {
-			spinner.Fail("failed installing kusk", err)
-			reportError(err)
-			return err
-		}
 		spinner.Success()
 
-		//https://raw.githubusercontent.com/jasmingacic/jasmingacic/main/api.yaml
+		if !noDashboard {
+			instCmd := NewKubectlCmd()
+			spinner = utils.NewSpinner("Installing Dashboard...")
+			apis, _ := manifest.ReadFile("manifests/dashboard.yaml")
+			tmpfile, _ := ioutil.TempFile("", "kusk-man")
 
-		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
+			tmpfile.Write(apis)
+
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", tmpfile.Name())})
+			if err := instCmd.Execute(); err != nil {
+				spinner.Fail("failed installing kusk", err)
+				reportError(err)
+				return err
+			}
+
+			spinner.Success()
+
+			printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
+		}
 		return nil
 	},
 }
@@ -154,67 +184,4 @@ func printPortForwardInstructions(service, releaseNamespace, envoyFleetName stri
 			fmt.Sprintf("\t$ kubectl port-forward -n %s svc/%s 8080:80\n", releaseNamespace, envoyFleetName) +
 			"\tand go http://localhost:8080/api",
 	)
-}
-
-func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace string, instance string, timeout time.Duration) error {
-	p := &corev1.PodList{}
-
-	labelSelector, err := labels.Parse("app.kubernetes.io/component=" + instance)
-	if err != nil {
-		return err
-	}
-
-	err = k8sClient.List(ctx, p, &client.ListOptions{LabelSelector: labelSelector, Namespace: namespace}) // metav1.ListOptions{LabelSelector: "app.kubernetes.io/instance=" + instance})
-	if err != nil {
-		return err
-	}
-	for _, pod := range p.Items {
-		if err := wait.PollImmediate(time.Second, timeout, IsPodRunning(ctx, k8sClient, pod.Name, namespace)); err != nil {
-			return err
-		}
-		if err := wait.PollImmediate(time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// IsPodReady check if the pod in question is running state
-func IsPodReady(ctx context.Context, c client.Client, podName, namespace string) wait.ConditionFunc {
-	return func() (bool, error) {
-		pod := &corev1.Pod{}
-		err := c.Get(ctx, client.ObjectKey{Name: podName, Namespace: namespace}, pod)
-		if err != nil {
-			return false, nil
-		}
-		if len(pod.Status.ContainerStatuses) == 0 {
-			return false, nil
-		}
-
-		for _, c := range pod.Status.ContainerStatuses {
-			if !c.Ready {
-				return false, nil
-			}
-		}
-		return true, nil
-	}
-}
-
-// IsPodRunning check if the pod in question is running state
-func IsPodRunning(ctx context.Context, c client.Client, podName, namespace string) wait.ConditionFunc {
-	return func() (bool, error) {
-		pod := &corev1.Pod{}
-		err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: podName}, pod)
-		if err != nil {
-			return false, err
-		}
-
-		switch pod.Status.Phase {
-		case corev1.PodRunning, corev1.PodSucceeded:
-			return true, nil
-		case corev1.PodFailed:
-			return false, nil
-		}
-		return false, nil
-	}
 }

@@ -25,6 +25,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"embed"
+	_ "embed"
 	"fmt"
 	"os"
 
@@ -34,6 +36,9 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 )
+
+//go:embed manifests/*
+var manifest embed.FS
 
 var cfgFile string
 

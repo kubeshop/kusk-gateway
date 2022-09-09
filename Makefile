@@ -198,7 +198,8 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default  | kubectl apply -f -
+	echo $(MANAGER_IMG)
+	$(KUSTOMIZE) build config/default  > tttdeploy.yaml
 
 .PHONY: deploy-debug
 deploy-debug: manifests $(KUSTOMIZE) ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
