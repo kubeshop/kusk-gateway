@@ -44,13 +44,13 @@ go install
 
 ### **Alternative Installation Method - Manual**
 
-If you don't like automatic scripts you can install the CLI manually:
+If you prefer installing the CLI manually:
 
-1. Download binary with version of your choice (recent one is recommended).
-2. Upack it (tar -zxvf kusk_0.1.0_Linux_arm64.tar.gz).
+1. Download [the latest binary from Github](https://github.com/kubeshop/kusk-gateway/releases/).
+2. Upack it (`tar -zxvf kusk_1.2.3_Linux_x86_64.tar.gz`).
 3. Move it to a location in the PATH. For example `mv kusk_0.1.0_Linux_arm64/kusk /usr/local/bin/kusk`.
 
-For Windows, download the binary from [here](https://github.com/kubeshop/kusk-gateway/releases), unpack the binary and add it to `%PATH%`. 
+For Windows, unpack the binary and add it to `%PATH%`. 
 
 ## **Updating**
 ### **Homebrew**

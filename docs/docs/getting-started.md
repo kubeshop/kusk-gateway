@@ -81,7 +81,7 @@ $ kusk ip
 ```sh
 $ curl 10.12.34.56/hello
 
-10.12.34.56
+Hello from a mocked response!
 ```
 ### **6. Deploy an application**
 
