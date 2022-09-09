@@ -33,6 +33,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
@@ -57,6 +58,12 @@ var upgradeCmd = &cobra.Command{
 
 	Will upgrade kusk-gateway, the dashboard, api, and envoy-fleets and install them if they are not installed`,
 	Run: func(cmd *cobra.Command, args []string) {
+		reportError := func(err error) {
+			if err != nil {
+				errors.NewErrorReporter(cmd, err).Report()
+			}
+		}
+
 		spinner := utils.NewSpinner("Looking for Helm...")
 		helmPath, err := exec.LookPath("helm")
 		if err != nil {
@@ -69,6 +76,7 @@ var upgradeCmd = &cobra.Command{
 		err = addKubeshopHelmRepo(helmPath)
 		if err != nil {
 			spinner.Fail("Adding Kubeshop helm repository: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 		spinner.Success()
@@ -77,12 +85,14 @@ var upgradeCmd = &cobra.Command{
 		err = updateHelmRepos(helmPath)
 		if err != nil {
 			spinner.Fail("Looking for Helm: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 
 		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
 		if err != nil {
 			spinner.Fail("Listing Helm releases: ", err)
+			reportError(err)
 			os.Exit(1)
 		}
 		spinner.Success()
@@ -92,6 +102,7 @@ var upgradeCmd = &cobra.Command{
 			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Upgrading Kusk Gateway: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 			spinner.Success()
@@ -107,6 +118,7 @@ var upgradeCmd = &cobra.Command{
 				err = installPublicEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
 					spinner.Fail("Upgrading Envoy Fleet: ", err)
+					reportError(err)
 					os.Exit(1)
 				}
 				spinner.Success()
@@ -124,6 +136,7 @@ var upgradeCmd = &cobra.Command{
 			err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Upgrading private Envoy Fleet: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 			spinner.Success()
@@ -137,6 +150,7 @@ var upgradeCmd = &cobra.Command{
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Upgrading Kusk API: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 			spinner.Success()
@@ -150,6 +164,7 @@ var upgradeCmd = &cobra.Command{
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Looking for Helm: ", err)
+				reportError(err)
 				os.Exit(1)
 			}
 			spinner.Success()
@@ -162,7 +177,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(upgradeCmd)
+	clusterCmd.AddCommand(upgradeCmd)
 
 	upgradeCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "name of release to update")
 	upgradeCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to upgrade in")
