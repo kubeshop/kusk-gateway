@@ -9,7 +9,6 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.0.0+incompatible
-	github.com/k0sproject/k0s v0.13.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kubeshop/testkube v1.3.43
 	github.com/mitchellh/copystructure v1.2.0
@@ -33,19 +32,16 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
-	github.com/Masterminds/goutils v1.1.0 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fvbommel/sortorder v1.0.1 // indirect
-	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
+	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	k8s.io/component-helpers v0.25.0 // indirect
