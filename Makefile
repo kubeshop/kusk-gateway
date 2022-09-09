@@ -229,7 +229,7 @@ $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.4
 
 $(CONTROLLER_GEN): ## Download controller-gen locally if necessary.
-	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
+	GOBIN=${BINARIES_DIR} go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
 
 $(STERN): ## Download stern (https://github.com/stern/stern) locally if necessary.
 	go install github.com/stern/stern@latest

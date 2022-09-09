@@ -41,7 +41,10 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
-var installOnUpgrade bool
+var (
+	installOnUpgrade              bool
+	releaseName, releaseNamespace string
+)
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",

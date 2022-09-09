@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pterm/pterm"
@@ -38,11 +39,10 @@ import (
 )
 
 var (
-	noApi                         bool
-	noDashboard                   bool
-	noEnvoyFleet                  bool
-	releaseName, releaseNamespace string
-
+	noApi            bool
+	noDashboard      bool
+	noEnvoyFleet     bool
+	latest           bool
 	analyticsEnabled = "true"
 )
 
@@ -54,6 +54,7 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+	installCmd.Flags().BoolVar(&latest, "latest", false, "if set latest version of kusk-gateway will be installed")
 
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
@@ -150,7 +151,21 @@ var installCmd = &cobra.Command{
 
 func apply(filename string) error {
 	instCmd := NewKubectlCmd()
-	instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
+	if !latest {
+		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
+	} else {
+		ghclient, _ := utils.NewGithubClient("", nil)
+		i, _, err := ghclient.GetTags()
+		if err != nil {
+			return err
+		}
+		if len(i) > 0 {
+			ref_str := strings.Split(i[len(i)-1].Ref, "/")
+			ref := ref_str[len(ref_str)-1]
+			url := fmt.Sprintf("https://raw.githubusercontent.com/kubeshop/kusk-gateway/v%s/cmd/kusk/cmd/manifests/%s", ref, filename)
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", url)})
+		}
+	}
 	return instCmd.Execute()
 }
 func getEmbeddedFile(filename string) string {
