@@ -232,6 +232,9 @@ func getAPISpecString(apiSpec *openapi3.T) (string, error) {
 }
 
 func init() {
+	rootCmd.AddCommand(generateCmd)
+	// This should be deprecated soon.
+	// See `apiCmd.Deprecated`.
 	apiCmd.AddCommand(generateCmd)
 
 	generateCmd.Flags().StringVarP(
