@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -37,6 +38,7 @@ import (
 
 func GetK8sClient() (client.Client, error) {
 	scheme := runtime.NewScheme()
+	appsv1.AddToScheme(scheme)
 	kuskv1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
 
