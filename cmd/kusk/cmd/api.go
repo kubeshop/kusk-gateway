@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 .
 */
+
 package cmd
 
 import (
@@ -31,18 +32,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Deprecated: `kusk api generate` is deprecated, use `kusk generate` instead.
+
 // apiCmd represents the api command
 var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "parent command for api related functions",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// Currently api only has one sub command
-		fmt.Fprint(os.Stderr, "The api command cannot be run directly. Please run: kusk api generate\n")
+		fmt.Fprintln(os.Stderr, "The `api` command cannot be run directly. Please run: `kusk generate`")
 
-		// In future, remove this when new sub commands are added and simply call cmd.Help()
-		generateCmd.Help()
+		return cmd.Help()
 	},
+	// > For good practice, let's keep `kusk api generate` for a release and mark it as deprecated in the help. I would normally say show a deprecated message on usage but that would defeat the purpose as it would be a breaking change since we pipe the output.
+	//
+	// See: <https://github.com/kubeshop/kusk-gateway/issues/667>.
+	Deprecated: "this command will be deprecated soon, please use `kusk generate`",
 }
 
 func init() {
