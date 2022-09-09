@@ -22,17 +22,17 @@ import (
 	"runtime"
 	"syscall"
 
+	// "github.com/k0sproject/k0s/pkg/config"
+	// "github.com/k0sproject/k0s/pkg/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/component-base/logs"
 	kubectl "k8s.io/kubectl/pkg/cmd"
-
-	"github.com/k0sproject/k0s/pkg/config"
 )
 
-type CmdOpts config.CLIOptions
+// type CmdOpts config.CLIOptions
 
 type kubectlPluginHandler struct{}
 
@@ -110,7 +110,7 @@ func NewKubectlCmd() *cobra.Command {
 
 		return originalPreRunE(cmd, args)
 	}
-	cmd.PersistentFlags().AddFlagSet(config.GetKubeCtlFlagSet())
+	// cmd.PersistentFlags().AddFlagSet(config.GetKubeCtlFlagSet())
 	originalRun := cmd.Run
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
