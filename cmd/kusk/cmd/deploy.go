@@ -36,12 +36,12 @@ import (
 	"syscall"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gookit/color"
 	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
@@ -93,6 +93,9 @@ var deployCmd = &cobra.Command{
 			return err
 		}
 
+		fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 successfully parsed %s", file)))
+		fmt.Println(color.FgWhite.Render(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName)))
+
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
@@ -121,13 +124,13 @@ var deployCmd = &cobra.Command{
 					reportError(err)
 					return err
 				}
-				fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
+				fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name)))
 			} else {
 				reportError(err)
 				return err
 			}
 		} else {
-			fmt.Printf("api.gateway.kusk.io/%s created\n", api.Name)
+			fmt.Println(color.FgWhite.Render(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name)))
 		}
 
 		if _, e := url.ParseRequestURI(file); e != nil {
@@ -145,18 +148,23 @@ var deployCmd = &cobra.Command{
 				signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 				if watcher != nil {
-					ui.Info(ui.White("⏳ watching for API changes in " + file))
+					fmt.Println(color.FgWhite.Render(fmt.Sprintf("⏳ watching for API changes in %s", file)))
 					go watcher.Watch(func() {
-						ui.Info("✍️ change detected in " + file)
+						fmt.Println(color.FgWhite.Render(fmt.Sprintf("✍️ change detected in %s", file)))
+						fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 successfully parsed %s", file)))
+						fmt.Println(color.FgWhite.Render(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName)))
+
 						manifest, err := getParsedAndValidatedOpenAPISpec(file)
 						if err != nil {
 							reportError(err)
-							ui.Fail(err)
+							fmt.Println(color.FgRed.Render(err))
+							return
 						}
 						api := &v1alpha1.API{}
 						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
 							reportError(err)
-							ui.Err(err)
+							fmt.Println(color.FgRed.Render(err))
+							return
 						}
 
 						if len(api.Namespace) == 0 {
@@ -168,23 +176,24 @@ var deployCmd = &cobra.Command{
 						ap := &v1alpha1.API{}
 						if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
 							reportError(err)
-							fmt.Fprintln(os.Stderr, err)
+							fmt.Println(color.FgRed.Render(err))
+							return
 						}
 						api.SetResourceVersion(ap.GetResourceVersion())
 
 						if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
 							reportError(err)
-							fmt.Fprintln(os.Stderr, err)
+							fmt.Println(color.FgRed.Render(err))
+							return
 						} else {
-							fmt.Printf("api.gateway.kusk.io/%s updated\n", api.Name)
+							fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name)))
 						}
-
 					}, done)
 				}
 				<-done
 			}
 		} else if e == nil {
-			ui.Warn("Warning: cannot watch URL. '--watch, -w' flag ignored!")
+			fmt.Println(color.FgLightYellow.Render("Warning: cannot watch URL. '--watch, -w' flag ignored!"))
 		}
 		return nil
 	},

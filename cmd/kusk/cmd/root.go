@@ -29,6 +29,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gookit/color"
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -90,7 +91,10 @@ func Execute() {
 		errors.NewErrorReporter(rootCmd, err).Report()
 	}
 
-	cobra.CheckErr(err)
+	if err != nil {
+		fmt.Println(color.FgRed.Render(err))
+		os.Exit(1)
+	}
 }
 
 func init() {
