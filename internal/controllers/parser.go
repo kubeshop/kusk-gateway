@@ -174,7 +174,12 @@ func UpdateConfigFromAPIOpts(
 					upstreamHostname = types.GenerateRouteName(routePath, method)
 					upstreamPort = 0
 				} else {
-					upstreamHostname, upstreamPort = getUpstreamHost(finalOpts.Upstream)
+					hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
+					if err != nil {
+						return err
+					}
+					upstreamHostname = hostPortPair.Host
+					upstreamPort = hostPortPair.Port
 				}
 				// create proxied service if needed
 				serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
@@ -320,11 +325,14 @@ func UpdateConfigFromAPIOpts(
 				}
 			// Default - proxy to the upstream
 			default:
-				upstreamHostname, upstreamPort := getUpstreamHost(finalOpts.Upstream)
+				hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
+				if err != nil {
+					return err
+				}
 
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
 				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
 
 				var rewriteOpts *options.RewriteRegex
@@ -346,7 +354,7 @@ func UpdateConfigFromAPIOpts(
 				// https://github.com/kubeshop/kusk-gateway/issues/404
 				// to help with issues around direct IP access e.g. CloudFlare
 				routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
-					HostRewriteLiteral: upstreamHostname,
+					HostRewriteLiteral: hostPortPair.Host,
 				}
 
 				rt.Action = routeRoute
@@ -518,10 +526,14 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRedirect
 			} else {
-				upstreamHostname, upstreamPort := getUpstreamHost(methodOpts.Upstream)
-				clusterName := generateClusterName(upstreamHostname, upstreamPort)
+				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
+				if err != nil {
+					return err
+				}
+
+				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
 				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, upstreamHostname, upstreamPort)
+					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
 
 				var rewriteOpts *options.RewriteRegex
@@ -603,11 +615,31 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 	)
 }
 
-func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (hostname string, port uint32) {
-	if upstreamOpts.Service != nil {
-		return fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace), upstreamOpts.Service.Port
+type HostPortPair struct {
+	Host string
+	Port uint32
+}
+
+func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, error) {
+	if upstreamOpts == nil {
+		return nil, fmt.Errorf("cannot get upstream host and port from nil upstream options")
 	}
-	return upstreamOpts.Host.Hostname, upstreamOpts.Host.Port
+
+	if upstreamOpts.Service != nil {
+		return &HostPortPair{
+			Host: fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace),
+			Port: upstreamOpts.Service.Port,
+		}, nil
+	}
+
+	if upstreamOpts.Host != nil {
+		return &HostPortPair{
+			Host: upstreamOpts.Host.Hostname,
+			Port: upstreamOpts.Host.Port,
+		}, nil
+	}
+
+	return nil, fmt.Errorf("cannot get upstream host and port from upstream options")
 }
 
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
