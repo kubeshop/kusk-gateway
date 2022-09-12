@@ -92,7 +92,7 @@ func Execute() {
 	}
 
 	if err != nil {
-		fmt.Println(color.FgRed.Render(err))
+		fmt.Println(color.FgRed.Render("❌ ", err.Error()))
 		os.Exit(1)
 	}
 }

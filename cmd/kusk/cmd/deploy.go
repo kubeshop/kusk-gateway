@@ -157,13 +157,13 @@ var deployCmd = &cobra.Command{
 						manifest, err := getParsedAndValidatedOpenAPISpec(file)
 						if err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render(err))
+							fmt.Println(color.FgRed.Render("❌", err.Error()))
 							return
 						}
 						api := &v1alpha1.API{}
 						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render(err))
+							fmt.Println(color.FgRed.Render("❌", err.Error()))
 							return
 						}
 
@@ -176,14 +176,14 @@ var deployCmd = &cobra.Command{
 						ap := &v1alpha1.API{}
 						if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render(err))
+							fmt.Println(color.FgRed.Render("❌", err.Error()))
 							return
 						}
 						api.SetResourceVersion(ap.GetResourceVersion())
 
 						if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render(err))
+							fmt.Println(color.FgRed.Render("❌", err.Error()))
 							return
 						} else {
 							fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name)))
