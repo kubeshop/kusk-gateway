@@ -66,7 +66,10 @@ type MockedRouteBuilder interface {
 // - text/plain
 // if the mediaType is not supported, an error is returned
 func NewRouteBuilder(mediaType string, rt *route.Route) (MockedRouteBuilder, error) {
-	baseMockedRouteBuilder := &baseMockedRouteBuilder{rt}
+	baseMockedRouteBuilder := &baseMockedRouteBuilder{
+		rt:        rt,
+		mediaType: mediaType,
+	}
 
 	switch {
 	case jsonMediaTypePattern.MatchString(mediaType):
@@ -87,7 +90,8 @@ func NewRouteBuilder(mediaType string, rt *route.Route) (MockedRouteBuilder, err
 }
 
 type baseMockedRouteBuilder struct {
-	rt *route.Route
+	rt        *route.Route
+	mediaType string
 }
 
 func (b *baseMockedRouteBuilder) getRoute(
@@ -120,6 +124,12 @@ func (b *baseMockedRouteBuilder) getRoute(
 					},
 					Append: &wrapperspb.BoolValue{
 						Value: true,
+					},
+				},
+				{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "content-type",
+						Value: b.mediaType,
 					},
 				},
 			}...),
