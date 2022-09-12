@@ -23,6 +23,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	contentType     = "Content-Type"
+	applicationJSON = "application/json"
+)
+
 // Server provides OpenAPI Validation and implements ext_proc GRPC service.
 type Server struct {
 	services map[string]*Service
@@ -123,8 +128,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 				}
 				err = s.validate(req, service, operation)
 				if err != nil {
-					errMsg := ErrorBody{}
-					errMsg.SetErrorBody(err)
+					errMsg := NewErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
@@ -135,8 +139,8 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 									SetHeaders: []*v31.HeaderValueOption{
 										{
 											Header: &v31.HeaderValue{
-												Key:   "Content-Type",
-												Value: "applictaion/json",
+												Key:   contentType,
+												Value: applicationJSON,
 											},
 										},
 									},
@@ -190,8 +194,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 
 				err = s.validate(req, service, operation)
 				if err != nil {
-					errorMsg := ErrorBody{}
-					errorMsg.SetErrorBody(err)
+					errorMsg := NewErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
@@ -202,8 +205,8 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 									SetHeaders: []*v31.HeaderValueOption{
 										{
 											Header: &v31.HeaderValue{
-												Key:   "Content-Type",
-												Value: "applictaion/json",
+												Key:   contentType,
+												Value: applicationJSON,
 											},
 										},
 									},
@@ -269,6 +272,10 @@ func (s *Server) validate(r *http.Request, service *Service, operation *operatio
 
 type ErrorBody struct {
 	Error string `json:"error,omitempty"`
+}
+
+func NewErrorBody(err error) ErrorBody {
+	return ErrorBody{Error: err.Error()}
 }
 
 func (e *ErrorBody) SetErrorBody(err error) {
