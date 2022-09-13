@@ -24,9 +24,10 @@ SHELL 			= /usr/bin/env bash -o pipefail
 
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${TELEMETRY_TOKEN}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
-# strip DWARF, symbol table and debug info. Expect ~25% binary size decrease
-# https://github.com/kubeshop/kusk-gateway/issues/431
-LD_FLAGS += -s -w
+# MBana: Don't strip symbol table and debug info for now.
+# # strip DWARF, symbol table and debug info. Expect ~25% binary size decrease
+# # https://github.com/kubeshop/kusk-gateway/issues/431
+# LD_FLAGS += -s -w
 
 export DOCKER_BUILDKIT ?= 1
 
@@ -154,6 +155,8 @@ docker-build: ## Build docker image with the manager.
 	eval $$(minikube docker-env --profile kgw); docker build \
 		--tag ${MANAGER_IMG} \
 		--tag kusk-gateway:latest \
+		--tag kubeshop/kusk-gateway:latest \
+		--tag kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
 		--file ./build/manager/Dockerfile \
 		.
 

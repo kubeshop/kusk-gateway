@@ -44,6 +44,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/auth"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -83,7 +84,7 @@ func UpdateConfigFromAPIOpts(
 	clBuilder *cloudentity.Builder,
 	name string,
 ) error {
-	logger := ctrl.Log.WithName("internal/controllers/parser.go")
+	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromAPIOpts")
 
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
@@ -133,6 +134,10 @@ func UpdateConfigFromAPIOpts(
 				),
 			}
 
+			if opts.CORS != nil {
+				cors.ConfigureCORSOnRoute(logger, corsPolicy, rt, opts.CORS.Origins)
+			}
+
 			if finalOpts.Cache != nil && finalOpts.Cache.Enabled != nil && *finalOpts.Cache.Enabled {
 				rt.ResponseHeadersToAdd = append(rt.ResponseHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
@@ -165,7 +170,6 @@ func UpdateConfigFromAPIOpts(
 
 			// // Validate and Proxy to the upstream
 			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
-
 				var (
 					upstreamHostname string
 					upstreamPort     uint32
@@ -489,6 +493,8 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
 func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
+	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
+
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -515,6 +521,10 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 			rt := &route.Route{
 				Name:  types.GenerateRouteName(routePath, strMethod),
 				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
+			}
+
+			if methodOpts.CORS != nil {
+				cors.ConfigureCORSOnRoute(logger, corsPolicy, rt, methodOpts.CORS.Origins)
 			}
 
 			if methodOpts.Redirect != nil {
