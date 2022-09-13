@@ -41,9 +41,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gookit/color"
 	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
@@ -93,8 +93,8 @@ var deployCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 successfully parsed %s", file)))
-		fmt.Println(color.FgWhite.Render(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName)))
+		kuskui.PrintSuccess(fmt.Sprintf("🎉 successfully parsed %s", file))
+		kuskui.PrintStart(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName))
 
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
@@ -124,13 +124,13 @@ var deployCmd = &cobra.Command{
 					reportError(err)
 					return err
 				}
-				fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name)))
+				kuskui.PrintSuccess(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name))
 			} else {
 				reportError(err)
 				return err
 			}
 		} else {
-			fmt.Println(color.FgWhite.Render(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name)))
+			kuskui.PrintInfo(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name))
 		}
 
 		if _, e := url.ParseRequestURI(file); e != nil {
@@ -148,22 +148,22 @@ var deployCmd = &cobra.Command{
 				signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 				if watcher != nil {
-					fmt.Println(color.FgWhite.Render(fmt.Sprintf("⏳ watching for API changes in %s", file)))
+					kuskui.PrintInfo(fmt.Sprintf("⏳ watching for API changes in %s", file))
 					go watcher.Watch(func() {
-						fmt.Println(color.FgWhite.Render(fmt.Sprintf("✍️ change detected in %s", file)))
-						fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 successfully parsed %s", file)))
-						fmt.Println(color.FgWhite.Render(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName)))
+						kuskui.PrintStart(fmt.Sprintf("✍️ change detected in %s", file))
+						kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
+						kuskui.PrintStart(fmt.Sprintf("initiallizing deployment to fleet %s", envoyFleetName))
 
 						manifest, err := getParsedAndValidatedOpenAPISpec(file)
 						if err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render("❌", err.Error()))
+							kuskui.PrintError(err.Error())
 							return
 						}
 						api := &v1alpha1.API{}
 						if err := yaml.Unmarshal([]byte(manifest), api); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render("❌", err.Error()))
+							kuskui.PrintError(err.Error())
 							return
 						}
 
@@ -176,24 +176,24 @@ var deployCmd = &cobra.Command{
 						ap := &v1alpha1.API{}
 						if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render("❌", err.Error()))
+							kuskui.PrintError(err.Error())
 							return
 						}
 						api.SetResourceVersion(ap.GetResourceVersion())
 
 						if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
 							reportError(err)
-							fmt.Println(color.FgRed.Render("❌", err.Error()))
+							kuskui.PrintError(err.Error())
 							return
 						} else {
-							fmt.Println(color.FgGreen.Render(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name)))
+							kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
 						}
 					}, done)
 				}
 				<-done
 			}
 		} else if e == nil {
-			fmt.Println(color.FgLightYellow.Render("Warning: cannot watch URL. '--watch, -w' flag ignored!"))
+			kuskui.PrintWarning("Warning: cannot watch URL. '--watch, -w' flag ignored!")
 		}
 		return nil
 	},
