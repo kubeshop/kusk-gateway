@@ -45,6 +45,11 @@ func (m *MockCheckSuite) SetupTest() {
 }
 
 func (m *MockCheckSuite) TestEndpoint() {
+	const (
+		ContentTypeKey      = "content-type"
+		expectedContentType = "application/json"
+	)
+
 	envoyFleetSvc := &corev1.Service{}
 	m.NoError(
 		m.Cli.Get(context.TODO(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
@@ -56,12 +61,15 @@ func (m *MockCheckSuite) TestEndpoint() {
 
 	m.Equal(200, resp.StatusCode)
 
+	actualContentType := resp.Header.Get(ContentTypeKey)
+	m.T().Logf("%s=%v", ContentTypeKey, actualContentType)
+	m.Equal(expectedContentType, actualContentType)
+
 	o, _ := io.ReadAll(resp.Body)
 	res := map[string]string{}
 	m.NoError(json.Unmarshal(o, &res))
 
 	m.Equal("Hello from a mocked response!", res["message"])
-
 }
 
 func (m *MockCheckSuite) TearDownTest() {
