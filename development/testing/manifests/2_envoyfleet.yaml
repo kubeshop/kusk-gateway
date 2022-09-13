@@ -4,7 +4,7 @@ metadata:
   name: testing
   namespace: testing
 spec:
-  image: "docker.io/envoyproxy/envoy:v1.23.0"
+  image: "docker.io/envoyproxy/envoy:v1.23.1"
   service:
     # NodePort, ClusterIP, LoadBalancer
     type: LoadBalancer

@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -80,6 +81,7 @@ var installCmd = &cobra.Command{
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -87,9 +89,14 @@ var installCmd = &cobra.Command{
 			}
 		}
 
+		dir, err := RestoreManifests()
+		if err != nil {
+			return err
+		}
+
 		spinner := utils.NewSpinner("Installing kusk")
 
-		if err := apply("deployment.yaml"); err != nil {
+		if err := applyk(dir); err != nil {
 			spinner.Fail("failed installing kusk", err)
 			reportError(err)
 			return err
@@ -113,7 +120,7 @@ var installCmd = &cobra.Command{
 		if !noEnvoyFleet {
 			spinner = utils.NewSpinner("Installing Envoy Fleets...")
 
-			if err := apply("fleets.yaml"); err != nil {
+			if err := applyf("fleets.yaml"); err != nil {
 				spinner.Fail("failed installing Envoy Fleets", err)
 				reportError(err)
 				return err
@@ -124,7 +131,7 @@ var installCmd = &cobra.Command{
 		if !noApi {
 			spinner = utils.NewSpinner("Installing API Server...")
 
-			if err := apply("apis.yaml"); err != nil {
+			if err := applyf("apis.yaml"); err != nil {
 				spinner.Fail("failed installing API Server", err)
 				reportError(err)
 				return err
@@ -137,7 +144,7 @@ var installCmd = &cobra.Command{
 		if !noDashboard {
 			spinner = utils.NewSpinner("Installing Dashboard...")
 
-			if err := apply("dashboard.yaml"); err != nil {
+			if err := applyf("dashboard.yaml"); err != nil {
 				spinner.Fail("failed installing Dashboard", err)
 				reportError(err)
 				return err
@@ -149,7 +156,8 @@ var installCmd = &cobra.Command{
 	},
 }
 
-func apply(filename string) error {
+// invokes kubectl apply -f
+func applyf(filename string) error {
 	instCmd := NewKubectlCmd()
 	if !latest {
 		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
@@ -168,6 +176,29 @@ func apply(filename string) error {
 	}
 	return instCmd.Execute()
 }
+
+// invokes kubectl apply -k
+func applyk(filename string) error {
+	instCmd := NewKubectlCmd()
+	if !latest {
+		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-k=%s", filepath.Join(filename, "/config/default"))})
+	} else {
+		// figure out a way to download latest manifests from GH
+		ghclient, _ := utils.NewGithubClient("", nil)
+		i, _, err := ghclient.GetTags()
+		if err != nil {
+			return err
+		}
+		if len(i) > 0 {
+			ref_str := strings.Split(i[len(i)-1].Ref, "/")
+			ref := ref_str[len(ref_str)-1]
+			url := fmt.Sprintf("https://raw.githubusercontent.com/kubeshop/kusk-gateway/v%s/cmd/kusk/cmd/manifests/%s", ref, filename)
+			instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", url)})
+		}
+	}
+	return instCmd.Execute()
+}
+
 func getEmbeddedFile(filename string) string {
 	apis, _ := manifest.ReadFile(fmt.Sprintf("manifests/%s", filename))
 	tmpfile, _ := ioutil.TempFile("", "kusk-man")
@@ -187,4 +218,26 @@ func printPortForwardInstructions(service, releaseNamespace, envoyFleetName stri
 			fmt.Sprintf("\t$ kubectl port-forward -n %s svc/%s 8080:80\n", releaseNamespace, envoyFleetName) +
 			"\tand go http://localhost:8080/api",
 	)
+}
+
+func RestoreManifests() (string, error) {
+	tmpdir, _ := ioutil.TempDir("", "kusk-man")
+
+	manifestNames := AssetNames()
+	for _, name := range manifestNames {
+		dir := filepath.Dir(name)
+		if dir != "." {
+			os.MkdirAll(filepath.Join(tmpdir, dir), 0700)
+		}
+		if f, err := os.Create(filepath.Join(tmpdir, name)); err != nil {
+			return "", nil
+		} else {
+			content, _ := Asset(name)
+			if _, err := f.Write(content); err != nil {
+				return "", nil
+			}
+		}
+	}
+
+	return tmpdir, nil
 }

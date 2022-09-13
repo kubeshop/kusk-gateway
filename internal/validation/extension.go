@@ -3,15 +3,17 @@ package validation
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
+	v31 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	pb "github.com/envoyproxy/go-control-plane/envoy/service/ext_proc/v3"
 	v32 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -19,6 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	contentType     = "Content-Type"
+	applicationJSON = "application/json"
 )
 
 // Server provides OpenAPI Validation and implements ext_proc GRPC service.
@@ -71,7 +78,6 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 			return status.Errorf(codes.Unknown, "cannot receive stream request: %v", err)
 		}
 
-		fmt.Println("request came")
 		m, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return status.Error(codes.Unknown, "cannot parse metadata")
@@ -122,14 +128,27 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 				}
 				err = s.validate(req, service, operation)
 				if err != nil {
+					errMsg := NewErrorBody(err)
+
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
 							ImmediateResponse: &pb.ImmediateResponse{
 								Status: &v32.HttpStatus{Code: v32.StatusCode_BadRequest},
-								Body:   err.Error(),
+								Body:   errMsg.Error,
+								Headers: &pb.HeaderMutation{
+									SetHeaders: []*v31.HeaderValueOption{
+										{
+											Header: &v31.HeaderValue{
+												Key:   contentType,
+												Value: applicationJSON,
+											},
+										},
+									},
+								},
 							},
 						},
 					}
+
 					break
 				}
 				resp = &pb.ProcessingResponse{
@@ -175,11 +194,23 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 
 				err = s.validate(req, service, operation)
 				if err != nil {
+					errorMsg := NewErrorBody(err)
+
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
 							ImmediateResponse: &pb.ImmediateResponse{
 								Status: &v32.HttpStatus{Code: v32.StatusCode_BadRequest},
-								Body:   err.Error(),
+								Body:   errorMsg.Error,
+								Headers: &pb.HeaderMutation{
+									SetHeaders: []*v31.HeaderValueOption{
+										{
+											Header: &v31.HeaderValue{
+												Key:   contentType,
+												Value: applicationJSON,
+											},
+										},
+									},
+								},
 							},
 						},
 					}
@@ -237,4 +268,20 @@ func (s *Server) validate(r *http.Request, service *Service, operation *operatio
 			MultiError: true,
 		},
 	})
+}
+
+type ErrorBody struct {
+	Error string `json:"error,omitempty"`
+}
+
+func NewErrorBody(err error) ErrorBody {
+	return ErrorBody{Error: err.Error()}
+}
+
+func (e *ErrorBody) SetErrorBody(err error) {
+	errorMsg := ErrorBody{Error: err.Error()}
+	jsn, _ := json.Marshal(errorMsg)
+	msg := string(jsn)
+	// removing '|' as openapi3filter.Multierror when printing adds a pipe at the end of the message https://github.com/getkin/kin-openapi/blob/master/openapi3/errors.go#L16
+	e.Error = strings.ReplaceAll(msg, "|", "")
 }
