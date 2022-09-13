@@ -4,6 +4,7 @@ metadata:
   name: kusk-gateway-envoy-fleet
   namespace: kusk-system
 spec:
+  default: true
   accesslog:
     format: text
   image: envoyproxy/envoy:v1.23.1
