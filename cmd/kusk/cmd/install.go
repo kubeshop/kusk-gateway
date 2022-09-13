@@ -1,4 +1,3 @@
-
 /*
 The MIT License (MIT)
 
@@ -47,7 +46,6 @@ var (
 	latest           bool
 	analyticsEnabled = "true"
 )
-
 
 func init() {
 	clusterCmd.AddCommand(installCmd)
@@ -185,6 +183,7 @@ func applyk(filename string) error {
 	if !latest {
 		instCmd.SetArgs([]string{"apply", fmt.Sprintf("-k=%s", filepath.Join(filename, "/config/default"))})
 	} else {
+		// figure out a way to download latest manifests from GH
 		ghclient, _ := utils.NewGithubClient("", nil)
 		i, _, err := ghclient.GetTags()
 		if err != nil {
