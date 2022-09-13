@@ -24,8 +24,11 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/kubeshop/kusk-gateway/cmd/kusk/cmd"
+import (
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/cmd"
+)
 
+//go:generate go-bindata -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/...
 func main() {
 	cmd.Execute()
 }
