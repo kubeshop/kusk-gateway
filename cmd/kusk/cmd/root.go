@@ -29,12 +29,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gookit/color"
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
@@ -92,7 +92,7 @@ func Execute() {
 	}
 
 	if err != nil {
-		fmt.Println(color.FgRed.Render("❌ ", err.Error()))
+		kuskui.PrintError(err.Error())
 		os.Exit(1)
 	}
 }

@@ -93,8 +93,8 @@ var deployCmd = &cobra.Command{
 			return err
 		}
 
-		kuskui.PrintSuccess(fmt.Sprintf("🎉 successfully parsed %s", file))
-		kuskui.PrintStart(fmt.Sprintf("🚢 initiallizing deployment to fleet %s", envoyFleetName))
+		kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
+		kuskui.PrintStart(fmt.Sprintf("initiallizing deployment to fleet %s", envoyFleetName))
 
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
@@ -124,7 +124,7 @@ var deployCmd = &cobra.Command{
 					reportError(err)
 					return err
 				}
-				kuskui.PrintSuccess(fmt.Sprintf("🎉 api.gateway.kusk.io/%s updated", api.Name))
+				kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
 			} else {
 				reportError(err)
 				return err
