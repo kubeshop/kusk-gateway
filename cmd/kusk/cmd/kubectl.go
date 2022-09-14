@@ -26,6 +26,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -79,10 +80,14 @@ func NewKubectlCmd() *cobra.Command {
 	_ = pflag.CommandLine.MarkHidden("log-flush-frequency")
 	_ = pflag.CommandLine.MarkHidden("version")
 
+	oo := ioutil.Discard
+	if verbose {
+		oo = os.Stdout
+	}
 	args := kubectl.KubectlOptions{
 		IOStreams: genericclioptions.IOStreams{
 			In:     os.Stdin,
-			Out:    os.Stdout,
+			Out:    oo,
 			ErrOut: os.Stderr,
 		},
 		Arguments:     os.Args,

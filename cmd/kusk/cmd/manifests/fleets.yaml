@@ -7,7 +7,6 @@ spec:
   default: true
   accesslog:
     format: text
-  image: envoyproxy/envoy:v1.23.1
   service:
     ports:
       - name: http
@@ -28,7 +27,6 @@ metadata:
 spec:
   accesslog:
     format: text
-  image: envoyproxy/envoy:v1.23.1
   service:
     ports:
       - name: http
