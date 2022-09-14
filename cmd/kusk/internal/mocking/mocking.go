@@ -7,7 +7,7 @@ import (
 const openApiMockingConfigStr = `application:
   debug: false
   log_format: json
-  log_level: warn
+  log_level: info
 
 generation:
   suppress_errors: false
