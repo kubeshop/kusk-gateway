@@ -12,7 +12,7 @@ func PrintWarning(messages ...string) {
 }
 
 func PrintSuccess(messages ...string) {
-	fmt.Println(color.FgGreen.Render("🎉 " + strings.Join(messages, ", ")))
+	fmt.Println(color.FgLightGreen.Render("🎉 " + strings.Join(messages, ", ")))
 }
 
 func PrintError(messages ...string) {
@@ -26,5 +26,3 @@ func PrintStart(messages ...string) {
 func PrintInfo(messages ...string) {
 	fmt.Println(color.FgWhite.Render(strings.Join(messages, ", ")))
 }
-
-
