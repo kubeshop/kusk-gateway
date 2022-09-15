@@ -253,9 +253,9 @@ func updateHelmRepos(helmPath string) error {
 	if isLevelDebug() {
 		commandExecuted := helmPath + " " + strings.Join(commandArguments, " ")
 		if err != nil {
-			pterm.Info.Printf("%v output:\n%v\n", commandExecuted, string(out))
-		} else {
 			pterm.Info.Printf("%v output:\n%v\n%v error: \n%v\n", commandExecuted, string(out), commandExecuted, err)
+		} else {
+			pterm.Info.Printf("%v output:\n%v\n", commandExecuted, string(out))
 		}
 	}
 	return err
