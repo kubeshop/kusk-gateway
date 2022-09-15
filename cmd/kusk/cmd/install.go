@@ -231,7 +231,15 @@ func printPortForwardInstructions(service, releaseNamespace, envoyFleetName stri
 }
 
 func addKubeshopHelmRepo(helmPath string) error {
-	_, err := process.Execute(helmPath, "repo", "add", "kubeshop", "https://kubeshop.github.io/helm-charts/")
+	commandArguments := getHelmCommandArguments("repo", "add", "kubeshop", "https://kubeshop.github.io/helm-charts/")
+
+	out, err := process.Execute(
+		helmPath,
+		commandArguments...,
+	)
+	// if isLevelDebug() {
+	pterm.Info.Printf("%v output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	// }
 	if err != nil && !strings.Contains(err.Error(), "Error: repository name (kubeshop) already exists, please specify a different name") {
 		return err
 	}
@@ -240,7 +248,11 @@ func addKubeshopHelmRepo(helmPath string) error {
 }
 
 func updateHelmRepos(helmPath string) error {
-	_, err := process.Execute(helmPath, "repo", "update")
+	commandArguments := getHelmCommandArguments("repo", "update")
+	out, err := process.Execute(helmPath, commandArguments...)
+	if isLevelDebug() {
+		pterm.Info.Printf("%v output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	}
 	return err
 }
 
@@ -257,6 +269,7 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 	}
 
 	cmd := exec.Command(helmPath, command...)
+	cmd.Env = os.Environ()
 
 	buffer := new(bytes.Buffer)
 	errBuffer := new(bytes.Buffer)
@@ -280,6 +293,11 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 			return nil, fmt.Errorf("helm list error: %s", errBuffer.String())
 		}
 		pterm.Warning.Print(strError)
+	}
+
+	if isLevelDebug() {
+		commandExecuted := helmPath + " " + strings.Join(command, " ")
+		pterm.Info.Printf("%v output:\n%v\n", commandExecuted, buffer.String())
 	}
 
 	var releases []struct {
@@ -307,7 +325,7 @@ func listReleases(helmPath, releaseName, releaseNamespace string) (map[string]*R
 }
 
 func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
-	command := []string{
+	commandArguments := getHelmCommandArguments(
 		"upgrade",
 		"--install",
 		"--wait",
@@ -318,14 +336,16 @@ func installKuskGateway(helmPath, releaseName, releaseNamespace string) error {
 		"--set", fmt.Sprintf("analytics.enabled=%s", analyticsEnabled),
 		releaseName,
 		"kubeshop/kusk-gateway",
-	}
+	)
 
-	out, err := process.Execute(helmPath, command...)
+	out, err := process.Execute(helmPath, commandArguments...)
 	if err != nil {
 		return err
 	}
 
-	pterm.Debug.Println("Helm install kusk gateway output: ", string(out))
+	if isLevelDebug() {
+		pterm.Info.Printf("%v install kusk gateway output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	}
 
 	return nil
 }
@@ -339,7 +359,7 @@ func installPrivateEnvoyFleet(helmPath, releaseName, releaseNamespace string) er
 }
 
 func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType string, isDefaultFleet bool) error {
-	command := []string{
+	commandArguments := getHelmCommandArguments(
 		"upgrade",
 		"--install",
 		"--wait",
@@ -351,20 +371,22 @@ func installEnvoyFleet(helmPath, releaseName, releaseNamespace, serviceType stri
 		"--set", fmt.Sprintf("default=%t", isDefaultFleet),
 		releaseName,
 		"kubeshop/kusk-gateway-envoyfleet",
-	}
+	)
 
-	out, err := process.Execute(helmPath, command...)
+	out, err := process.Execute(helmPath, commandArguments...)
 	if err != nil {
 		return err
 	}
 
-	pterm.Debug.Println("Helm install envoy fleet output: ", string(out))
+	if isLevelDebug() {
+		pterm.Info.Printf("%v install envoy fleet output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	}
 
 	return nil
 }
 
 func installApi(helmPath, releaseName, releaseNamespace, envoyFleetName string) error {
-	command := []string{
+	commandArguments := getHelmCommandArguments(
 		"upgrade",
 		"--install",
 		"--wait",
@@ -377,20 +399,22 @@ func installApi(helmPath, releaseName, releaseNamespace, envoyFleetName string) 
 		"--set", fmt.Sprintf("analytics.enabled=%s", analyticsEnabled),
 		releaseName,
 		"kubeshop/kusk-gateway-api",
-	}
+	)
 
-	out, err := process.Execute(helmPath, command...)
+	out, err := process.Execute(helmPath, commandArguments...)
 	if err != nil {
 		return err
 	}
 
-	pterm.Debug.Println("Helm install api output", string(out))
+	if isLevelDebug() {
+		pterm.Info.Printf("%v install api output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	}
 
 	return nil
 }
 
 func installDashboard(helmPath, releaseName, releaseNamespace, envoyFleetName string) error {
-	command := []string{
+	commandArguments := getHelmCommandArguments(
 		"upgrade",
 		"--install",
 		"--wait",
@@ -402,14 +426,16 @@ func installDashboard(helmPath, releaseName, releaseNamespace, envoyFleetName st
 		"--set", fmt.Sprintf("envoyfleet.namespace=%s", releaseNamespace),
 		releaseName,
 		"kubeshop/kusk-gateway-dashboard",
-	}
+	)
 
-	out, err := process.Execute(helmPath, command...)
+	out, err := process.Execute(helmPath, commandArguments...)
 	if err != nil {
 		return err
 	}
 
-	pterm.Debug.Println("helm install dashboard output", string(out))
+	if isLevelDebug() {
+		pterm.Info.Printf("%v install dashboard output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+	}
 
 	return nil
 }

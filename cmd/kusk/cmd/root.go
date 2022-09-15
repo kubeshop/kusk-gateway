@@ -33,14 +33,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/kubeshop/testkube/pkg/ui"
+
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
-	"github.com/kubeshop/testkube/pkg/ui"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	// verbosity - controls verbosity level, 0 is the lowest and results in the lowest amount of information being printed.
+	verbosityLevel uint32
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -85,7 +90,6 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
-
 	if err != nil {
 		errors.NewErrorReporter(rootCmd, err).Report()
 	}
@@ -101,6 +105,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kusk.yaml)")
+	rootCmd.PersistentFlags().Uint32VarP(&verbosityLevel, "verbosity", "v", 0, "number for the log level verbosity, 0=error, 1=warn, 2=info, 3=debug and 4=trace.")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -128,5 +133,47 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("failed to read config file %q, %w", viper.ConfigFileUsed(), err))
+	}
+
+	// If running at debug level, turn on helm debugging.
+	// Available environment variables can be found by running `helm env`.
+	if isLevelDebug() {
+		const HelmDebugKey = "HELM_DEBUG"
+		const HelmDebugValue = "true"
+		if err := os.Setenv(HelmDebugKey, HelmDebugValue); err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Errorf("initialisation error: unable to set environmental variable `%v=%q`: %w", HelmDebugKey, HelmDebugValue, err))
+			os.Exit(1)
+		}
+	}
+}
+
+func isLevelError() bool {
+	return verbosityLevel == 0
+}
+
+func isLevelWarn() bool {
+	return verbosityLevel == 1
+}
+
+func isLevelInfo() bool {
+	return verbosityLevel == 2
+}
+
+func isLevelDebug() bool {
+	return verbosityLevel == 3
+}
+
+func isLevelTrace() bool {
+	return verbosityLevel == 4
+}
+
+func getHelmCommandArguments(arguments ...string) []string {
+	commandArguments := []string{}
+	if isLevelDebug() {
+		commandArguments = append([]string{"--debug"}, arguments...)
+		return commandArguments
+	} else {
+		commandArguments = append(commandArguments, arguments...)
+		return commandArguments
 	}
 }
