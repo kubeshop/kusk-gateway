@@ -171,9 +171,8 @@ func getHelmCommandArguments(arguments ...string) []string {
 	commandArguments := []string{}
 	if isLevelDebug() {
 		commandArguments = append([]string{"--debug"}, arguments...)
-		return commandArguments
 	} else {
 		commandArguments = append(commandArguments, arguments...)
-		return commandArguments
 	}
+	return commandArguments
 }

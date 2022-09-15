@@ -251,7 +251,12 @@ func updateHelmRepos(helmPath string) error {
 	commandArguments := getHelmCommandArguments("repo", "update")
 	out, err := process.Execute(helmPath, commandArguments...)
 	if isLevelDebug() {
-		pterm.Info.Printf("%v output:\n%v\n", helmPath+" "+strings.Join(commandArguments, " "), string(out))
+		commandExecuted := helmPath + " " + strings.Join(commandArguments, " ")
+		if err != nil {
+			pterm.Info.Printf("%v output:\n%v\n", commandExecuted, string(out))
+		} else {
+			pterm.Info.Printf("%v output:\n%v\n%v error: \n%v\n", commandExecuted, string(out), commandExecuted, err)
+		}
 	}
 	return err
 }
