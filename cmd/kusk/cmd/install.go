@@ -42,7 +42,6 @@ var (
 	noApi            bool
 	noDashboard      bool
 	noEnvoyFleet     bool
-	latest           bool
 	analyticsEnabled = "true"
 )
 
