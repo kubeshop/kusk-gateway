@@ -49,13 +49,18 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "kusk",
-	Short: "",
-	Long:  ``,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	Use:           "kusk",
+	Short:         "",
+	Long:          ``,
+	SilenceErrors: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		analytics.SendAnonymousCMDInfo(nil)
-		if cmd.Name() != generateCmd.Name() {
 
+		if !(verbosityLevel <= 4) {
+			return fmt.Errorf("verbosity must be between 0 and 4 (inclusive), verbosity level = %v", verbosityLevel)
+		}
+
+		if cmd.Name() != generateCmd.Name() {
 			if len(build.Version) != 0 {
 				ghclient, _ := utils.NewGithubClient("", nil)
 				i, _, err := ghclient.GetTags()
@@ -83,6 +88,8 @@ var rootCmd = &cobra.Command{
 				}
 			}
 		}
+
+		return nil
 	},
 }
 
