@@ -76,8 +76,8 @@ spec:
     name: kusk-gateway-private-envoy-fleet
     namespace: kusk-system
   hosts:
-  - localhost
-  - '*'
+    - localhost
+    - "*"
   paths:
     /:
       get:

@@ -197,7 +197,7 @@ uninstall: manifests $(KUSTOMIZE) ## Uninstall CRDs from the K8s cluster specifi
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 generate-deployment:
-	$(KUSTOMIZE) build config/default > cmd/kusk/cmd/manifests/deployment.yaml
+	$(KUSTOMIZE) build config/default > deployment.yaml
 
 .PHONY: deploy
 deploy: manifests $(KUSTOMIZE) ## Deploy controller to the K8s cluster specified in ~/.kube/config.

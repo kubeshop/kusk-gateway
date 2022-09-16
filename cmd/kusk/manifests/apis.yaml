@@ -93,18 +93,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: kusk-gateway-api
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
   name: kusk-gateway-api
   namespace: kusk-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kusk-gateway-api
+      app.kubernetes.io/name: kusk-gateway-api
+      app.kubernetes.io/instance: kusk-gateway-api
   template:
     metadata:
       labels:
-        app: kusk-gateway-api
+        app.kubernetes.io/name: kusk-gateway-api
+        app.kubernetes.io/instance: kusk-gateway-api
     spec:
       containers:
         - image: kubeshop/kusk-gateway-api:v1.1.5

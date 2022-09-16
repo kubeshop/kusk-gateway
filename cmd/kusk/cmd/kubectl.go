@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -80,7 +80,7 @@ func NewKubectlCmd() *cobra.Command {
 	_ = pflag.CommandLine.MarkHidden("log-flush-frequency")
 	_ = pflag.CommandLine.MarkHidden("version")
 
-	oo := ioutil.Discard
+	oo := io.Discard
 	if verbose {
 		oo = os.Stdout
 	}

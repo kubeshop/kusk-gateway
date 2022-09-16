@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
 */
 package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
@@ -47,8 +45,6 @@ var (
 
 func init() {
 	clusterCmd.AddCommand(installCmd)
-	installCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "installation name")
-	installCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to install in")
 
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
@@ -58,6 +54,8 @@ func init() {
 		analyticsEnabled = enabled
 	}
 }
+
+const manifests_dir = "/cmd/kusk/manifests"
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -86,18 +84,19 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		dir, err := RestoreManifests()
+		dir, err := getManifests()
 		if err != nil {
 			return err
 		}
 
-		color.Tag("lightWhite").Println("✅ Installing Kusk...")
+		fmt.Println("✅ Installing Kusk...")
 
 		if err := applyk(dir); err != nil {
-			color.Tag("red").Println("❌ failed installing Kusk", err)
+			fmt.Println("❌ failed installing Kusk", err)
 			reportError(err)
 			return err
 		}
+
 		namespace := "kusk-system"
 		name := "kusk-gateway-manager"
 
@@ -107,43 +106,59 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute)); err != nil {
-			color.Tag("red").Println("❌ failed installing kusk", err)
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
+			fmt.Println("❌ failed installing kusk", err)
 			reportError(err)
 			return err
 		}
-		color.Tag("lightWhite").Println("✅ Kusk installed")
+		fmt.Println("✅ Kusk installed")
 
 		if !noEnvoyFleet {
-			if err := applyf("fleets.yaml"); err != nil {
-				color.Tag("red").Println("❌ failed installing Envoy Fleets", err)
+			if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
+				fmt.Println("❌ failed installing Envoy Fleets", err)
 				reportError(err)
 				return err
 			}
-			color.Tag("lightWhite").Println("✅ Envoy Fleets installed")
+			fmt.Println("✅ Envoy Fleets installed")
 		} else {
 			return nil
 		}
 
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
+			fmt.Println("❌ failed installing kusk", err)
+			reportError(err)
+			return err
+		}
+
 		if !noApi {
-			if err := applyf("apis.yaml"); err != nil {
-				color.Tag("red").Println("❌ failed installing API Server", err)
+			if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+				fmt.Println("❌ failed installing API Server", err)
 				reportError(err)
 				return err
 			}
-			color.Tag("lightWhite").Println("✅ API Server installed")
+			fmt.Println("✅ API Server installed")
 		} else if noApi {
 			return nil
 		}
 
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+			fmt.Println("❌ failed installing kusk", err)
+			reportError(err)
+			return err
+		}
+
 		if !noDashboard {
-			if err := applyf("dashboard.yaml"); err != nil {
-				color.Tag("red").Println("❌ failed installing Dashboard", err)
+			if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
+				fmt.Println("❌ failed installing Dashboard", err)
 				reportError(err)
 				return err
 			}
-
-			color.Tag("lightWhite").Println("✅ Dashboard installed")
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
+				fmt.Println("❌ failed installing kusk", err)
+				reportError(err)
+				return err
+			}
+			fmt.Println("✅ Dashboard installed")
 			printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 		}
 
@@ -154,7 +169,7 @@ var installCmd = &cobra.Command{
 // invokes kubectl apply -f
 func applyf(filename string) error {
 	instCmd := NewKubectlCmd()
-	instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", getEmbeddedFile(filename))})
+	instCmd.SetArgs([]string{"apply", fmt.Sprintf("-f=%s", filename)})
 
 	return instCmd.Execute()
 }
@@ -167,29 +182,21 @@ func applyk(filename string) error {
 	return instCmd.Execute()
 }
 
-func getEmbeddedFile(filename string) string {
-	apis, _ := manifest.ReadFile(fmt.Sprintf("manifests/%s", filename))
-	tmpfile, _ := ioutil.TempFile("", "kusk-man")
-
-	tmpfile.Write(apis)
-	return tmpfile.Name()
-}
-
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
 	if service == "dashboard" {
-		color.Tag("darkGray").Println("💡 Access the dashboard by using the following command")
-		color.Tag("lightWhite").Println("👉 kusk dashboard \n")
+		fmt.Println("💡 Access the dashboard by using the following command")
+		fmt.Println("👉 kusk dashboard")
 	}
 
-	color.Tag("darkGray").Println("💡 Deploy your first API")
-	color.Tag("lightWhite").Println("👉 kusk deploy -i <path or url to your api definition> \n")
+	fmt.Println("💡 Deploy your first API")
+	fmt.Println("👉 kusk deploy -i <path or url to your api definition>")
 
-	color.Tag("darkGray").Println("💡 Access Help and useful examples to help get you started ")
-	color.Tag("lightWhite").Println("👉 kusk --help")
+	fmt.Println("💡 Access Help and useful examples to help get you started ")
+	fmt.Println("👉 kusk --help")
 }
 
-func RestoreManifests() (string, error) {
-	tmpdir, _ := ioutil.TempDir("", "kusk-man")
+func getManifests() (string, error) {
+	tmpdir := os.TempDir()
 
 	manifestNames := AssetNames()
 	for _, name := range manifestNames {
@@ -197,10 +204,15 @@ func RestoreManifests() (string, error) {
 		if dir != "." {
 			os.MkdirAll(filepath.Join(tmpdir, dir), 0700)
 		}
+
 		if f, err := os.Create(filepath.Join(tmpdir, name)); err != nil {
 			return "", nil
 		} else {
 			content, _ := Asset(name)
+			if strings.Contains(name, "manager_configmap.yaml") {
+				tmp := strings.Replace(string(content), `ANALYTICS_ENABLED: "true"`, fmt.Sprintf(`ANALYTICS_ENABLED: "%s"`, analyticsEnabled), -1)
+				content = []byte(tmp)
+			}
 			if _, err := f.Write(content); err != nil {
 				return "", nil
 			}
