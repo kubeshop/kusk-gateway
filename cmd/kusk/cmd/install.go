@@ -24,7 +24,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,6 +46,7 @@ var (
 	noDashboard      bool
 	noEnvoyFleet     bool
 	analyticsEnabled = "true"
+	latest           bool
 )
 
 func init() {
@@ -49,6 +55,7 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+	installCmd.Flags().BoolVar(&latest, "latest", false, "get latest Kusk version from Github")
 
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
@@ -76,7 +83,8 @@ var installCmd = &cobra.Command{
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
-	SilenceUsage: true,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -84,9 +92,16 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		dir, err := getManifests()
-		if err != nil {
-			return err
+		var err error
+		var dir string
+		if !latest {
+			if dir, err = getManifests(); err != nil {
+				return err
+			}
+		} else {
+			if dir, err = getManifestsFromUrl(); err != nil {
+				return err
+			}
 		}
 
 		fmt.Println("✅ Installing Kusk...")
@@ -193,6 +208,125 @@ func printPortForwardInstructions(service, releaseNamespace, envoyFleetName stri
 
 	fmt.Println("💡 Access Help and useful examples to help get you started ")
 	fmt.Println("👉 kusk --help")
+}
+func getManifestsFromUrl() (string, error) {
+	ghclient, err := utils.NewGithubClient("", nil)
+	if err != nil {
+		return "", err
+	}
+
+	latest, err := ghclient.GetLatest()
+	if err != nil {
+		return "", err
+
+	}
+
+	fmt.Println("LATEST", latest)
+	if latest == "v1.2.3" {
+		return "", fmt.Errorf("you are trying to update to %s which isn't supported with `kusk cluster install --latest`", latest)
+	}
+	fullURLFile := fmt.Sprintf("https://github.com/kubeshop/kusk-gateway/archive/refs/tags/%s.zip", latest)
+
+	dir := os.TempDir()
+
+	file, err := donwloadFile(dir, fullURLFile)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println(file)
+
+	return unzip(file)
+}
+
+func unzip(path string) (string, error) {
+	dir, _ := filepath.Split(path)
+	dst := dir
+	archive, err := zip.OpenReader(path)
+	if err != nil {
+		return "", err
+	}
+	var distroDir string
+	defer archive.Close()
+
+	for i, f := range archive.File {
+		filePath := filepath.Join(dst, f.Name)
+
+		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
+			return "", fmt.Errorf("invalid file path")
+		}
+		if f.FileInfo().IsDir() {
+			if i == 0 {
+				distroDir = filePath
+				fmt.Println("distroDir", distroDir)
+			}
+
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			fmt.Println("here")
+			return "", err
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return "", err
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return "", err
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return "", err
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+	return distroDir, nil
+}
+
+func donwloadFile(dir, fullURLFile string) (string, error) {
+	// Build fileName from fullPath
+	fileURL, err := url.Parse(fullURLFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	path := fileURL.Path
+	segments := strings.Split(path, "/")
+	fileName := segments[len(segments)-1]
+
+	// Create blank file
+	file, err := os.Create(filepath.Join(dir, fileName))
+	if err != nil {
+		return "", err
+	}
+	client := http.Client{
+		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+			r.URL.Opaque = r.URL.Path
+			return nil
+		},
+	}
+	// Put content on file
+	resp, err := client.Get(fullURLFile)
+	if err != nil {
+		return "", err
+
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	return file.Name(), nil
 }
 
 func getManifests() (string, error) {
