@@ -98,7 +98,13 @@ var upgradeCmd = &cobra.Command{
 		spinner.Success()
 
 		if _, kuskGatewayInstalled := releases[releaseName]; kuskGatewayInstalled || installOnUpgrade {
-			spinner = utils.NewSpinner(fmt.Sprintf("Upgrading Kusk Gateway to %s...", releases[releaseName].version))
+			var spinnerMessage string
+			if kuskGatewayInstalled {
+				spinnerMessage = "Upgrading Kusk Gateway..."
+			} else {
+				spinnerMessage = "Installing Kusk Gateway..."
+			}
+			spinner = utils.NewSpinner(spinnerMessage)
 			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Upgrading Kusk Gateway: ", err)
@@ -114,7 +120,13 @@ var upgradeCmd = &cobra.Command{
 
 		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; publicEnvoyFleetInstalled || installOnUpgrade {
 			if !noEnvoyFleet {
-				spinner = utils.NewSpinner("Upgrading Envoy Fleet...")
+				var spinnerMessage string
+				if publicEnvoyFleetInstalled {
+					spinnerMessage = "Upgrading public Envoy Fleet..."
+				} else {
+					spinnerMessage = "Installing public Envoy Fleet..."
+				}
+				spinner = utils.NewSpinner(spinnerMessage)
 				err = installPublicEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 				if err != nil {
 					spinner.Fail("Upgrading Envoy Fleet: ", err)
@@ -132,7 +144,13 @@ var upgradeCmd = &cobra.Command{
 		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
 
 		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; privateEnvoyFleetInstalled || installOnUpgrade {
-			spinner = utils.NewSpinner("Upgrading private Envoy Fleet...")
+			var spinnerMessage string
+			if privateEnvoyFleetInstalled {
+				spinnerMessage = "Upgrading private Envoy Fleet..."
+			} else {
+				spinnerMessage = "Installing private Envoy Fleet..."
+			}
+			spinner = utils.NewSpinner(spinnerMessage)
 			err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
 			if err != nil {
 				spinner.Fail("Upgrading private Envoy Fleet: ", err)
@@ -146,7 +164,13 @@ var upgradeCmd = &cobra.Command{
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
 		if _, apiInstalled := releases[apiReleaseName]; apiInstalled || installOnUpgrade {
-			spinner = utils.NewSpinner(fmt.Sprintf("Upgrading Kusk API to %s...", releases[apiReleaseName].version))
+			var spinnerMessage string
+			if apiInstalled {
+				spinnerMessage = "Upgrading Kusk API..."
+			} else {
+				spinnerMessage = "Installing Kusk API..."
+			}
+			spinner = utils.NewSpinner(spinnerMessage)
 			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Upgrading Kusk API: ", err)
@@ -160,7 +184,13 @@ var upgradeCmd = &cobra.Command{
 
 		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
 		if _, dashboardInstalled := releases[dashboardReleaseName]; dashboardInstalled || installOnUpgrade {
-			spinner = utils.NewSpinner(fmt.Sprintf("Upgrading Kusk Dashboard to %s...", releases[dashboardReleaseName].version))
+			var spinnerMessage string
+			if dashboardInstalled {
+				spinnerMessage = "Upgrading Kusk Dashboard..."
+			} else {
+				spinnerMessage = "Installing Kusk Dashboard..."
+			}
+			spinner = utils.NewSpinner(spinnerMessage)
 			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
 			if err != nil {
 				spinner.Fail("Looking for Helm: ", err)
