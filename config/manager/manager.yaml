@@ -3,22 +3,6 @@ kind: Namespace
 metadata:
   name: system
 ---
-apiVersion: v1
-data:
-  ENABLE_LEADER_ELECTION: "false"
-  ENVOY_CONTROL_PLANE_BIND_ADDR: :18000
-  HEALTH_PROBE_BIND_ADDR: :8081
-  LOG_LEVEL: INFO
-  METRICS_BIND_ADDR: :8080
-  WEBHOOK_CERTS_DIR: /opt/manager/webhook/certs
-  ANALYTICS_ENABLED: "false"
-kind: ConfigMap
-metadata:
-  name: kusk-gateway-manager
-  namespace: system
-  labels:
-    app.kubernetes.io/component: kusk-gateway-manager
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,33 +23,33 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-      - command:
-        - /manager
-        image: kusk-gateway:latest
-        name: manager
-        envFrom:
-          - configMapRef:
-              name: kusk-gateway-manager
-        securityContext:
-          allowPrivilegeEscalation: false
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 2000m
-            memory: 1024Mi
-          requests:
-            cpu: 500m
-            memory: 256Mi
+        - command:
+            - /manager
+          image: kusk-gateway:latest
+          name: manager
+          envFrom:
+            - configMapRef:
+                name: kusk-gateway-manager
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 1024Mi
+            requests:
+              cpu: 500m
+              memory: 256Mi
       serviceAccountName: kusk-gateway-manager
       terminationGracePeriodSeconds: 10

@@ -83,18 +83,17 @@ func getConfig() (*rest.Config, error) {
 	return config, err
 }
 
-func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace string, instance string, timeout time.Duration) error {
+func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace string, name string, timeout time.Duration, bylabel string) error {
 	p := &corev1.PodList{}
 
-	labelSelector, err := labels.Parse("app.kubernetes.io/component=" + instance)
+	labelSelector, err := labels.Parse("app.kubernetes.io/" + bylabel + "=" + name)
 	if err != nil {
+		return err
+	}
+	if err = k8sClient.List(ctx, p, &client.ListOptions{LabelSelector: labelSelector, Namespace: namespace}); err != nil {
 		return err
 	}
 
-	err = k8sClient.List(ctx, p, &client.ListOptions{LabelSelector: labelSelector, Namespace: namespace}) // metav1.ListOptions{LabelSelector: "app.kubernetes.io/instance=" + instance})
-	if err != nil {
-		return err
-	}
 	for _, pod := range p.Items {
 		if err := wait.PollImmediate(time.Second, timeout, IsPodRunning(ctx, k8sClient, pod.Name, namespace)); err != nil {
 			return err

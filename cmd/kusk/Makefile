@@ -57,7 +57,7 @@ test:
 
 .PHONY: build
 build:
-	go generate ./...
+	go generate 
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 
 # `build-goreleaser` is just for local testing.

@@ -28,3 +28,13 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.DocSearch-Button {
+  min-width: 200px;
+  max-width: 400px;
+  width: 25vw;
+}
+
+.DocSearch-Button .DocSearch-Search-Icon {
+  transform: scale(0.75);
+}
