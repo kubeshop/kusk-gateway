@@ -29,12 +29,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
@@ -162,6 +164,7 @@ func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFlee
 		return fmt.Errorf("failure querying for the deployed APIs: %w", err)
 	}
 
+	duplicates := openapi3.Paths{}
 	// filter out apis are in the process of deletion
 	for _, api := range apiObjs.Items {
 		if api.Spec.Fleet.Name == fleet.Name && api.Spec.Fleet.Namespace == fleet.Namespace && api.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -171,11 +174,15 @@ func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFlee
 			}
 
 			for path := range newApiSpec.Paths {
-				if _, ok := apiSpec.Paths[path]; ok {
-					return fmt.Errorf("path %s already exists with envoyfleet %s", path, fleet)
+				if p, ok := apiSpec.Paths[path]; ok {
+					duplicates[path] = p
 				}
 			}
 		}
+	}
+	if len(duplicates) > 0 {
+		return fmt.Errorf("paths %s already exist with envoyfleet %s", reflect.ValueOf(duplicates).MapKeys(), fleet)
+
 	}
 	return nil
 }
