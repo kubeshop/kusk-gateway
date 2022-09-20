@@ -74,7 +74,7 @@ var rootCmd = &cobra.Command{
 					}
 
 					if currentVersion.LessThan(latestVersion) {
-						ui.Warn(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s\n", currentVersion, latestVersion), "Please follow instructions to update you installation: https://docs.kusk.io/reference/cli/overview/#updating")
+						ui.Warn(fmt.Sprintf("Outdated kusk CLI version %s: ", currentVersion), fmt.Sprintf("update to %s https://docs.kusk.io/reference/cli/overview/#updating", latestVersion))
 					}
 				}
 			}

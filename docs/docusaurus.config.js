@@ -27,8 +27,6 @@ const config = {
     locales: ["en"],
   },
 
-  plugins: [require.resolve("@cmfcmf/docusaurus-search-local")],
-
   presets: [
     [
       "classic",
@@ -93,6 +91,10 @@ const config = {
             position: "right",
             value: `<iframe src="https://ghbtns.com/github-btn.html?user=kubeshop&repo=kusk-gateway&type=star&count=true&size=large" style='margin-top: 6px' frameborder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>`,
           },
+          {
+            type: "search",
+            position: "left",
+          },
         ],
       },
       footer: {
@@ -139,6 +141,15 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+      },
+      algolia: {
+        // The application ID provided by Algolia
+        appId: "2K9J967OUZ",
+
+        // Public API key: it is safe to commit it
+        apiKey: "56fe41abaf25479f62d1b2b15aac11b7",
+
+        indexName: "kusk",
       },
     }),
 };
