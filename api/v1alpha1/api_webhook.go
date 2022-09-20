@@ -31,6 +31,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -147,9 +148,9 @@ func (a *APIValidator) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (r *API) validate() error {
-	parser := spec.NewParser(nil)
-
-	apiSpec, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))
+	apiSpec, err := spec.
+		NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).
+		ParseFromReader(strings.NewReader(r.Spec.Spec))
 	if err != nil {
 		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
 	}
