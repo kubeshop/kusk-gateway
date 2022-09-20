@@ -120,6 +120,7 @@ func (a *APIMutator) InjectDecoder(d *admission.Decoder) error {
 // APIValidator handles API objects validation
 //+kubebuilder:object:generate:=false
 type APIValidator struct {
+	Client  client.Client
 	decoder *admission.Decoder
 }
 
@@ -133,7 +134,9 @@ func (a *APIValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if err := apiObj.validate(); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
+	if err := a.PathAlreadyDeployed(ctx, apiObj.Spec.Fleet, *apiObj); err != nil {
+		return admission.Errored(http.StatusConflict, err)
+	}
 	return admission.Allowed("")
 }
 
@@ -143,6 +146,39 @@ func (a *APIValidator) Handle(ctx context.Context, req admission.Request) admiss
 // InjectDecoder injects the decoder.
 func (a *APIValidator) InjectDecoder(d *admission.Decoder) error {
 	a.decoder = d
+	return nil
+}
+
+func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFleetID, newApi API) error {
+	var apiObjs APIList
+	parser := spec.NewParser(nil)
+	newApiSpec, err := parser.ParseFromReader(strings.NewReader(newApi.Spec.Spec))
+	if err != nil {
+		return err
+	}
+
+	// Get all API objects with this fleet field set
+	if err := a.Client.List(ctx, &apiObjs, &client.ListOptions{}); err != nil {
+		return fmt.Errorf("failure querying for the deployed APIs: %w", err)
+	}
+
+	// filter out apis are in the process of deletion
+	for _, api := range apiObjs.Items {
+		if api.Spec.Fleet.Name == fleet.Name && api.Spec.Fleet.Namespace == fleet.Namespace {
+			if api.ObjectMeta.DeletionTimestamp.IsZero() {
+				apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+				if err != nil {
+					return err
+				}
+
+				for path := range newApiSpec.Paths {
+					if _, ok := apiSpec.Paths[path]; ok {
+						return fmt.Errorf("path %s already exists with envoyfleet %s", path, fleet)
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
 

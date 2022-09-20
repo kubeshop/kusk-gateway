@@ -81,7 +81,6 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	defer l.Info("Finished updating configuration", "fleet", fleetIDstr)
 
 	envoyConfig := config.New()
-
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs for the fleet", "fleet", fleetIDstr)
 
