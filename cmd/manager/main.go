@@ -35,6 +35,7 @@ import (
 
 	// +kubebuilder:scaffold:imports
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/kelseyhightower/envconfig"
@@ -65,6 +66,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
+	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 var (
@@ -272,7 +274,9 @@ func main() {
 		Validator:          proxy,
 		SecretToEnvoyFleet: map[string]gateway.EnvoyFleetID{},
 		WatchedSecretsChan: secretsChan,
+		OpenApiParser:      spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}),
 	}
+
 	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
 	heartBeat(ctx, controllerConfigManager.Client)
 
@@ -322,7 +326,7 @@ func main() {
 
 	setupLog.Info("Registering API mutating and validating webhooks to the webhook server")
 	webhookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
-	webhookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
+	webhookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{Client: mgr.GetClient()}})
 
 	// StaticRoute obj controller
 	if err = (&controllers.StaticRouteReconciler{
