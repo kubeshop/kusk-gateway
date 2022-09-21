@@ -28,14 +28,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/hashicorp/go-version"
 	"github.com/kubeshop/testkube/pkg/process"
-	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
@@ -64,152 +67,139 @@ var upgradeCmd = &cobra.Command{
 	$ kusk upgrade --install
 
 	Will upgrade kusk-gateway, the dashboard, api, and envoy-fleets and install them if they are not installed`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
 				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
-
-		spinner := utils.NewSpinner("Looking for Helm...")
-		helmPath, err := exec.LookPath("helm")
+		ghclient, err := utils.NewGithubClient("", nil)
 		if err != nil {
-			spinner.Fail("Looking for Helm: ", err)
-			os.Exit(1)
-		}
-		spinner.Success()
-
-		spinner = utils.NewSpinner("Adding Kubeshop helm repository...")
-		err = addKubeshopHelmRepo(helmPath)
-		if err != nil {
-			spinner.Fail("Adding Kubeshop helm repository: ", err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
-		spinner.Success()
 
-		spinner = utils.NewSpinner("Fetching the latest charts...")
-		err = updateHelmRepos(helmPath)
+		latest, err := ghclient.GetLatest()
 		if err != nil {
-			spinner.Fail("Looking for Helm: ", err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
-		releases, err := listReleases(helmPath, releaseName, releaseNamespace)
+		var dir string
+		// if !latest {
+		if dir, err = getManifests(); err != nil {
+			return err
+		}
+		// } else {
+		// 	if dir, err = getManifestsFromUrl(); err != nil {
+		// 		return err
+		// 	}
+		// }
+
+		c, err := utils.GetK8sClient()
 		if err != nil {
-			spinner.Fail("Listing Helm releases: ", err)
 			reportError(err)
-			os.Exit(1)
-		}
-		spinner.Success()
-
-		if _, kuskGatewayInstalled := releases[releaseName]; kuskGatewayInstalled || installOnUpgrade {
-			var spinnerMessage string
-			if kuskGatewayInstalled {
-				spinnerMessage = "Upgrading Kusk Gateway..."
-			} else {
-				spinnerMessage = "Installing Kusk Gateway..."
-			}
-			spinner = utils.NewSpinner(spinnerMessage)
-			err = installKuskGateway(helmPath, releaseName, releaseNamespace)
-			if err != nil {
-				spinner.Fail("Upgrading Kusk Gateway: ", err)
-				reportError(err)
-				os.Exit(1)
-			}
-			spinner.Success()
-		} else {
-			pterm.Info.Println("Kusk Gateway not installed and --install not specified, skipping")
+			return err
 		}
 
-		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
+		fmt.Println("✅ Checking if kusk is already installed...")
 
-		if _, publicEnvoyFleetInstalled := releases[envoyFleetName]; publicEnvoyFleetInstalled || installOnUpgrade {
-			if !noEnvoyFleet {
-				var spinnerMessage string
-				if publicEnvoyFleetInstalled {
-					spinnerMessage = "Upgrading public Envoy Fleet..."
-				} else {
-					spinnerMessage = "Installing public Envoy Fleet..."
+		deployments := appsv1.DeploymentList{}
+		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: "kusk-system"}); err != nil {
+			reportError(err)
+			return err
+		}
+		fmt.Println("DIR", dir)
+		for _, deployment := range deployments.Items {
+			switch deployment.Name {
+			case "kusk-gateway-manager":
+				for _, c := range deployment.Spec.Template.Spec.Containers {
+					if c.Name == "manager" {
+						imagetag := strings.Split(c.Image, ":")
+						if len(imagetag) > 1 {
+							fmt.Println("imagetag", imagetag)
+							latestVersion, err := version.NewVersion(latest)
+							if err != nil {
+								errors.NewErrorReporter(cmd, err).Report()
+							}
+
+							currentVersion, err := version.NewVersion(imagetag[1])
+							if err != nil {
+								errors.NewErrorReporter(cmd, err).Report()
+							}
+
+							if currentVersion != nil && currentVersion.LessThan(latestVersion) {
+								if err := applyk(dir); err != nil {
+									fmt.Println("❌ failed installing Kusk", err)
+									reportError(err)
+									return err
+								}
+							}
+							if currentVersion == nil {
+								if err := applyk(dir); err != nil {
+									fmt.Println("❌ failed installing Kusk", err)
+									reportError(err)
+									return err
+								}
+							}
+						}
+					}
 				}
-				spinner = utils.NewSpinner(spinnerMessage)
-				err = installPublicEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
-				if err != nil {
-					spinner.Fail("Upgrading Envoy Fleet: ", err)
+
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
+					fmt.Println("❌ failed installing kusk", err)
 					reportError(err)
-					os.Exit(1)
+					return err
 				}
-				spinner.Success()
-			} else {
-				ui.Info(ui.LightYellow("--no-envoy-fleet set - skipping envoy fleet installation"))
+
+			case "kusk-gateway-private-envoy-fleet", "kusk-gateway-envoy-fleet":
+				if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
+					fmt.Println("❌ failed installing Envoy Fleets", err)
+					reportError(err)
+					return err
+				}
+
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
+					fmt.Println("❌ failed installing Envoyfleets", err)
+					reportError(err)
+					return err
+				}
+
+				fmt.Println("✅ Envoy Fleets installed")
+			case "kusk-gateway-api":
+				if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+					fmt.Println("❌ failed installing API Server", err)
+					reportError(err)
+					return err
+				}
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+					fmt.Println("❌ failed installing kusk", err)
+					reportError(err)
+					return err
+				}
+				fmt.Println("✅ API Server installed")
+			case "kusk-gateway-dashboard":
+				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
+					fmt.Println("❌ failed installing Dashboard", err)
+					reportError(err)
+					return err
+				}
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
+					fmt.Println("❌ failed installing kusk", err)
+					reportError(err)
+					return err
+				}
+				fmt.Println("✅ Dashboard installed")
 			}
-		} else {
-			pterm.Info.Println("Envoy Fleet not installed and --install not specified, skipping")
 		}
 
-		envoyFleetName = fmt.Sprintf("%s-private-envoy-fleet", releaseName)
+		// if err := applyk(dir); err != nil {
+		// 	fmt.Println("❌ failed installing Kusk", err)
+		// 	reportError(err)
+		// 	return err
+		// }
 
-		if _, privateEnvoyFleetInstalled := releases[envoyFleetName]; privateEnvoyFleetInstalled || installOnUpgrade {
-			var spinnerMessage string
-			if privateEnvoyFleetInstalled {
-				spinnerMessage = "Upgrading private Envoy Fleet..."
-			} else {
-				spinnerMessage = "Installing private Envoy Fleet..."
-			}
-			spinner = utils.NewSpinner(spinnerMessage)
-			err = installPrivateEnvoyFleet(helmPath, envoyFleetName, releaseNamespace)
-			if err != nil {
-				spinner.Fail("Upgrading private Envoy Fleet: ", err)
-				reportError(err)
-				os.Exit(1)
-			}
-			spinner.Success()
-		} else {
-			pterm.Info.Println("Private Envoy Fleet not installed and --install not specified, skipping")
-		}
-
-		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
-		if _, apiInstalled := releases[apiReleaseName]; apiInstalled || installOnUpgrade {
-			var spinnerMessage string
-			if apiInstalled {
-				spinnerMessage = "Upgrading Kusk API..."
-			} else {
-				spinnerMessage = "Installing Kusk API..."
-			}
-			spinner = utils.NewSpinner(spinnerMessage)
-			err = installApi(helmPath, apiReleaseName, releaseNamespace, envoyFleetName)
-			if err != nil {
-				spinner.Fail("Upgrading Kusk API: ", err)
-				reportError(err)
-				os.Exit(1)
-			}
-			spinner.Success()
-		} else {
-			pterm.Info.Println("api not installed and --install not specified, skipping")
-		}
-
-		dashboardReleaseName := fmt.Sprintf("%s-dashboard", releaseName)
-		if _, dashboardInstalled := releases[dashboardReleaseName]; dashboardInstalled || installOnUpgrade {
-			var spinnerMessage string
-			if dashboardInstalled {
-				spinnerMessage = "Upgrading Kusk Dashboard..."
-			} else {
-				spinnerMessage = "Installing Kusk Dashboard..."
-			}
-			spinner = utils.NewSpinner(spinnerMessage)
-			err = installDashboard(helmPath, dashboardReleaseName, releaseNamespace, envoyFleetName)
-			if err != nil {
-				spinner.Fail("Looking for Helm: ", err)
-				reportError(err)
-				os.Exit(1)
-			}
-			spinner.Success()
-		} else {
-			pterm.Info.Println("dashboard not installed and --install not specified, skipping")
-		}
-
-		pterm.Success.Printfln("Upgraded succesfully!")
+		return nil
 	},
 }
 
