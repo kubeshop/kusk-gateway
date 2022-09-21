@@ -37,7 +37,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
