@@ -61,6 +61,8 @@ type KubeEnvoyConfigManager struct {
 
 	WatchedSecretsChan chan *v1.Secret
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
+
+	OpenApiParser spec.Parser
 }
 
 var (
@@ -96,10 +98,9 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	clBuilder := cloudentity.NewBuilder()
-	parser := spec.NewParser(nil)
 	for _, api := range apis {
 		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api.Name)
-		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+		apiSpec, err := c.OpenApiParser.ParseFromReader(strings.NewReader(api.Spec.Spec))
 		if err != nil {
 			return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
 		}
