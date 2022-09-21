@@ -167,21 +167,23 @@ func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFlee
 	duplicates := openapi3.Paths{}
 	// filter out apis are in the process of deletion
 	for _, api := range apiObjs.Items {
-		if api.Spec.Fleet.Name == fleet.Name && api.Spec.Fleet.Namespace == fleet.Namespace && api.ObjectMeta.DeletionTimestamp.IsZero() {
-			if api.Name != newApi.Name && api.Namespace != newApi.Namespace {
-				apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
-				if err != nil {
-					return err
-				}
+		if (api.Name != newApi.Name && api.Namespace != newApi.Namespace) &&
+			api.Spec.Fleet.Name == fleet.Name &&
+			api.Spec.Fleet.Namespace == fleet.Namespace &&
+			api.ObjectMeta.DeletionTimestamp.IsZero() {
+			apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+			if err != nil {
+				return err
+			}
 
-				for path := range newApiSpec.Paths {
-					if p, ok := apiSpec.Paths[path]; ok {
-						duplicates[path] = p
-					}
+			for path := range newApiSpec.Paths {
+				if p, ok := apiSpec.Paths[path]; ok {
+					duplicates[path] = p
 				}
 			}
 		}
 	}
+
 	if len(duplicates) > 0 {
 		return fmt.Errorf("paths %s already exist with envoyfleet %s", reflect.ValueOf(duplicates).MapKeys(), fleet)
 
