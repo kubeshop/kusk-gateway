@@ -322,7 +322,7 @@ func main() {
 
 	setupLog.Info("Registering API mutating and validating webhooks to the webhook server")
 	webhookServer.Register(gateway.APIMutatingWebhookPath, &webhook.Admission{Handler: &gateway.APIMutator{Client: mgr.GetClient()}})
-	webhookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{}})
+	webhookServer.Register(gateway.APIValidatingWebhookPath, &webhook.Admission{Handler: &gateway.APIValidator{Client: mgr.GetClient()}})
 
 	// StaticRoute obj controller
 	if err = (&controllers.StaticRouteReconciler{
