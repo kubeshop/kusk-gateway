@@ -33,7 +33,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-version"
 	"github.com/kubeshop/testkube/pkg/process"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -73,28 +72,12 @@ var upgradeCmd = &cobra.Command{
 				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
-		ghclient, err := utils.NewGithubClient("", nil)
-		if err != nil {
-			reportError(err)
-			return err
-		}
-
-		latest, err := ghclient.GetLatest()
-		if err != nil {
-			reportError(err)
-			return err
-		}
 
 		var dir string
-		// if !latest {
+		var err error
 		if dir, err = getManifests(); err != nil {
 			return err
 		}
-		// } else {
-		// 	if dir, err = getManifestsFromUrl(); err != nil {
-		// 		return err
-		// 	}
-		// }
 
 		c, err := utils.GetK8sClient()
 		if err != nil {
@@ -109,40 +92,19 @@ var upgradeCmd = &cobra.Command{
 			reportError(err)
 			return err
 		}
-		fmt.Println("DIR", dir)
 		for _, deployment := range deployments.Items {
 			switch deployment.Name {
 			case "kusk-gateway-manager":
+				fmt.Println("✅ kusk is already installed. Upgrading...")
+
 				for _, c := range deployment.Spec.Template.Spec.Containers {
 					if c.Name == "manager" {
-						imagetag := strings.Split(c.Image, ":")
-						if len(imagetag) > 1 {
-							fmt.Println("imagetag", imagetag)
-							latestVersion, err := version.NewVersion(latest)
-							if err != nil {
-								errors.NewErrorReporter(cmd, err).Report()
-							}
-
-							currentVersion, err := version.NewVersion(imagetag[1])
-							if err != nil {
-								errors.NewErrorReporter(cmd, err).Report()
-							}
-
-							if currentVersion != nil && currentVersion.LessThan(latestVersion) {
-								if err := applyk(dir); err != nil {
-									fmt.Println("❌ failed installing Kusk", err)
-									reportError(err)
-									return err
-								}
-							}
-							if currentVersion == nil {
-								if err := applyk(dir); err != nil {
-									fmt.Println("❌ failed installing Kusk", err)
-									reportError(err)
-									return err
-								}
-							}
+						if err := applyk(dir); err != nil {
+							fmt.Println("❌ failed upgrading Kusk", err)
+							reportError(err)
+							return err
 						}
+						fmt.Println("✅ kusk upgraded")
 					}
 				}
 
@@ -165,8 +127,9 @@ var upgradeCmd = &cobra.Command{
 					return err
 				}
 
-				fmt.Println("✅ Envoy Fleets installed")
+				fmt.Println("✅ Envoy Fleets upgraded")
 			case "kusk-gateway-api":
+				fmt.Println("✅ kusk API server is already installed. Upgrading...")
 				if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
 					fmt.Println("❌ failed installing API Server", err)
 					reportError(err)
@@ -179,6 +142,7 @@ var upgradeCmd = &cobra.Command{
 				}
 				fmt.Println("✅ API Server installed")
 			case "kusk-gateway-dashboard":
+				fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
 				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
 					fmt.Println("❌ failed installing Dashboard", err)
 					reportError(err)
@@ -189,15 +153,9 @@ var upgradeCmd = &cobra.Command{
 					reportError(err)
 					return err
 				}
-				fmt.Println("✅ Dashboard installed")
+				fmt.Println("✅ Dashboard upgraded")
 			}
 		}
-
-		// if err := applyk(dir); err != nil {
-		// 	fmt.Println("❌ failed installing Kusk", err)
-		// 	reportError(err)
-		// 	return err
-		// }
 
 		return nil
 	},
