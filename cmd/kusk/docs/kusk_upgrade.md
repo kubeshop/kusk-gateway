@@ -1,4 +1,4 @@
-## kusk upgrade
+## kusk cluster upgrade
 
 Upgrade kusk-gateway, envoy-fleet, api, and dashboard in a single command
 
@@ -7,21 +7,21 @@ Upgrade kusk-gateway, envoy-fleet, api, and dashboard in a single command
 
 	Upgrade kusk-gateway, envoy-fleet, api, and dashboard in a single command.
 
-	$ kusk upgrade
+	$ kusk cluster upgrade
 
 	Will upgrade kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api) 
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-	$ kusk upgrade --name=my-release --namespace=my-namespace
+	$ kusk cluster upgrade --name=my-release --namespace=my-namespace
 
 	Will upgrade a helm release named with --name in the namespace specified by --namespace.
 
-	$ kusk upgrade --install
+	$ kusk cluster upgrade --install
 
 	Will upgrade kusk-gateway, the dashboard, api, and envoy-fleets and install them if they are not installed
 
 ```
-kusk upgrade [flags]
+kusk cluster upgrade [flags]
 ```
 
 ### Options

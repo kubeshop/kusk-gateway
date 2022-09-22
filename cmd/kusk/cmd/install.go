@@ -69,16 +69,16 @@ var installCmd = &cobra.Command{
 	Long: `
 	Install kusk-gateway, envoy-fleet, api, and dashboard in a single command.
 
-	$ kusk install
+	$ kusk cluster install
 
 	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-	$ kusk install --name=my-release --namespace=my-namespace
+	$ kusk cluster install --name=my-release --namespace=my-namespace
 
 	Will create a helm release named with --name in the namespace specified by --namespace.
 
-	$ kusk install --no-dashboard --no-api --no-envoy-fleet
+	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
@@ -134,7 +134,7 @@ var installCmd = &cobra.Command{
 
 			spinner.Success()
 		} else {
-			pterm.Info.Println("Kusk Gateway already installed, skipping... To upgrade to a new version run `kusk upgrade`")
+			pterm.Info.Println("Kusk Gateway already installed, skipping... To upgrade to a new version run `kusk cluster upgrade`")
 		}
 
 		envoyFleetName := fmt.Sprintf("%s-envoy-fleet", releaseName)
@@ -152,7 +152,7 @@ var installCmd = &cobra.Command{
 				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
 		} else {
-			pterm.Info.Println("Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+			pterm.Info.Println("Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk cluster upgrade`")
 		}
 
 		if noApi {
@@ -175,7 +175,7 @@ var installCmd = &cobra.Command{
 				pterm.Info.Println("--no-envoy-fleet set - skipping envoy fleet installation")
 			}
 		} else {
-			pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+			pterm.Info.Println("Private Envoy Fleet already installed, skipping. To upgrade to a new version run `kusk cluster upgrade`")
 		}
 
 		apiReleaseName := fmt.Sprintf("%s-api", releaseName)
@@ -190,7 +190,7 @@ var installCmd = &cobra.Command{
 
 			spinner.Success()
 		} else {
-			pterm.Info.Println("api already installed, skipping. To upgrade to a new version run kusk upgrade")
+			pterm.Info.Println("api already installed, skipping. To upgrade to a new version run kusk cluster upgrade")
 		}
 
 		if noDashboard {
@@ -211,7 +211,7 @@ var installCmd = &cobra.Command{
 
 			spinner.Success()
 		} else {
-			pterm.Info.Println("Kusk Dashboard already installed, skipping. To upgrade to a new version run `kusk upgrade`")
+			pterm.Info.Println("Kusk Dashboard already installed, skipping. To upgrade to a new version run `kusk cluster upgrade`")
 		}
 		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 	},
