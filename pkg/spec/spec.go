@@ -128,7 +128,7 @@ func parseSwagger(spec []byte) (*openapi3.T, error) {
 }
 
 func parseOpenAPI3(spec []byte) (*openapi3.T, error) {
-	return openapi3.NewLoader().LoadFromData(spec)
+	return (&openapi3.Loader{IsExternalRefsAllowed: true}).LoadFromData(spec)
 }
 
 // GetExampleResponse returns a single example response from the given operation

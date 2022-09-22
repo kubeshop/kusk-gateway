@@ -31,6 +31,7 @@ import (
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	tlsinspector "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -200,7 +201,15 @@ func (l *listenerBuilder) AddHTTPManagerFilterChains(httpConnectionManager *hcm.
 	// When certificates are present, we add an additional Listener filter chain that is selected when the connection protocol type is tls.
 	// HTTP Manager configuration is the same.
 	// Enable TLS Inspector in the Listener to detect plain http or tls requests.
-	l.addListenerFilter(&listener.ListenerFilter{Name: wellknown.TLSInspector})
+	tlsInspector := &tlsinspector.TlsInspector{}
+	anyTlsInspector, err := anypb.New(tlsInspector)
+	if err != nil {
+		return fmt.Errorf("failed to add tls inspector to the listener: cannot convert to Any message type: %w", err)
+	}
+	l.addListenerFilter(&listener.ListenerFilter{
+		Name:       wellknown.TLSInspector,
+		ConfigType: &listener.ListenerFilter_TypedConfig{TypedConfig: anyTlsInspector},
+	})
 
 	// Make sure plain http manager filter chain is selected when protocol type is raw_buffer (not tls).
 	hcmPlainChain.FilterChainMatch = &listener.FilterChainMatch{TransportProtocol: "raw_buffer"}
