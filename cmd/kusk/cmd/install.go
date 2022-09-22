@@ -56,7 +56,6 @@ func init() {
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
 	installCmd.Flags().BoolVar(&latest, "latest", false, "get latest Kusk version from Github")
-
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
 	}
@@ -103,7 +102,6 @@ var installCmd = &cobra.Command{
 				return err
 			}
 		}
-
 		fmt.Println("✅ Installing Kusk...")
 
 		if err := applyk(dir); err != nil {
@@ -114,7 +112,6 @@ var installCmd = &cobra.Command{
 
 		namespace := "kusk-system"
 		name := "kusk-gateway-manager"
-
 		c, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
@@ -343,7 +340,7 @@ func getManifests() (string, error) {
 			return "", nil
 		} else {
 			content, _ := Asset(name)
-			if strings.Contains(name, "manager_configmap.yaml") {
+			if strings.Contains(name, "configmap.yaml") {
 				tmp := strings.Replace(string(content), `ANALYTICS_ENABLED: "true"`, fmt.Sprintf(`ANALYTICS_ENABLED: "%s"`, analyticsEnabled), -1)
 				content = []byte(tmp)
 			}

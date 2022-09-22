@@ -141,6 +141,7 @@ func IsPodRunning(ctx context.Context, c client.Client, podName, namespace strin
 		case corev1.PodFailed:
 			return false, nil
 		}
+
 		return false, nil
 	}
 }

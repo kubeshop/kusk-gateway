@@ -1,10 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../crd
-  - ../rbac
-  - ../manager
-  - ../webhook
+- ../crd
+- ../rbac
+- ../manager
+- ../webhook
 
 # Adds namespace to all resources.
 namespace: kusk-system
@@ -38,25 +38,13 @@ commonLabels:
 # crd/kustomization.yaml
 
 patchesStrategicMerge:
-  - manager_auth_proxy_patch.yaml
-  - manager_webhook_patch.yaml
+- manager_auth_proxy_patch.yaml
+- manager_webhook_patch.yaml
 
-# the following config is for teaching kustomize how to do var substitution
-# vars:
-#   - fieldref:
-#       fieldPath: metadata.namespace
-#     name: SERVICE_NAMESPACE
-#     objref:
-#       kind: Service
-#       name: kusk-gateway-webhooks-service
-#       version: v1
-#   - fieldref: {}
-#     name: SERVICE_NAME
-#     objref:
-#       kind: Service
-#       name: kusk-gateway-webhooks-service
-#       version: v1
 images:
-  - name: kusk-gateway:dev
-    newName: kubeshop/kusk-gateway
-    newTag: latest
+- name: kusk-gateway
+  newName: kubeshop/kusk-gateway
+  newTag: v1.2.4
+- name: kusk-gateway:dev
+  newName: kubeshop/kusk-gateway
+  newTag: latest
