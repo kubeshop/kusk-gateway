@@ -21,22 +21,6 @@ commonLabels:
   app.kubernetes.io/instance: kusk-gateway-development
   app.kubernetes.io/name: kusk-gateway
 
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
-#- ../prometheus
-
-# Protect the /metrics endpoint by putting it behind auth.
-# If you want your kusk-gateway-manager to expose the /metrics
-# endpoint w/o any authn/z, please comment the following line.
-
-# Mount the controller config file for loading manager configurations
-# through a ComponentConfig type
-#- manager_config_patch.yaml
-
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
-
 patchesStrategicMerge:
   - manager_auth_proxy_patch.yaml
   - manager_webhook_patch.yaml

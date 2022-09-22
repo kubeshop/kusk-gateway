@@ -74,10 +74,10 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-	$ kusk cluster install --name=my-release --namespace=my-namespace
-
-	Will create a helm release named with --name in the namespace specified by --namespace.
-
+	$ kusk install --latest 
+	
+	Will pull the latest version of kusk available 
+	
 	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
