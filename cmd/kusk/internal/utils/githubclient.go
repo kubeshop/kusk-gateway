@@ -29,6 +29,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+)
+
+const (
+	baseURL = "https://api.github.com/repos/kubeshop/kusk-gateway/"
 )
 
 func (c *GithubClient) GetTags() ([]Tag, *ErrorResponse, error) {
@@ -40,9 +45,20 @@ func (c *GithubClient) GetTags() ([]Tag, *ErrorResponse, error) {
 	}
 }
 
-const (
-	baseURL = "https://api.github.com/repos/kubeshop/kusk-gateway/"
-)
+func (c *GithubClient) GetLatest() (string, error) {
+	i, _, err := c.GetTags()
+	if err != nil {
+		return "", err
+	}
+
+	var latest string
+	if len(i) > 0 {
+		ref_str := strings.Split(i[len(i)-1].Ref, "/")
+		latest = ref_str[len(ref_str)-1]
+	}
+
+	return latest, nil
+}
 
 func NewGithubClient(apiKey string, httpClient *http.Client) (*GithubClient, error) {
 	if httpClient == nil {

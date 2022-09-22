@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM docker.io/golang:1.17 as builder
+FROM --platform=$BUILDPLATFORM docker.io/golang:1.19 as builder
 
 WORKDIR /workspace
 
