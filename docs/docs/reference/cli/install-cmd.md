@@ -1,4 +1,4 @@
-# `kusk install`
+# `kusk cluster install`
 
 The `install` command will install Kusk Gateway and all its components with a single command. 
 Kusk uses Helm to do this, so you will need to have [Helm installed](https://helm.sh/docs/intro/install/).
@@ -12,11 +12,11 @@ Kusk uses Helm to do this, so you will need to have [Helm installed](https://hel
 
 #### **Examples**
 
-The default `kusk install` command will install Kusk Gateway, a public (for your APIs) and private (for the Kusk dashboard and API)
+The default `kusk cluster install` command will install Kusk Gateway, a public (for your APIs) and private (for the Kusk dashboard and API)
 envoy-fleet, api, and dashboard in the kusk-system namespace using Helm and using the current kubeconfig context.
 
 ```sh
-$ kusk install
+$ kusk cluster install
   ✔  Looking for Helm...
   ✔  Adding Kubeshop repository...
   ✔  Fetching the latest charts...
@@ -31,14 +31,14 @@ $ kusk install
 The following command will create a Helm release named with **--name** in the namespace specified by **--namespace**.
 
 ```sh
-$ kusk install --name=my-release --namespace=my-namespace
+$ kusk cluster install --name=my-release --namespace=my-namespace
 ...
 ```
 
 The following command will install Kusk Gateway, but not the dashboard, api, or envoy-fleet.
 
 ```sh
-$ kusk install --no-dashboard --no-api --no-envoy-fleet
+$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 ...
 ```
 
@@ -62,6 +62,6 @@ export ANALYTICS_ENABLED=false
 
 or run 
 ```
-ANALYTICS_ENABLED=false kusk install
+ANALYTICS_ENABLED=false kusk cluster install
 ```
 

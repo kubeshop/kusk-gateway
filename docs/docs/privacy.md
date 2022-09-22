@@ -64,5 +64,5 @@ export ANALYTICS_ENABLED=false
 ```
 or
 ```
-ANALYTICS_ENABLED=false kusk install
+ANALYTICS_ENABLED=false kusk cluster install
 ```
