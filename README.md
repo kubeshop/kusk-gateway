@@ -37,7 +37,7 @@ Kusk Gateway enables you to design and configure your APIs from single OpenAPI m
 
 ## Get Started
 
-Check out our [Getting Started section](https://kubeshop.github.io/kusk-gateway/getting-started/deploy-an-api/) to install Kusk Gateway, deploy an example API and connect a service to the API.
+Check out our [Getting Started section](https://kubeshop.github.io/kusk-gateway/getting-started) to install Kusk Gateway, deploy an example API and connect a service to the API.
 
 ## Contributing
 
