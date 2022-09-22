@@ -32,6 +32,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
@@ -88,7 +89,10 @@ func Execute() {
 		errors.NewErrorReporter(rootCmd, err).Report()
 	}
 
-	cobra.CheckErr(err)
+	if err != nil {
+		kuskui.PrintError(err.Error())
+		os.Exit(1)
+	}
 }
 
 func init() {
