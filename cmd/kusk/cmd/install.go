@@ -69,16 +69,16 @@ var installCmd = &cobra.Command{
 	Long: `
 	Install kusk-gateway, envoy-fleet, api, and dashboard in a single command.
 
-	$ kusk install
+	$ kusk cluster install
 
 	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-	$ kusk install --name=my-release --namespace=my-namespace
+	$ kusk cluster install --name=my-release --namespace=my-namespace
 
 	Will create a helm release named with --name in the namespace specified by --namespace.
 
-	$ kusk install --no-dashboard --no-api --no-envoy-fleet
+	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
 	`,
@@ -218,7 +218,6 @@ func getManifestsFromUrl() (string, error) {
 
 	}
 
-	fmt.Println("LATEST", latest)
 	if latest == "v1.2.3" {
 		return "", fmt.Errorf("you are trying to update to %s which isn't supported with `kusk cluster install --latest`", latest)
 	}
