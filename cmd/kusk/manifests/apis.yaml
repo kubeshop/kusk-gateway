@@ -1,0 +1,842 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kusk-gateway-api
+rules:
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - apis
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - apis/status
+    verbs:
+      - get
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - envoyfleet
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - envoyfleet/status
+    verbs:
+      - get
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - staticroutes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - gateway.kusk.io
+    resources:
+      - staticroutes/status
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kusk-gateway-api
+  namespace: kusk-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kusk-gateway-api
+subjects:
+  - kind: ServiceAccount
+    name: kusk-gateway-api
+    namespace: kusk-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
+  name: kusk-gateway-api
+  namespace: kusk-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kusk-gateway-api
+      app.kubernetes.io/instance: kusk-gateway-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kusk-gateway-api
+        app.kubernetes.io/instance: kusk-gateway-api
+    spec:
+      containers:
+        - image: kubeshop/kusk-gateway-api:v1.1.5
+          imagePullPolicy: Always
+          name: kusk-gateway-api
+      serviceAccountName: kusk-gateway-manager
+---
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: kusk-gateway-api
+  namespace: kusk-system
+spec:
+  fleet:
+    name: kusk-gateway-private-envoy-fleet
+    namespace: kusk-system
+  spec: |
+    components:
+      schemas:
+        ApiItem:
+          properties:
+            fleet:
+              $ref: '#/components/schemas/ApiItem_Fleet'
+            name:
+              type: string
+            namespace:
+              type: string
+            service:
+              $ref: '#/components/schemas/ApiItem_Service'
+            version:
+              type: string
+          required:
+          - name
+          - namespace
+          - fleet
+          - service
+          - version
+          type: object
+        ApiItem_Fleet:
+          properties:
+            name:
+              type: string
+            namespace:
+              type: string
+          required:
+          - name
+          - namespace
+          type: object
+        ApiItem_Service:
+          properties:
+            name:
+              type: string
+            namespace:
+              type: string
+          required:
+          - name
+          - namespace
+          type: object
+        EnvoyFleetItem:
+          properties:
+            apis:
+              items:
+                $ref: '#/components/schemas/ApiItem_Fleet'
+              type: array
+            name:
+              type: string
+            namespace:
+              type: string
+            services:
+              items:
+                $ref: '#/components/schemas/ServiceItem'
+              type: array
+            staticRoutes:
+              items:
+                $ref: '#/components/schemas/StaticRouteItem_Fleet'
+              type: array
+          required:
+          - name
+          - namespace
+          type: object
+        NamespaceItem:
+          properties:
+            name:
+              type: string
+          type: object
+        ServiceItem:
+          properties:
+            name:
+              type: string
+            namespace:
+              type: string
+            ports:
+              items:
+                $ref: '#/components/schemas/ServicePortItem'
+              type: array
+            serviceType:
+              enum:
+              - ClusterIP
+              - LoadBalancer
+              type: string
+            status:
+              enum:
+              - available
+              - unavailable
+              type: string
+          required:
+          - name
+          - status
+          - namespace
+          - serviceType
+          - ports
+          type: object
+        ServicePortItem:
+          properties:
+            name:
+              type: string
+            nodePort:
+              type: integer
+            port:
+              type: integer
+            protocol:
+              type: string
+            targetPort:
+              type: string
+          required:
+          - name
+          - nodePort
+          - port
+          - protocol
+          - targetPort
+          type: object
+        StaticRouteItem:
+          properties:
+            envoyFleetName:
+              type: string
+            envoyFleetNamespace:
+              type: string
+            name:
+              type: string
+            namespace:
+              type: string
+          required:
+          - name
+          - namespace
+          type: object
+        StaticRouteItem_Fleet:
+          properties:
+            name:
+              type: string
+            namespace:
+              type: string
+          required:
+          - name
+          - namespace
+          type: object
+    externalDocs:
+      description: Find out more about Kusk-Gateway
+      url: https://kubeshop.github.io/kusk-gateway/
+    info:
+      description: This is the Kusk Gateway Management API
+      title: kusk-gateway-api
+      version: 1.0.0
+    openapi: 3.0.0
+    paths:
+      /apis:
+        get:
+          description: Returns the list of APIs available in the cluster
+          operationId: getApis
+          parameters:
+          - description: optional filter on fleet
+            in: query
+            name: fleetname
+            schema:
+              type: string
+          - description: optional filter on fleet
+            in: query
+            name: fleetnamespace
+            schema:
+              type: string
+          - description: optional filter on namespace
+            in: query
+            name: namespace
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    items:
+                      $ref: '#/components/schemas/ApiItem'
+                    type: array
+              description: a list of apis
+          summary: Get a list of APIs
+          tags:
+          - apis
+        post:
+          description: Deploys a new API to the cluster
+          operationId: deployApi
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  properties:
+                    envoyFleetName:
+                      type: string
+                    envoyFleetNamespace:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    openapi:
+                      type: string
+                  type: object
+            description: API content that needs to be deployed
+            required: true
+          responses:
+            "201":
+              description: API deployed
+            "400":
+              content:
+                application/json:
+                  schema:
+                    type: string
+              description: The content of the API is malformed
+          summary: Deploy new API
+          tags:
+          - apis
+      /apis/{namespace}/{name}:
+        delete:
+          operationId: deleteApi
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "204":
+              description: api item deleted
+            "404":
+              description: api item not found
+          summary: Delete an API instance by namespace and name
+          tags:
+          - apis
+        get:
+          operationId: getApi
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ApiItem'
+              description: API item
+            "404":
+              description: API item not found
+          summary: Get an API instance by namespace and name
+          tags:
+          - apis
+        put:
+          description: Updates an existing API in the cluster
+          operationId: updateApi
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  properties:
+                    envoyFleetName:
+                      type: string
+                    envoyFleetNamespace:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    openapi:
+                      type: string
+                  type: object
+            description: API content that needs to be updated
+            required: true
+          responses:
+            "201":
+              description: API deployed
+            "400":
+              content:
+                application/json:
+                  schema:
+                    type: string
+              description: The content of the API is malformed
+            "404":
+              description: API not found
+          summary: Update an existing API
+          tags:
+          - apis
+      /apis/{namespace}/{name}/crd:
+        get:
+          operationId: getApiCRD
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+              description: returns the CRD of the API ( Raw Api Spec )
+            "404":
+              description: API CRD not found
+          summary: Get API CRD from cluster
+          tags:
+          - apis
+      /apis/{namespace}/{name}/definition:
+        get:
+          operationId: getApiDefinition
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+              description: API definition item
+            "404":
+              description: API definition not found
+          summary: Get API definition ( Post-Processed version )
+          tags:
+          - apis
+      /fleets:
+        get:
+          description: Returns a list of envoy fleets that are available in the cluster
+          operationId: getEnvoyFleets
+          parameters:
+          - description: optional filter on namespace
+            in: query
+            name: namespace
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    items:
+                      $ref: '#/components/schemas/EnvoyFleetItem'
+                    type: array
+              description: list of envoy fleets
+          summary: Get a list of envoy fleets
+          tags:
+          - fleets
+        post:
+          operationId: createFleet
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ServiceItem'
+            description: create fleet content
+            required: true
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/EnvoyFleetItem'
+              description: created fleet
+            "400":
+              content:
+                application/json:
+                  schema:
+                    type: string
+              description: The content of the API is malformed
+          summary: create new fleet
+          tags:
+          - create new fleet
+      /fleets/{namespace}/{name}:
+        delete:
+          operationId: deleteFleet
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "204":
+              description: fleet item deleted
+            "404":
+              description: fleet item not found
+          summary: Delete a Fleet instance by namespace and name
+          tags:
+          - fleets
+        get:
+          description: Returns an object containing info about the envoy fleet corresponding
+            to the namespace and name
+          operationId: getEnvoyFleet
+          parameters:
+          - description: the namespace of the fleet
+            in: path
+            name: namespace
+            required: true
+            schema:
+              type: string
+          - description: the name of the fleet
+            in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/EnvoyFleetItem'
+              description: envoy fleet details
+            "404":
+              description: Envoy fleet not found by namespace-name combination
+          summary: Get details for a single envoy fleet
+          tags:
+          - fleets
+      /fleets/{namespace}/{name}/crd:
+        get:
+          operationId: getEnvoyFleetCRD
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+              description: Envoy fleet CRD
+            "404":
+              description: Envoy fleet CRD not found
+          summary: Get envoy fleet CRD
+          tags:
+          - fleets
+      /namespaces:
+        get:
+          description: Returns a list of namespaces
+          operationId: getNamespaces
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    items:
+                      $ref: '#/components/schemas/NamespaceItem'
+                    type: array
+              description: list of namespaces
+          summary: Get a list of namespaces
+          tags:
+          - namespaces
+      /services:
+        get:
+          description: Returns the list of services available in the cluster that are
+            related to kusk-gateway
+          operationId: getServices
+          parameters:
+          - description: optional filter on namespace
+            in: query
+            name: namespace
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    items:
+                      $ref: '#/components/schemas/ServiceItem'
+                    type: array
+              description: list of services
+          summary: Get a list of services handled by kusk-gateway
+          tags:
+          - services
+      /services/{namespace}/{name}:
+        get:
+          description: Returns an object containing info about the service corresponding
+            to the namespace and name
+          operationId: getService
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ServiceItem'
+              description: service details
+            "404":
+              description: Service not found by namespace-name combination
+          summary: Get details for a single service
+          tags:
+          - services
+      /staticroutes:
+        get:
+          description: Returns a list of static routes
+          operationId: getStaticRoutes
+          parameters:
+          - description: optional filter on namespace
+            in: query
+            name: namespace
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    items:
+                      $ref: '#/components/schemas/StaticRouteItem'
+                    type: array
+              description: list of static routes
+          summary: Get a list of static routes
+          tags:
+          - static routes
+        post:
+          operationId: createStaticRoute
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  properties:
+                    envoyFleetName:
+                      type: string
+                    envoyFleetNamespace:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    openapi:
+                      type: string
+                  type: object
+            description: static route content
+            required: true
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/StaticRouteItem'
+              description: created static route
+            "400":
+              content:
+                application/json:
+                  schema:
+                    type: string
+              description: The content of the API is malformed
+          summary: create new static route
+          tags:
+          - create new static route
+      /staticroutes/{namespace}/{name}:
+        delete:
+          operationId: deleteStaticRoute
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "204":
+              description: staticRoute item deleted
+            "404":
+              description: staticRoute item not found
+          summary: Delete a StaticRoute by namespace and name
+          tags:
+          - static Route
+        get:
+          description: Returns an object containing info about the static route corresponding
+            to the namespace and name
+          operationId: getStaticRoute
+          parameters:
+          - description: the namespace of the static route
+            in: path
+            name: namespace
+            required: true
+            schema:
+              type: string
+          - description: the name of the static route
+            in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/StaticRouteItem'
+              description: get static route details
+            "404":
+              description: Static Route not found by namespace-name combination
+          summary: Get details for a single static route
+          tags:
+          - static routes
+      /staticroutes/{namespace}/{name}/crd:
+        get:
+          operationId: getStaticRouteCRD
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+              description: Static route CRD
+            "404":
+              description: Static route CRD not found
+          summary: Get static route CRD
+          tags:
+          - static routes
+    servers:
+    - description: My local endpoint mockup
+      url: http://localhost:8080
+    tags:
+    - description: Get the list of the APIs
+      name: apis
+    - description: Get the list of all services
+      name: services
+    - description: Get the list of all envoy fleets
+      name: fleets
+    - description: Get the list of all static routes
+      name: static routes
+    x-kusk:
+      path:
+        prefix: /api
+      upstream:
+        rewrite:
+          pattern: ^/api
+          substitution: ""
+        service:
+          name: kusk-gateway-api
+          namespace: kusk-system
+          port: 80

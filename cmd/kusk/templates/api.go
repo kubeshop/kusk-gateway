@@ -20,7 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
 */
 package templates
 
@@ -47,4 +46,25 @@ spec:
   {{- range $line := .Spec }}
     {{ $line -}}
   {{- end }}
+`
+
+var ConfigMapTemplate = `apiVersion: v1
+data:
+  AGENT_MANAGER_BIND_ADDR: :18010
+  ANALYTICS_ENABLED: {{ ".AnalyticsEnabled" }}
+  ENABLE_LEADER_ELECTION: "false"
+  ENVOY_CONTROL_PLANE_BIND_ADDR: :18000
+  HEALTH_PROBE_BIND_ADDR: :8081
+  LOG_LEVEL: INFO
+  METRICS_BIND_ADDR: 127.0.0.1:8080
+  WEBHOOK_CERTS_DIR: /tmp/k8s-webhook-server/serving-certs
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: kusk-gateway-manager
+    app.kubernetes.io/instance: kusk-gateway
+    app.kubernetes.io/name: kusk-gateway
+    app.kubernetes.io/version: {{ .Version }}
+  name: kusk-gateway-manager
+  namespace: kusk-system
 `
