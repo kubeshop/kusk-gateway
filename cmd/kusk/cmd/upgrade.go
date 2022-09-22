@@ -29,10 +29,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/kubeshop/testkube/pkg/process"
-	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
