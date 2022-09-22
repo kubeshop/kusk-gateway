@@ -9,9 +9,6 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -63,6 +60,24 @@ var uninstallCmd = &cobra.Command{
 
 			c, err := utils.GetK8sClient()
 			if err != nil {
+				reportError(err)
+				return err
+			}
+
+			if err := deletef(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
+				fmt.Println("❌ failed installing Envoy Fleets", err)
+				reportError(err)
+				return err
+			}
+
+			if err := deletef(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+				fmt.Println("❌ failed installing Envoy Fleets", err)
+				reportError(err)
+				return err
+			}
+
+			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
+				fmt.Println("❌ failed installing Envoy Fleets", err)
 				reportError(err)
 				return err
 			}
@@ -121,35 +136,6 @@ var uninstallCmd = &cobra.Command{
 				}
 			}
 
-			deployments := appsv1.DeploymentList{}
-			if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: "kusk-system"}); err != nil {
-				reportError(err)
-				return err
-			}
-
-			for _, deploy := range deployments.Items {
-				if deploy.Name == "kusk-gateway-manager" || deploy.Name == "kusk-gateway-private-envoy-fleet" || deploy.Name == "kusk-gateway-envoy-fleet" {
-					continue
-				}
-				if err := c.Delete(cmd.Context(), &deploy, &client.DeleteAllOfOptions{}); err != nil {
-					reportError(err)
-					return err
-				}
-			}
-
-			fmt.Println("Deleting Kusk Dashboard service")
-			service := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kusk-gateway-dashboard",
-					Namespace: "kusk-system",
-				},
-			}
-
-			if err := c.Delete(cmd.Context(), service, &client.DeleteOptions{}); err != nil {
-				reportError(err)
-				fmt.Println(err)
-			}
-
 			fmt.Println("Uninstalling Kusk...")
 
 			if err := deletek(dir); err != nil {
@@ -172,6 +158,13 @@ func init() {
 func deletek(filename string) error {
 	instCmd := NewKubectlCmd()
 	instCmd.SetArgs([]string{"delete", fmt.Sprintf("-k=%s", filepath.Join(filename, "/config/default"))})
+
+	return instCmd.Execute()
+}
+
+func deletef(filename string) error {
+	instCmd := NewKubectlCmd()
+	instCmd.SetArgs([]string{"delete", fmt.Sprintf("-f=%s", filename)})
 
 	return instCmd.Execute()
 }
