@@ -13,7 +13,6 @@
 // ../../config/default/manager_config_patch.yaml
 // ../../config/default/manager_webhook_patch.yaml
 // ../../config/manager/configmap.yaml
-// ../../config/manager/env.properties
 // ../../config/manager/kustomization.yaml
 // ../../config/manager/manager.yaml
 // ../../config/manager/service.yaml
@@ -284,7 +283,7 @@ func configDefaultKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 1501, mode: os.FileMode(420), modTime: time.Unix(1663849811, 0)}
+	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 1501, mode: os.FileMode(420), modTime: time.Unix(1663855145, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -364,27 +363,7 @@ func configManagerConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/configmap.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1663842339, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _configManagerEnvProperties = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\xf4\x73\xf4\x89\x0c\xf1\x74\x0e\x8e\x77\xf5\x73\x74\xf2\x71\x75\xb1\x2d\x29\x2a\x4d\x05\x04\x00\x00\xff\xff\xfe\x45\x3d\x73\x16\x00\x00\x00")
-
-func configManagerEnvPropertiesBytes() ([]byte, error) {
-	return bindataRead(
-		_configManagerEnvProperties,
-		"config/manager/env.properties",
-	)
-}
-
-func configManagerEnvProperties() (*asset, error) {
-	bytes, err := configManagerEnvPropertiesBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "config/manager/env.properties", size: 22, mode: os.FileMode(420), modTime: time.Unix(1663842093, 0)}
+	info := bindataFileInfo{name: "config/manager/configmap.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -404,7 +383,7 @@ func configManagerKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/kustomization.yaml", size: 177, mode: os.FileMode(420), modTime: time.Unix(1663842494, 0)}
+	info := bindataFileInfo{name: "config/manager/kustomization.yaml", size: 177, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -424,7 +403,7 @@ func configManagerManagerYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/manager.yaml", size: 1352, mode: os.FileMode(420), modTime: time.Unix(1663840724, 0)}
+	info := bindataFileInfo{name: "config/manager/manager.yaml", size: 1352, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -904,7 +883,7 @@ func cmdKuskManifestsApisYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/apis.yaml", size: 23042, mode: os.FileMode(420), modTime: time.Unix(1663840724, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/apis.yaml", size: 23042, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -924,7 +903,7 @@ func cmdKuskManifestsDashboardYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 2205, mode: os.FileMode(420), modTime: time.Unix(1663840724, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 2205, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -944,7 +923,7 @@ func cmdKuskManifestsFleetsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 767, mode: os.FileMode(420), modTime: time.Unix(1663840724, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 767, mode: os.FileMode(420), modTime: time.Unix(1663851811, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1014,7 +993,6 @@ var _bindata = map[string]func() (*asset, error){
 	"config/default/manager_config_patch.yaml": configDefaultManager_config_patchYaml,
 	"config/default/manager_webhook_patch.yaml": configDefaultManager_webhook_patchYaml,
 	"config/manager/configmap.yaml": configManagerConfigmapYaml,
-	"config/manager/env.properties": configManagerEnvProperties,
 	"config/manager/kustomization.yaml": configManagerKustomizationYaml,
 	"config/manager/manager.yaml": configManagerManagerYaml,
 	"config/manager/service.yaml": configManagerServiceYaml,
@@ -1117,7 +1095,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		}},
 		"manager": &bintree{nil, map[string]*bintree{
 			"configmap.yaml": &bintree{configManagerConfigmapYaml, map[string]*bintree{}},
-			"env.properties": &bintree{configManagerEnvProperties, map[string]*bintree{}},
 			"kustomization.yaml": &bintree{configManagerKustomizationYaml, map[string]*bintree{}},
 			"manager.yaml": &bintree{configManagerManagerYaml, map[string]*bintree{}},
 			"service.yaml": &bintree{configManagerServiceYaml, map[string]*bintree{}},
