@@ -28,7 +28,7 @@ go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 Use the Kusk CLIs [install command](./reference/cli/install-cmd.md) to install Kusk Gateway components in your cluster. 
 
 ```sh
-kusk install
+kusk cluster install
 ```
 
 Now that you've installed Kusk Gateway, let's have a look at how you can use OpenAPI to configure the operational and functional parts of your API.

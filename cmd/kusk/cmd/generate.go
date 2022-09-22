@@ -126,7 +126,7 @@ var generateCmd = &cobra.Command{
 			}
 		}
 
-		parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
+		parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			reportError(err)

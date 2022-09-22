@@ -29,8 +29,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -120,6 +122,7 @@ func (a *APIMutator) InjectDecoder(d *admission.Decoder) error {
 // APIValidator handles API objects validation
 //+kubebuilder:object:generate:=false
 type APIValidator struct {
+	Client  client.Client
 	decoder *admission.Decoder
 }
 
@@ -133,7 +136,9 @@ func (a *APIValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if err := apiObj.validate(); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
+	if err := a.PathAlreadyDeployed(ctx, apiObj.Spec.Fleet, *apiObj); err != nil {
+		return admission.Errored(http.StatusConflict, err)
+	}
 	return admission.Allowed("")
 }
 
@@ -146,10 +151,50 @@ func (a *APIValidator) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func (r *API) validate() error {
+func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFleetID, newApi API) error {
+	var apiObjs APIList
 	parser := spec.NewParser(nil)
+	newApiSpec, err := parser.ParseFromReader(strings.NewReader(newApi.Spec.Spec))
+	if err != nil {
+		return err
+	}
 
-	apiSpec, err := parser.ParseFromReader(strings.NewReader(r.Spec.Spec))
+	// Get all API objects with this fleet field set
+	if err := a.Client.List(ctx, &apiObjs, &client.ListOptions{}); err != nil {
+		return fmt.Errorf("failure querying for the deployed APIs: %w", err)
+	}
+
+	duplicates := openapi3.Paths{}
+	// filter out apis are in the process of deletion
+	for _, api := range apiObjs.Items {
+		if (api.Name != newApi.Name && api.Namespace != newApi.Namespace) &&
+			api.Spec.Fleet.Name == fleet.Name &&
+			api.Spec.Fleet.Namespace == fleet.Namespace &&
+			api.ObjectMeta.DeletionTimestamp.IsZero() {
+			apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+			if err != nil {
+				return err
+			}
+
+			for path := range newApiSpec.Paths {
+				if p, ok := apiSpec.Paths[path]; ok {
+					duplicates[path] = p
+				}
+			}
+		}
+	}
+
+	if len(duplicates) > 0 {
+		return fmt.Errorf("paths %s already exist with envoyfleet %s", reflect.ValueOf(duplicates).MapKeys(), fleet)
+
+	}
+	return nil
+}
+
+func (r *API) validate() error {
+	apiSpec, err := spec.
+		NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).
+		ParseFromReader(strings.NewReader(r.Spec.Spec))
 	if err != nil {
 		return fmt.Errorf("spec: should be a valid OpenAPI spec: %w", err)
 	}

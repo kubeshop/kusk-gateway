@@ -3,14 +3,7 @@ kind: Kustomization
 resources:
   - manager.yaml
   - service.yaml
-  - manager_configmap.yaml
+  - configmap.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
-
-images:
-  - name: kusk-gateway
-    newName: kusk-gateway
-    newTag: dev
-patchesStrategicMerge:
-  - manager_configmap.yaml

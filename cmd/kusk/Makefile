@@ -1,6 +1,11 @@
 .DEFAULT_GOAL := all
 MAKEFLAGS += --environment-overrides --warn-undefined-variables #--print-directory --no-builtin-rules --no-builtin-variables
 
+BINARIES_DIR := $(shell pwd)/../../bin
+KUSTOMIZE := ${BINARIES_DIR}/kustomize
+
+
+
 SHELL := /bin/bash
 ifneq ($(shell uname),Darwin)
 	SHELL += -O globstar -O extglob
@@ -17,6 +22,8 @@ LD_FLAGS += -w -s
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)'
 
+IMAGE_TAG ?= ${VERSION}
+MANAGER_IMG ?= kubeshop/kusk-gateway:${IMAGE_TAG}
 # Determine if we should use:
 # 1. docker and docker-compose, or
 # 2. podman and podman-compose
@@ -57,6 +64,8 @@ test:
 
 .PHONY: build
 build:
+	echo ${VERSION}
+	cd ../../config/default && $(KUSTOMIZE) edit set image kusk-gateway=${MANAGER_IMG}
 	go generate 
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 

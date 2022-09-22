@@ -141,7 +141,7 @@ $ kusk mock -i https://url.to.api.com
 			ui.Fail(err)
 		}
 
-		spec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
+		spec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
 		if err != nil {
 			err := fmt.Errorf("error when parsing openapi spec: %w", err)
 			reportError(err)

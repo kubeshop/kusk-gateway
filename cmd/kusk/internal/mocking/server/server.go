@@ -3,11 +3,12 @@ package server
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/url"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -38,7 +39,7 @@ type AccessLogEntry struct {
 }
 
 func New(ctx context.Context, client *client.Client, configFile, apiToMock string, port uint32) (MockServer, error) {
-	const openApiMockImage = "muonsoft/openapi-mock:v0.3.1"
+	const openApiMockImage = "muonsoft/openapi-mock:v0.3.3"
 
 	reader, err := client.ImagePull(ctx, openApiMockImage, types.ImagePullOptions{})
 	if err != nil {
@@ -152,30 +153,50 @@ func (m MockServer) StreamLogs(ctx context.Context, containerId string) {
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		if le, err := newAccessLogEntry(scanner.Text()); err != nil {
+		le, err := newAccessLogEntry(scanner.Text())
+		if err != nil {
 			m.ErrCh <- err
-		} else {
-			m.LogCh <- le
+		} else if le != nil {
+			m.LogCh <- *le
 		}
 	}
 }
 
-func newAccessLogEntry(rawLog string) (AccessLogEntry, error) {
-	if strings.Contains(rawLog, "warning") || strings.Contains(rawLog, "error") {
-		return AccessLogEntry{}, errors.New(rawLog)
+func newAccessLogEntry(rawLog string) (*AccessLogEntry, error) {
+	type log struct {
+		Host       string    `json:"host"`
+		Level      string    `json:"level"`
+		Method     string    `json:"method"`
+		Msg        string    `json:"msg"`
+		Proto      string    `json:"proto"`
+		Referrer   string    `json:"referrer"`
+		RequestID  string    `json:"requestID"`
+		Size       int       `json:"size"`
+		StatusCode int       `json:"statusCode"`
+		Time       time.Time `json:"time"`
+		URI        string    `json:"uri"`
+		UserAgent  string    `json:"userAgent"`
 	}
 
-	logLine := strings.Split(rawLog, " ")
+	var l log
+	if err := json.Unmarshal([]byte(rawLog), &l); err != nil {
+		return nil, err
+	}
 
-	timeStamp := strings.TrimPrefix(logLine[3], "[")
-	method := strings.TrimPrefix(logLine[5], "\"")
-	path := logLine[6]
-	statusCode := logLine[8]
+	// not an access log entry
+	if l.URI == "" {
+		return nil, nil
+	}
 
-	return AccessLogEntry{
-		TimeStamp:  timeStamp,
-		Method:     method,
-		Path:       path,
-		StatusCode: statusCode,
+	// if warning or error, return error with raw log contents
+	if l.Level != "info" {
+		return nil, errors.New(rawLog)
+	}
+
+	return &AccessLogEntry{
+		TimeStamp:  l.Time.String(),
+		Method:     l.Method,
+		Path:       l.URI,
+		StatusCode: strconv.Itoa(l.StatusCode),
 	}, nil
 }
