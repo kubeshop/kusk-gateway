@@ -1,8 +1,6 @@
 .DEFAULT_GOAL := all
 MAKEFLAGS += --environment-overrides --warn-undefined-variables #--print-directory --no-builtin-rules --no-builtin-variables
 
-BINARIES_DIR := $(shell pwd)/../../bin
-KUSTOMIZE := ${BINARIES_DIR}/kustomize
 
 
 
@@ -18,6 +16,17 @@ export PATH := $(shell go env GOPATH)/bin:${PATH}
 
 VERSION ?= $(shell git describe --tags)
 
+
+MAKE_PATH := $(shell pwd)
+MAKE_DIR := $(shell dirname $(MAKE_PATH))
+
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+KUSTOMIZE_VERSION ?= v4.5.2
+
+LOCALBIN ?= $(shell pwd)/bin
+KUSTOMIZE = $(LOCALBIN)/kustomize
+CONTROLLER_GEN = $(LOCALBIN)/controller-gen
+
 LD_FLAGS += -w -s
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)'
@@ -32,8 +41,19 @@ ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version >/dev/null 2>&1 && which podman)
 endif
 
+go_bindata := $(shell which go-bindata 2>/dev/null)
+ifeq ($(go_bindata),)
+go_bindata := cd hack/ci-deps && go install github.com/kevinburke/go-bindata/... && cd ../.. && "${GOPATH}/bin/go-bindata"
+endif
+
 .PHONY: all
 all: install-tools pre-commit
+
+kustomize: ## $(KUSTOMIZE) ## Download kustomize locally if necessary.
+# $(KUSTOMIZE): $(LOCALBIN)
+	mkdir -p $(shell pwd)/bin
+	rm -f $(KUSTOMIZE)
+	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
 
 .PHONY: install-tools
 install-tools:
@@ -63,8 +83,7 @@ test:
 	go test -count=1 -v -race ./...
 
 .PHONY: build
-build:
-	echo ${VERSION}
+build: kustomize
 	cd ../../config/default && $(KUSTOMIZE) edit set image kusk-gateway=${MANAGER_IMG}
 	go generate 
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go

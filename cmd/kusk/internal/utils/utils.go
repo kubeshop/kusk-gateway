@@ -95,9 +95,6 @@ func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace st
 	}
 
 	for _, pod := range p.Items {
-		if err := wait.PollImmediate(time.Second, timeout, IsPodRunning(ctx, k8sClient, pod.Name, namespace)); err != nil {
-			return err
-		}
 		if err := wait.PollImmediate(time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
 			return err
 		}
