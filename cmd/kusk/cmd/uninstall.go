@@ -37,7 +37,7 @@ var uninstallCmd = &cobra.Command{
 
 		if !confirm {
 			prompt := promptui.Prompt{
-				Label:     "uninstall command is irrevirsible. Are you sure you want to proceed?",
+				Label:     "Are you sure you want to uninstall kusk",
 				IsConfirm: true,
 			}
 			result, err := prompt.Run()
