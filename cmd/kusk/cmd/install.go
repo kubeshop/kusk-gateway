@@ -92,8 +92,6 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		// kuskui.PrintStart("getting Kusk manifests")
-
 		var err error
 		var dir string
 		if !latest {
@@ -105,8 +103,6 @@ var installCmd = &cobra.Command{
 				return err
 			}
 		}
-
-		// kuskui.PrintSuccess("successfully prepared manifests")
 
 		kuskui.PrintStart("installing kusk...")
 
@@ -124,13 +120,11 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		// kuskui.PrintInfo("⏳ waiting for Kusk to become ready...")
 		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
 			kuskui.PrintError("failed installing Envoyfleets")
 			reportError(err)
 			return err
 		}
-		// kuskui.PrintSuccess("Kusk installed!")
 
 		if !noEnvoyFleet {
 			kuskui.PrintStart("installing Envoyfleets...")
@@ -140,14 +134,12 @@ var installCmd = &cobra.Command{
 				return err
 			}
 
-			// kuskui.PrintInfo("⏳ waiting for Envoyfleets to become ready...")
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
 				kuskui.PrintError("failed installing Envoyfleets")
 				reportError(err)
 				return err
 			}
 
-			// kuskui.PrintSuccess("Envoy Fleets installed!")
 		} else {
 			return nil
 		}
@@ -159,13 +151,11 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-			// kuskui.PrintInfo("⏳ waiting for API server to become ready...")
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
 				kuskui.PrintError("failed installing API Server")
 				reportError(err)
 				return err
 			}
-			// kuskui.PrintSuccess("API Server installed")
 		} else if noApi {
 			return nil
 		}
@@ -177,13 +167,11 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-			// kuskui.PrintInfo("⏳ waiting for Dashboard to become ready...")
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
 				kuskui.PrintError("failed installing kusk")
 				reportError(err)
 				return err
 			}
-			// kuskui.PrintSuccess("Dashboard installed")
 		}
 
 		fmt.Println("")
