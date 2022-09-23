@@ -6,6 +6,7 @@ import (
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ var uninstallCmd = &cobra.Command{
 
 		if !confirm {
 			prompt := promptui.Prompt{
-				Label:     "uninstall command is irrevirsible. Are you sure you want to proceed?",
+				Label:     "Are you sure you want to uninstall kusk",
 				IsConfirm: true,
 			}
 			result, err := prompt.Run()
@@ -45,7 +46,7 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if result == "N" || result == "n" || result == "" {
-				fmt.Println("exiting")
+				kuskui.PrintInfo("exiting")
 				return nil
 			}
 			proceed = true
@@ -65,19 +66,20 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if err := deletef(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
-				fmt.Println("❌ failed installing Envoy Fleets", err)
+				fmt.Println("❌ failed uninstalling Envoy Fleets", err)
 				reportError(err)
 				return err
 			}
 
 			if err := deletef(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
-				fmt.Println("❌ failed installing Envoy Fleets", err)
+				fmt.Println("❌ failed uninstalling APIs", err)
 				reportError(err)
 				return err
 			}
 
+			kuskui.PrintStart("deleting Dashboard")
 			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-				fmt.Println("❌ failed installing Envoy Fleets", err)
+				fmt.Println("❌ failed uninstalling dashboard", err)
 				reportError(err)
 				return err
 			}
@@ -86,13 +88,13 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), apis, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "API" in version "gateway.kusk.io/v1alpha1"` {
-					fmt.Println("Kusk Custom Resource Definition API is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition API is not installed skipping ")
 				} else {
 					return err
 				}
 			}
 
-			fmt.Println("Deleting APIs...")
+			kuskui.PrintStart("deleting APIs...")
 			for _, api := range apis.Items {
 				if err := c.Delete(cmd.Context(), &api, &client.DeleteAllOfOptions{}); err != nil {
 					reportError(err)
@@ -104,13 +106,13 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
-					fmt.Println("Kusk Custom Resource Definition API is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition EnvoyFleet is not installed skipping ")
 				} else {
 					return err
 				}
 			}
 
-			fmt.Println("Deleting fleets...")
+			kuskui.PrintStart("deleting Envoyfleets...")
 			for _, fleet := range fleets.Items {
 				if err := c.Delete(cmd.Context(), &fleet, &client.DeleteAllOfOptions{}); err != nil {
 					reportError(err)
@@ -122,13 +124,13 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
-					fmt.Println("Kusk Custom Resource Definition API is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition StaticRouote is not installed skipping ")
 				} else {
 					return err
 				}
 			}
 
-			fmt.Println("Deleting Static Routes...")
+			kuskui.PrintStart("deleting Staticroutes...")
 			for _, route := range staticRoutes.Items {
 				if err := c.Delete(cmd.Context(), &route, &client.DeleteAllOfOptions{}); err != nil {
 					reportError(err)
@@ -145,6 +147,9 @@ var uninstallCmd = &cobra.Command{
 			}
 
 		}
+
+		kuskui.PrintInfoLightGreen("\nkusk successfully uninstalled from your cluster")
+
 		return nil
 	},
 }

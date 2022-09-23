@@ -38,6 +38,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
@@ -102,10 +103,11 @@ var installCmd = &cobra.Command{
 				return err
 			}
 		}
-		fmt.Println("✅ Installing Kusk...")
+
+		kuskui.PrintStart("installing kusk...")
 
 		if err := applyk(dir); err != nil {
-			fmt.Println("❌ failed installing Kusk", err)
+			kuskui.PrintError("❌ failed installing Kusk")
 			reportError(err)
 			return err
 		}
@@ -119,60 +121,62 @@ var installCmd = &cobra.Command{
 		}
 
 		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-			fmt.Println("❌ failed installing kusk", err)
+			kuskui.PrintError("failed installing Envoyfleets")
 			reportError(err)
 			return err
 		}
-		fmt.Println("✅ Kusk installed")
 
 		if !noEnvoyFleet {
+			kuskui.PrintStart("installing Envoyfleets...")
 			if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
-				fmt.Println("❌ failed installing Envoy Fleets", err)
+				kuskui.PrintError("failed installing Envoyfleets")
 				reportError(err)
 				return err
 			}
-			fmt.Println("✅ Envoy Fleets installed")
+
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
 		} else {
 			return nil
 		}
 
-		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
-			fmt.Println("❌ failed installing kusk", err)
-			reportError(err)
-			return err
-		}
-
 		if !noApi {
+			kuskui.PrintStart("installing API Server...")
 			if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
-				fmt.Println("❌ failed installing API Server", err)
+				kuskui.PrintError("failed installing API Server")
 				reportError(err)
 				return err
 			}
-			fmt.Println("✅ API Server installed")
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
 		} else if noApi {
 			return nil
 		}
 
-		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
-			fmt.Println("❌ failed installing kusk", err)
-			reportError(err)
-			return err
-		}
-
 		if !noDashboard {
+			kuskui.PrintStart("installing Dashboard...")
 			if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-				fmt.Println("❌ failed installing Dashboard", err)
+				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
 				return err
 			}
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
-				fmt.Println("❌ failed installing kusk", err)
+				kuskui.PrintError("failed installing kusk")
 				reportError(err)
 				return err
 			}
-			fmt.Println("✅ Dashboard installed")
-			printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 		}
+
+		fmt.Println("")
+		kuskui.PrintSuccess("installation complete\n")
+		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
 
 		return nil
 	},
@@ -196,15 +200,15 @@ func applyk(filename string) error {
 
 func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
 	if service == "dashboard" {
-		fmt.Println("💡 Access the dashboard by using the following command")
-		fmt.Println("👉 kusk dashboard")
+		kuskui.PrintInfoGray("💡 Access the dashboard by using the following command")
+		kuskui.PrintInfo("👉 kusk dashboard\n")
 	}
 
-	fmt.Println("💡 Deploy your first API")
-	fmt.Println("👉 kusk deploy -i <path or url to your api definition>")
+	kuskui.PrintInfoGray("💡 Deploy your first API")
+	kuskui.PrintInfo("👉 kusk deploy -i <path or url to your api definition>\n")
 
-	fmt.Println("💡 Access Help and useful examples to help get you started ")
-	fmt.Println("👉 kusk --help")
+	kuskui.PrintInfoGray("💡 Access Help and useful examples to help get you started")
+	kuskui.PrintInfo("👉 kusk --help")
 }
 func getManifestsFromUrl() (string, error) {
 	ghclient, err := utils.NewGithubClient("", nil)
@@ -230,8 +234,6 @@ func getManifestsFromUrl() (string, error) {
 		return "", err
 	}
 
-	fmt.Println(file)
-
 	return unzip(file)
 }
 
@@ -254,7 +256,6 @@ func unzip(path string) (string, error) {
 		if f.FileInfo().IsDir() {
 			if i == 0 {
 				distroDir = filePath
-				fmt.Println("distroDir", distroDir)
 			}
 
 			os.MkdirAll(filePath, os.ModePerm)
@@ -262,7 +263,6 @@ func unzip(path string) (string, error) {
 		}
 
 		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-			fmt.Println("here")
 			return "", err
 		}
 

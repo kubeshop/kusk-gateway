@@ -292,7 +292,7 @@ func configDefaultKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1663880267, 0)}
+	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1663927728, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -912,7 +912,7 @@ func cmdKuskManifestsDashboardYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 2589, mode: os.FileMode(420), modTime: time.Unix(1663879071, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 2589, mode: os.FileMode(420), modTime: time.Unix(1663927085, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -932,7 +932,7 @@ func cmdKuskManifestsFleetsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 387, mode: os.FileMode(420), modTime: time.Unix(1663879057, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 387, mode: os.FileMode(420), modTime: time.Unix(1663927085, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
