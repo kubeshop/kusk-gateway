@@ -292,7 +292,7 @@ func configDefaultKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1663927462, 0)}
+	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1663927728, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
