@@ -288,6 +288,29 @@ $ kusk mock -i https://url.to.api.com
 	},
 }
 
+func writeInitialisedApiToTempFile(directory string, api *openapi3.T) (tmpFileName string, err error) {
+	api.InternalizeRefs(context.Background(), nil)
+	apiBytes, err := api.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+	tmpFile, err := ioutil.TempFile(directory, "mocked-api-*.yaml")
+	if err != nil {
+		return "", err
+	}
+	defer tmpFile.Close()
+
+	if err := tmpFile.Truncate(0); err != nil {
+		return "", err
+	}
+
+	if _, err = tmpFile.Write(apiBytes); err != nil {
+		return "", err
+	}
+
+	return tmpFile.Name(), nil
+}
+
 func scanForNextAvailablePort(startingPort uint32) (uint32, error) {
 	localPortCheck := func(port uint32) error {
 		ln, err := net.Listen("tcp", "127.0.0.1:"+fmt.Sprint(port))
