@@ -67,7 +67,7 @@ spec:
         app.kubernetes.io/name: kusk-gateway-dashboard
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-dashboard:v1.1.0-stable
+        - image: kubeshop/kusk-gateway-dashboard:v1.2.0
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

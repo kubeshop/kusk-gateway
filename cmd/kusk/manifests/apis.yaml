@@ -110,10 +110,35 @@ spec:
         app.kubernetes.io/instance: kusk-gateway-api
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-api:v1.1.5
+        - image: kubeshop/kusk-gateway-api:v1.1.8
           imagePullPolicy: Always
           name: kusk-gateway-api
       serviceAccountName: kusk-gateway-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
+  finalizers:
+    - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
+  name: kusk-gateway-api
+  namespace: kusk-system
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
+  sessionAffinity: None
+  type: ClusterIP
 ---
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
