@@ -12,14 +12,16 @@ type FileWatcher struct {
 	watcher *fsnotify.Watcher
 }
 
-func New(filePath string) (*FileWatcher, error) {
+func New(filePaths ...string) (*FileWatcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create new file watcher: %w", err)
 	}
 
-	if err := watcher.Add(filePath); err != nil {
-		return nil, fmt.Errorf("unable to add file %s to watcher: %w", filePath, err)
+	for _, filePath := range filePaths {
+		if err := watcher.Add(filePath); err != nil {
+			return nil, fmt.Errorf("unable to watch file %s: %w", filePath, err)
+		}
 	}
 
 	return &FileWatcher{
