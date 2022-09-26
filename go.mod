@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/envoyproxy/go-control-plane v0.10.3
-	github.com/getkin/kin-openapi v0.97.0
+	github.com/getkin/kin-openapi v0.103.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.0.0+incompatible
