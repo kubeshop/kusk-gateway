@@ -71,13 +71,31 @@ var uninstallCmd = &cobra.Command{
 				return err
 			}
 
-			if err := deletef(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+			if err := deletef(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
+				fmt.Println("❌ failed uninstalling APIs", err)
+				reportError(err)
+				return err
+			}
+
+			if err := deletef(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
 				fmt.Println("❌ failed uninstalling APIs", err)
 				reportError(err)
 				return err
 			}
 
 			kuskui.PrintStart("deleting Dashboard")
+			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
+				fmt.Println("❌ failed uninstalling dashboard", err)
+				reportError(err)
+				return err
+			}
+
+			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
+				fmt.Println("❌ failed uninstalling dashboard", err)
+				reportError(err)
+				return err
+			}
+
 			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
 				fmt.Println("❌ failed uninstalling dashboard", err)
 				reportError(err)
