@@ -28,6 +28,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -135,20 +136,20 @@ $ kusk mock -i https://url.to.api.com
 			ui.Fail(err)
 		}
 
-		mockingConfigFilePath := path.Join(homeDir, ".kusk", "openapi-mock.yaml")
-		if err := writeMockingConfigIfNotExists(mockingConfigFilePath); err != nil {
-			reportError(err)
-			ui.Fail(err)
-		}
+		kuskConfigDir := path.Join(homeDir, ".kusk")
 
-		spec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
+		apiParser := spec.NewParser(&openapi3.Loader{
+			IsExternalRefsAllowed: true,
+			ReadFromURIFunc:       openapi3.ReadFromURIs(openapi3.ReadFromHTTP(http.DefaultClient), openapi3.ReadFromFile),
+		})
+		apiSpec, err := apiParser.Parse(apiSpecPath)
 		if err != nil {
 			err := fmt.Errorf("error when parsing openapi spec: %w", err)
 			reportError(err)
 			ui.Fail(err)
 		}
 
-		if err := spec.Validate(context.Background()); err != nil {
+		if err := apiSpec.Validate(context.Background()); err != nil {
 			err := fmt.Errorf("openapi spec failed validation: %w", err)
 			reportError(err)
 			ui.Fail(err)
@@ -163,11 +164,50 @@ $ kusk mock -i https://url.to.api.com
 		}
 
 		var watcher *filewatcher.FileWatcher
-		absoluteApiSpecPath := apiSpecPath
+		var tempApiFileName string
+		apiSpecLocation := apiSpecPath
+		apiToMock := apiSpecPath
 		if apiOnFileSystem := u.Host == ""; apiOnFileSystem {
+			var currentWorkingDir string
+			apiSpecDir := filepath.Dir(apiSpecPath)
+
+			if apiSpecDir != "" {
+				if currentWorkingDir, err = os.Getwd(); err != nil {
+					ui.Fail(err)
+				}
+				if err := os.Chdir(apiSpecDir); err != nil {
+					reportError(err)
+					ui.Fail(err)
+				}
+				defer func() {
+					if err := os.Chdir(currentWorkingDir); err != nil {
+						ui.Fail(err)
+					}
+				}()
+			}
+
+			tempApiFile, err := os.CreateTemp(kuskConfigDir, "mocked-api-*.yaml")
+			if err != nil {
+				ui.Fail(err)
+			}
+
+			tempApiFileName = tempApiFile.Name()
+
+			defer func(fileName string) {
+				if err := tempApiFile.Close(); err != nil {
+					ui.Fail(err)
+				}
+				if err := os.Remove(fileName); err != nil {
+					ui.Fail(err)
+				}
+			}(tempApiFileName)
+
+			if err := writeInitialisedApiToTempFile(tempApiFileName, apiSpec); err != nil {
+				ui.Fail(err)
+			}
 			// we need the absolute path of the file in the filesystem
 			// to properly mount the file into the mocking container
-			absoluteApiSpecPath, err = filepath.Abs(apiSpecPath)
+			absoluteApiSpecPath, err := filepath.Abs(apiSpecPath)
 			if err != nil {
 				reportError(err)
 				ui.Fail(err)
@@ -179,32 +219,19 @@ $ kusk mock -i https://url.to.api.com
 				ui.Fail(err)
 			}
 			defer watcher.Close()
+
+			apiSpecLocation = absoluteApiSpecPath
+			apiToMock = tempApiFileName
 		}
 
 		ui.Info(ui.White("☀️ initializing mocking server"))
-
-		cli, err := client.NewClientWithOpts(client.FromEnv)
+		mockServer, err := setUpMockingServer(kuskConfigDir, apiToMock)
 		if err != nil {
-			err := fmt.Errorf("unable to create new docker client from environment: %w", err)
-			reportError(err)
-			ui.Fail(err)
+			msg := fmt.Errorf("error when setting up mocking server: %w", err)
+			reportError(msg)
+			ui.Fail(msg)
 		}
-
-		if mockServerPort == 0 {
-			mockServerPort, err = scanForNextAvailablePort(8080)
-			if err != nil {
-				reportError(err)
-				ui.Fail(err)
-			}
-		}
-
 		ctx := context.Background()
-		mockServer, err := mockingServer.New(ctx, cli, mockingConfigFilePath, absoluteApiSpecPath, mockServerPort)
-		if err != nil {
-			reportError(err)
-			ui.Fail(err)
-		}
-
 		mockServerId, err := mockServer.Start(ctx)
 		if err != nil {
 			reportError(err)
@@ -228,8 +255,8 @@ $ kusk mock -i https://url.to.api.com
 			ui.Info(ui.White("⏳ watching for file changes in " + apiSpecPath))
 			go watcher.Watch(func() {
 				ui.Info("✍️ change detected in " + apiSpecPath)
-				if err := mockServer.Stop(ctx, mockServerId); err != nil {
-					err := fmt.Errorf("unable to update mocking server")
+				err := apiFileUpdateHandler(ctx, mockServer, apiSpecLocation, tempApiFileName, mockServerId)
+				if err != nil {
 					reportError(err)
 					ui.Fail(err)
 				}
@@ -245,7 +272,7 @@ $ kusk mock -i https://url.to.api.com
 				if status.Error == nil && status.StatusCode > 0 {
 					mockServerId, err = mockServer.Start(ctx)
 					if err != nil {
-						err := fmt.Errorf("unable to update mocking server")
+						err := fmt.Errorf("unable to restart mocking server")
 						reportError(err)
 						ui.Fail(err)
 					}
@@ -288,27 +315,78 @@ $ kusk mock -i https://url.to.api.com
 	},
 }
 
-func writeInitialisedApiToTempFile(directory string, api *openapi3.T) (tmpFileName string, err error) {
+func setUpMockingServer(kuskConfigDir, apiToMock string) (*mockingServer.MockServer, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create new docker client from environment: %w", err)
+	}
+
+	if mockServerPort == 0 {
+		mockServerPort, err = scanForNextAvailablePort(8080)
+		if err != nil {
+			return nil, fmt.Errorf("unable to find available port for mocking server: %w", err)
+		}
+	}
+
+	mockingConfigFilePath := path.Join(kuskConfigDir, "openapi-mock.yaml")
+	if err := writeMockingConfigIfNotExists(mockingConfigFilePath); err != nil {
+		return nil, fmt.Errorf("unable to write mocking config file: %w", err)
+	}
+
+	return mockingServer.New(cli, mockingConfigFilePath, apiToMock, mockServerPort), nil
+}
+
+func writeInitialisedApiToTempFile(fileName string, api *openapi3.T) error {
 	api.InternalizeRefs(context.Background(), nil)
 	apiBytes, err := api.MarshalJSON()
 	if err != nil {
-		return "", err
+		return err
 	}
-	tmpFile, err := ioutil.TempFile(directory, "mocked-api-*.yaml")
+
+	file, err := os.OpenFile(fileName, os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
-		return "", err
-	}
-	defer tmpFile.Close()
-
-	if err := tmpFile.Truncate(0); err != nil {
-		return "", err
+		return err
 	}
 
-	if _, err = tmpFile.Write(apiBytes); err != nil {
-		return "", err
+	if err := file.Truncate(0); err != nil {
+		return err
 	}
 
-	return tmpFile.Name(), nil
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if _, err = file.Write(apiBytes); err != nil {
+		return err
+	}
+
+	if err := file.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func apiFileUpdateHandler(
+	ctx context.Context,
+	mockServer *mockingServer.MockServer,
+	apiFileName, tempApiFileName, mockServerId string,
+) error {
+	apiSpec, err := spec.NewParser(&openapi3.Loader{
+		IsExternalRefsAllowed: true,
+		ReadFromURIFunc:       openapi3.ReadFromFile,
+	}).Parse(apiFileName)
+	if err != nil {
+		return fmt.Errorf("unable to parse api spec: %w", err)
+	}
+	if err := writeInitialisedApiToTempFile(tempApiFileName, apiSpec); err != nil {
+		return fmt.Errorf("unable to write api spec to temp file: %w", err)
+	}
+	if err := mockServer.Stop(ctx, mockServerId); err != nil {
+		return fmt.Errorf("unable to update mocking server: %w", err)
+	}
+
+	return nil
 }
 
 func scanForNextAvailablePort(startingPort uint32) (uint32, error) {
@@ -330,7 +408,7 @@ func scanForNextAvailablePort(startingPort uint32) (uint32, error) {
 		}
 	}
 
-	return 0, errors.New("no available local port")
+	return 0, fmt.Errorf("unable to find available port between %d-%d", startingPort, maxPortNumber)
 }
 
 func writeMockingConfigIfNotExists(mockingConfigPath string) error {
