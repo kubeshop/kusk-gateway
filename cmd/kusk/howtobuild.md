@@ -11,7 +11,14 @@ Kusk CLI uses embedded manifests for `kusk cluster install`. Embedded files are 
 
 First set of manifests are taken from `config` directory in ther root directory of the project. These manifests are used by kustomize to build and deploy kusk CRDs, Controller, RBAC and Webhooks. Configuration `config` are generated each time when `make manifests` is executed in the root director of the project. `make manifests` ensures that directory `config` always has the latest changes on the controller.  
 
-Another set of manifests being embedded are located in `cmd/kusk/manifests` directory. These hold standard deployment for Kusk Dashboard and API server.
+Another set of manifests being embedded are located in `cmd/kusk/manifests` directory. These hold standard deployment for Kusk Dashboard and API server. These are split as follows:
+1. fleets.yaml - holds manifest for the public envoyfleet we need for hosting the dashboard
+2. api_server_api.yaml - holds manifest for API Server API
+3. api_server.yaml - holds manifest for the API Server service, deployment, ServiceAccount, ClusterRoleBinding and ClusterRole
+3. dashboard_envoyfleet.yaml - holds manifest of the private envoyfleet for Dashboard so it can access API Server
+4. dashboard_staticroute.yaml - holds manifest for the Static Route for hosting the Dashboard
+5. dashboard.yaml - holds manifests for the dashboard Dervice, Deployment and ServiceAccount
+
 
 When invoking `kusk cluster install` embedded manifests are unpacked and stored in temporary directory, and are removed after use. 
 1. Integrated `kubectl apply -k config/default` is invoked to install all Kubernetes resources required for Kusk to run
