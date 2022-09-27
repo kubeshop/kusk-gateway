@@ -92,7 +92,7 @@ var upgradeCmd = &cobra.Command{
 				for _, c := range deployment.Spec.Template.Spec.Containers {
 					if c.Name == "manager" {
 						if err := applyk(dir); err != nil {
-							kuskui.PrintError("❌ failed upgrading Kusk", err.Error())
+							kuskui.PrintError("❌ failed upgrading kusk", err.Error())
 							reportError(err)
 							return err
 						}
@@ -101,7 +101,7 @@ var upgradeCmd = &cobra.Command{
 				}
 
 				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-					kuskui.PrintError("❌ failed installing kusk", err.Error())
+					kuskui.PrintError("❌ failed installing Envoy Fleets", err.Error())
 					reportError(err)
 					return err
 				}
@@ -114,7 +114,7 @@ var upgradeCmd = &cobra.Command{
 				}
 
 				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
-					kuskui.PrintError("❌ failed installing Envoyfleets", err.Error())
+					kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
 					reportError(err)
 					return err
 				}
@@ -123,18 +123,18 @@ var upgradeCmd = &cobra.Command{
 			case "kusk-gateway-api":
 				fmt.Println("✅ kusk API server is already installed. Upgrading...")
 				if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
-					kuskui.PrintError("❌ failed installing API Server", err.Error())
+					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
 					reportError(err)
 					return err
 				}
 				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
-					kuskui.PrintError("❌ failed installing kusk", err.Error())
+					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
 					reportError(err)
 					return err
 				}
 
 				if err := applyf(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
-					kuskui.PrintError("❌ failed installing API Server", err.Error())
+					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
 					reportError(err)
 					return err
 				}
@@ -142,24 +142,24 @@ var upgradeCmd = &cobra.Command{
 			case "kusk-gateway-dashboard":
 				fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
 				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-					kuskui.PrintError("❌ failed installing Dashboard", err.Error())
+					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
 					reportError(err)
 					return err
 				}
 				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
-					kuskui.PrintError("❌ failed installing kusk", err.Error())
+					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
 					reportError(err)
 					return err
 				}
 
 				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
-					kuskui.PrintError("❌ failed installing Dashboard", err.Error())
+					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
 					reportError(err)
 					return err
 				}
 
 				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
-					kuskui.PrintError("❌ failed installing Dashboard", err.Error())
+					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
 					reportError(err)
 					return err
 				}
