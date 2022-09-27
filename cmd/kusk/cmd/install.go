@@ -25,7 +25,6 @@ package cmd
 
 import (
 	"archive/zip"
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -40,8 +39,6 @@ import (
 	"github.com/ghodss/yaml"
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
@@ -486,37 +483,4 @@ func getManifests() (string, error) {
 	}
 
 	return tmpdir, nil
-}
-
-func CreateFleet(ctx context.Context, c client.Client) {
-	fleet := kuskv1.EnvoyFleet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "default",
-		},
-		Spec: kuskv1.EnvoyFleetSpec{
-			Default: false,
-			Service: &kuskv1.ServiceConfig{
-				Ports: []corev1.ServicePort{{
-					Name:     "ttt",
-					Port:     8789,
-					Protocol: corev1.Protocol("TCP"),
-				}},
-				Type: corev1.ServiceTypeClusterIP,
-			},
-		},
-	}
-
-	retry.Do(
-		func() error {
-			err := c.Create(ctx, &fleet, &client.CreateOptions{})
-			fmt.Println(err)
-			return err
-		},
-		retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-
-			return time.Duration(10 * time.Second)
-		}),
-	)
-	c.Delete(ctx, &fleet, &client.DeleteOptions{})
 }
