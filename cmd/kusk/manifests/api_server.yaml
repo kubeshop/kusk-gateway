@@ -114,3 +114,19 @@ spec:
           imagePullPolicy: Always
           name: kusk-gateway-api
       serviceAccountName: kusk-gateway-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kusk-gateway-api
+  namespace: kusk-system
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/instance: kusk-gateway-api
+    app.kubernetes.io/name: kusk-gateway-api
+  type: LoadBalancer
