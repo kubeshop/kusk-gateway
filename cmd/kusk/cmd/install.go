@@ -25,6 +25,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -35,7 +36,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v3"
+	"github.com/ghodss/yaml"
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
@@ -106,29 +113,70 @@ var installCmd = &cobra.Command{
 
 		kuskui.PrintStart("installing kusk...")
 
-		if err := applyk(dir); err != nil {
-			kuskui.PrintError("❌ failed installing Kusk")
-			reportError(err)
-			return err
-		}
-
-		namespace := "kusk-system"
-		name := "kusk-gateway-manager"
 		c, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
 			return err
 		}
 
-		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-			kuskui.PrintError("failed installing Envoyfleets")
+		if err := applyk(dir); err != nil {
+			kuskui.PrintError("❌ failed installing Kusk")
+			reportError(err)
+			return err
+		}
+		namespace := "kusk-system"
+		name := "kusk-gateway-manager"
+
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(10*time.Minute), "component"); err != nil {
+			kuskui.PrintError("failed installing Kusk")
+			reportError(err)
+			return err
+		}
+
+		if err := utils.WaitForDeploymentReady(cmd.Context(), c, namespace, name, time.Duration(10*time.Minute)); err != nil {
+			kuskui.PrintError("failed installing Kusk")
+			reportError(err)
+			return err
+		}
+
+		if err := utils.WaitKuskCRDsReady(cmd.Context()); err != nil {
+			kuskui.PrintError("❌ failed installing Kusk")
+			reportError(err)
+			return err
+		}
+
+		if err := utils.WaitAPIServiceReady(cmd.Context(), c); err != nil {
+			kuskui.PrintError("❌ failed installing Kusk")
 			reportError(err)
 			return err
 		}
 
 		if !noEnvoyFleet {
 			kuskui.PrintStart("installing Envoyfleets...")
-			if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
+			manifest, err := os.ReadFile(filepath.Join(dir, manifests_dir, "fleets.yaml"))
+			if err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
+			fleet := &kuskv1.EnvoyFleet{}
+			if err := yaml.Unmarshal(manifest, fleet); err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
+			retry.Do(
+				func() error {
+					return c.Create(cmd.Context(), fleet, &client.CreateOptions{})
+				},
+				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+
+					return time.Duration(10 * time.Second)
+				}))
+
+			if err != nil {
 				kuskui.PrintError("failed installing Envoyfleets")
 				reportError(err)
 				return err
@@ -139,14 +187,43 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-
 		} else {
 			return nil
 		}
 
 		if !noApi {
 			kuskui.PrintStart("installing API Server...")
-			if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+			manifest, err := os.ReadFile(filepath.Join(dir, manifests_dir, "api_server_api.yaml"))
+			if err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
+
+			api := &kuskv1.API{}
+			if err := yaml.Unmarshal(manifest, api); err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
+
+			err = retry.Do(
+				func() error {
+					c.Create(cmd.Context(), api, &client.CreateOptions{})
+					return err
+				},
+				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+
+					return time.Duration(10 * time.Second)
+				}),
+			)
+			if err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
+
+			if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
 				kuskui.PrintError("failed installing API Server")
 				reportError(err)
 				return err
@@ -162,6 +239,65 @@ var installCmd = &cobra.Command{
 
 		if !noDashboard {
 			kuskui.PrintStart("installing Dashboard...")
+			manifest, err := os.ReadFile(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml"))
+			if err != nil {
+				kuskui.PrintError("failed installing Dashboard")
+				reportError(err)
+				return err
+			}
+
+			sr := &kuskv1.StaticRoute{}
+			if err := yaml.Unmarshal(manifest, sr); err != nil {
+				kuskui.PrintError("failed installing Dashboard")
+				reportError(err)
+				return err
+			}
+
+			err = retry.Do(
+				func() error {
+					c.Create(cmd.Context(), sr, &client.CreateOptions{})
+					return err
+				},
+				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+
+					return time.Duration(10 * time.Second)
+				}),
+			)
+			if err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
+
+			manifest, err = os.ReadFile(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml"))
+			if err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
+			fleet := &kuskv1.EnvoyFleet{}
+			if err := yaml.Unmarshal(manifest, fleet); err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
+			err = retry.Do(
+				func() error {
+					return c.Create(cmd.Context(), fleet, &client.CreateOptions{})
+				},
+				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+
+					return time.Duration(10 * time.Second)
+				}))
+
+			if err != nil {
+				kuskui.PrintError("failed installing Envoyfleets")
+				reportError(err)
+				return err
+			}
+
 			if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
 				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
@@ -350,4 +486,37 @@ func getManifests() (string, error) {
 	}
 
 	return tmpdir, nil
+}
+
+func CreateFleet(ctx context.Context, c client.Client) {
+	fleet := kuskv1.EnvoyFleet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: kuskv1.EnvoyFleetSpec{
+			Default: false,
+			Service: &kuskv1.ServiceConfig{
+				Ports: []corev1.ServicePort{{
+					Name:     "ttt",
+					Port:     8789,
+					Protocol: corev1.Protocol("TCP"),
+				}},
+				Type: corev1.ServiceTypeClusterIP,
+			},
+		},
+	}
+
+	retry.Do(
+		func() error {
+			err := c.Create(ctx, &fleet, &client.CreateOptions{})
+			fmt.Println(err)
+			return err
+		},
+		retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+
+			return time.Duration(10 * time.Second)
+		}),
+	)
+	c.Delete(ctx, &fleet, &client.DeleteOptions{})
 }
