@@ -24,7 +24,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 	"time"
@@ -37,9 +36,6 @@ import (
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	aggv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	"k8s.io/client-go/rest"
@@ -114,7 +110,6 @@ func WaitForDeploymentReady(ctx context.Context, k8sClient client.Client, namesp
 	if err := wait.PollImmediate(10*time.Second, timeout, IsDeployReady(ctx, k8sClient, name, namespace)); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -172,61 +167,10 @@ func IsPodRunning(ctx context.Context, c client.Client, podName, namespace strin
 	}
 }
 
-func getCRDClient(ctx context.Context) (*clientset.Clientset, error) {
-	cfg, _ := getConfig()
-
-	return clientset.NewForConfig(cfg)
-}
-
-func WaitKuskCRDsReady(ctx context.Context) error {
-	client, err := getCRDClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := waitCRDReady(ctx, client, "apis.gateway.kusk.io"); err != nil {
-		return err
-	}
-
-	if err := waitCRDReady(ctx, client, "staticroutes.gateway.kusk.io"); err != nil {
-		return err
-	}
-
-	if err := waitCRDReady(ctx, client, "envoyfleet.gateway.kusk.io"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func waitCRDReady(ctx context.Context, client clientset.Interface, crdName string) error {
-	return wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
-		crd, err := client.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crdName, metav1.GetOptions{})
-		if err != nil {
-			return false, err
-		}
-
-		for _, cond := range crd.Status.Conditions {
-			switch cond.Type {
-			case apiextv1.Established:
-				if cond.Status == apiextv1.ConditionTrue {
-					return true, err
-				}
-			case apiextv1.NamesAccepted:
-				if cond.Status == apiextv1.ConditionFalse {
-					fmt.Printf("Name conflict on %s: %v\n", crdName, cond.Reason)
-				}
-			}
-		}
-
-		return false, ctx.Err()
-	})
-}
-
 func WaitAPIServiceReady(ctx context.Context, client client.Client) error {
 	apiService := aggv1.APIService{}
 
 	return wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
-
 		if err := client.Get(ctx, types.NamespacedName{Name: "v1alpha1.gateway.kusk.io"}, &apiService); err != nil {
 			return false, err
 		}
@@ -237,5 +181,4 @@ func WaitAPIServiceReady(ctx context.Context, client client.Client) error {
 		}
 		return false, nil
 	})
-
 }

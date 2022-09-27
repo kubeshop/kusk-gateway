@@ -136,11 +136,11 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		if err := utils.WaitKuskCRDsReady(cmd.Context()); err != nil {
-			kuskui.PrintError("❌ failed installing Kusk")
-			reportError(err)
-			return err
-		}
+		// if err := utils.WaitKuskCRDsReady(cmd.Context()); err != nil {
+		// 	kuskui.PrintError("❌ failed installing Kusk")
+		// 	reportError(err)
+		// 	return err
+		// }
 
 		if err := utils.WaitAPIServiceReady(cmd.Context(), c); err != nil {
 			kuskui.PrintError("❌ failed installing Kusk")
@@ -268,14 +268,14 @@ var installCmd = &cobra.Command{
 
 			manifest, err = os.ReadFile(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml"))
 			if err != nil {
-				kuskui.PrintError("failed installing Envoyfleets")
+				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
 				return err
 			}
 
 			fleet := &kuskv1.EnvoyFleet{}
 			if err := yaml.Unmarshal(manifest, fleet); err != nil {
-				kuskui.PrintError("failed installing Envoyfleets")
+				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
 				return err
 			}
@@ -290,7 +290,7 @@ var installCmd = &cobra.Command{
 				}))
 
 			if err != nil {
-				kuskui.PrintError("failed installing Envoyfleets")
+				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
 				return err
 			}
