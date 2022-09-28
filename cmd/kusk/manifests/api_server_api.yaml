@@ -3,6 +3,8 @@ kind: API
 metadata:
   name: kusk-gateway-api
   namespace: kusk-system
+  labels:
+    kusk-managed: "true"
 spec:
   fleet:
     name: kusk-gateway-private-envoy-fleet

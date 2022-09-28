@@ -3,6 +3,8 @@ kind: StaticRoute
 metadata:
   name: kusk-gateway-dashboard
   namespace: kusk-system
+  labels:
+    kusk-managed: "true"
 spec:
   fleet:
     name: kusk-gateway-private-envoy-fleet
