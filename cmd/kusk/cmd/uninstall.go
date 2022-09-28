@@ -65,43 +65,6 @@ var uninstallCmd = &cobra.Command{
 				return err
 			}
 
-			if err := deletef(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling Envoy Fleets", err)
-				reportError(err)
-				return err
-			}
-
-			if err := deletef(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling APIs", err)
-				reportError(err)
-				return err
-			}
-
-			if err := deletef(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling APIs", err)
-				reportError(err)
-				return err
-			}
-
-			kuskui.PrintStart("deleting Dashboard")
-			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling dashboard", err)
-				reportError(err)
-				return err
-			}
-
-			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling dashboard", err)
-				reportError(err)
-				return err
-			}
-
-			if err := deletef(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-				fmt.Println("❌ failed uninstalling dashboard", err)
-				reportError(err)
-				return err
-			}
-
 			apis := &kuskv1.APIList{}
 			if err := c.List(cmd.Context(), apis, &client.ListOptions{}); err != nil {
 				reportError(err)
@@ -156,10 +119,10 @@ var uninstallCmd = &cobra.Command{
 				}
 			}
 
-			fmt.Println("Uninstalling Kusk...")
+			kuskui.PrintStart("uninstalling Kusk...")
 
 			if err := deletek(dir); err != nil {
-				fmt.Println("❌ failed uninstalling Kusk", err)
+				kuskui.PrintError("❌ failed uninstalling Kusk", err.Error())
 				reportError(err)
 				return err
 			}
@@ -181,13 +144,6 @@ func init() {
 func deletek(filename string) error {
 	instCmd := NewKubectlCmd()
 	instCmd.SetArgs([]string{"delete", fmt.Sprintf("-k=%s", filepath.Join(filename, "/config/default"))})
-
-	return instCmd.Execute()
-}
-
-func deletef(filename string) error {
-	instCmd := NewKubectlCmd()
-	instCmd.SetArgs([]string{"delete", fmt.Sprintf("-f=%s", filename)})
 
 	return instCmd.Execute()
 }

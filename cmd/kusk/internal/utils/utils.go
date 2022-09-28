@@ -99,7 +99,7 @@ func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace st
 	}
 
 	for _, pod := range p.Items {
-		if err := wait.PollImmediate(10*time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
+		if err := wait.PollImmediate(2*time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
 			return err
 		}
 	}
@@ -107,7 +107,7 @@ func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace st
 }
 
 func WaitForDeploymentReady(ctx context.Context, k8sClient client.Client, namespace string, name string, timeout time.Duration) error {
-	if err := wait.PollImmediate(10*time.Second, timeout, IsDeployReady(ctx, k8sClient, name, namespace)); err != nil {
+	if err := wait.PollImmediate(2*time.Second, timeout, IsDeployReady(ctx, k8sClient, name, namespace)); err != nil {
 		return err
 	}
 	return nil
@@ -170,7 +170,7 @@ func IsPodRunning(ctx context.Context, c client.Client, podName, namespace strin
 func WaitAPIServiceReady(ctx context.Context, client client.Client) error {
 	apiService := aggv1.APIService{}
 
-	return wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
+	return wait.Poll(2*time.Second, 10*time.Minute, func() (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: "v1alpha1.gateway.kusk.io"}, &apiService); err != nil {
 			return false, err
 		}
