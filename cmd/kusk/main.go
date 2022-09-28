@@ -27,7 +27,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/cmd"
 )
 
-//go:generate go-bindata -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/... manifests/...
+//go:generate bin/go-bindata -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/... manifests/...
 func main() {
 	cmd.Execute()
 }
