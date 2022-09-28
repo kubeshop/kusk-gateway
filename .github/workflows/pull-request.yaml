@@ -26,10 +26,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18
-      - name:
-        run: make test
+          go-version: 1.19
+      - name: build-cli
         working-directory: cmd/kusk
+        run: VERSION=${{ github.sha }} make build
+      - name: test-cli
+        working-directory: cmd/kusk
+        run: make test
   compilation-and-unit-test-manager:
     name: Compile and Test Manager
     runs-on: ubuntu-latest
@@ -166,5 +169,5 @@ jobs:
           helm delete  kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} \
             --namespace default
           helm delete kusk-gateway-pr-${{ github.event.pull_request.number }} \
-            --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} 
+            --namespace kusk-gateway-pr-${{ github.event.pull_request.number }}
           kubectl delete ns kusk-gateway-pr-${{ github.event.pull_request.number }}
