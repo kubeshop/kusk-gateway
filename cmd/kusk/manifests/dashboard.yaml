@@ -1,24 +1,3 @@
----
-apiVersion: gateway.kusk.io/v1alpha1
-kind: EnvoyFleet
-metadata:
-  name: kusk-gateway-private-envoy-fleet
-  namespace: kusk-system
-spec:
-  accesslog:
-    format: text
-  service:
-    ports:
-      - name: http
-        port: 80
-        protocol: TCP
-        targetPort: http
-      - name: https
-        port: 443
-        protocol: TCP
-        targetPort: http
-    type: ClusterIP
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -86,28 +65,3 @@ spec:
               scheme: HTTP
       serviceAccount: kusk-gateway-dashboard
       serviceAccountName: kusk-gateway-dashboard
----
-apiVersion: gateway.kusk.io/v1alpha1
-kind: StaticRoute
-metadata:
-  name: kusk-gateway-dashboard
-  namespace: kusk-system
-spec:
-  fleet:
-    name: kusk-gateway-private-envoy-fleet
-    namespace: kusk-system
-  hosts:
-    - localhost
-    - "*"
-  paths:
-    /:
-      get:
-        route:
-          upstream:
-            rewrite:
-              pattern: ""
-              substitution: ""
-            service:
-              name: kusk-gateway-dashboard
-              namespace: kusk-system
-              port: 80

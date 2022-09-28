@@ -49,7 +49,7 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		analytics.SendAnonymousCMDInfo(nil)
-		if cmd.Name() != generateCmd.Name() {
+		if cmd.Name() != generateCmd.Name() && build.Version != "latest" {
 
 			if len(build.Version) != 0 {
 				ghclient, err := utils.NewGithubClient("", nil)

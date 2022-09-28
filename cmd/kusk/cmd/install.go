@@ -25,6 +25,7 @@ package cmd
 
 import (
 	"archive/zip"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -35,7 +36,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v3"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
@@ -75,10 +81,10 @@ var installCmd = &cobra.Command{
 	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
-	$ kusk install --latest 
-	
-	Will pull the latest version of kusk available 
-	
+	$ kusk install --latest
+
+	Will pull the latest version of kusk available
+
 	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 
 	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
@@ -92,8 +98,10 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		var err error
-		var dir string
+		var (
+			dir string
+			err error
+		)
 		if !latest {
 			if dir, err = getManifests(); err != nil {
 				return err
@@ -106,29 +114,43 @@ var installCmd = &cobra.Command{
 
 		kuskui.PrintStart("installing kusk...")
 
-		if err := applyk(dir); err != nil {
-			kuskui.PrintError("❌ failed installing Kusk")
-			reportError(err)
-			return err
-		}
-
-		namespace := "kusk-system"
-		name := "kusk-gateway-manager"
 		c, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
 			return err
 		}
 
-		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-			kuskui.PrintError("failed installing Envoyfleets")
+		if err := applyk(dir); err != nil {
+			kuskui.PrintError("❌ failed installing Kusk")
+			reportError(err)
+			return err
+		}
+		namespace := "kusk-system"
+		name := "kusk-gateway-manager"
+
+		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, 10*time.Minute, "component"); err != nil {
+			kuskui.PrintError("failed installing Kusk")
+			reportError(err)
+			return err
+		}
+
+		if err := utils.WaitForDeploymentReady(cmd.Context(), c, namespace, name, 10*time.Minute); err != nil {
+			kuskui.PrintError("failed installing Kusk")
+			reportError(err)
+			return err
+		}
+
+		if err := utils.WaitAPIServiceReady(cmd.Context(), c); err != nil {
+			kuskui.PrintError("❌ failed installing Kusk")
 			reportError(err)
 			return err
 		}
 
 		if !noEnvoyFleet {
-			kuskui.PrintStart("installing Envoyfleets...")
-			if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
+			kuskui.PrintStart("installing Envoyfleet...")
+			fleet := &kuskv1.EnvoyFleet{}
+
+			if err := provisionFromManifest(cmd.Context(), c, fleet, filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
 				kuskui.PrintError("failed installing Envoyfleets")
 				reportError(err)
 				return err
@@ -139,14 +161,23 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-
 		} else {
+			kuskui.PrintSuccess("\ninstallation complete\n")
+			printPortForwardInstructions(noEnvoyFleet)
 			return nil
 		}
 
 		if !noApi {
 			kuskui.PrintStart("installing API Server...")
-			if err := applyf(filepath.Join(dir, manifests_dir, "apis.yaml")); err != nil {
+			api := &kuskv1.API{}
+
+			if err := provisionFromManifest(cmd.Context(), c, api, filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
+				kuskui.PrintError("failed installing API Server")
+				reportError(err)
+				return err
+			}
+
+			if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
 				kuskui.PrintError("failed installing API Server")
 				reportError(err)
 				return err
@@ -156,12 +187,28 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-		} else if noApi {
+		} else {
+			kuskui.PrintSuccess("\ninstallation complete\n")
+			printPortForwardInstructions(noApi)
 			return nil
 		}
 
 		if !noDashboard {
 			kuskui.PrintStart("installing Dashboard...")
+			sr := &kuskv1.StaticRoute{}
+			if err := provisionFromManifest(cmd.Context(), c, sr, filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
+				kuskui.PrintError("failed installing Dashboard")
+				reportError(err)
+				return err
+			}
+
+			fleet := &kuskv1.EnvoyFleet{}
+			if err := provisionFromManifest(cmd.Context(), c, fleet, filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
+				kuskui.PrintError("failed installing Dashboard")
+				reportError(err)
+				return err
+			}
+
 			if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
 				kuskui.PrintError("failed installing Dashboard")
 				reportError(err)
@@ -176,7 +223,7 @@ var installCmd = &cobra.Command{
 
 		fmt.Println("")
 		kuskui.PrintSuccess("installation complete\n")
-		printPortForwardInstructions("dashboard", releaseNamespace, envoyFleetName)
+		printPortForwardInstructions(noDashboard)
 
 		return nil
 	},
@@ -198,8 +245,8 @@ func applyk(filename string) error {
 	return instCmd.Execute()
 }
 
-func printPortForwardInstructions(service, releaseNamespace, envoyFleetName string) {
-	if service == "dashboard" {
+func printPortForwardInstructions(noDashboard bool) {
+	if !noDashboard {
 		kuskui.PrintInfoGray("💡 Access the dashboard by using the following command")
 		kuskui.PrintInfo("👉 kusk dashboard\n")
 	}
@@ -210,13 +257,14 @@ func printPortForwardInstructions(service, releaseNamespace, envoyFleetName stri
 	kuskui.PrintInfoGray("💡 Access Help and useful examples to help get you started")
 	kuskui.PrintInfo("👉 kusk --help")
 }
+
 func getManifestsFromUrl() (string, error) {
-	ghclient, err := utils.NewGithubClient("", nil)
+	githubClient, err := utils.NewGithubClient("", nil)
 	if err != nil {
 		return "", err
 	}
 
-	latest, err := ghclient.GetLatest()
+	latest, err := githubClient.GetLatest()
 	if err != nil {
 		return "", err
 
@@ -229,7 +277,7 @@ func getManifestsFromUrl() (string, error) {
 
 	dir := os.TempDir()
 
-	file, err := donwloadFile(dir, fullURLFile)
+	file, err := downloadFile(dir, fullURLFile)
 	if err != nil {
 		return "", err
 	}
@@ -286,12 +334,13 @@ func unzip(path string) (string, error) {
 	return distroDir, nil
 }
 
-func donwloadFile(dir, fullURLFile string) (string, error) {
+func downloadFile(dir, fullURLFile string) (string, error) {
 	// Build fileName from fullPath
 	fileURL, err := url.Parse(fullURLFile)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	path := fileURL.Path
 	segments := strings.Split(path, "/")
 	fileName := segments[len(segments)-1]
@@ -301,17 +350,17 @@ func donwloadFile(dir, fullURLFile string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	client := http.Client{
+
+	resp, err := (&http.Client{
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
 			return nil
 		},
-	}
+	}).Get(fullURLFile)
+
 	// Put content on file
-	resp, err := client.Get(fullURLFile)
 	if err != nil {
 		return "", err
-
 	}
 	defer resp.Body.Close()
 
@@ -332,22 +381,54 @@ func getManifests() (string, error) {
 	for _, name := range manifestNames {
 		dir := filepath.Dir(name)
 		if dir != "." {
-			os.MkdirAll(filepath.Join(tmpdir, dir), 0700)
+			if err := os.MkdirAll(filepath.Join(tmpdir, dir), 0700); err != nil {
+				return "", err
+			}
 		}
 
-		if f, err := os.Create(filepath.Join(tmpdir, name)); err != nil {
+		f, err := os.Create(filepath.Join(tmpdir, name))
+		if err != nil {
 			return "", nil
-		} else {
-			content, _ := Asset(name)
-			if strings.Contains(name, "configmap.yaml") {
-				tmp := strings.Replace(string(content), `ANALYTICS_ENABLED: "true"`, fmt.Sprintf(`ANALYTICS_ENABLED: "%s"`, analyticsEnabled), -1)
-				content = []byte(tmp)
-			}
-			if _, err := f.Write(content); err != nil {
-				return "", nil
-			}
+		}
+
+		content, _ := Asset(name)
+		if strings.Contains(name, "configmap.yaml") {
+			tmp := strings.Replace(string(content), `ANALYTICS_ENABLED: "true"`, fmt.Sprintf(`ANALYTICS_ENABLED: "%s"`, analyticsEnabled), -1)
+			content = []byte(tmp)
+		}
+		if _, err := f.Write(content); err != nil {
+			return "", nil
 		}
 	}
 
 	return tmpdir, nil
+}
+
+// path = filepath.Join(dir, manifests_dir, "fleets.yaml")
+func provisionFromManifest(ctx context.Context, c client.Client, obj client.Object, path string) error {
+	manifest, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	if err := yaml.Unmarshal(manifest, obj); err != nil {
+		return err
+	}
+
+	err = retry.Do(
+		func() error {
+			err := c.Create(ctx, obj, &client.CreateOptions{})
+			if err != nil && strings.Contains(err.Error(), "already exists") {
+				return nil
+			}
+			return err
+		},
+		retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+			return 2 * time.Second
+		}))
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

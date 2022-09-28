@@ -41,20 +41,17 @@ ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version >/dev/null 2>&1 && which podman)
 endif
 
-go_bindata := $(shell which go-bindata 2>/dev/null)
-ifeq ($(go_bindata),)
-go_bindata := cd hack/ci-deps && go install github.com/kevinburke/go-bindata/... && cd ../.. && "${GOPATH}/bin/go-bindata"
-endif
 
 .PHONY: all
 all: install-tools pre-commit
 
-kustomize: ## $(KUSTOMIZE) ## Download kustomize locally if necessary.
+build-tools: ## $(KUSTOMIZE) ## Download kustomize locally if necessary.
 # $(KUSTOMIZE): $(LOCALBIN)
 	mkdir -p $(shell pwd)/bin
 	rm -f $(KUSTOMIZE)
 	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
-
+	GOBIN=$(shell pwd)/bin go install -a -v github.com/go-bindata/go-bindata/...@latest
+	
 .PHONY: install-tools
 install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
@@ -83,7 +80,7 @@ test:
 	go test -count=1 -v -race ./...
 
 .PHONY: build
-build: kustomize
+build: build-tools
 	cd ../../config/default && $(KUSTOMIZE) edit set image kusk-gateway=${MANAGER_IMG}
 	go generate 
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
