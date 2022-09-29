@@ -138,10 +138,55 @@ $ kusk mock -i https://url.to.api.com
 
 		kuskConfigDir := path.Join(homeDir, ".kusk")
 
+		u, err := url.Parse(apiSpecPath)
+		if err != nil {
+			reportError(err)
+			ui.Fail(err)
+		}
+
+		apiOnFileSystem := u.Host == ""
+
+		// the api spec location could be a url or a file
+		// if it's a file, this will get updated below to be the absolute path to the file
+		apiSpecLocation := apiSpecPath
+
+		// if api on the file system, change into the directory
+		// where it's kept as it could have local schema references that need
+		// to be resolved.
+		// also set up a file watcher
+		var watcher *filewatcher.FileWatcher
+		if apiOnFileSystem {
+			// we need the absolute path of the file in the filesystem
+			// to properly mount the file into the mocking container
+			absoluteApiSpecPath, err := filepath.Abs(apiSpecPath)
+			if err != nil {
+				reportError(err)
+				ui.Fail(err)
+			}
+
+			popFunc, err := pushDirectory(filepath.Dir(absoluteApiSpecPath))
+			defer func() {
+				if err := popFunc(); err != nil {
+					reportError(err)
+					ui.Fail(err)
+				}
+			}()
+
+			watcher, err = filewatcher.New(absoluteApiSpecPath)
+			if err != nil {
+				reportError(err)
+				ui.Fail(err)
+			}
+			defer watcher.Close()
+
+			apiSpecLocation = absoluteApiSpecPath
+		}
+
 		apiParser := spec.NewParser(&openapi3.Loader{
 			IsExternalRefsAllowed: true,
 			ReadFromURIFunc:       openapi3.ReadFromURIs(openapi3.ReadFromHTTP(http.DefaultClient), openapi3.ReadFromFile),
 		})
+
 		apiSpec, err := apiParser.Parse(apiSpecPath)
 		if err != nil {
 			err := fmt.Errorf("error when parsing openapi spec: %w", err)
@@ -157,34 +202,9 @@ $ kusk mock -i https://url.to.api.com
 
 		ui.Info(ui.Green("🎉 successfully parsed OpenAPI spec"))
 
-		u, err := url.Parse(apiSpecPath)
-		if err != nil {
-			reportError(err)
-			ui.Fail(err)
-		}
-
-		var watcher *filewatcher.FileWatcher
 		var tempApiFileName string
-		apiSpecLocation := apiSpecPath
-		apiToMock := apiSpecPath
-		if apiOnFileSystem := u.Host == ""; apiOnFileSystem {
-			var currentWorkingDir string
-			apiSpecDir := filepath.Dir(apiSpecPath)
-
-			if apiSpecDir != "" {
-				if currentWorkingDir, err = os.Getwd(); err != nil {
-					ui.Fail(err)
-				}
-				if err := os.Chdir(apiSpecDir); err != nil {
-					reportError(err)
-					ui.Fail(err)
-				}
-				defer func() {
-					if err := os.Chdir(currentWorkingDir); err != nil {
-						ui.Fail(err)
-					}
-				}()
-			}
+		apiToMock := apiSpecLocation
+		if apiOnFileSystem {
 
 			tempApiFile, err := os.CreateTemp(kuskConfigDir, "mocked-api-*.yaml")
 			if err != nil {
@@ -205,22 +225,7 @@ $ kusk mock -i https://url.to.api.com
 			if err := writeInitialisedApiToTempFile(tempApiFileName, apiSpec); err != nil {
 				ui.Fail(err)
 			}
-			// we need the absolute path of the file in the filesystem
-			// to properly mount the file into the mocking container
-			absoluteApiSpecPath, err := filepath.Abs(apiSpecPath)
-			if err != nil {
-				reportError(err)
-				ui.Fail(err)
-			}
 
-			watcher, err = filewatcher.New(absoluteApiSpecPath)
-			if err != nil {
-				reportError(err)
-				ui.Fail(err)
-			}
-			defer watcher.Close()
-
-			apiSpecLocation = absoluteApiSpecPath
 			apiToMock = tempApiFileName
 		}
 
@@ -231,6 +236,7 @@ $ kusk mock -i https://url.to.api.com
 			reportError(msg)
 			ui.Fail(msg)
 		}
+
 		ctx := context.Background()
 		mockServerId, err := mockServer.Start(ctx)
 		if err != nil {
@@ -313,6 +319,36 @@ $ kusk mock -i https://url.to.api.com
 			}
 		}
 	},
+}
+
+func pushDirectory(dir string) (popFunc func() error, err error) {
+	noPopFunc := func() error { return nil }
+
+	var currentWorkingDir string
+
+	if dir == "" {
+		return noPopFunc, nil
+	}
+
+	if currentWorkingDir, err = os.Getwd(); err != nil {
+		return noPopFunc, err
+	}
+
+	if err := os.Chdir(dir); err != nil {
+		return noPopFunc, err
+	}
+
+	return func() error {
+		if currentWorkingDir == "" {
+			return nil
+		}
+
+		if err := os.Chdir(currentWorkingDir); err != nil {
+			return fmt.Errorf("unable to change back to directory %s: %w", currentWorkingDir, err)
+		}
+
+		return nil
+	}, nil
 }
 
 func setUpMockingServer(kuskConfigDir, apiToMock string) (*mockingServer.MockServer, error) {
