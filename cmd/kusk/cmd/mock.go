@@ -208,6 +208,7 @@ $ kusk mock -i https://url.to.api.com
 
 			tempApiFile, err := os.CreateTemp(kuskConfigDir, "mocked-api-*.yaml")
 			if err != nil {
+				reportError(err)
 				ui.Fail(err)
 			}
 
@@ -215,14 +216,17 @@ $ kusk mock -i https://url.to.api.com
 
 			defer func(fileName string) {
 				if err := tempApiFile.Close(); err != nil {
+					reportError(err)
 					ui.Fail(err)
 				}
 				if err := os.Remove(fileName); err != nil {
+					reportError(err)
 					ui.Fail(err)
 				}
 			}(tempApiFileName)
 
 			if err := writeInitialisedApiToTempFile(tempApiFileName, apiSpec); err != nil {
+				reportError(err)
 				ui.Fail(err)
 			}
 
