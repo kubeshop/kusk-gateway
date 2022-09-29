@@ -160,10 +160,6 @@ func (m *MockServer) StreamLogs(ctx context.Context, containerId string) {
 	}
 }
 
-func (m *MockServer) SetApi(api string) {
-	m.apiToMock = api
-}
-
 func newAccessLogEntry(rawLog string) (*AccessLogEntry, error) {
 	type log struct {
 		Host       string    `json:"host"`
@@ -179,8 +175,6 @@ func newAccessLogEntry(rawLog string) (*AccessLogEntry, error) {
 		URI        string    `json:"uri"`
 		UserAgent  string    `json:"userAgent"`
 	}
-
-	fmt.Println(rawLog)
 
 	var l log
 	if err := json.Unmarshal([]byte(rawLog), &l); err != nil {
