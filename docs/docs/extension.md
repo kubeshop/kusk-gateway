@@ -299,8 +299,6 @@ The cache object contains the following properties to configure HTTP caching:
 | `cache.enabled`      | Boolean flag to enable request validation.|
 | `cache.max_age`      | Indicates how long (in seconds) results of a request can be cached.  |
 
-Note: current support for caching is experimental. Check out [https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/cache_filter](Envoy documentation) to learn more about how it works.
-
 **Sample:**
 
 ```yaml
