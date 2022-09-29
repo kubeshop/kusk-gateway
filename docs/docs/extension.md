@@ -357,6 +357,26 @@ x-kusk:
 ...
 ```
 
+#### `cloudentity` Sample
+
+```yaml
+...
+x-kusk:
+...
+  upstream:
+    service:
+      name: auth-cloudentity-go-httpbin
+      namespace: default
+      port: 80
+  auth:
+    scheme: cloudentity
+    auth-upstream:
+      host:
+        hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
+        port: 9004
+...
+```
+
 #### `oauth2` Sample
 
 The example below ensures the whole API is protected via OAuth2.
