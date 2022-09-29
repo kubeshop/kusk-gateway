@@ -65,30 +65,40 @@ func (o Options) Validate() error {
 
 	// check if global options contains either mocking or an upstream service that covers all endpoints
 	if o.Mocking != nil {
-		return o.Mocking.Validate()
+		err := o.Mocking.Validate()
+		return err
 	}
 
 	if o.Upstream != nil {
-		return o.Upstream.Validate()
+		err := o.Upstream.Validate()
+		return err
 	}
 
 	if o.Redirect != nil {
-		return o.Redirect.Validate()
+		err := o.Redirect.Validate()
+		return err
 	}
 
 	// if we get here, it means there aren't global options contains either mocking or an upstream service that covers all endpoints
 	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
+
 	for pathAndMethod, op := range o.OperationFinalSubOptions {
 		if op.Mocking != nil {
-			return op.Mocking.Validate()
+			if err := op.Mocking.Validate(); err != nil {
+				return err
+			}
 		}
 
 		if op.Upstream != nil {
-			return op.Upstream.Validate()
+			if err := op.Upstream.Validate(); err != nil {
+				return err
+			}
 		}
 
 		if op.Redirect != nil {
-			return op.Redirect.Validate()
+			if err := op.Redirect.Validate(); err != nil {
+				return err
+			}
 		}
 
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
