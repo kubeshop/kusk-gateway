@@ -187,7 +187,7 @@ $ kusk mock -i https://url.to.api.com
 			ReadFromURIFunc:       openapi3.ReadFromURIs(openapi3.ReadFromHTTP(http.DefaultClient), openapi3.ReadFromFile),
 		})
 
-		apiSpec, err := apiParser.Parse(apiSpecPath)
+		apiSpec, err := apiParser.Parse(apiSpecLocation)
 		if err != nil {
 			err := fmt.Errorf("error when parsing openapi spec: %w", err)
 			reportError(err)
