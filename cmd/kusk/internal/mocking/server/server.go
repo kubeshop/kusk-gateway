@@ -38,30 +38,28 @@ type AccessLogEntry struct {
 	Error error
 }
 
-func New(ctx context.Context, client *client.Client, configFile, apiToMock string, port uint32) (MockServer, error) {
-	const openApiMockImage = "muonsoft/openapi-mock:v0.3.3"
+func New(client *client.Client, configFile, apiToMock string, port uint32) *MockServer {
+	return &MockServer{
+		client:     client,
+		image:      "muonsoft/openapi-mock:v0.3.3",
+		configFile: configFile,
+		apiToMock:  apiToMock,
+		port:       port,
+		LogCh:      make(chan AccessLogEntry),
+		ErrCh:      make(chan error),
+	}
+}
 
-	reader, err := client.ImagePull(ctx, openApiMockImage, types.ImagePullOptions{})
+func (m *MockServer) Start(ctx context.Context) (string, error) {
+	reader, err := m.client.ImagePull(ctx, m.image, types.ImagePullOptions{})
 	if err != nil {
-		return MockServer{}, fmt.Errorf("unable to pull mock server image: %w", err)
+		return "", fmt.Errorf("unable to pull mock server image: %w", err)
 	}
 
 	// wait for download to complete, discard output
 	defer reader.Close()
 	io.Copy(io.Discard, reader)
 
-	return MockServer{
-		client:     client,
-		image:      openApiMockImage,
-		configFile: configFile,
-		apiToMock:  apiToMock,
-		port:       port,
-		LogCh:      make(chan AccessLogEntry),
-		ErrCh:      make(chan error),
-	}, nil
-}
-
-func (m MockServer) Start(ctx context.Context) (string, error) {
 	u, err := url.Parse(m.apiToMock)
 	if err != nil {
 		return "", err
@@ -124,21 +122,21 @@ func (m MockServer) Start(ctx context.Context) (string, error) {
 	return resp.ID, nil
 }
 
-func (m MockServer) Restart(ctx context.Context, MockServerId string) error {
+func (m *MockServer) Restart(ctx context.Context, MockServerId string) error {
 	timeout := 5 * time.Second
 	return m.client.ContainerRestart(ctx, MockServerId, &timeout)
 }
 
-func (m MockServer) Stop(ctx context.Context, MockServerId string) error {
+func (m *MockServer) Stop(ctx context.Context, MockServerId string) error {
 	timeout := 5 * time.Second
 	return m.client.ContainerStop(ctx, MockServerId, &timeout)
 }
 
-func (m MockServer) ServerWait(ctx context.Context, MockServerId string) (<-chan container.ContainerWaitOKBody, <-chan error) {
+func (m *MockServer) ServerWait(ctx context.Context, MockServerId string) (<-chan container.ContainerWaitOKBody, <-chan error) {
 	return m.client.ContainerWait(ctx, MockServerId, container.WaitConditionNextExit)
 }
 
-func (m MockServer) StreamLogs(ctx context.Context, containerId string) {
+func (m *MockServer) StreamLogs(ctx context.Context, containerId string) {
 	reader, err := m.client.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
