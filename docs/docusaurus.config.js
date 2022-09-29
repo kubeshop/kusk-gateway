@@ -42,9 +42,6 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
-        googleAnalytics: {
-          trackingID: "GTM-5S7QKN7",
-        },
       }),
     ],
     [
@@ -65,7 +62,14 @@ const config = {
       },
     ],
   ],
-
+  plugins: [
+    [
+      require.resolve('docusaurus-gtm-plugin'),
+      {
+        id: 'GTM-5S7QKN7', // GTM Container ID
+      }
+    ]
+  ],
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
