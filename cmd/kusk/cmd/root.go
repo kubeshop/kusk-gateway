@@ -55,25 +55,30 @@ var rootCmd = &cobra.Command{
 				ghclient, err := utils.NewGithubClient("", nil)
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
+					return
 				}
 
 				ref, err := ghclient.GetLatest()
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
+					return
 				}
 
 				latestVersion, err := version.NewVersion(ref)
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
+					return
 				}
 
 				currentVersion, err := version.NewVersion(build.Version)
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
+					return
 				}
 
-				if currentVersion.LessThan(latestVersion) {
+				if currentVersion != nil && currentVersion.LessThan(latestVersion) {
 					ui.Warn(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s\n", currentVersion, latestVersion), "Please follow instructions to update you installation: https://docs.kusk.io/reference/cli/overview/#updating")
+					return
 				}
 			}
 		}
