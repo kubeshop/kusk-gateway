@@ -30,11 +30,14 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	aggv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,6 +48,7 @@ func GetK8sClient() (client.Client, error) {
 	appsv1.AddToScheme(scheme)
 	kuskv1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
+	aggv1.AddToScheme(scheme)
 
 	config, err := getConfig()
 	if err != nil {
@@ -95,11 +99,32 @@ func WaitForPodsReady(ctx context.Context, k8sClient client.Client, namespace st
 	}
 
 	for _, pod := range p.Items {
-		if err := wait.PollImmediate(time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
+		if err := wait.PollImmediate(2*time.Second, timeout, IsPodReady(ctx, k8sClient, pod.Name, namespace)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func WaitForDeploymentReady(ctx context.Context, k8sClient client.Client, namespace string, name string, timeout time.Duration) error {
+	if err := wait.PollImmediate(2*time.Second, timeout, IsDeployReady(ctx, k8sClient, name, namespace)); err != nil {
+		return err
+	}
+	return nil
+}
+
+// IsPodReady check if the pod in question is running state
+func IsDeployReady(ctx context.Context, c client.Client, name, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		deployment := &appsv1.Deployment{}
+		if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, deployment); err != nil {
+			return false, err
+		}
+		if deployment.Status.ReadyReplicas == 1 && deployment.Status.AvailableReplicas == 1 {
+			return true, nil
+		}
+		return false, nil
+	}
 }
 
 // IsPodReady check if the pod in question is running state
@@ -140,4 +165,20 @@ func IsPodRunning(ctx context.Context, c client.Client, podName, namespace strin
 		}
 		return false, nil
 	}
+}
+
+func WaitAPIServiceReady(ctx context.Context, client client.Client) error {
+	apiService := aggv1.APIService{}
+
+	return wait.Poll(2*time.Second, 10*time.Minute, func() (bool, error) {
+		if err := client.Get(ctx, types.NamespacedName{Name: "v1alpha1.gateway.kusk.io"}, &apiService); err != nil {
+			return false, err
+		}
+		for _, cond := range apiService.Status.Conditions {
+			if cond.Type == "Available" && cond.Status == "True" {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
 }

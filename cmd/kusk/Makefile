@@ -1,9 +1,6 @@
 .DEFAULT_GOAL := all
 MAKEFLAGS += --environment-overrides --warn-undefined-variables #--print-directory --no-builtin-rules --no-builtin-variables
 
-
-
-
 SHELL := /bin/bash
 ifneq ($(shell uname),Darwin)
 	SHELL += -O globstar -O extglob
@@ -16,44 +13,21 @@ export PATH := $(shell go env GOPATH)/bin:${PATH}
 
 VERSION ?= $(shell git describe --tags)
 
-
-MAKE_PATH := $(shell pwd)
-MAKE_DIR := $(shell dirname $(MAKE_PATH))
-
-KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
-KUSTOMIZE_VERSION ?= v4.5.2
-
-LOCALBIN ?= $(shell pwd)/bin
-KUSTOMIZE = $(LOCALBIN)/kustomize
-CONTROLLER_GEN = $(LOCALBIN)/controller-gen
-
 LD_FLAGS += -w -s
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
-LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$(TELEMETRY_TOKEN)'
+LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${TELEMETRY_TOKEN}'
 
 IMAGE_TAG ?= ${VERSION}
 MANAGER_IMG ?= kubeshop/kusk-gateway:${IMAGE_TAG}
-# Determine if we should use:
-# 1. docker and docker-compose, or
-# 2. podman and podman-compose
+
+# Determine if we should use: docker or podman.
 CONTAINER_ENGINE ?= $(shell docker version >/dev/null 2>&1 && which docker)
 ifeq ($(CONTAINER_ENGINE),)
 	CONTAINER_ENGINE = $(shell podman version >/dev/null 2>&1 && which podman)
 endif
 
-go_bindata := $(shell which go-bindata 2>/dev/null)
-ifeq ($(go_bindata),)
-go_bindata := cd hack/ci-deps && go install github.com/kevinburke/go-bindata/... && cd ../.. && "${GOPATH}/bin/go-bindata"
-endif
-
 .PHONY: all
-all: install-tools pre-commit
-
-kustomize: ## $(KUSTOMIZE) ## Download kustomize locally if necessary.
-# $(KUSTOMIZE): $(LOCALBIN)
-	mkdir -p $(shell pwd)/bin
-	rm -f $(KUSTOMIZE)
-	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+all: install-tools install-deps pre-commit
 
 .PHONY: install-tools
 install-tools:
@@ -82,10 +56,15 @@ lint:
 test:
 	go test -count=1 -v -race ./...
 
+.PHONY: install-deps
+install-deps:
+	go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3
+	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+
 .PHONY: build
-build: kustomize
-	cd ../../config/default && $(KUSTOMIZE) edit set image kusk-gateway=${MANAGER_IMG}
-	go generate 
+build: install-deps
+	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
+	go generate
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 
 # `build-goreleaser` is just for local testing.

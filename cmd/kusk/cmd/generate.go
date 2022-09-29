@@ -24,7 +24,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"text/template"
@@ -119,7 +118,9 @@ var generateCmd = &cobra.Command{
 
 	This will fetch the OpenAPI document from the provided URL and generate a Kusk Gateway API resource
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
 				errors.NewErrorReporter(cmd, err).Report()
@@ -128,9 +129,8 @@ var generateCmd = &cobra.Command{
 
 		parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
 		if _, ok := parsedApiSpec.ExtensionProps.Extensions["x-kusk"]; !ok {
@@ -145,15 +145,13 @@ var generateCmd = &cobra.Command{
 
 		opts, err := spec.GetOptions(parsedApiSpec)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
 		if err := opts.Validate(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
 		// override top level upstream service if undefined.
@@ -171,15 +169,13 @@ var generateCmd = &cobra.Command{
 		}
 
 		if err := validateExtensionOptions(parsedApiSpec.ExtensionProps.Extensions["x-kusk"]); err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
 		if apiSpec, err = getAPISpecString(parsedApiSpec); err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
 
 		if err := apiTemplate.Execute(os.Stdout, templates.APITemplateArgs{
@@ -189,10 +185,10 @@ var generateCmd = &cobra.Command{
 			EnvoyfleetNamespace: envoyFleetNamespace,
 			Spec:                strings.Split(apiSpec, "\n"),
 		}); err != nil {
-			fmt.Fprintln(os.Stderr, err)
 			reportError(err)
-			os.Exit(1)
+			return err
 		}
+		return nil
 	},
 }
 
