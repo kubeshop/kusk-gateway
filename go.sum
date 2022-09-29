@@ -236,8 +236,6 @@ github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmV
 github.com/fvbommel/sortorder v1.0.1 h1:dSnXLt4mJYH25uDDGa3biZNQsozaUWDSWeKJ0qqFfzE=
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
-github.com/getkin/kin-openapi v0.97.0 h1:bsvXZeuGiCW43ZKy6xOY5qfT5fCRYmnJwierblSrHCU=
-github.com/getkin/kin-openapi v0.97.0/go.mod h1:w4lRPHiyOdwGbOkLIyk+P0qCwlu7TXPCHD/64nSXzgE=
 github.com/getkin/kin-openapi v0.103.0 h1:F5wAtaQvPWxKCAYZ69LgHAThgu16p4u41VQtbn1U8LA=
 github.com/getkin/kin-openapi v0.103.0/go.mod h1:w4lRPHiyOdwGbOkLIyk+P0qCwlu7TXPCHD/64nSXzgE=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
