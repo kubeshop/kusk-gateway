@@ -49,7 +49,6 @@ const sidebars = {
           items: [
             "guides/authentication/custom-auth-upstream",
             "guides/authentication/oauth2",
-            "guides/authentication/cloudentity",
           ],
         },
         {

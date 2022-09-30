@@ -1,7 +1,0 @@
-# Cloudentity
-
-:::info
-
-Coming soon.
-
-:::
