@@ -136,7 +136,7 @@ func configCrdBasesGatewayKuskIo_apisYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_apis.yaml", size: 2813, mode: os.FileMode(420), modTime: time.Unix(1662980422, 0)}
+	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_apis.yaml", size: 2813, mode: os.FileMode(420), modTime: time.Unix(1664471856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -156,7 +156,7 @@ func configCrdBasesGatewayKuskIo_envoyfleetYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_envoyfleet.yaml", size: 71423, mode: os.FileMode(420), modTime: time.Unix(1662980422, 0)}
+	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_envoyfleet.yaml", size: 71423, mode: os.FileMode(420), modTime: time.Unix(1664298925, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -176,7 +176,7 @@ func configCrdBasesGatewayKuskIo_staticroutesYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_staticroutes.yaml", size: 11056, mode: os.FileMode(420), modTime: time.Unix(1662980422, 0)}
+	info := bindataFileInfo{name: "config/crd/bases/gateway.kusk.io_staticroutes.yaml", size: 11056, mode: os.FileMode(420), modTime: time.Unix(1664471856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -196,7 +196,7 @@ func configCrdKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/kustomization.yaml", size: 811, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/crd/kustomization.yaml", size: 811, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -216,7 +216,7 @@ func configCrdKustomizeconfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/kustomizeconfig.yaml", size: 506, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/crd/kustomizeconfig.yaml", size: 506, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -236,7 +236,7 @@ func configCrdPatchesWebhook_in_apisYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/patches/webhook_in_apis.yaml", size: 403, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/crd/patches/webhook_in_apis.yaml", size: 403, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -256,7 +256,7 @@ func configCrdPatchesWebhook_in_envoyfleetYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/patches/webhook_in_envoyfleet.yaml", size: 409, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/crd/patches/webhook_in_envoyfleet.yaml", size: 409, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -276,7 +276,7 @@ func configCrdPatchesWebhook_in_staticroutesYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/crd/patches/webhook_in_staticroutes.yaml", size: 411, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/crd/patches/webhook_in_staticroutes.yaml", size: 411, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -296,7 +296,7 @@ func configDefaultKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1664481720, 0)}
+	info := bindataFileInfo{name: "config/default/kustomization.yaml", size: 824, mode: os.FileMode(420), modTime: time.Unix(1664525564, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -316,7 +316,7 @@ func configDefaultManager_auth_proxy_patchYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/manager_auth_proxy_patch.yaml", size: 847, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/default/manager_auth_proxy_patch.yaml", size: 847, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -336,12 +336,12 @@ func configDefaultManager_config_patchYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/manager_config_patch.yaml", size: 480, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/default/manager_config_patch.yaml", size: 480, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _configDefaultManager_webhook_patchYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8e\xcd\x4e\x03\x31\x0c\x84\xef\x79\x0a\xbf\xc0\x8a\x5d\x51\x09\xc8\x15\x1e\xa0\x07\xc4\xdd\x6c\xac\x12\xe5\xc7\x56\x6c\xb6\xec\xdb\xa3\x15\x0d\x50\x04\x95\x98\x53\x34\x19\x7f\x33\x28\xf1\x89\x9a\x46\xae\x1e\x50\x44\xaf\x96\xc9\xa5\x58\x83\x87\x07\x92\xcc\x6b\xa1\x6a\xae\x90\x61\x40\x43\xef\x00\x2a\x16\xf2\x90\x5e\x35\x0d\x07\x34\x3a\xe2\x3a\x14\xac\x78\xa0\x76\xfa\x54\xc1\x99\x3c\xe8\xaa\x46\xc5\xa9\xd0\xbc\x9d\x19\x15\xc9\x68\xb4\xbd\x01\xba\xbb\x69\xe6\x6a\x18\x2b\x35\xed\x0e\xc0\x70\xaa\xf9\x22\x77\x09\x37\xfb\x16\xfc\x08\x7f\x22\xf6\xdc\xcc\xc3\x74\x3b\x8e\xe3\x59\xa4\xcf\x7e\x0b\xfa\xc3\x97\xc6\xc6\x33\x67\x0f\x8f\xf7\xfb\xcb\xd8\xbb\xdd\xee\xfa\x57\xea\x91\x9e\x5f\x98\xd3\xa0\xd4\x96\xb3\xb1\xff\x2c\x98\x6e\xfe\xda\xbd\x60\x8e\x01\x8d\x2f\xc3\xdd\x7b\x00\x00\x00\xff\xff\xbb\xda\x3c\xcb\xcd\x01\x00\x00")
+var _configDefaultManager_webhook_patchYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x8e\xcd\x4e\xc3\x40\x0c\x84\xef\x79\x0a\xbf\x40\x44\x22\x2a\x41\xf7\x0a\x0f\xd0\x03\xe2\x6e\x12\xab\x5d\xed\x8f\xad\xb5\x9b\x92\xb7\x47\x11\x5d\xa0\x88\x46\x42\x9d\xd3\x6a\x76\xfc\xcd\xa0\xf8\x57\x2a\xea\x39\x3b\x40\x11\xbd\x9b\xfa\x26\xf8\x3c\x3a\x78\x26\x89\x3c\x27\xca\xd6\x24\x32\x1c\xd1\xd0\x35\x00\x19\x13\x39\x08\x47\x0d\xed\x1e\x8d\x4e\x38\xb7\x09\x33\xee\xa9\x9c\x3f\x55\x70\x20\x07\x3a\xab\x51\x6a\x54\x68\x58\xce\x8c\x92\x44\x34\x5a\xde\x00\xd5\x5d\x34\x70\x36\xf4\x99\x8a\x56\x07\xa0\x3d\xd7\x7c\x93\xab\x84\x8b\xfd\x08\x7e\x86\xbf\x10\x3b\x2e\xe6\xa0\x7f\xec\xba\xee\x22\x52\x67\xbf\x8f\xfa\xcb\x97\xc2\xc6\x03\x47\x07\x2f\x4f\xbb\x75\xec\x76\xb3\xb9\xff\x93\x7a\xa2\xb7\x03\x73\x68\x95\xca\x74\x31\xf6\x9f\x05\xfd\xc3\xb5\xdd\x13\x46\x3f\xa2\xf1\x2d\xf0\xed\x35\x38\x1e\xed\xb0\xca\xfd\x08\x00\x00\xff\xff\x55\x17\x26\x94\x24\x02\x00\x00")
 
 func configDefaultManager_webhook_patchYamlBytes() ([]byte, error) {
 	return bindataRead(
@@ -356,12 +356,12 @@ func configDefaultManager_webhook_patchYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/default/manager_webhook_patch.yaml", size: 461, mode: os.FileMode(420), modTime: time.Unix(1661863673, 0)}
+	info := bindataFileInfo{name: "config/default/manager_webhook_patch.yaml", size: 548, mode: os.FileMode(420), modTime: time.Unix(1664524651, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _configManagerConfigmapYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x91\x41\x6f\xdb\x20\x18\x86\xef\xfc\x8a\x4f\xb9\xe3\xd8\xdd\x61\x11\x37\x62\xb3\xc4\x1a\x81\x8a\x5a\x99\x7a\x42\x24\xfd\xea\x59\x8e\xb1\x65\x88\xab\xfe\xfb\x09\x6d\x9d\xda\x4d\x91\x7a\x02\xc1\xf3\xf0\xbd\xe2\xa5\x94\x12\x37\x75\x47\x9c\x43\x37\x7a\x06\x4b\x41\x9e\x5c\x74\x8c\x00\xf0\x9d\x50\x8d\x3d\x70\xc5\x77\xc2\xd8\x6d\xad\x2a\xcb\xab\xca\x30\x60\xc5\x26\x2f\xf2\x44\x28\x2e\x1f\x9b\xba\x7c\xb0\x42\xf1\xad\x14\x15\x83\x55\x9c\xaf\xb8\x22\x00\xbf\x4f\xac\x14\xbc\x12\xc6\x0a\x29\xca\xa6\xd6\x8a\xc1\xea\xd9\x5d\xc2\x1f\xe2\xa8\x1f\x6d\xa9\x55\x63\xb4\xb4\xf7\x92\x2b\xf1\xef\x94\x3c\x4d\xd9\x0b\x2e\x9b\xbd\xbd\x37\x7a\xfb\x11\xd8\xe4\x9b\x82\x00\x48\xbd\xb3\x52\x1c\x85\x64\x50\xab\x6f\x9a\x00\x1c\x44\x63\x52\xaa\x77\x70\x71\xf7\x35\xcb\xb3\x3c\x2b\x92\x95\x5e\xfd\x21\xb6\x7b\xad\xbf\xdb\x52\x98\xe6\xc1\x56\xb5\x61\xb0\x8e\xc3\xb4\xee\x37\x81\xbe\xe0\xe9\xe7\x38\xf6\x34\xe0\xbc\xe0\xbc\x4e\x4b\xe7\x5b\x7a\xc6\x39\x06\xd2\x77\xfe\x89\x41\x39\xfa\xe7\xae\x3d\xb8\x89\x0c\x18\xdd\xdb\x97\x5d\xdc\x09\x2f\x21\xed\x00\xdc\x34\x65\xfd\xf5\x84\xb3\xc7\x88\x21\xeb\xc6\xf5\x79\x1c\xa6\xd1\xa3\x8f\x0c\xfa\x6b\xe8\x69\xeb\x22\xbe\xb8\x57\x3a\x38\xef\x5a\x9c\x6f\x58\x9d\x0f\xd1\xf9\x33\x7e\x94\x6e\xc0\xde\x0d\x9f\x03\x97\xb7\xc2\x57\x4b\x91\xdd\x65\x5f\x52\x21\xff\xcb\xef\xa2\xa5\xcb\x30\xb9\xbf\x39\xc2\x6b\x88\x38\x90\x5f\x01\x00\x00\xff\xff\xa9\x66\x35\x33\x40\x02\x00\x00")
+var _configManagerConfigmapYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x91\x41\x6f\xdb\x20\x18\x86\xef\xfc\x8a\x4f\xb9\xe3\x98\xed\xb0\x88\x1b\xb1\x59\x62\x8d\x40\x45\xad\x4c\x3d\x21\x92\x7e\xcd\x2c\xc7\xd8\x32\xc4\x55\xff\xfd\x84\xb6\x4e\xed\xa6\x4a\x3b\x81\xe0\x79\xf8\x5e\xf1\x52\x4a\x89\x9f\xba\x23\xce\xb1\x1b\x03\x87\x85\x91\x47\x9f\x3c\x27\x00\x62\x27\x75\xeb\x0e\x42\x8b\x9d\xb4\x6e\xdb\xe8\xda\x89\xba\xb6\x1c\x38\xdb\x94\xac\xcc\x84\x16\xea\xa1\x6d\xaa\x7b\x27\xb5\xd8\x2a\x59\x73\x58\xa5\xf9\x86\x2b\x02\xf0\xeb\xc4\x29\x29\x6a\x69\x9d\x54\xb2\x6a\x1b\xa3\x39\xac\x9e\xfc\x35\xfe\x26\x8e\xe6\xc1\x55\x46\xb7\xd6\x28\x77\xa7\x84\x96\x7f\x4f\x29\xf3\x94\xbd\x14\xaa\xdd\xbb\x3b\x6b\xb6\xef\x81\x4d\xb9\x61\x04\x40\x99\x9d\x53\xf2\x28\x15\x87\x46\x7f\x35\x04\xe0\x20\x5b\x9b\x53\xbd\x81\xd9\xa7\x2f\x45\x59\x94\x05\xcb\x56\x7e\xf5\xbb\xdc\xee\x8d\xf9\xe6\x2a\x69\xdb\x7b\x57\x37\x96\xc3\x3a\x0d\xd3\xba\xdf\x44\xfa\x8c\xa7\x1f\xe3\xd8\xd3\x88\xf3\x82\xf3\x3a\x2f\x5d\xb8\xd0\x33\xce\x29\x92\xbe\x0b\x8f\x1c\xaa\x31\x3c\x75\x97\x83\x9f\xc8\x80\xc9\xbf\x7e\xd9\xd5\x9f\xf0\x1a\xf3\x0e\xc0\x4f\x53\xd1\xdf\x4e\x38\x07\x4c\x18\x8b\x6e\x5c\x9f\xc7\x61\x1a\x03\x86\xc4\xa1\xbf\xc5\x9e\x5e\x7c\xc2\x67\xff\x42\x07\x1f\xfc\x05\xe7\x0f\xac\x2e\xc4\xe4\xc3\x19\xdf\x4b\x1f\xc0\xc1\x0f\xff\x07\x2e\xaf\x85\xaf\x16\x56\x7c\x2e\x58\x2e\xe4\x5f\xf9\x4d\xb4\x7c\x19\x27\xff\x27\x47\x7c\x89\x09\x07\xf2\x33\x00\x00\xff\xff\x90\xc7\x2c\x6b\x40\x02\x00\x00")
 
 func configManagerConfigmapYamlBytes() ([]byte, error) {
 	return bindataRead(
@@ -376,7 +376,7 @@ func configManagerConfigmapYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/configmap.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1663856334, 0)}
+	info := bindataFileInfo{name: "config/manager/configmap.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1664524728, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -396,7 +396,7 @@ func configManagerKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/kustomization.yaml", size: 177, mode: os.FileMode(420), modTime: time.Unix(1663856334, 0)}
+	info := bindataFileInfo{name: "config/manager/kustomization.yaml", size: 177, mode: os.FileMode(420), modTime: time.Unix(1664278064, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -416,12 +416,12 @@ func configManagerManagerYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/manager.yaml", size: 1392, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "config/manager/manager.yaml", size: 1392, mode: os.FileMode(420), modTime: time.Unix(1664383879, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _configManagerServiceYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x90\x4d\x6a\xc3\x30\x10\x85\xf7\x3a\xc5\x5c\x40\xa9\xb3\x6a\xd1\x29\x0a\x85\xee\x27\xd2\xc3\x08\xeb\x0f\xcd\xc4\x4d\x6e\x5f\xe2\xb8\x25\xfd\xa1\x14\x9c\xe5\x8c\xde\xf7\x24\x7d\xdc\xe2\x2b\xba\xc4\x5a\x1c\xcd\x7b\x33\xc5\x12\x1c\xbd\xa0\xcf\xd1\xc3\x64\x28\x07\x56\x76\x86\xa8\x70\x86\xa3\xe9\x28\x93\x1d\x59\xf1\xc6\x67\x7b\x0a\x62\x65\x8d\x5e\x03\xd2\xd8\xc3\x91\x9c\x45\x91\x0d\x51\xe2\x03\x92\x5c\x70\x22\x6e\x6d\x37\x1d\x0f\xe8\x05\x0a\xd9\xc5\xfa\xe0\x6b\x6e\xb5\xa0\xa8\xa3\xdb\x2a\x69\xf0\x17\xa4\xd5\xae\x2b\x6b\x97\xc1\xd1\xfe\x69\x18\x86\x65\xf3\xf1\xa0\x53\x90\x75\x56\xee\x23\xf4\x79\xc9\x5d\xb7\x82\x04\xaf\xb5\xff\xe3\xfe\x2f\xff\xca\x5c\x78\x44\x37\xd6\x5a\xb3\xc5\xcf\xcc\x29\x06\xd6\xda\xef\x65\xe9\x67\xe1\x5f\xae\x1e\xbf\xbb\xfa\xc4\x7f\x31\x76\x7b\xb6\xd5\xdb\x7b\x00\x00\x00\xff\xff\x4e\x9d\xcd\xaa\x54\x02\x00\x00")
+var _configManagerServiceYaml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xc4\xd0\xc1\x4e\xc3\x30\x0c\x06\xe0\x7b\x9e\xc2\x2f\x90\xd1\x9d\x80\x5c\x79\x81\x49\x20\xee\x5e\x6a\x95\xa8\x4d\x1c\xc5\x6e\xd9\xde\x1e\xb5\x2b\xa8\x1b\xd3\x84\x44\xa5\x1d\xed\xf8\x77\x92\x0f\x73\x78\xa7\x22\x81\x93\x83\x61\x6b\xda\x90\x6a\x07\xaf\x54\x86\xe0\xc9\x44\x52\xac\x51\xd1\x19\x80\x84\x91\x1c\xb4\xbd\xb4\xb6\x41\xa5\x4f\x3c\xda\x43\x2d\x56\xe6\xd1\xd3\x80\x64\xf4\xe4\x40\x8e\xa2\x14\x0d\x40\x87\x7b\xea\x64\x8c\x03\x60\xce\x9b\xb6\xdf\x53\x49\xa4\x24\x9b\xc0\x0f\x9e\x63\xe6\x44\x49\x1d\x2c\x57\x49\x26\x3f\x46\x32\x17\x9d\xb3\x76\x2a\x1c\x6c\x9f\xaa\xaa\x9a\x3a\xdf\x0f\x3a\xd4\x32\xd7\x8a\xa5\x21\xdd\x4d\x73\xa7\xae\x50\x47\x5e\xb9\xfc\xe1\xfe\xb3\x7f\x45\x4c\xd8\x50\x31\xd6\x5a\xf3\x1f\x9f\x01\xbb\x50\xa3\x72\x59\x4b\xe9\xf7\xc2\x5b\x56\x8f\x97\x56\x3f\xf1\x2b\x62\xcb\xb3\x7b\xbb\x61\xaf\x1f\x6b\x91\x9d\xed\xba\xa5\xf5\x7c\xa9\x35\x26\xaf\x40\x2d\xda\xb9\xb0\xb2\xe7\xce\xc1\xdb\xcb\x6e\x05\xb7\xaf\x00\x00\x00\xff\xff\x97\x40\x44\x37\x8c\x03\x00\x00")
 
 func configManagerServiceYamlBytes() ([]byte, error) {
 	return bindataRead(
@@ -436,7 +436,7 @@ func configManagerServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/manager/service.yaml", size: 596, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/manager/service.yaml", size: 908, mode: os.FileMode(420), modTime: time.Unix(1664524651, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -456,7 +456,7 @@ func configRbacApi_editor_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/api_editor_role.yaml", size: 368, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/api_editor_role.yaml", size: 368, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -476,7 +476,7 @@ func configRbacApi_viewer_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/api_viewer_role.yaml", size: 325, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/api_viewer_role.yaml", size: 325, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -496,7 +496,7 @@ func configRbacAuth_proxy_client_clusterroleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/auth_proxy_client_clusterrole.yaml", size: 163, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/auth_proxy_client_clusterrole.yaml", size: 163, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -516,7 +516,7 @@ func configRbacAuth_proxy_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/auth_proxy_role.yaml", size: 293, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/auth_proxy_role.yaml", size: 293, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -536,7 +536,7 @@ func configRbacAuth_proxy_role_bindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/auth_proxy_role_binding.yaml", size: 296, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/auth_proxy_role_binding.yaml", size: 296, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -556,7 +556,7 @@ func configRbacAuth_proxy_serviceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/auth_proxy_service.yaml", size: 493, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/auth_proxy_service.yaml", size: 493, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -576,7 +576,7 @@ func configRbacEnvoyfleet_editor_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/envoyfleet_editor_role.yaml", size: 393, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/envoyfleet_editor_role.yaml", size: 393, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -596,7 +596,7 @@ func configRbacEnvoyfleet_manager_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/envoyfleet_manager_role.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/envoyfleet_manager_role.yaml", size: 576, mode: os.FileMode(420), modTime: time.Unix(1663328668, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -616,7 +616,7 @@ func configRbacEnvoyfleet_manager_role_bindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/envoyfleet_manager_role_binding.yaml", size: 322, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/envoyfleet_manager_role_binding.yaml", size: 322, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -636,7 +636,7 @@ func configRbacEnvoyfleet_viewer_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/envoyfleet_viewer_role.yaml", size: 350, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/envoyfleet_viewer_role.yaml", size: 350, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -656,7 +656,7 @@ func configRbacKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/kustomization.yaml", size: 763, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/kustomization.yaml", size: 763, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -676,7 +676,7 @@ func configRbacLeader_election_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/leader_election_role.yaml", size: 489, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/leader_election_role.yaml", size: 489, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -696,7 +696,7 @@ func configRbacLeader_election_role_bindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/leader_election_role_binding.yaml", size: 302, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/leader_election_role_binding.yaml", size: 302, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -716,7 +716,7 @@ func configRbacRoleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/role.yaml", size: 1662, mode: os.FileMode(420), modTime: time.Unix(1662980422, 0)}
+	info := bindataFileInfo{name: "config/rbac/role.yaml", size: 1662, mode: os.FileMode(420), modTime: time.Unix(1664471865, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -736,7 +736,7 @@ func configRbacRole_bindingYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/role_binding.yaml", size: 300, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/role_binding.yaml", size: 300, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -756,7 +756,7 @@ func configRbacService_accountYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/service_account.yaml", size: 95, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/service_account.yaml", size: 95, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -776,7 +776,7 @@ func configRbacStaticroute_editor_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/staticroute_editor_role.yaml", size: 400, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/staticroute_editor_role.yaml", size: 400, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -796,7 +796,7 @@ func configRbacStaticroute_viewer_roleYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/rbac/staticroute_viewer_role.yaml", size: 357, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/rbac/staticroute_viewer_role.yaml", size: 357, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -816,7 +816,7 @@ func configWebhookKustomizationYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/webhook/kustomization.yaml", size: 1332, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/webhook/kustomization.yaml", size: 1332, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -836,7 +836,7 @@ func configWebhookKustomizeconfigYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/webhook/kustomizeconfig.yaml", size: 791, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/webhook/kustomizeconfig.yaml", size: 791, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -856,7 +856,7 @@ func configWebhookManifestsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/webhook/manifests.yaml", size: 2686, mode: os.FileMode(420), modTime: time.Unix(1662980422, 0)}
+	info := bindataFileInfo{name: "config/webhook/manifests.yaml", size: 2686, mode: os.FileMode(420), modTime: time.Unix(1664471872, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -876,7 +876,7 @@ func configWebhookServiceYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "config/webhook/service.yaml", size: 301, mode: os.FileMode(420), modTime: time.Unix(1659656949, 0)}
+	info := bindataFileInfo{name: "config/webhook/service.yaml", size: 301, mode: os.FileMode(420), modTime: time.Unix(1661935780, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -896,7 +896,7 @@ func cmdKuskManifestsApi_serverYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/api_server.yaml", size: 2492, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/api_server.yaml", size: 2492, mode: os.FileMode(420), modTime: time.Unix(1664383879, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -916,7 +916,7 @@ func cmdKuskManifestsApi_server_apiYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/api_server_api.yaml", size: 20891, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/api_server_api.yaml", size: 20891, mode: os.FileMode(420), modTime: time.Unix(1664383879, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -936,7 +936,7 @@ func cmdKuskManifestsDashboardYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 1689, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard.yaml", size: 1689, mode: os.FileMode(420), modTime: time.Unix(1664469661, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -956,7 +956,7 @@ func cmdKuskManifestsDashboard_envoyfleetYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard_envoyfleet.yaml", size: 376, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard_envoyfleet.yaml", size: 376, mode: os.FileMode(420), modTime: time.Unix(1664383879, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -976,7 +976,7 @@ func cmdKuskManifestsDashboard_staticrouteYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard_staticroute.yaml", size: 540, mode: os.FileMode(420), modTime: time.Unix(1664481595, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/dashboard_staticroute.yaml", size: 540, mode: os.FileMode(420), modTime: time.Unix(1664383879, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -996,7 +996,7 @@ func cmdKuskManifestsFleetsYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 387, mode: os.FileMode(420), modTime: time.Unix(1664245009, 0)}
+	info := bindataFileInfo{name: "cmd/kusk/manifests/fleets.yaml", size: 387, mode: os.FileMode(420), modTime: time.Unix(1664278064, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

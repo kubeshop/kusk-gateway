@@ -357,6 +357,73 @@ x-kusk:
 ...
 ```
 
+#### `cloudentity`
+
+##### Deployments
+
+`kubectl apply` the below:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-cloudentity-go-httpbin
+  namespace: kusk-system
+  labels:
+    app: auth-cloudentity-go-httpbin
+spec:
+  selector:
+    matchLabels:
+      app: auth-cloudentity-go-httpbin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auth-cloudentity-go-httpbin
+    spec:
+      containers:
+        - name: auth-cloudentity-go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-cloudentity-go-httpbin
+  namespace: kusk-system
+  labels:
+    app: auth-cloudentity-go-httpbin
+spec:
+  selector:
+    app: auth-cloudentity-go-httpbin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+```
+
+##### Sample
+
+```yaml
+...
+x-kusk:
+...
+  upstream:
+    service:
+      name: auth-cloudentity-go-httpbin
+      namespace: kusk-system
+      port: 80
+  auth:
+    scheme: cloudentity
+    auth-upstream:
+      host:
+        hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
+        port: 9004
+...
+```
+
 #### `oauth2` Sample
 
 The example below ensures the whole API is protected via OAuth2.

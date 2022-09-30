@@ -18,4 +18,6 @@ spec:
             - containerPort: 17000
               name: validator
               protocol: TCP
-
+            - containerPort: 19000
+              name: auth
+              protocol: TCP

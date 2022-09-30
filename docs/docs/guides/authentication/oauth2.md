@@ -9,6 +9,7 @@ Kusk makes it easy to configure OAuth2, using the `auth` option in the `x-kusk` 
 The OAuth2 feature is currently under active development. See [upstream issues](#upstream-issues).
 
 :::
+
 ## Setup Guide
 
 We'll go through step-by-step of configuring OAuth2. In this example we'll be using [Auth0](https://auth0.com/) as OAuth2 provider.

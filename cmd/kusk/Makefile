@@ -64,7 +64,7 @@ install-deps:
 .PHONY: build
 build: install-deps
 	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
-	go generate
+	go generate ./...
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 
 # `build-goreleaser` is just for local testing.
