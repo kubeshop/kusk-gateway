@@ -120,8 +120,8 @@ var ipCmd = &cobra.Command{
 			err := fmt.Errorf("your envoyfleet doesn't have public IP address assigned yet retry or try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
 			reportError(err)
 			return err
-		}
 
+		}
 		fmt.Println(ip)
 		return nil
 	},
