@@ -84,7 +84,6 @@ var ipCmd = &cobra.Command{
 		if len(defaultFleet.Name) == 0 {
 			err := fmt.Errorf("there is no default envoyfleet in your cluster")
 			reportError(err)
-			return err
 		}
 
 		list := &corev1.ServiceList{}
@@ -111,20 +110,16 @@ var ipCmd = &cobra.Command{
 				}
 			}
 		}
-
-		//kubectl port-forward svc/kusk-gateway-dashboard -n kusk-system 8080:80
-		if svc.Spec.Type == "ClusterIP" {
-			err := fmt.Errorf("your envoyfleet doesn't have a Public IP address assigned. Try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
-			reportError(err)
-			return err
-		}
-
 		if ip == "" {
-			err := fmt.Errorf("your envoyfleet doesn't have IP address assigned yet retry or try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
-			reportError(err)
-			return err
+			//kubectl port-forward svc/kusk-gateway-dashboard -n kusk-system 8080:80
+			if svc.Spec.Type == "ClusterIP" {
+				err := fmt.Errorf("your envoyfleet doesn't have IP address assigned. Try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				reportError(err)
+			} else {
+				err := fmt.Errorf("your envoyfleet doesn't have IP address assigned yet retry or try portforwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+				reportError(err)
+			}
 		}
-
 		fmt.Println(ip)
 		return nil
 	},
