@@ -56,6 +56,10 @@ jobs:
           flavor: |
             latest=true
 
+      - name: build-cli
+        working-directory: cmd/kusk
+        run: VERSION=${{ github.sha }} make build
+
       - name: setup-goreleaser-environment-variables
         run: |
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
@@ -72,6 +76,10 @@ jobs:
           build-args: |
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
             VERSION=${{ env.VERSION }}
+
+      - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
+        working-directory: cmd/kusk
+        run: VERSION=${{ env.VERSION }} make manifests
 
       - name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
