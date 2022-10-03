@@ -151,7 +151,7 @@ run: install-deps install-local generate fmt vet ## Run a controller from your h
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	eval $$(minikube docker-env --profile kgw); docker build \
+	docker build \
 		--tag ${MANAGER_IMG} \
 		--tag kusk-gateway:latest \
 		--file ./build/manager/Dockerfile \
