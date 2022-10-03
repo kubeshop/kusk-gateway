@@ -78,6 +78,9 @@ jobs:
             VERSION=${{ env.VERSION }}
 
       - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
         working-directory: cmd/kusk
         run: VERSION=${{ env.VERSION }} make manifests
 
