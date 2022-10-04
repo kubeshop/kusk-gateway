@@ -357,64 +357,14 @@ x-kusk:
 ...
 ```
 
-#### `cloudentity`
+Check the [Custom Upstream auth guide](./guides/authentication/custom-auth-upstream.md) for more details on how to secure your APIs with your own custom auth service. 
 
-##### Deployments
-
-`kubectl apply` the below:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auth-cloudentity-go-httpbin
-  namespace: kusk-system
-  labels:
-    app: auth-cloudentity-go-httpbin
-spec:
-  selector:
-    matchLabels:
-      app: auth-cloudentity-go-httpbin
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: auth-cloudentity-go-httpbin
-    spec:
-      containers:
-        - name: auth-cloudentity-go-httpbin
-          image: docker.io/mccutchen/go-httpbin:v2.4.1
-          ports:
-            - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-cloudentity-go-httpbin
-  namespace: kusk-system
-  labels:
-    app: auth-cloudentity-go-httpbin
-spec:
-  selector:
-    app: auth-cloudentity-go-httpbin
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 8080
-```
-
-##### Sample
+#### `cloudentity` Sample
 
 ```yaml
 ...
 x-kusk:
 ...
-  upstream:
-    service:
-      name: auth-cloudentity-go-httpbin
-      namespace: kusk-system
-      port: 80
   auth:
     scheme: cloudentity
     auth-upstream:
@@ -423,6 +373,8 @@ x-kusk:
         port: 9004
 ...
 ```
+
+For more details on this authorization flow, check [the guide on how to use Cloudentity with Kusk](./guides/authentication/cloudentity.md). 
 
 #### `oauth2` Sample
 
@@ -449,6 +401,8 @@ x-kusk:
         - openid
 ...
 ```
+
+[Check the OAuth guide](./guides/authentication/oauth2.md) for more details on how to set up OAuth for your APIs.
 
 ### **Exposing OpenAPI defintion**
 
