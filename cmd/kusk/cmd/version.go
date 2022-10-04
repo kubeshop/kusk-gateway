@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 
 	return &cobra.Command{
 		Use:   "version",
-		Short: "version for kusk",
+		Short: "version for Kusk",
 		Run: func(*cobra.Command, []string) {
 			fmt.Fprintf(writer, "%s\n", formattedVersion)
 		},
@@ -63,11 +63,11 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 func VersionFormat(version string) string {
 	version = strings.TrimPrefix(version, "v")
 
-	return fmt.Sprintf("kusk version %s\n%s", version, changelogURL(version))
+	return fmt.Sprintf("Kusk version %s\n%s", version, changelogURL(version))
 }
 
 func changelogURL(version string) string {
-	path := "https://github.com/kubeshop/kusk"
+	path := "https://github.com/kubeshop/kusk-gateway"
 	r := regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[\w.]+)?$`)
 	if !r.MatchString(version) {
 		return fmt.Sprintf("%s/releases/latest", path)

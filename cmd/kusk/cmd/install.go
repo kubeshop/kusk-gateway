@@ -78,7 +78,7 @@ var installCmd = &cobra.Command{
 
 	$ kusk cluster install
 
-	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
+	Will install Kusk Gateway, a public (for your APIS) and private (for the Kusk Dashboard and API)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
 	$ kusk install --latest
@@ -112,7 +112,7 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		kuskui.PrintStart("installing kusk...")
+		kuskui.PrintStart("installing Kusk...")
 
 		c, err := utils.GetK8sClient()
 		if err != nil {
@@ -215,7 +215,7 @@ var installCmd = &cobra.Command{
 				return err
 			}
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
-				kuskui.PrintError("failed installing kusk")
+				kuskui.PrintError("failed installing Kusk")
 				reportError(err)
 				return err
 			}

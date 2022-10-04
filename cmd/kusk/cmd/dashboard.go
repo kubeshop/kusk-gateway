@@ -37,8 +37,8 @@ func init() {
 
 var dashboardCmd = &cobra.Command{
 	Use:   "dashboard",
-	Short: "Access the kusk dashboard",
-	Long: `Access the kusk dashboard. kusk dashboard will start a port-forward session on port 8080 to the envoyfleet
+	Short: "Access the Kusk Dashboard",
+	Long: `Access the Kusk Dashboard. Kusk Dashboard will start a port-forward session on port 8080 to the envoyfleet
 serving the dashboard and will open the dashboard in the browser. By default this is kusk-gateway-private-envoy-fleet.kusk-system.
 The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the envoyfleet.
 	`,
