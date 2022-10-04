@@ -517,7 +517,7 @@ spec:
       /services:
         get:
           description: Returns the list of services available in the cluster that are
-            related to kusk-gateway
+            related to Kusk Gateway
           operationId: getServices
           parameters:
           - description: optional filter on namespace
@@ -534,7 +534,7 @@ spec:
                       $ref: '#/components/schemas/ServiceItem'
                     type: array
               description: list of services
-          summary: Get a list of services handled by kusk-gateway
+          summary: Get a list of services handled by Kusk Gateway
           tags:
           - services
       /services/{namespace}/{name}:

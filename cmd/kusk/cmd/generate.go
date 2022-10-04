@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ var generateCmd = &cobra.Command{
 	and leave the rest of the settings as they are.
 
 	You must specify the name of the envoyfleet you wish to use to expose your API. This is because Kusk Gateway could be managing more than one.
-	In the future, we will add the notion of a default envoyfleet which kusk gateway will use when none is specified.
+	In the future, we will add the notion of a default envoyfleet which Kusk Gateway will use when none is specified.
 
 	In case you don't specify envoyfleet name, it will default to kusk-gateway-envoy-fleet.
 	If you do not specify the envoyfleet namespace, it will default to kusk-system.
