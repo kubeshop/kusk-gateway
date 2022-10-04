@@ -34,9 +34,7 @@ We'll go through step-by-step of configuring OAuth2. In this example we'll be us
 
 The example below ensures the whole API is protected via OAuth2, and that the upstream `auth-oauth2-oauth0-authorization-code-grant-go-httpbin` can be only accessed when authenticated and authorized.
 
-**api.yml**:
-
-```yaml
+```yaml title="api.yaml"
 openapi: 3.0.0
 info:
   title: oauth2-example
@@ -81,7 +79,7 @@ You are required to change:
 After that, deploy the API by running: 
 
 ```
-kusk deploy -i api.yaml | kubectl apply -f -
+kusk deploy -i api.yaml
 ```
 
 ### 4. Update EnvoyFleet ConfigMap

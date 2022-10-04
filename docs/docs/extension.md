@@ -14,7 +14,7 @@ This string array property configures the hosts (i.e. `Host` HTTP header) list t
 - *.example.org
 - example.*
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   hosts:
@@ -39,7 +39,7 @@ The `CORS` object sets properties for configuring [CORS](https://developer.mozil
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   cors:
@@ -70,7 +70,7 @@ Options for configuring QoS settings, such as retries and timeouts.
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   qos:
@@ -86,7 +86,7 @@ An optional boolean field that defines whether to enable handling of "Upgrade: w
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   websocket: true
@@ -115,7 +115,7 @@ it to the upstream service.
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   upstream:
@@ -140,7 +140,7 @@ The service object sets the target Kubernetes service to receive traffic. It con
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   upstream:
@@ -164,7 +164,7 @@ Note: `service` and `host` are mutually exclusive since they define the same thi
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   upstream:
@@ -187,7 +187,7 @@ still appended to the URL. If the upstream application doesn't know about this p
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   path:
@@ -214,7 +214,7 @@ Configures where to redirect the request. The redirect and upstream options are 
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   redirect:
@@ -238,7 +238,7 @@ See the [guide on Validation](./guides/validation.md) to learn more about this f
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   validation:
@@ -259,7 +259,7 @@ See the [guide on Mocking](./guides/mocking.md) to learn more about this functio
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   mocking:
@@ -282,7 +282,7 @@ Note: Currently, rate limiting is applied per Envoy pod - if you have more than 
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   rate_limit:
@@ -301,7 +301,7 @@ The cache object contains the following properties to configure HTTP caching:
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
   cache:
@@ -343,7 +343,7 @@ The `auth` object contains the following properties to configure HTTP authentica
 
 #### `basic` Sample
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
 ...
@@ -357,64 +357,14 @@ x-kusk:
 ...
 ```
 
-#### `cloudentity`
+Check the [Custom Upstream auth guide](./guides/authentication/custom-auth-upstream.md) for more details on how to secure your APIs with your own custom auth service. 
 
-##### Deployments
+#### `cloudentity` Sample
 
-`kubectl apply` the below:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auth-cloudentity-go-httpbin
-  namespace: kusk-system
-  labels:
-    app: auth-cloudentity-go-httpbin
-spec:
-  selector:
-    matchLabels:
-      app: auth-cloudentity-go-httpbin
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: auth-cloudentity-go-httpbin
-    spec:
-      containers:
-        - name: auth-cloudentity-go-httpbin
-          image: docker.io/mccutchen/go-httpbin:v2.4.1
-          ports:
-            - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-cloudentity-go-httpbin
-  namespace: kusk-system
-  labels:
-    app: auth-cloudentity-go-httpbin
-spec:
-  selector:
-    app: auth-cloudentity-go-httpbin
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 8080
-```
-
-##### Sample
-
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
 ...
-  upstream:
-    service:
-      name: auth-cloudentity-go-httpbin
-      namespace: kusk-system
-      port: 80
   auth:
     scheme: cloudentity
     auth-upstream:
@@ -424,13 +374,13 @@ x-kusk:
 ...
 ```
 
+For more details on this authorization flow, check [the guide on how to use Cloudentity with Kusk](./guides/authentication/cloudentity.md). 
+
 #### `oauth2` Sample
 
 The example below ensures the whole API is protected via OAuth2.
 
-**api.yml**:
-
-```yaml
+```yaml title="api.yml"
 ...
 x-kusk:
   auth:
@@ -450,13 +400,15 @@ x-kusk:
 ...
 ```
 
+[Check the OAuth guide](./guides/authentication/oauth2.md) for more details on how to set up OAuth for your APIs.
+
 ### **Exposing OpenAPI defintion**
 
 The `openapi-path` field takes a path name and will expose your OpenAPI definition at the defined path.
 
 **Sample:**
 
-```yaml
+```yaml title="openapi.yaml"
 ...
 x-kusk:
  openapi-path: openapi.json
@@ -474,7 +426,7 @@ This boolean property allows you to disable the corresponding path/operation, "h
 When set to true at the top level, all paths will be hidden; you will have to override specific paths/operations with
 `disabled: false` to make those operations visible.
 
-```yaml
+```yaml title="openapi.yaml"
 ...
   /path:
     x-kusk:
