@@ -37,9 +37,7 @@ Now that you've installed Kusk Gateway, let's have a look at how you can use Ope
 
 Kusk Gateway relies on [OpenAPI](https://www.openapis.org/) (f.k.a Swagger) to define your APIs and configure the gateway, all in one place, using the `x-kusk` extension.
 
-Create the file `openapi.yaml`
-
-```yaml
+```yaml title="openapi.yaml"
 openapi: 3.0.0
 info:
   title: simple-api
