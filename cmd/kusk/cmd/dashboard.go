@@ -183,7 +183,6 @@ func getBrowserOpenCmdAndArgs(url string) (string, []string) {
 func localPortCheck(port int) error {
 	ln, err := net.Listen("tcp", ":"+fmt.Sprint(port))
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
