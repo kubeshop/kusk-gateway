@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -124,6 +125,13 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 			wg.Done()
 		}()
 
+		dashboardEnvoyFleetExternalPort, err := getDashboardLocalPort()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err, dashboardEnvoyFleetName)
+			reportError(err)
+			os.Exit(1)
+		}
+
 		go func() {
 			err := k8s.PortForward(k8s.PortForwardRequest{
 				RestConfig: config,
@@ -170,4 +178,25 @@ func getBrowserOpenCmdAndArgs(url string) (string, []string) {
 	args = append(args, url)
 
 	return cmd, args
+}
+
+func localPortCheck(port int) error {
+	ln, err := net.Listen("tcp", ":"+fmt.Sprint(port))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	ln.Close()
+	return nil
+}
+
+func getDashboardLocalPort() (int, error) {
+	for port := 8080; port <= 65535; port++ {
+		if localPortCheck(port) == nil {
+			return port, nil
+		}
+	}
+
+	return 0, fmt.Errorf("no available local port")
 }
