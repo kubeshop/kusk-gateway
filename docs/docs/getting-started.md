@@ -12,14 +12,18 @@ To install Kusk CLI, you will need the following tools available in your termina
 - [helm](https://helm.sh/docs/intro/install/) command-line tool
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
 
+**MacOS**
 ```sh
-# MacOS 
 brew install kubeshop/kusk/kusk
+```
 
-# Linux
+**Linux**
+```sh
 curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
+```
 
-# Windows (go binary needed)
+**Windows (go binary needed)**
+```sh
 go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
