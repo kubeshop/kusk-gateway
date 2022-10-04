@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -10,6 +11,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,14 +56,26 @@ var uninstallCmd = &cobra.Command{
 
 		if proceed {
 			var err error
-			var dir string
-			if dir, err = getManifests(); err != nil {
-				return err
-			}
-
 			c, err := utils.GetK8sClient()
 			if err != nil {
 				reportError(err)
+				return err
+			}
+
+			kuskui.PrintStart("Checking if kusk is already installed...")
+
+			kuskNamespace := &corev1.Namespace{}
+			if err := c.Get(cmd.Context(), client.ObjectKey{Name: "kusk-system"}, kuskNamespace); err != nil {
+				if err.Error() == `namespaces "kusk-system" not found` {
+					kuskui.PrintInfo("Kusk is not installed on cluster.")
+					os.Exit(0)
+				}
+				reportError(err)
+				return err
+			}
+
+			var dir string
+			if dir, err = getManifests(); err != nil {
 				return err
 			}
 
@@ -69,17 +83,19 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), apis, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "API" in version "gateway.kusk.io/v1alpha1"` {
-					kuskui.PrintInfo("Kusk Custom Resource Definition API is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition API is not installed.")
 				} else {
 					return err
 				}
 			}
 
-			kuskui.PrintStart("deleting APIs...")
-			for _, api := range apis.Items {
-				if err := c.Delete(cmd.Context(), &api, &client.DeleteAllOfOptions{}); err != nil {
-					reportError(err)
-					return err
+			if apis != nil && len(apis.Items) > 0 {
+				kuskui.PrintStart("deleting APIs...")
+				for _, api := range apis.Items {
+					if err := c.Delete(cmd.Context(), &api, &client.DeleteAllOfOptions{}); err != nil {
+						reportError(err)
+						return err
+					}
 				}
 			}
 
@@ -87,17 +103,19 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
-					kuskui.PrintInfo("Kusk Custom Resource Definition EnvoyFleet is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition EnvoyFleet is not installed.")
 				} else {
 					return err
 				}
 			}
 
-			kuskui.PrintStart("deleting Envoyfleets...")
-			for _, fleet := range fleets.Items {
-				if err := c.Delete(cmd.Context(), &fleet, &client.DeleteAllOfOptions{}); err != nil {
-					reportError(err)
-					return err
+			if fleets != nil && len(fleets.Items) > 0 {
+				kuskui.PrintStart("deleting Envoyfleets...")
+				for _, fleet := range fleets.Items {
+					if err := c.Delete(cmd.Context(), &fleet, &client.DeleteAllOfOptions{}); err != nil {
+						reportError(err)
+						return err
+					}
 				}
 			}
 
@@ -105,17 +123,19 @@ var uninstallCmd = &cobra.Command{
 			if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
 				reportError(err)
 				if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
-					kuskui.PrintInfo("Kusk Custom Resource Definition StaticRouote is not installed skipping ")
+					kuskui.PrintInfo("Kusk Custom Resource Definition StaticRouote is not installed")
 				} else {
 					return err
 				}
 			}
 
-			kuskui.PrintStart("deleting Staticroutes...")
-			for _, route := range staticRoutes.Items {
-				if err := c.Delete(cmd.Context(), &route, &client.DeleteAllOfOptions{}); err != nil {
-					reportError(err)
-					return err
+			if staticRoutes != nil && len(staticRoutes.Items) > 0 {
+				kuskui.PrintStart("deleting Staticroutes...")
+				for _, route := range staticRoutes.Items {
+					if err := c.Delete(cmd.Context(), &route, &client.DeleteAllOfOptions{}); err != nil {
+						reportError(err)
+						return err
+					}
 				}
 			}
 

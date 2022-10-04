@@ -60,7 +60,7 @@ var rootCmd = &cobra.Command{
 					return
 				}
 
-				ref, err := ghclient.GetLatest()
+				ref, err := ghclient.GetLatest("kusk-gateway")
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
 					return

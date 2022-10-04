@@ -26,7 +26,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -78,26 +80,34 @@ var upgradeCmd = &cobra.Command{
 			reportError(err)
 			return err
 		}
+
+		if len(deployments.Items) == 0 {
+			kuskui.PrintInfo("Kusk is not installed on the cluster")
+			os.Exit(0)
+		}
+
 		for _, deployment := range deployments.Items {
 			switch deployment.Name {
 			case "kusk-gateway-manager":
-				kuskui.PrintStart("kusk is already installed. Upgrading...")
 
-				for _, c := range deployment.Spec.Template.Spec.Containers {
-					if c.Name == "manager" {
-						if err := applyk(dir); err != nil {
-							kuskui.PrintError("❌ failed upgrading kusk", err.Error())
-							reportError(err)
-							return err
+				if !utils.IsUptodate(getVersions(deployment.Name, "manager", deployment)) {
+					kuskui.PrintStart("kusk is already installed. Upgrading...")
+					for _, c := range deployment.Spec.Template.Spec.Containers {
+						if c.Name == "manager" {
+							if err := applyk(dir); err != nil {
+								kuskui.PrintError("❌ failed upgrading kusk", err.Error())
+								reportError(err)
+								return err
+							}
+							kuskui.PrintStart("kusk upgraded")
 						}
-						kuskui.PrintStart("kusk upgraded")
 					}
-				}
 
-				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-					kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
-					reportError(err)
-					return err
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
+						kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
+						reportError(err)
+						return err
+					}
 				}
 
 			case "kusk-gateway-private-envoy-fleet", "kusk-gateway-envoy-fleet":
@@ -115,49 +125,54 @@ var upgradeCmd = &cobra.Command{
 
 				fmt.Println("✅ Envoy Fleets upgraded")
 			case "kusk-gateway-api":
-				fmt.Println("✅ kusk API server is already installed. Upgrading...")
-				if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
-					reportError(err)
-					return err
-				}
-				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
-					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
-					reportError(err)
-					return err
-				}
+				if !utils.IsUptodate(getVersions(deployment.Name, "kusk-gateway-api", deployment)) {
+					fmt.Println("✅ kusk API server is already installed. Upgrading...")
+					if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
+						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						reportError(err)
+						return err
+					}
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						reportError(err)
+						return err
+					}
 
-				if err := applyf(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading API Server", err.Error())
-					reportError(err)
-					return err
+					if err := applyf(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
+						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						reportError(err)
+						return err
+					}
+					kuskui.PrintStart("API Server installed")
 				}
-				kuskui.PrintStart("API Server installed")
 			case "kusk-gateway-dashboard":
-				fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
-				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
-					reportError(err)
-					return err
-				}
-				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
-					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
-					reportError(err)
-					return err
-				}
+				if !utils.IsUptodate(getVersions("kusk-gateway-dashboard", "kusk-gateway-dashboard", deployment)) {
 
-				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
-					reportError(err)
-					return err
-				}
+					fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
+					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
+						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						reportError(err)
+						return err
+					}
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
+						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						reportError(err)
+						return err
+					}
 
-				if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
-					reportError(err)
-					return err
+					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
+						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						reportError(err)
+						return err
+					}
+
+					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
+						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						reportError(err)
+						return err
+					}
+					kuskui.PrintStart("Dashboard upgraded")
 				}
-				kuskui.PrintStart("Dashboard upgraded")
 			}
 		}
 
@@ -171,4 +186,23 @@ func init() {
 	upgradeCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "name of release to update")
 	upgradeCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to upgrade in")
 	upgradeCmd.Flags().BoolVar(&installOnUpgrade, "install", false, "install components if not installed")
+}
+
+func getVersions(component, container string, deployment appsv1.Deployment) (latest string, current string) {
+	githubClient, err := utils.NewGithubClient("", nil)
+	if err != nil {
+		return "", ""
+	}
+
+	latest, err = githubClient.GetLatest(component)
+	if err != nil {
+		return "", ""
+	}
+	for _, c := range deployment.Spec.Template.Spec.Containers {
+		if c.Name == container {
+			current = strings.Split(c.Image, ":")[1]
+			break
+		}
+	}
+	return latest, current
 }

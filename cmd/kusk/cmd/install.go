@@ -264,7 +264,7 @@ func getManifestsFromUrl() (string, error) {
 		return "", err
 	}
 
-	latest, err := githubClient.GetLatest()
+	latest, err := githubClient.GetLatest("kusk-gateway")
 	if err != nil {
 		return "", err
 
