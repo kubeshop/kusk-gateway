@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
 */
 package cmd
 
@@ -76,7 +75,7 @@ var upgradeCmd = &cobra.Command{
 		kuskui.PrintStart("Checking if kusk is already installed...")
 
 		deployments := appsv1.DeploymentList{}
-		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: "kusk-system"}); err != nil {
+		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
 			reportError(err)
 			return err
 		}
@@ -124,15 +123,15 @@ var upgradeCmd = &cobra.Command{
 				}
 
 				fmt.Println("✅ Envoy Fleets upgraded")
-			case "kusk-gateway-api":
-				if !utils.IsUptodate(getVersions(deployment.Name, "kusk-gateway-api", deployment)) {
+			case kuskgatewayapi:
+				if !utils.IsUptodate(getVersions(deployment.Name, kuskgatewayapi, deployment)) {
 					fmt.Println("✅ kusk API server is already installed. Upgrading...")
 					if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
 						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
 						reportError(err)
 						return err
 					}
-					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, time.Duration(5*time.Minute), "instance"); err != nil {
 						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
 						reportError(err)
 						return err
@@ -183,8 +182,8 @@ var upgradeCmd = &cobra.Command{
 func init() {
 	clusterCmd.AddCommand(upgradeCmd)
 
-	upgradeCmd.Flags().StringVar(&releaseName, "name", "kusk-gateway", "name of release to update")
-	upgradeCmd.Flags().StringVar(&releaseNamespace, "namespace", "kusk-system", "namespace to upgrade in")
+	upgradeCmd.Flags().StringVar(&releaseName, "name", kuskgateway, "name of release to update")
+	upgradeCmd.Flags().StringVar(&releaseNamespace, "namespace", kusknamespace, "namespace to upgrade in")
 	upgradeCmd.Flags().BoolVar(&installOnUpgrade, "install", false, "install components if not installed")
 }
 

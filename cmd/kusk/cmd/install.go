@@ -125,7 +125,7 @@ var installCmd = &cobra.Command{
 			reportError(err)
 			return err
 		}
-		namespace := "kusk-system"
+		namespace := kusknamespace
 		name := "kusk-gateway-manager"
 
 		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, 10*time.Minute, "component"); err != nil {
@@ -182,7 +182,7 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, time.Duration(5*time.Minute), "instance"); err != nil {
 				kuskui.PrintError("failed installing API Server")
 				reportError(err)
 				return err
@@ -264,7 +264,7 @@ func getManifestsFromUrl() (string, error) {
 		return "", err
 	}
 
-	latest, err := githubClient.GetLatest("kusk-gateway")
+	latest, err := githubClient.GetLatest(kuskgateway)
 	if err != nil {
 		return "", err
 

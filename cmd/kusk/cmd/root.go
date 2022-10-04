@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,12 @@ import (
 var cfgFile string
 var verbose bool
 
+const (
+	kuskgateway    = "kusk-gateway"
+	kusknamespace  = "kusk-system"
+	kuskgatewayapi = "kusk-gateway-api"
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kusk",
@@ -60,7 +66,7 @@ var rootCmd = &cobra.Command{
 					return
 				}
 
-				ref, err := ghclient.GetLatest("kusk-gateway")
+				ref, err := ghclient.GetLatest(kuskgateway)
 				if err != nil {
 					errors.NewErrorReporter(cmd, err).Report()
 					return

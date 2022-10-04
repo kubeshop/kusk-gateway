@@ -65,8 +65,8 @@ var uninstallCmd = &cobra.Command{
 			kuskui.PrintStart("Checking if kusk is already installed...")
 
 			kuskNamespace := &corev1.Namespace{}
-			if err := c.Get(cmd.Context(), client.ObjectKey{Name: "kusk-system"}, kuskNamespace); err != nil {
-				if err.Error() == `namespaces "kusk-system" not found` {
+			if err := c.Get(cmd.Context(), client.ObjectKey{Name: kusknamespace}, kuskNamespace); err != nil {
+				if err.Error() == fmt.Sprintf(`namespaces "%s" not found`, kusknamespace) {
 					kuskui.PrintInfo("Kusk is not installed on cluster.")
 					os.Exit(0)
 				}
@@ -76,15 +76,16 @@ var uninstallCmd = &cobra.Command{
 
 			var dir string
 			if dir, err = getManifests(); err != nil {
+				reportError(err)
 				return err
 			}
 
 			apis := &kuskv1.APIList{}
 			if err := c.List(cmd.Context(), apis, &client.ListOptions{}); err != nil {
-				reportError(err)
 				if err.Error() == `no matches for kind "API" in version "gateway.kusk.io/v1alpha1"` {
 					kuskui.PrintInfo("Kusk Custom Resource Definition API is not installed.")
 				} else {
+					reportError(err)
 					return err
 				}
 			}
@@ -101,10 +102,10 @@ var uninstallCmd = &cobra.Command{
 
 			fleets := &kuskv1.EnvoyFleetList{}
 			if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
-				reportError(err)
 				if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
 					kuskui.PrintInfo("Kusk Custom Resource Definition EnvoyFleet is not installed.")
 				} else {
+					reportError(err)
 					return err
 				}
 			}
@@ -121,10 +122,10 @@ var uninstallCmd = &cobra.Command{
 
 			staticRoutes := &kuskv1.StaticRouteList{}
 			if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
-				reportError(err)
 				if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
 					kuskui.PrintInfo("Kusk Custom Resource Definition StaticRouote is not installed")
 				} else {
+					reportError(err)
 					return err
 				}
 			}
