@@ -1,6 +1,6 @@
 # `kusk dashboard`
 
-Kusk provides a kusk dashboard command to expose and navigate easily to the Kusk Gateway Dashboard in the browser. `kusk dashboard` will start a port-forward session on port 8080, by default, to the envoyfleet serving the dashboard and will open the dashboard in the browser. By default this is kusk-gateway-private-envoy-fleet.kusk-system.
+Kusk provides a Kusk Dashboard command to expose and navigate easily to the Kusk Gateway Dashboard in the browser. `kusk dashboard` will start a port-forward session on port 8080, by default, to the envoyfleet serving the dashboard and will open the dashboard in the browser. By default this is kusk-gateway-private-envoy-fleet.kusk-system.
 
 If you installed all the components using `kusk install` without changing any of the default values, running `kusk dashboard` will be sufficient to open the dashboard.
 
@@ -19,7 +19,7 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 $ kusk dashboard
 ```
 
-Opens the kusk gateway dashboard in the browser by exposing the default private envoy fleet on port 8080
+Opens the Kusk Dashboard in the browser by exposing the default private envoy fleet on port 8080
 
 ```
 $ kusk dashboard --envoyfleet.namespace=other-namespace --envoyfleet.name=other-envoy-fleet
