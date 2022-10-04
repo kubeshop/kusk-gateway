@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
+      changed_manifests: ${{ steps.check_modified_manifests.outputs.changed_resources }}
       release_version: ${{ steps.check_modified_resources.outputs.release_version }}
 
     steps:
@@ -76,6 +77,23 @@ jobs:
           build-args: |
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
             VERSION=${{ env.VERSION }}
+
+      - name: check-embedded-manifests
+        id: check_modified_manifests
+        run: |
+          CHANGED_FILES_STATS=$(git diff $(git log --tags --no-walk --pretty="format:%D" | sed -nr '3q;s;^.*(tag: )([^,]*).*;\2;p') --stat config/default cmd/kusk/manifests |tail -1)
+          echo "Changed embedded manifest files: ${CHANGED_FILES_STATS}"
+          git diff $(git log --tags --no-walk --pretty="format:%D" | sed -nr '3q;s;^.*(tag: )([^,]*).*;\2;p') --stat config/default cmd/kusk/manifests
+
+          # Pass version (git tag name) to other jobs
+          echo "::set-output name=release_version::${{ github.ref_name }}"
+
+          # This will set job output to changed_resource=true or false
+          if [[ -n "$CHANGED_FILES_STATS" ]]; then
+            echo "::set-output name=changed_resources::true"
+          else
+            echo "::set-output name=changed_resources::false"
+          fi
 
       - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
         with:
