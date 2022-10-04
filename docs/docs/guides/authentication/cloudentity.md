@@ -18,13 +18,23 @@ On Cloudentity's platform, go to **Enforcement > Authorizers**, click **CREATE G
 
 ### 2. Install Cloudentity's authorizer in your cluster
 
-The bottom of the quickstart section contains a `helm` command that installs Cloudentity's authorizer and configures with credentials that are used to pull authorization policies from Cloudentity. 
+The bottom of the quickstart section contains a `helm` command that installs Cloudentity's authorizer and configures it with credentials that are used to pull authorization policies from Cloudentity. 
 
-Be sure to click on "Show" before copying the command. 
+Be sure to click on "Show" before copying the command so it can copy the credentials with the `helm` command.
 
 ![cloudentity helm command](./img/cloudentity-helm-command.png)
 
 Once copied, run the `helm` command in your terminal. 
+
+You can check the installation of the authorizer with: 
+
+```
+kubectl get svc -A
+NAMESPACE     NAME                                           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+...
+cloudentity-authorizer-standalone-authorizer   ClusterIP      10.96.216.20    <none>        9004/TCP                     3h12m
+...
+```
 
 ### 3. Deploy an API with Kusk that uses Cloudentiy's authorizer
 
