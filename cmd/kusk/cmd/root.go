@@ -43,9 +43,10 @@ var cfgFile string
 var verbose bool
 
 const (
-	kuskgateway    = "kusk-gateway"
-	kusknamespace  = "kusk-system"
-	kuskgatewayapi = "kusk-gateway-api"
+	kuskgateway          = "kusk-gateway"
+	kusknamespace        = "kusk-system"
+	kuskgatewayapi       = "kusk-gateway-api"
+	kuskgatewaydashboard = "kusk-gateway-dashboard"
 )
 
 // rootCmd represents the base command when called without any subcommands

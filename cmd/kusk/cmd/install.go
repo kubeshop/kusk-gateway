@@ -214,7 +214,7 @@ var installCmd = &cobra.Command{
 				reportError(err)
 				return err
 			}
-			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, time.Duration(5*time.Minute), "instance"); err != nil {
 				kuskui.PrintError("failed installing kusk")
 				reportError(err)
 				return err

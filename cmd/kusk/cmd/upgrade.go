@@ -144,8 +144,8 @@ var upgradeCmd = &cobra.Command{
 					}
 					kuskui.PrintStart("API Server installed")
 				}
-			case "kusk-gateway-dashboard":
-				if !utils.IsUptodate(getVersions("kusk-gateway-dashboard", "kusk-gateway-dashboard", deployment)) {
+			case kuskgatewaydashboard:
+				if !utils.IsUptodate(getVersions(kuskgatewaydashboard, kuskgatewaydashboard, deployment)) {
 
 					fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
 					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
@@ -153,7 +153,7 @@ var upgradeCmd = &cobra.Command{
 						reportError(err)
 						return err
 					}
-					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, time.Duration(5*time.Minute), "instance"); err != nil {
 						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
 						reportError(err)
 						return err
