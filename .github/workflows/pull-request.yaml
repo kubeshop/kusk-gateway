@@ -38,7 +38,7 @@ jobs:
           cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 
       - name: run_kusk_install
         working-directory: cmd/kusk
-        run: pwd && kusk cluster install
+        run: pwd && ./kusk cluster install
 
       # - name: test-cli
       #   working-directory: cmd/kusk
