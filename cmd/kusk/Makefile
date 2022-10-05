@@ -13,9 +13,10 @@ export PATH := $(shell go env GOPATH)/bin:${PATH}
 
 VERSION ?= $(shell git describe --tags)
 
-LD_FLAGS += -w -s
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${TELEMETRY_TOKEN}'
+# # MBana: Don't strip symbol table and debug info for now.
+# LD_FLAGS += -w -s
 
 IMAGE_TAG ?= ${VERSION}
 MANAGER_IMG ?= kubeshop/kusk-gateway:${IMAGE_TAG}
@@ -54,7 +55,7 @@ lint:
 
 .PHONY: test
 test:
-	go test -count=1 -v -race ./...
+	go test -count=1 ./...
 
 .PHONY: install-deps
 install-deps:
@@ -67,7 +68,7 @@ manifests: install-deps
 
 .PHONY: build
 build: manifests
-	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
+	go build -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 
 # `build-goreleaser` is just for local testing.
 .PHONY: build-goreleaser
