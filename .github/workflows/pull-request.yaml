@@ -29,7 +29,7 @@ jobs:
           go-version: 1.19
       - name: build-cli
         working-directory: cmd/kusk
-        run: VERSION=$(git describe --tags $(git rev-list --tags --max-count=1)) make build
+        run: VERSION=pr-${{ github.event.pull_request.number }} make build
       - name: test-cli
         working-directory: cmd/kusk
         run: make test
@@ -105,18 +105,9 @@ jobs:
           cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
       - name: Deploy
+        working-directory: cmd/kusk
         run: |
-          helm repo add kubeshop https://kubeshop.github.io/helm-charts
-          helm repo update
-          helm upgrade kusk-gateway-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway \
-            --install --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} --create-namespace \
-            --set analytics.enabled=false \
-            --set manager.image.tag=pr-${{ github.event.pull_request.number }} \
-            --set manager.image.pullPolicy=Always \
-            --wait --timeout 3m
-          helm upgrade kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
-            --install --namespace default --set fullnameOverride=default \
-            --wait --timeout 3m
+          ./kusk cluster install
       - name: Run e2e Tests
         run: |
           make check-all
