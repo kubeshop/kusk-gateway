@@ -30,6 +30,16 @@ jobs:
       - name: build-cli
         working-directory: cmd/kusk
         run: VERSION=pr-${{ github.event.pull_request.number }} make build
+      - name: k3s
+        run: |
+          curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE=777 INSTALL_K3S_EXEC="server --no-deploy traefik" sh -
+          cat /etc/rancher/k3s/k3s.yaml
+          mkdir -p ~/.kube
+          cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 
+      - name: run_kusk_install
+        working-directory: cmd/kusk
+        run: pwd && kusk cluster install
+
       # - name: test-cli
       #   working-directory: cmd/kusk
       #   run: make test
@@ -46,15 +56,15 @@ jobs:
       # - name: Compile and Test manager
       #   run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
 
-  build-docker:
-    needs: [compilation-and-unit-test-manager]
-    name: "Build Image"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+  # build-docker:
+  #   needs: [compilation-and-unit-test-manager]
+  #   name: "Build Image"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0
 
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v1
