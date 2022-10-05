@@ -15,5 +15,5 @@ func IsUptodate(latest, current string) bool {
 		return false
 	}
 
-	return latestVersion.Equal(currentVersion) || latestVersion.GreaterThan(currentVersion)
+	return latestVersion.LessThanOrEqual(currentVersion)
 }
