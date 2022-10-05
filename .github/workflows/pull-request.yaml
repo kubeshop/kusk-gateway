@@ -22,17 +22,36 @@ jobs:
     name: Compile and Test Kusk CLI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.19
+
+      - name: setup-environment-variables
+        run: |
+          go version
+          echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
+
       - name: build-cli
         working-directory: cmd/kusk
-        run: VERSION=${{ github.sha }} make build
+        run: |
+          go version
+          VERSION=${{ github.sha }} make build
+
       - name: test-cli
         working-directory: cmd/kusk
-        run: make test
+        run: |
+          go version
+          make test
+
+      - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
+        working-directory: cmd/kusk
+        run: |
+          go version
+          VERSION=${{ env.VERSION }} make manifests
 
   compilation-and-unit-test-manager:
     name: Compile and Test Manager
