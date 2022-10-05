@@ -293,7 +293,7 @@ func init() {
 		&envoyFleetNamespace,
 		"envoyfleet.namespace",
 		"",
-		"kusk-system",
+		kusknamespace,
 		"namespace of envoyfleet to use for this API. Default: kusk-system",
 	)
 

@@ -30,7 +30,7 @@ var (
 func init() {
 	rootCmd.AddCommand(dashboardCmd)
 
-	dashboardCmd.Flags().StringVarP(&dashboardEnvoyFleetNamespace, "envoyfleet.namespace", "", "kusk-system", "kusk gateway dashboard envoy fleet namespace")
+	dashboardCmd.Flags().StringVarP(&dashboardEnvoyFleetNamespace, "envoyfleet.namespace", "", kusknamespace, "kusk gateway dashboard envoy fleet namespace")
 	dashboardCmd.Flags().StringVarP(&dashboardEnvoyFleetName, "envoyfleet.name", "", "kusk-gateway-private-envoy-fleet", "kusk gateway dashboard envoy fleet service name")
 	dashboardCmd.Flags().IntVarP(&dashboardEnvoyFleetExternalPort, "external-port", "", 8080, "external port to access dashboard at")
 }

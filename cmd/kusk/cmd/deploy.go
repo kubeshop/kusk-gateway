@@ -68,7 +68,7 @@ func init() {
 	deployCmd.Flags().StringVar(&namespace, "namespace", "default", "name of the API")
 	deployCmd.Flags().StringVarP(&envoyFleetName, "envoyfleet.name", "", "kusk-gateway-envoy-fleet", "name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet")
 
-	deployCmd.Flags().StringVarP(&envoyFleetNamespace, "envoyfleet.namespace", "", "kusk-system", "namespace of envoyfleet to use for this API. Default: kusk-system")
+	deployCmd.Flags().StringVarP(&envoyFleetNamespace, "envoyfleet.namespace", "", kusknamespace, "namespace of envoyfleet to use for this API. Default: kusk-system")
 
 }
 
