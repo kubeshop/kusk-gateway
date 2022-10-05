@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examples-cors-1-go-httpbin
+  namespace: default
+  labels:
+    app: examples-cors-1-go-httpbin
+spec:
+  selector:
+    matchLabels:
+      app: examples-cors-1-go-httpbin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: examples-cors-1-go-httpbin
+    spec:
+      containers:
+        - name: examples-cors-1-go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: examples-cors-1-go-httpbin
+  namespace: default
+  labels:
+    app: examples-cors-1-go-httpbin
+spec:
+  selector:
+    app: examples-cors-1-go-httpbin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080

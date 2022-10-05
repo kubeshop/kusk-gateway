@@ -169,7 +169,7 @@ require (
 
 require (
 	github.com/clbanning/mxj v1.8.4
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/fsnotify/fsnotify v1.5.4
