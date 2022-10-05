@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
-	defaultName      = "default"
+	defaultNamespace = "kusk-system"
+	defaultName      = "kusk-gateway-envoy-fleet"
 	testName         = "mock-test"
 	testPort         = 82
 )
@@ -54,6 +54,8 @@ func (m *MockCheckSuite) TestEndpoint() {
 	m.NoError(
 		m.Cli.Get(context.TODO(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
 	)
+
+	fmt.Println(envoyFleetSvc.Status.LoadBalancer)
 	resp, err := http.Get(fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP))
 	m.NoError(err)
 

@@ -62,11 +62,14 @@ install-deps:
 	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
 
 manifests: install-deps
+	echo ${MANAGER_IMG}
 	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
-	go generate ./...
+	go-bindata -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/... manifests/...
+	
 
 .PHONY: build
 build: manifests
+	go generate ./...
 	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
 
 # `build-goreleaser` is just for local testing.

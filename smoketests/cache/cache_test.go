@@ -43,8 +43,8 @@ import (
 
 const (
 	testName         = "test-cache"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	defaultName      = "kusk-gateway-envoy-fleet"
+	defaultNamespace = "kusk-system"
 )
 
 type CacheTestSuite struct {
