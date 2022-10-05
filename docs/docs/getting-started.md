@@ -12,14 +12,18 @@ To install Kusk CLI, you will need the following tools available in your termina
 - [helm](https://helm.sh/docs/intro/install/) command-line tool
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) command-line tool
 
+**MacOS**
 ```sh
-# MacOS 
 brew install kubeshop/kusk/kusk
+```
 
-# Linux
+**Linux**
+```sh
 curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
+```
 
-# Windows (go binary needed)
+**Windows (go binary needed)**
+```sh
 go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
@@ -37,9 +41,7 @@ Now that you've installed Kusk Gateway, let's have a look at how you can use Ope
 
 Kusk Gateway relies on [OpenAPI](https://www.openapis.org/) (f.k.a Swagger) to define your APIs and configure the gateway, all in one place, using the `x-kusk` extension.
 
-Create the file `openapi.yaml`
-
-```yaml
+```yaml title="openapi.yaml"
 openapi: 3.0.0
 info:
   title: simple-api

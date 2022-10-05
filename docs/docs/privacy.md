@@ -58,7 +58,7 @@ helm upgrade kusk-gateway kubeshop/kusk-gateway \
 ```
 
 ### Kusk CLI
-Set the following environment variable when running kusk commands
+Set the following environment variable when running Kusk commands
 ```
 export ANALYTICS_ENABLED=false
 ```
