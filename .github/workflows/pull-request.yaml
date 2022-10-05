@@ -39,6 +39,9 @@ jobs:
       - name: run_kusk_install
         working-directory: cmd/kusk
         run: pwd && ./kusk cluster install
+      - name: Run e2e Tests
+        run: |
+          make check-all
 
       # - name: test-cli
       #   working-directory: cmd/kusk
