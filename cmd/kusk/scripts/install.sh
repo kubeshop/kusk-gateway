@@ -55,7 +55,7 @@ _download_url() {
   echo "https://github.com/kubeshop/kusk-gateway/releases/download/${version}/kusk_${trailedVersion}_${os}_${arch}.tar.gz"
 }
 
-echo "Downloading kusk from URL: $(_download_url)"
+echo "Downloading Kusk from URL: $(_download_url)"
 curl --progress-bar --output kusk.tar.gz -SLf "$(_download_url)"
 tar -xzf kusk.tar.gz kusk
 rm kusk.tar.gz
@@ -64,7 +64,7 @@ install_dir=$1
 if [ "$install_dir" != "" ]; then
   mkdir -p "$install_dir"
   mv kusk "${install_dir}/kusk"
-  echo "kusk installed in ${install_dir}"
+  echo "Kusk installed in ${install_dir}"
   exit 0
 fi
 
@@ -75,4 +75,4 @@ else
   mv kusk /usr/local/bin/kusk
 fi
 
-echo "kusk installed in /usr/local/bin/kusk"
+echo "Kusk installed in /usr/local/bin/kusk"

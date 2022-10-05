@@ -39,7 +39,7 @@ var uninstallCmd = &cobra.Command{
 
 		if !confirm {
 			prompt := promptui.Prompt{
-				Label:     "Are you sure you want to uninstall kusk",
+				Label:     "Are you sure you want to uninstall Kusk",
 				IsConfirm: true,
 			}
 			result, err := prompt.Run()

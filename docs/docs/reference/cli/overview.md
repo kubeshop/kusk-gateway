@@ -73,10 +73,10 @@ go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 
 ### **From Source**
 
-Inside of the kusk repository directory:
+Inside of the Kusk repository directory:
 
 ```
-git clone https://github.com/kubeshop/kusk.git
-cd kusk/cmd/kusk
+git clone https://github.com/kubeshop/kusk-gateway.git
+cd cmd/kusk
 go install
 ```

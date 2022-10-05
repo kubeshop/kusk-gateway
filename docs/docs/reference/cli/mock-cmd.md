@@ -57,8 +57,8 @@ paths:
 ```
 
 It has a single path with 3 content types.
-- `application/json` specifies a response schema which kusk will generate a generated response that matches
-- `applications/xml` and `text/plain` specifies examples which kusk will return as is.
+- `application/json` specifies a response schema which Kusk will generate a generated response that matches
+- `applications/xml` and `text/plain` specifies examples which Kusk will return as is.
 
 ### Launch Kusk Mocking Server
 ![kusk mocking example](./img/kusk-mock.gif)

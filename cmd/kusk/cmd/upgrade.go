@@ -46,13 +46,13 @@ var (
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade kusk-gateway, envoy-fleet, api, and dashboard in a single command",
+	Short: "Upgrade Kusk Gateway, envoy-fleet, api, and dashboard in a single command",
 	Long: `
-	Upgrade kusk-gateway, envoy-fleet, api, and dashboard in a single command.
+	Upgrade Kusk Gateway, envoy-fleet, api, and dashboard in a single command.
 
 	$ kusk cluster upgrade
 
-	Will upgrade or install kusk-gateway, the dashboard, api, and envoy-fleets and install them if they are not installed`,
+	Will upgrade or install Kusk Gatewway, Kusk Dashboard, Kusk API, and envoy-fleets and install them if they are not installed`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -72,7 +72,7 @@ var upgradeCmd = &cobra.Command{
 			return err
 		}
 
-		kuskui.PrintStart("Checking if kusk is already installed...")
+		kuskui.PrintStart("Checking if Kusk is already installed...")
 
 		deployments := appsv1.DeploymentList{}
 		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
@@ -88,7 +88,6 @@ var upgradeCmd = &cobra.Command{
 		for _, deployment := range deployments.Items {
 			switch deployment.Name {
 			case "kusk-gateway-manager":
-
 				if !utils.IsUptodate(getVersions(deployment.Name, "manager", deployment)) {
 					kuskui.PrintStart("kusk is already installed. Upgrading...")
 					for _, c := range deployment.Spec.Template.Spec.Containers {

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -36,8 +37,8 @@ func init() {
 
 var dashboardCmd = &cobra.Command{
 	Use:   "dashboard",
-	Short: "Access the kusk dashboard",
-	Long: `Access the kusk dashboard. kusk dashboard will start a port-forward session on port 8080 to the envoyfleet
+	Short: "Access the Kusk Dashboard",
+	Long: `Access the Kusk Dashboard. Kusk Dashboard will start a port-forward session on port 8080 to the envoyfleet
 serving the dashboard and will open the dashboard in the browser. By default this is kusk-gateway-private-envoy-fleet.kusk-system.
 The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the envoyfleet.
 	`,
@@ -124,6 +125,13 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 			wg.Done()
 		}()
 
+		dashboardEnvoyFleetExternalPort, err := getDashboardLocalPort()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err, dashboardEnvoyFleetName)
+			reportError(err)
+			os.Exit(1)
+		}
+
 		go func() {
 			err := k8s.PortForward(k8s.PortForwardRequest{
 				RestConfig: config,
@@ -170,4 +178,24 @@ func getBrowserOpenCmdAndArgs(url string) (string, []string) {
 	args = append(args, url)
 
 	return cmd, args
+}
+
+func localPortCheck(port int) error {
+	ln, err := net.Listen("tcp", ":"+fmt.Sprint(port))
+	if err != nil {
+		return err
+	}
+
+	ln.Close()
+	return nil
+}
+
+func getDashboardLocalPort() (int, error) {
+	for port := 8080; port <= 65535; port++ {
+		if localPortCheck(port) == nil {
+			return port, nil
+		}
+	}
+
+	return 0, fmt.Errorf("no available local port")
 }

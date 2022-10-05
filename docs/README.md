@@ -1,6 +1,6 @@
 # Kusk docs
 
-You can find the docs here: kusk.io/docs
+You can find the docs here: docs.kusk.io
 
 ## Edit the docs
 
