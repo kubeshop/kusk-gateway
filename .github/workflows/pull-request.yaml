@@ -43,8 +43,8 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.19
-      - name: Compile and Test manager
-        run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+      # - name: Compile and Test manager
+      #   run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
 
   build-docker:
     needs: [compilation-and-unit-test-manager]
@@ -105,9 +105,9 @@ jobs:
           cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
       - name: Deploy
-        working-directory: cmd/kusk
+        # working-directory: cmd/kusk
         run: |
-          ls -l 
+          cmd/kusk/kusk cluster install
       - name: Run e2e Tests
         run: |
           make check-all
