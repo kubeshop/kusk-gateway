@@ -101,23 +101,23 @@ jobs:
       #     rm -rf /tmp/.buildx-cache
       #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-  deploy:
-    needs: build-docker
-    name: Deploy
-    runs-on: ubuntu-latest
+  # deploy:
+  #   needs: build-docker
+  #   name: Deploy
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        run: |
-          curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE=777 INSTALL_K3S_EXEC="server --no-deploy traefik" sh -
-          cat /etc/rancher/k3s/k3s.yaml
-          mkdir -p ~/.kube
-          cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+  #   steps:
+  #     - name: Checkout
+  #       run: |
+  #         curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE=777 INSTALL_K3S_EXEC="server --no-deploy traefik" sh -
+  #         cat /etc/rancher/k3s/k3s.yaml
+  #         mkdir -p ~/.kube
+  #         cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 
-      - name: Deploy
-        # working-directory: cmd/kusk
-        run: |
-          cmd/kusk/kusk cluster install
-      - name: Run e2e Tests
-        run: |
-          make check-all
+  #     - name: Deploy
+  #       # working-directory: cmd/kusk
+  #       run: |
+  #         cmd/kusk/kusk cluster install
+  #     - name: Run e2e Tests
+  #       run: |
+  #         make check-all
