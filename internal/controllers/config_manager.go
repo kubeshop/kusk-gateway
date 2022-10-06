@@ -54,15 +54,13 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	EnvoyManager *manager.EnvoyConfigManager
-	Validator    validation.ValidationUpdater
-	m            sync.Mutex
-
+	Scheme             *runtime.Scheme
+	EnvoyManager       *manager.EnvoyConfigManager
+	Validator          validation.ValidationUpdater
+	m                  sync.Mutex
 	WatchedSecretsChan chan *v1.Secret
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
-
-	OpenApiParser spec.Parser
+	OpenApiParser      spec.Parser
 }
 
 var (
@@ -71,7 +69,6 @@ var (
 
 // UpdateConfiguration is the main method to gather all routing configs and to create and apply Envoy config
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetID gateway.EnvoyFleetID) error {
-
 	l := configManagerLogger
 	fleetIDstr := fleetID.String()
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
@@ -114,7 +111,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name); err != nil {
+		kubernetesClient := c.Client
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name, kubernetesClient); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)

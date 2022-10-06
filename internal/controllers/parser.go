@@ -40,6 +40,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/auth"
@@ -83,6 +84,7 @@ func UpdateConfigFromAPIOpts(
 	httpConnectionManagerBuilder *config.HCMBuilder,
 	clBuilder *cloudentity.Builder,
 	name string,
+	kubernetesClient client.Client,
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromAPIOpts")
 
@@ -160,6 +162,7 @@ func UpdateConfigFromAPIOpts(
 					method,
 					clBuilder,
 					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+					kubernetesClient,
 				)
 
 				err := auth.ParseAuthOptions(finalOpts, arguments)

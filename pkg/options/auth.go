@@ -23,6 +23,8 @@
 package options
 
 import (
+	"fmt"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
@@ -36,14 +38,15 @@ const (
 // AuthOptions example:
 //
 // x-kusk:
-//   ...
-//   auth:
-//     scheme: basic
-//     auth-upstream:
-//       path_prefix: /login # optional
-//       host:
-//         hostname: example.com
-//         port: 80
+//
+//	...
+//	auth:
+//	  scheme: basic
+//	  auth-upstream:
+//	    path_prefix: /login # optional
+//	    host:
+//	      hostname: example.com
+//	      port: 80
 type AuthOptions struct {
 	// "basic", "cloudentity" "oauth2".
 	// REQUIRED.
@@ -151,12 +154,12 @@ func (o OAuth2) String() string {
 
 func (o OAuth2) Validate() error {
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.TokenEndpoint, validation.Required),         // TODO(MBana): Note sure if using `is.URL` is good idea or not so I'm leaving it out.
-		validation.Field(&o.AuthorizationEndpoint, validation.Required), // TODO(MBana): Note sure if using `is.URL` is good idea or not so I'm leaving it out.
-		validation.Field(&o.Credentials, validation.Required),           // TODO(MBana): Note sure if using `is.URL` is good idea or not so I'm leaving it out.
-		validation.Field(&o.RedirectURI, validation.Required),           // TODO(MBana): Note sure if using `is.RequestURI` is good idea or not so I'm leaving it out.
-		validation.Field(&o.RedirectPathMatcher, validation.Required),   // TODO(MBana): Note sure if using `is.RequestURI` is good idea or not so I'm leaving it out.
-		validation.Field(&o.SignoutPath, validation.Required),           // TODO(MBana): Note sure if using `is.RequestURI` is good idea or not so I'm leaving it out.
+		validation.Field(&o.TokenEndpoint, validation.Required),
+		validation.Field(&o.AuthorizationEndpoint, validation.Required),
+		validation.Field(&o.Credentials, validation.Required),
+		validation.Field(&o.RedirectURI, validation.Required),
+		validation.Field(&o.RedirectPathMatcher, validation.Required),
+		validation.Field(&o.SignoutPath, validation.Required),
 		validation.Field(&o.ForwardBearerToken, validation.Required),
 	)
 }
@@ -164,22 +167,55 @@ func (o OAuth2) Validate() error {
 type Credentials struct {
 	// REQUIRED.
 	ClientID string `json:"client_id,omitempty" yaml:"client_id,omitempty"`
-	// REQUIRED.
-	ClientSecret string `json:"client_secret,omitempty" yaml:"client_secret,omitempty"`
-	// REQUIRED.
-	TokenSecret string `json:"token_secret,omitempty" yaml:"token_secret,omitempty"`
-	// REQUIRED.
+	// REQUIRED, if `client_secret_ref` is not set, i.e., mutually exclusive with `client_secret_ref`.
+	ClientSecret *string `json:"client_secret,omitempty" yaml:"client_secret,omitempty"`
+	// REQUIRED, if `client_secret` is not set, i.e., mutually exclusive with `client_secret`.
+	ClientSecretRef *ClientSecretRef `json:"client_secret_ref,omitempty" yaml:"client_secret_ref,omitempty"`
+	// OPTIONAL.
 	HmacSecret string `json:"hmac_secret,omitempty" yaml:"hmac_secret,omitempty"`
 	// OPTIONAL.
 	CookieNames CookieNames `json:"cookie_names,omitempty" yaml:"cookie_names,omitempty"`
 }
 
+func (o Credentials) String() string {
+	return ToCompactJSON(o)
+}
+
 func (o Credentials) Validate() error {
+	// You cannot specify both `client_secret_ref` and `client_secret`. An error is generated if both are specified.
+	if o.ClientSecret != nil && o.ClientSecretRef != nil {
+		return fmt.Errorf("oauth2: You cannot specify both `client_secret_ref` and `client_secret`, the options are mutually exclusive")
+	}
+
+	if o.ClientSecret != nil {
+		return validation.ValidateStruct(&o,
+			validation.Field(&o.ClientID, validation.Required),
+			validation.Field(&o.ClientSecret, validation.Required),
+		)
+	}
+
+	// o.ClientSecretRef != nil
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.ClientID),
-		validation.Field(&o.ClientSecret),
-	// 	validation.Field(&o.TokenSecret),
-	// 	validation.Field(&o.HmacSecret),
+		validation.Field(&o.ClientID, validation.Required),
+		validation.Field(&o.ClientSecretRef, validation.Required),
+	)
+}
+
+type ClientSecretRef struct {
+	// REQUIRED.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// REQUIRED.
+	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+}
+
+func (o ClientSecretRef) String() string {
+	return ToCompactJSON(o)
+}
+
+func (o ClientSecretRef) Validate() error {
+	return validation.ValidateStruct(&o,
+		validation.Field(&o.Name, validation.Required),
+		validation.Field(&o.Namespace, validation.Required),
 	)
 }
 
