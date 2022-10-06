@@ -9,13 +9,19 @@ export default function CopyButton({ code, className }) {
   const copyTimeout = useRef(undefined);
   const handleCopyCode = useCallback(() => {
     if (code === "brew install kubeshop/kusk/kusk") {
-      console.log("MacOS analytics trigger");
+      window.dataLayer.push({
+        installationPlatform: "MacOS"
+      })
     }
     if (code === "curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash") {
-      console.log("Linux analytics trigger");
+      window.dataLayer.push({
+        installationPlatform: "Linux"
+      })
     }
     if (code === "go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest") {
-      console.log("Windows analytics trigger");
+      window.dataLayer.push({
+        installationPlatform: "Windows"
+      })
     }
     copy(code);
     setIsCopied(true);
