@@ -114,9 +114,8 @@ func (t *AuthOAuth2TestSuite) TestUUIDPathReturnsARedirect() {
 	t.Contains(redirect.String(), redirectExpected)
 }
 
-func (t *AuthOAuth2TestSuite) TestRootPathReturnsARedirect() {
-	// Calling `/` should return the below:
-	redirectExpected := `https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/authorize?client_id=upRN78W8GzV4TwFRp0ekZfLx2UnqJJs8&scope=openid&response_type=code`
+func (t *AuthOAuth2TestSuite) TestOAuth2IsDisabledOnRootPath() {
+	// Calling `/` should be fine even if OAuth2 is configured as the root path is un-protected.
 
 	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
 	url := fmt.Sprintf("http://%s/", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
@@ -127,15 +126,11 @@ func (t *AuthOAuth2TestSuite) TestRootPathReturnsARedirect() {
 	client := makeHTTPClient()
 	response, err := client.Do(request)
 	t.NoError(err)
-	t.Equal(http.StatusFound, response.StatusCode)
+	t.Equal(http.StatusOK, response.StatusCode)
 
 	defer func() {
 		t.NoError(response.Body.Close())
 	}()
-
-	redirect, err := response.Location()
-	t.NoError(err)
-	t.Contains(redirect.String(), redirectExpected)
 }
 
 func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {

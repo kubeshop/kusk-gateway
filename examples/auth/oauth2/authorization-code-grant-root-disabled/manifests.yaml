@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+  namespace: default
+  labels:
+    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+spec:
+  selector:
+    matchLabels:
+      app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+    spec:
+      containers:
+        - name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+  namespace: default
+  labels:
+    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+spec:
+  selector:
+    app: auth-oauth2-oauth0-authorization-code-grant-go-httpbin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
