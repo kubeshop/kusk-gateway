@@ -26,7 +26,10 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/cmd"
 )
 
-//go:generate go-bindata -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/... manifests/...
+// `-modtime 1` is a hack to prevent `go-bindata` from generating file modifications times each time it is run and hence causing an update to `cmd/kusk/cmd/manifest_data.go`.
+// We don't want this to happen.
+
+//go:generate go-bindata -modtime 1 -prefix "../../" -o cmd/manifest_data.go -pkg=cmd -ignore=debug/ -ignore=local/ -ignore=prometheus/ -ignore=samples/ ../../config/... manifests/...
 func main() {
 	cmd.Execute()
 }
