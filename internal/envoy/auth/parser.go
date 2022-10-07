@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
@@ -48,6 +49,7 @@ type parseAuthOptionsArguments struct {
 	Method                       string
 	CloudEntityBuilder           *cloudentity.Builder
 	GenerateClusterName          generateClusterNameFunc
+	KubernetesClient             client.Client
 }
 
 func NewParseAuthOptionsArguments(
@@ -57,7 +59,9 @@ func NewParseAuthOptionsArguments(
 	name string, routePathstring,
 	method string,
 	cloudEntityBuilder *cloudentity.Builder,
-	generateClusterName generateClusterNameFunc) *parseAuthOptionsArguments {
+	generateClusterName generateClusterNameFunc,
+	kubernetesClient client.Client,
+) *parseAuthOptionsArguments {
 	return &parseAuthOptionsArguments{
 		Logger:                       logger,
 		EnvoyConfiguration:           envoyConfiguration,
@@ -67,6 +71,7 @@ func NewParseAuthOptionsArguments(
 		Method:                       method,
 		CloudEntityBuilder:           cloudEntityBuilder,
 		GenerateClusterName:          generateClusterName,
+		KubernetesClient:             kubernetesClient,
 	}
 }
 
