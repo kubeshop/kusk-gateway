@@ -54,15 +54,26 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	EnvoyManager *manager.EnvoyConfigManager
-	Validator    validation.ValidationUpdater
-	m            sync.Mutex
-
+	Scheme             *runtime.Scheme
+	EnvoyManager       *manager.EnvoyConfigManager
+	Validator          validation.ValidationUpdater
 	WatchedSecretsChan chan *v1.Secret
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
+	OpenApiParser      spec.Parser
+	m                  *sync.Mutex
+}
 
-	OpenApiParser spec.Parser
+func NewKubeEnvoyConfigManager(client client.Client, scheme *runtime.Scheme, envoyManager *manager.EnvoyConfigManager, validator validation.ValidationUpdater, watchedSecretsChan chan *v1.Secret, secretToEnvoyFleet map[string]gateway.EnvoyFleetID, OpenApiParser spec.Parser) *KubeEnvoyConfigManager {
+	return &KubeEnvoyConfigManager{
+		Client:             client,
+		Scheme:             scheme,
+		EnvoyManager:       envoyManager,
+		Validator:          validator,
+		WatchedSecretsChan: watchedSecretsChan,
+		SecretToEnvoyFleet: secretToEnvoyFleet,
+		OpenApiParser:      OpenApiParser,
+		m:                  &sync.Mutex{},
+	}
 }
 
 var (
@@ -71,7 +82,6 @@ var (
 
 // UpdateConfiguration is the main method to gather all routing configs and to create and apply Envoy config
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetID gateway.EnvoyFleetID) error {
-
 	l := configManagerLogger
 	fleetIDstr := fleetID.String()
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
@@ -82,7 +92,8 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	l.Info("Started updating configuration", "fleet", fleetIDstr)
 	defer l.Info("Finished updating configuration", "fleet", fleetIDstr)
 
-	envoyConfig := config.New()
+	envoyConfig := config.NewEnvoyConfiguration(ctrl.Log)
+
 	// fetch all APIs and Static Routes to rebuild Envoy configuration
 	l.Info("Getting APIs for the fleet", "fleet", fleetIDstr)
 

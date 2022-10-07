@@ -78,7 +78,7 @@ spec:
     # The output example:
     # "[2021-12-15T16:50:50.217Z]" "GET" "/" "200" "1"
     text_template: |
-      "[%START_TIME%]" "%REQ(:METHOD)%" "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "%RESPONSE_CODE%" "%DURATION%"
+      "[%START_TIME%]" "%REQ(:scheme)%" "%REQ(:METHOD)%" "%REQ(X-FORWARDED-PROTO)%://%REQ(:AUTHORITY)%%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "%RESPONSE_CODE%" %BYTES_SENT% %DURATION% %UPSTREAM_HOST% %REQ(X-ENVOY-IP-TAGS)%"
     # Json format fields order isn't preserved
     # The output example:
     # {"start_time":"2021-12-15T16:46:52.135Z","path":"/","response_code":200,"method":"GET","duration":1}

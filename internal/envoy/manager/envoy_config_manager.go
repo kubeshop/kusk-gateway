@@ -91,11 +91,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, server)
 	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, server)
 	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, server)
-
 	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, server)
-	// TODO(MBana): Not too sure about this one, but I'm leaving it as a reference that an unimplemented SDS could be used.
-	// secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, &secretservice.UnimplementedSecretDiscoveryServiceServer{})
-
 	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, server)
 }
 

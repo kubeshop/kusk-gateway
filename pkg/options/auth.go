@@ -168,7 +168,8 @@ type Credentials struct {
 	ClientSecret string `json:"client_secret,omitempty" yaml:"client_secret,omitempty"`
 	// REQUIRED.
 	TokenSecret string `json:"token_secret,omitempty" yaml:"token_secret,omitempty"`
-	// REQUIRED.
+	// If not specified, `kusk-gateway` generates the `hmac_secret`.
+	// OPTIONAL.
 	HmacSecret string `json:"hmac_secret,omitempty" yaml:"hmac_secret,omitempty"`
 	// OPTIONAL.
 	CookieNames CookieNames `json:"cookie_names,omitempty" yaml:"cookie_names,omitempty"`
@@ -186,10 +187,13 @@ func (o Credentials) Validate() error {
 // CookieNames - By default, OAuth2 filter sets some cookies with the following names: BearerToken, OauthHMAC, and OauthExpires. These cookie names can be customized by setting cookie_names.
 type CookieNames struct {
 	// Defaults to BearerToken.
+	// OPTIONAL.
 	BearerToken string `json:"bearer_token,omitempty" yaml:"bearer_token,omitempty"`
 	// Defaults to OauthHMAC.
+	// OPTIONAL.
 	OauthHMAC string `json:"oauth_hmac,omitempty" yaml:"oauth_hmac,omitempty"`
 	// Defaults to OauthExpires.
+	// OPTIONAL.
 	ExpiresOauth string `json:"oauth_expires,omitempty" yaml:"oauth_expires,omitempty"`
 }
 

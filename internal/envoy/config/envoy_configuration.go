@@ -1,42 +1,44 @@
-/*
-MIT License
+// MIT License
+//
+// Copyright (c) 2022 Kubeshop
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-Copyright (c) 2022 Kubeshop
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
 package config
 
 import (
 	"fmt"
 	"sort"
 
+	"github.com/davecgh/go-spew/spew"
 	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	cacheTypes "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-
+	envoy_cache_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	google_uuid "github.com/google/uuid"
+
+	"github.com/go-logr/logr"
 	"github.com/gofrs/uuid"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -44,6 +46,14 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 )
 
+// type SecretType string
+
+// const (
+// 	TokenSecretType SecretType = "token_secret"
+// 	HMACSecretType  SecretType = "hmac_secret"
+// )
+
+// EnvoyConfiguration
 // Simplified objects hierarchy configuration as for the static Envoy config
 // Top level objects are "listeners" and "clusters"
 //
@@ -74,18 +84,21 @@ import (
 //                address: backendsvc1-dns-name
 //                port_value: backendsvc1-port
 //
-
 type EnvoyConfiguration struct {
 	// vhosts maps vhost domain name or domain pattern to the list of vhosts assigned to the listener
 	vHosts   map[string]*types.VirtualHost
 	clusters map[string]*cluster.Cluster
 	listener *listener.Listener
+	secrets  map[string]*envoy_extensions_transport_sockets_tls_v3.Secret
+	logger   logr.Logger
 }
 
-func New() *EnvoyConfiguration {
+func NewEnvoyConfiguration(logger logr.Logger) *EnvoyConfiguration {
 	return &EnvoyConfiguration{
 		clusters: make(map[string]*cluster.Cluster),
 		vHosts:   make(map[string]*types.VirtualHost),
+		secrets:  map[string]*envoy_extensions_transport_sockets_tls_v3.Secret{},
+		logger:   logger.WithName("EnvoyConfiguration"),
 	}
 }
 
@@ -156,9 +169,9 @@ func (e *EnvoyConfiguration) AddClusterWithTLS(clusterName, upstreamServiceHost 
 		return fmt.Errorf("EnvoyConfiguration.AddClusterWithTLS: failed on `anypb.New(upstreamTlsContext)`, %w", err)
 	}
 
-	transportSocket := &core.TransportSocket{
+	transportSocket := &envoy_config_core_v3.TransportSocket{
 		Name: "envoy.transport_sockets.tls",
-		ConfigType: &core.TransportSocket_TypedConfig{
+		ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
 			TypedConfig: anyUpstreamTlsContext,
 		},
 	}
@@ -171,7 +184,7 @@ func (e *EnvoyConfiguration) AddClusterWithTLS(clusterName, upstreamServiceHost 
 		LoadAssignment:       loadAssignment,
 		DnsLookupFamily:      cluster.Cluster_V4_ONLY,
 		TransportSocket:      transportSocket,
-		UpstreamHttpProtocolOptions: &core.UpstreamHttpProtocolOptions{
+		UpstreamHttpProtocolOptions: &envoy_config_core_v3.UpstreamHttpProtocolOptions{
 			// Set transport socket `SNI <https://en.wikipedia.org/wiki/Server_Name_Indication>`_ for new
 			// upstream connections based on the downstream HTTP host/authority header or any other arbitrary
 			// header when :ref:`override_auto_sni_header <envoy_v3_api_field_config.core.v3.UpstreamHttpProtocolOptions.override_auto_sni_header>`
@@ -197,12 +210,12 @@ func createLoadAssignment(clusterName string, upstreamServiceHost string, upstre
 				{
 					HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 						Endpoint: &endpoint.Endpoint{
-							Address: &core.Address{
-								Address: &core.Address_SocketAddress{
-									SocketAddress: &core.SocketAddress{
-										Protocol: core.SocketAddress_TCP,
+							Address: &envoy_config_core_v3.Address{
+								Address: &envoy_config_core_v3.Address_SocketAddress{
+									SocketAddress: &envoy_config_core_v3.SocketAddress{
+										Protocol: envoy_config_core_v3.SocketAddress_TCP,
 										Address:  upstreamServiceHost,
-										PortSpecifier: &core.SocketAddress_PortValue{
+										PortSpecifier: &envoy_config_core_v3.SocketAddress_PortValue{
 											PortValue: upstreamServicePort,
 										},
 									},
@@ -215,26 +228,56 @@ func createLoadAssignment(clusterName string, upstreamServiceHost string, upstre
 		}},
 	}
 
+	// TODO: Should be calling `ValidateAll()` here.
+	// if err := upstreamEndpoint.ValidateAll(); err != nil {
+	// 	return fmt.Errorf("EnvoyConfiguration.createLoadAssignment: failed to validate clusterLoadAssignment=%v, %w", upstreamEndpoint, err)
+	// }
+
 	return upstreamEndpoint
 }
 
 func (e *EnvoyConfiguration) GenerateSnapshot() (*cache.Snapshot, error) {
-	var clusters []cacheTypes.Resource
-	for _, c := range e.clusters {
-		clusters = append(clusters, c)
+	if err := e.listener.ValidateAll(); err != nil {
+		return nil, fmt.Errorf("EnvoyConfiguration.GenerateSnapshot: failed to validate listener=%v, %w", e.listener, err)
 	}
+
+	clusters := []envoy_cache_types.Resource{}
+	for _, cluster := range e.clusters {
+		if err := cluster.ValidateAll(); err != nil {
+			return nil, fmt.Errorf("EnvoyConfiguration.GenerateSnapshot: failed to validate cluster=%v, %w", cluster, err)
+		}
+		clusters = append(clusters, cluster)
+	}
+
+	secrets := []*envoy_extensions_transport_sockets_tls_v3.Secret{}
+	for _, secret := range e.secrets {
+		if err := secret.ValidateAll(); err != nil {
+			return nil, fmt.Errorf("EnvoyConfiguration.GenerateSnapshot: failed to validate secret=%v, %w", secret, err)
+		}
+		secrets = append(secrets, secret)
+	}
+
 	// We're using uuid V1 to provide time sortable snapshot version
-	snapshotVersion, _ := uuid.NewV1()
-	snap, err := cache.NewSnapshot(snapshotVersion.String(),
-		map[resource.Type][]cacheTypes.Resource{
-			resource.ClusterType:  clusters,
-			resource.RouteType:    {e.makeRouteConfiguration(RouteName)},
-			resource.ListenerType: {e.listener},
+	snapshotVersion, err := uuid.NewV1()
+	if err != nil {
+		return nil, fmt.Errorf("EnvoyConfiguration.GenerateSnapshot: failed on uuid.NewV1, %w", err)
+	}
+
+	newVersion := snapshotVersion.String()
+	e.logger.Info("GenerateSnapshot: generating new snapshot", "newVersion", newVersion)
+
+	snap, err := cache.NewSnapshot(newVersion,
+		map[envoy_resource_v3.Type][]envoy_cache_types.Resource{
+			envoy_resource_v3.ClusterType:  clusters,
+			envoy_resource_v3.RouteType:    {e.makeRouteConfiguration(RouteName)},
+			envoy_resource_v3.ListenerType: {e.listener},
+			envoy_resource_v3.SecretType:   asResources(secrets),
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("EnvoyConfiguration.GenerateSnapshot: failed to create new snapshot, newVersion=%v, %w", newVersion, err)
 	}
+
 	return snap, snap.Consistent()
 }
 
@@ -248,6 +291,90 @@ func (e *EnvoyConfiguration) makeRouteConfiguration(routeConfigName string) *rou
 		Name:         routeConfigName,
 		VirtualHosts: vhosts,
 	}
+}
+
+// AddGenericSecretString
+// Add a generic secrets as a string. This should be used to add the `token_secret`, also known as `TokenSecretType`.
+func (e *EnvoyConfiguration) AddGenericSecretString(inlineString string) (string, error) {
+	const SecretType = types.TokenSecretType
+
+	name, err := e.generateSecretName(SecretType)
+	if err != nil {
+		return "", fmt.Errorf("EnvoyConfiguration.AddGenericSecretBytes: failed to generate %q name, %w", SecretType, err)
+	}
+	secret := &envoy_extensions_transport_sockets_tls_v3.Secret{
+		Name: name,
+		Type: &envoy_extensions_transport_sockets_tls_v3.Secret_GenericSecret{
+			GenericSecret: &envoy_extensions_transport_sockets_tls_v3.GenericSecret{
+				Secret: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: inlineString,
+					},
+				},
+			},
+		},
+	}
+	return e.addGenericSecret(SecretType, secret)
+}
+
+// AddGenericSecretBytes
+// Add a generic secrets as a string. This should be used to add the `hmac_secret`, also known as `HMACSecretType`.
+func (e *EnvoyConfiguration) AddGenericSecretBytes(inlineBytes []byte) (string, error) {
+	const SecretType = types.HMACSecretType
+
+	name, err := e.generateSecretName(SecretType)
+	if err != nil {
+		return "", fmt.Errorf("EnvoyConfiguration.AddGenericSecretBytes: failed to generate %q name, %w", SecretType, err)
+	}
+	secret := &envoy_extensions_transport_sockets_tls_v3.Secret{
+		Name: name,
+		Type: &envoy_extensions_transport_sockets_tls_v3.Secret_GenericSecret{
+			GenericSecret: &envoy_extensions_transport_sockets_tls_v3.GenericSecret{
+				Secret: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
+						InlineBytes: inlineBytes,
+					},
+				},
+			},
+		},
+	}
+	return e.addGenericSecret(SecretType, secret)
+}
+
+// addGenericSecret
+// The `name` field in the secret along with a uuid-v4 is used as the key to value in the map.
+func (e *EnvoyConfiguration) addGenericSecret(secretType types.SecretType, secret *envoy_extensions_transport_sockets_tls_v3.Secret) (string, error) {
+	if secret == nil {
+		return "", fmt.Errorf("EnvoyConfiguration.addGenericSecret: %q is nil", secretType)
+	}
+
+	if err := secret.ValidateAll(); err != nil {
+		return "", fmt.Errorf("EnvoyConfiguration.addGenericSecret: %q failed validation %v, %w", secretType, spew.Sprint(secret), err)
+	}
+
+	key := secret.Name
+	e.secrets[key] = secret
+	e.logger.Info("AddClientSecret: added secret", "key", key, "secret", spew.Sprint(secret), "secretType", secretType)
+
+	return key, nil
+}
+
+// addGenericSecret
+// The `name` field in the secret along with a uuid-v4 is used as the key to value in the map.
+func (e *EnvoyConfiguration) generateSecretName(secretType types.SecretType) (string, error) {
+	uuid, err := google_uuid.NewRandom()
+	if err != nil {
+		return "", fmt.Errorf("EnvoyConfiguration.generateSecretName: failed to get UUID for %q, %w", secretType, err)
+	}
+
+	keyPrefix := ""
+	if secretType == types.TokenSecretType {
+		keyPrefix = "token-secret"
+	} else if secretType == types.HMACSecretType {
+		keyPrefix = "hmac-secret"
+	}
+
+	return fmt.Sprintf("%s-%s", keyPrefix, uuid.String()), nil
 }
 
 // sortRoutesByPathMatcher creates route list ordered by:

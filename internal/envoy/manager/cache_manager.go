@@ -44,7 +44,7 @@ type cacheManager struct {
 func NewCacheManager(snapshotCache cache_v3.SnapshotCache, logger logr.Logger) *cacheManager {
 	return &cacheManager{
 		SnapshotCache: snapshotCache,
-		fleetSnapshot: make(map[string]*cache_v3.Snapshot),
+		fleetSnapshot: map[string]*cache_v3.Snapshot{},
 		mu:            sync.RWMutex{},
 		logger:        logger.WithName("CacheManager"),
 	}

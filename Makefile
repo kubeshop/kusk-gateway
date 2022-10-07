@@ -80,20 +80,20 @@ tail-envoyfleet: ## Tail logs of envoy
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
 	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
-	sleep 4
-	curl -s -X POST "http://localhost:19000/logging?backtrace=trace"
-	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace"
-	curl -s -X POST "http://localhost:19000/logging?assert=trace"
-	curl -s -X POST "http://localhost:19000/logging?secret=trace"
-	curl -s -X POST "http://localhost:19000/logging?grpc=trace"
-	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace"
-	curl -s -X POST "http://localhost:19000/logging?filter=trace"
-	curl -s -X POST "http://localhost:19000/logging?misc=trace"
-	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?connection=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http2=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?admin=trace"
+	sleep 2
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?backtrace=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?envoy_bug=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?assert=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?secret=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?grpc=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?ext_authz=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?filter=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?misc=trace"
+	curl --silent --output /dev/null -X POST "http://localhost:19000/logging?conn_handler=trace"
+	@# curl --silent --output /dev/null -X POST "http://localhost:19000/logging?connection=trace"
+	@# curl --silent --output /dev/null -X POST "http://localhost:19000/logging?http=trace"
+	@# curl --silent --output /dev/null -X POST "http://localhost:19000/logging?http2=trace"
+	@# curl --silent --output /dev/null -X POST "http://localhost:19000/logging?admin=trace"
 	@# bash -c "trap 'pkill -F /tmp/kube-port-forward-logging.pid' SIGINT SIGTERM ERR EXIT"
 	@echo
 	@echo "How to stop port forward to the admin port (19000):"

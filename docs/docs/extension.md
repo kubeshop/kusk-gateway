@@ -327,7 +327,7 @@ The `auth` object contains the following properties to configure HTTP authentica
 | `auth.oauth2.authorization_endpoint`    | **Required, if `scheme` is `oauth2`**. Defines the `authorization_endpoint`, e.g., the field `authorization_endpoint` from <https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/openid-configuration>. |
 | `auth.oauth2.credentials.client_id`     | **Required, if `scheme` is `oauth2`**. Defines the Client ID. |
 | `auth.oauth2.credentials.client_secret` | **Required, if `scheme` is `oauth2`**. Defines the Client Secret. |
-| `auth.oauth2.redirect_uri`              | **Required, if `scheme` is `oauth2`**. The redirect URI passed to the authorization endpoint. |
+| `auth.oauth2.redirect_uri`              | **Required, if `scheme` is `oauth2`**. The redirect URI passed to the authorization endpoint. It is advised to use `%REQ(x-forwarded-proto)%://%REQ(:authority)%` before the actual callback path, e.g., the `redirect_uri` should be defined as `""%REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback/oauth2/callback"`, including the quotes. |
 | `auth.oauth2.signout_path`              | **Required, if `scheme` is `oauth2`**. The path to sign a user out, clearing their credential cookies. |
 | `auth.oauth2.redirect_path_matcher`     | **Required, if `scheme` is `oauth2`**. After a redirecting the user back to the `redirect_uri`, using this new grant and the `token_secret`, the `kusk-gateway` then attempts to retrieve an access token from the `token_endpoint`. The `kusk-gateway` knows it has to do this instead of reinitiating another login because the incoming request has a path that matches the `redirect_path_matcher` criteria. |
 | `auth.oauth2.forward_bearer_token`      | **Required, if `scheme` is `oauth2`**. If the Bearer Token should be forwarded, you generally want this to be `true`. When the authn server validates the client and returns an authorization token back to `kusk-gateway`, no matter what format that token is, if `forward_bearer_token` is set to true `kusk-gateway` will send over a cookie named `BearerToken` to the upstream. Additionally, the `Authorization` header will be populated with the same value, i.e., Forward the OAuth token as a Bearer to upstream web service. |
@@ -391,7 +391,7 @@ x-kusk:
       credentials:
         client_id: *CLIENT_ID*
         client_secret: *CLIENT_SECRET*
-      redirect_uri: /oauth2/callback
+      redirect_uri: "%REQ(x-forwarded-proto)%://%REQ(:authority)%/oauth2/callback"
       redirect_path_matcher: /oauth2/callback
       signout_path: /oauth2/signout
       forward_bearer_token: true

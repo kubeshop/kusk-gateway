@@ -239,13 +239,11 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 		ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 		ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
 			ApiConfigSource: &envoy_core_v3.ApiConfigSource{
-				TransportApiVersion:       envoy_core_v3.ApiVersion_V3,
-				ApiType:                   envoy_core_v3.ApiConfigSource_GRPC,
-				RequestTimeout:            durationpb.New(defaultRequestTimeout),
-				SetNodeOnFirstMessageOnly: true,
-				GrpcServices: []*envoy_core_v3.GrpcService{
-					makeGrpcService(cluster, "", defaultResponseTimeout),
-				},
+				TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+				ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+				RequestTimeout:      durationpb.New(defaultRequestTimeout),
+				GrpcServices:        []*envoy_core_v3.GrpcService{makeGrpcService(cluster, "", defaultResponseTimeout)},
+				//SetNodeOnFirstMessageOnly: true, // Could someone please justify why this is set to `true`?
 			},
 		},
 	}
