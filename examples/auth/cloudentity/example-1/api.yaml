@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   fleet:
-    name: default
-    namespace: default
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   spec: |
     openapi: 3.1.0
     info:
@@ -39,4 +39,3 @@ spec:
           description: Returns UUID4.
           operationId: "/uuid"
           responses: {}
-    
