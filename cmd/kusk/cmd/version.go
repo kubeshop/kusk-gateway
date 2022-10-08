@@ -32,7 +32,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
 )
 
@@ -54,8 +58,41 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "version for Kusk",
-		Run: func(*cobra.Command, []string) {
+		RunE: func(cmd *cobra.Command, s []string) error {
+			reportError := func(err error) {
+				if err != nil {
+					errors.NewErrorReporter(cmd, err).Report()
+				}
+			}
+
 			fmt.Fprintf(writer, "%s\n", formattedVersion)
+
+			c, err := utils.GetK8sClient()
+			if err != nil {
+				reportError(err)
+				return err
+			}
+			deployments := appsv1.DeploymentList{}
+			if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
+				reportError(err)
+				return err
+			}
+			versions := []string{}
+			for _, deployment := range deployments.Items {
+				//spec.template.spec.containers[].image
+				name := fmt.Sprintf("%s: ", deployment.Name)
+
+				for _, container := range deployment.Spec.Template.Spec.Containers {
+					if len(container.Image) > 0 {
+						name = name + ", " + container.Image
+					}
+				}
+
+				versions = append(versions, name)
+			}
+
+			fmt.Println(strings.Join(versions, "\n"))
+			return nil
 		},
 	}
 }
