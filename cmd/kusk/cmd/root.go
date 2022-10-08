@@ -222,6 +222,7 @@ func help(c *cobra.Command, s []string) {
 
 		fmt.Println(mockDescription)
 		fmt.Println(mockHelp)
+		fmt.Println("")
 	case "generate":
 		fmt.Println("")
 		generateDescription = strings.Replace(generateDescription, "Description:", kuskui.Gray("Description:"), 1)
@@ -233,13 +234,16 @@ func help(c *cobra.Command, s []string) {
 
 		fmt.Println(generateDescription)
 		fmt.Println(generateHelp)
-	default:
 		fmt.Println("")
-		kuskui.PrintInfo(c.Short)
+	default:
+		if len(c.Short) != 0 {
+			fmt.Println("")
+			kuskui.PrintInfo(c.Short)
+			fmt.Println("")
+		}
 	}
 
-	fmt.Println("")
-	kuskui.PrintInfoGray(kuskui.Gray("Usage"))
+	kuskui.PrintInfoGray("Usage")
 	kuskui.PrintInfo(fmt.Sprintf("%s %s", c.Use, kuskui.Gray("[flags]")))
 	if len(c.Commands()) > 0 {
 		kuskui.PrintInfo(fmt.Sprintf("%s %s", c.Use, kuskui.Gray("[command]")))
