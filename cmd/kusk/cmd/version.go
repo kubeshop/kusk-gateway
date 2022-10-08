@@ -65,7 +65,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 				}
 			}
 
-			fmt.Fprintf(writer, "%s\n", formattedVersion)
+			fmt.Fprintf(writer, "%s\n\n", formattedVersion)
 
 			c, err := utils.GetK8sClient()
 			if err != nil {
@@ -77,21 +77,18 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 				reportError(err)
 				return err
 			}
-			versions := []string{}
-			for _, deployment := range deployments.Items {
-				//spec.template.spec.containers[].image
-				name := fmt.Sprintf("%s: ", deployment.Name)
 
+			for _, deployment := range deployments.Items {
+				fmt.Printf("%s: ", deployment.Name)
+
+				images := []string{}
 				for _, container := range deployment.Spec.Template.Spec.Containers {
 					if len(container.Image) > 0 {
-						name = name + ", " + container.Image
+						images = append(images, container.Image)
 					}
 				}
-
-				versions = append(versions, name)
+				fmt.Println("", strings.Join(images, ", "))
 			}
-
-			fmt.Println(strings.Join(versions, "\n"))
 			return nil
 		},
 	}
