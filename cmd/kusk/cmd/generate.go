@@ -56,68 +56,8 @@ var (
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generate a Kusk Gateway API resource from your OpenAPI spec file",
-	Long: `
-	Generate accepts your OpenAPI spec file as input either as a local file or a URL pointing to your file
-	and generates a Kusk Gateway compatible API resource that you can apply directly into your cluster.
-
-	Configuration of the API resource is done via the x-kusk extension.
-
-	If the OpenAPI spec doesn't have a top-level x-kusk annotation set, it will add them for you and set
-	the upstream service, namespace and port to the flag values passed in respectively and set the rest of the settings to defaults.
-	This is enough to get you started
-
-	If the x-kusk extension is already present, it will override the the upstream service, namespace and port to the flag values passed in respectively
-	and leave the rest of the settings as they are.
-
-	You must specify the name of the envoyfleet you wish to use to expose your API. This is because Kusk Gateway could be managing more than one.
-	In the future, we will add the notion of a default envoyfleet which Kusk Gateway will use when none is specified.
-
-	In case you don't specify envoyfleet name, it will default to kusk-gateway-envoy-fleet.
-	If you do not specify the envoyfleet namespace, it will default to kusk-system.
-
-	Sample usage
-
-	No name specified
-	kusk api generate \
-		-i spec.yaml \
-		--envoyfleet.name kusk-gateway-envoy-fleet \
-		--envoyfleet.namespace kusk-system
-
-	In the above example, kusk will use the openapi spec info.title to generate a manifest name and leave the existing
-	x-kusk extension settings
-
-	No api namespace specified
-	kusk api generate \
-		-i spec.yaml \
-		--name httpbin-api \
-		--upstream.service httpbin \
-		--upstream.port 8080 \
-		--envoyfleet.name kusk-gateway-envoy-fleet
-
-	In the above example, as --namespace isn't defined, it will assume the default namespace.
-
-	Namespace specified
-	kusk api generate \
-		-i spec.yaml \
-		--name httpbin-api \
-		--upstream.service httpbin \
-		--upstream.namespace my-namespace \
-		--upstream.port 8080 \
-		--envoyfleet.name kusk-gateway-envoy-fleet
-
-	OpenAPI spec at URL
-	kusk api generate \
-			-i https://raw.githubusercontent.com/$ORG_OR_USER/$REPO/myspec.yaml \
-			 --name httpbin-api \
-			 --upstream.service httpbin \
-			 --upstream.namespace my-namespace \
-			 --upstream.port 8080 \
-			 --envoyfleet.name kusk-gateway-envoy-fleet
-
-	This will fetch the OpenAPI document from the provided URL and generate a Kusk Gateway API resource
-	`,
+	Use:           "generate",
+	Short:         "Generate a Kusk Gateway API resource from your OpenAPI spec file",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -299,3 +239,56 @@ func init() {
 
 	apiTemplate = template.Must(template.New("api").Parse(templates.APITemplate))
 }
+
+var generateDescription = `Description:
+
+Generate accepts your OpenAPI spec file as input either as a local file or a URL and generates a Kusk 
+Gateway compatible API resource that you can apply directly into your cluster. 
+
+It does this via the x-kusk extension which will be added automatically if one is not already set. It will 
+set the upstream service, namespace and port to the flag values passed, respectively, and set the rest of 
+the settings to defaults.
+
+If the x-kusk extension is already present, it will override the upstream service, namespace and port to 
+the flag values passed, respectively, and leave the rest of the settings as they are.`
+
+var generateHelp = `
+No name specified:
+kusk api generate \
+	-i spec.yaml \
+	--envoyfleet.name kusk-gateway-envoy-fleet \
+	--envoyfleet.namespace kusk-system
+
+In the above example, kusk will use the openapi spec info.title to generate a manifest name and leave the existing
+x-kusk extension settings
+
+No API namespace specified:
+kusk api generate \
+	-i spec.yaml \
+	--name httpbin-api \
+	--upstream.service httpbin \
+	--upstream.port 8080 \
+	--envoyfleet.name kusk-gateway-envoy-fleet
+
+In the above example, as --namespace isn't defined, it will assume the default namespace.
+
+Namespace specified:
+kusk api generate \
+	-i spec.yaml \
+	--name httpbin-api \
+	--upstream.service httpbin \
+	--upstream.namespace my-namespace \
+	--upstream.port 8080 \
+	--envoyfleet.name kusk-gateway-envoy-fleet
+
+OpenAPI definition form URL:
+This will fetch the OpenAPI document from the provided URL and generate a Kusk Gateway API resource
+
+kusk api generate \
+	-i https://raw.githubusercontent.com/$ORG_OR_USER/$REPO/myspec.yaml \
+	--name httpbin-api \
+	--upstream.service httpbin \
+	--upstream.namespace my-namespace \
+	--upstream.port 8080 \
+	--envoyfleet.name kusk-gateway-envoy-fleet
+`

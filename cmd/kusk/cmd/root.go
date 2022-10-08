@@ -24,8 +24,11 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
@@ -36,7 +39,6 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
-	"github.com/kubeshop/testkube/pkg/ui"
 )
 
 var cfgFile string
@@ -86,7 +88,7 @@ var rootCmd = &cobra.Command{
 				}
 
 				if currentVersion != nil && currentVersion.LessThan(latestVersion) {
-					ui.Warn(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s\n", currentVersion, latestVersion), "Please follow instructions to update you installation: https://docs.kusk.io/reference/cli/overview/#updating")
+					kuskui.PrintWarning(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s\n", currentVersion, latestVersion), "Please follow instructions to update you installation: https://docs.kusk.io/reference/cli/overview/#updating")
 					return
 				}
 			}
@@ -98,7 +100,6 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
-
 	if err != nil {
 		errors.NewErrorReporter(rootCmd, err).Report()
 	}
@@ -109,19 +110,62 @@ func Execute() {
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
+const (
+	cmdGroupAnnotation = "GroupAnnotation"
+	cmdMngmCmdGroup    = "1-Management commands"
+	cmdGroupCommands   = "2-Commands"
+	cmdGroupCobra      = "other"
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	cmdGroupDelimiter = "-"
+)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kusk.yaml)")
+func helpMessageByGroups(cmd *cobra.Command) string {
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Help message for toggle")
+	groups := map[string][]string{}
+	for _, c := range cmd.Commands() {
+		var groupName string
+		v, ok := c.Annotations[cmdGroupAnnotation]
+		if !ok {
+			groupName = cmdGroupCobra
+		} else {
+			groupName = v
+		}
+
+		groupCmds := groups[groupName]
+		groupCmds = append(groupCmds, fmt.Sprintf("%-16s%s", c.Name(), kuskui.Gray(c.Short)))
+		sort.Strings(groupCmds)
+
+		groups[groupName] = groupCmds
+	}
+
+	if len(groups[cmdGroupCobra]) != 0 {
+		groups[cmdMngmCmdGroup] = append(groups[cmdMngmCmdGroup], groups[cmdGroupCobra]...)
+	}
+	delete(groups, cmdGroupCobra)
+
+	groupNames := []string{}
+	for k, _ := range groups {
+		groupNames = append(groupNames, k)
+	}
+	sort.Strings(groupNames)
+
+	buf := bytes.Buffer{}
+	for _, groupName := range groupNames {
+		commands := groups[groupName]
+
+		groupSplit := strings.Split(groupName, cmdGroupDelimiter)
+		group := "others"
+		if len(groupSplit) > 1 {
+			group = strings.Split(groupName, cmdGroupDelimiter)[1]
+		}
+		buf.WriteString(fmt.Sprintf("%s\n", kuskui.Gray(group)))
+
+		for _, cmd := range commands {
+			buf.WriteString(fmt.Sprintf("%s\n", cmd))
+		}
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -146,4 +190,69 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, fmt.Errorf("failed to read config file %q, %w", viper.ConfigFileUsed(), err))
 	}
+}
+
+func init() {
+	cobra.OnInitialize(initConfig)
+
+	// Here you will define your flags and configuration settings.
+	// Cobra supports persistent flags, which, if defined here,
+	// will be global for your application.
+
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kusk.yaml)")
+
+	// Cobra also supports local flags, which will only run
+	// when this action is called directly.
+	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Help message for toggle")
+	rootCmd.SetHelpFunc(help)
+}
+
+func help(c *cobra.Command, s []string) {
+
+	switch c.Use {
+	case "mock":
+		fmt.Println("")
+		mockDescription = strings.Replace(mockDescription, "Description:", kuskui.Gray("Description:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Schema example:", kuskui.Gray("Schema example:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Generated JSON Response:", kuskui.Gray("Generated JSON Response:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Generated XML Response:", kuskui.Gray("Generated XML Response:"), 1)
+		mockHelp = strings.Replace(mockHelp, "XML Respose from Defined Examples:", kuskui.Gray("XML Respose from Defined Examples:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Stop Mock Server:", kuskui.Gray("Stop Mock Server:"), 1)
+
+		fmt.Println(mockDescription)
+		fmt.Println(mockHelp)
+	case "generate":
+		fmt.Println("")
+		generateDescription = strings.Replace(generateDescription, "Description:", kuskui.Gray("Description:"), 1)
+		generateHelp = strings.Replace(generateHelp, "No name specified:", kuskui.Gray("No name specified::"), 1)
+		generateHelp = strings.Replace(generateHelp, "OpenAPI definition form URL:", kuskui.Gray("OpenAPI definition form URL:"), 1)
+		generateHelp = strings.Replace(generateHelp, "No API namespace specified:", kuskui.Gray("No API namespace specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "Namespace specified:", kuskui.Gray("Namespace specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "OpenAPI definition form URL:", kuskui.Gray("OpenAPI definition form URL:"), 1)
+
+		fmt.Println(generateDescription)
+		fmt.Println(generateHelp)
+	default:
+		fmt.Println("")
+		kuskui.PrintInfo(c.Short)
+	}
+
+	fmt.Println("")
+	kuskui.PrintInfoGray(kuskui.Gray("Usage"))
+	kuskui.PrintInfo(fmt.Sprintf("%s %s", c.Use, kuskui.Gray("[flags]")))
+	if len(c.Commands()) > 0 {
+		kuskui.PrintInfo(fmt.Sprintf("%s %s", c.Use, kuskui.Gray("[command]")))
+	}
+
+	fmt.Println("")
+	usage := helpMessageByGroups(c)
+	kuskui.PrintInfo(usage)
+	kuskui.PrintInfoGray(kuskui.Gray("Flags"))
+	kuskui.PrintInfo(c.Flags().FlagUsages())
+	kuskui.PrintInfo(kuskui.Gray("Use \"kusk [command] --help\" for more information about a command."))
+	fmt.Println("")
+	kuskui.PrintInfo(fmt.Sprintf("%s   %s", kuskui.Gray("Docs & Support:"), "https://docs.kusk.io/"))
+	fmt.Println("")
+
 }
