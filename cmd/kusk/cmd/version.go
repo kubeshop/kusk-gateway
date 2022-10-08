@@ -25,6 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -72,8 +73,9 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 				reportError(err)
 				return err
 			}
+
 			deployments := appsv1.DeploymentList{}
-			if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
+			if err := c.List(context.Background(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
 				reportError(err)
 				return err
 			}
