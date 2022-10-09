@@ -254,7 +254,7 @@ the flag values passed, respectively, and leave the rest of the settings as they
 
 var generateHelp = `
 No name specified:
-kusk api generate \
+kusk generate \
 	-i spec.yaml \
 	--envoyfleet.name kusk-gateway-envoy-fleet \
 	--envoyfleet.namespace kusk-system
