@@ -38,7 +38,7 @@ var uninstallCmd = &cobra.Command{
 		var err error
 		c, err := utils.GetK8sClient()
 
-		kuskui.PrintStart("Checking if Kusk is already installed...")
+		kuskui.PrintInfo("Checking if Kusk is already installed...")
 
 		kuskNamespace := &corev1.Namespace{}
 		if err := c.Get(cmd.Context(), client.ObjectKey{Name: kusknamespace}, kuskNamespace); err != nil {
