@@ -226,11 +226,11 @@ func help(c *cobra.Command, s []string) {
 	case "generate":
 		fmt.Println("")
 		generateDescription = strings.Replace(generateDescription, "Description:", kuskui.Gray("Description:"), 1)
+		generateHelp = strings.Replace(generateHelp, "Example:", kuskui.Gray("Example:"), 1)
 		generateHelp = strings.Replace(generateHelp, "No name specified:", kuskui.Gray("No name specified::"), 1)
 		generateHelp = strings.Replace(generateHelp, "OpenAPI definition form URL:", kuskui.Gray("OpenAPI definition form URL:"), 1)
-		generateHelp = strings.Replace(generateHelp, "No API namespace specified:", kuskui.Gray("No API namespace specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "Specifying additional information:", kuskui.Gray("Specifying additional information:"), 1)
 		generateHelp = strings.Replace(generateHelp, "Namespace specified:", kuskui.Gray("Namespace specified:"), 1)
-		generateHelp = strings.Replace(generateHelp, "OpenAPI definition form URL:", kuskui.Gray("OpenAPI definition form URL:"), 1)
 
 		fmt.Println(generateDescription)
 		fmt.Println(generateHelp)
