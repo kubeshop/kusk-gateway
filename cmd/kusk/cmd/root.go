@@ -211,11 +211,13 @@ func help(c *cobra.Command, s []string) {
 	case mockCmd.Use:
 		fmt.Println("")
 		mockDescription = strings.Replace(mockDescription, "Description:", kuskui.Gray("Description:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Mock Command:", kuskui.Gray("Mock Command:"), 1)
 		mockHelp = strings.Replace(mockHelp, "Schema example:", kuskui.Gray("Schema example:"), 1)
 		mockHelp = strings.Replace(mockHelp, "Generated JSON Response:", kuskui.Gray("Generated JSON Response:"), 1)
 		mockHelp = strings.Replace(mockHelp, "Generated XML Response:", kuskui.Gray("Generated XML Response:"), 1)
 		mockHelp = strings.Replace(mockHelp, "XML Respose from Defined Examples:", kuskui.Gray("XML Respose from Defined Examples:"), 1)
 		mockHelp = strings.Replace(mockHelp, "Stop Mock Server:", kuskui.Gray("Stop Mock Server:"), 1)
+		mockHelp = strings.Replace(mockHelp, "Plain Text Response from Defined Examples:", kuskui.Gray("Plain Text Response from Defined Examples:"), 1)
 
 		fmt.Println(mockDescription)
 		fmt.Println(mockHelp)

@@ -468,28 +468,55 @@ real API would return from your content schema or defined examples.
 Note: Kusk mock prioritises examples over schema definitions.
 `
 
-var mockHelp = `Schema example: 
- content:
-  application/json:
-   schema:
-	type: object
-	properties:
-	 title:
-	  type: string
-	  description: Description of what to do
-	 completed:
-	  type: boolean
-	 order:
-	  type: integer
-	  format: int32
-	 url:
-	  type: string
-	  format: uri
-	required:
-	 - title
-	 - completed
-	 - order
-	 - url
+var mockHelp = `
+Mock Command:
+kusk mock -i path-to-openapi-file.yaml
+kusk mock -i https://url.to.api.com
+
+Schema example: 
+openapi: 3.0.0
+info:
+  title: todo-backend-api
+  version: 0.0.2
+paths:
+  /todos:
+    get:
+      responses:
+        '200':
+          description: 'ToDos'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Description of what to do
+                  completed:
+                    type: boolean
+                  order:
+                    type: integer
+                    format: int32
+                  url:
+                    type: string
+                    format: uri
+                required:
+                  - title
+                  - completed
+                  - order
+                  - url
+            application/xml:
+              example:
+                title: "Mocked XML title"
+                completed: true
+                order: 13
+                url: "http://mockedURL.com"
+            text/plain:
+              example: |
+                title: "Mocked Text title"
+                completed: true
+                order: 13
+                url: "http://mockedURL.com"
  
 Generated JSON Response: 
 {
@@ -514,7 +541,13 @@ XML Respose from Defined Examples:
   <title>Mocked XML title</title>
   <url>http://mockedURL.com</url>
  </doc>
- 
+
+Plain Text Response from Defined Examples:
+title: "Mocked Text title"
+completed: true
+order: 13
+url: "http://mockedURL.com"
+
 Stop Mock Server: 
 ctrt+c
 `
