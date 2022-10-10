@@ -90,15 +90,13 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 			}
 
 			for _, deployment := range deployments.Items {
-				fmt.Printf("%s: ", deployment.Name)
-
 				images := []string{}
 				for _, container := range deployment.Spec.Template.Spec.Containers {
 					if len(container.Image) > 0 {
 						images = append(images, container.Image)
 					}
 				}
-				fmt.Println("", strings.Join(images, ", "))
+				fmt.Println(strings.Join(images, "\n"))
 			}
 			return nil
 		},
