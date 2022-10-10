@@ -128,7 +128,8 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 				}
 				err = s.validate(req, service, operation)
 				if err != nil {
-					errMsg := NewErrorBody(err)
+					errMsg := NewErrorBody()
+					errMsg.SetErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
@@ -194,7 +195,8 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 
 				err = s.validate(req, service, operation)
 				if err != nil {
-					errorMsg := NewErrorBody(err)
+					errorMsg := NewErrorBody()
+					errorMsg.SetErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
@@ -274,8 +276,8 @@ type ErrorBody struct {
 	Error string `json:"error,omitempty"`
 }
 
-func NewErrorBody(err error) ErrorBody {
-	return ErrorBody{Error: err.Error()}
+func NewErrorBody() *ErrorBody {
+	return &ErrorBody{}
 }
 
 func (e *ErrorBody) SetErrorBody(err error) {
