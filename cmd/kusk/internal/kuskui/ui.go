@@ -34,3 +34,7 @@ func PrintInfoGray(messages ...string) {
 func PrintInfoLightGreen(messages ...string) {
 	fmt.Println(color.FgLightGreen.Render(strings.Join(messages, ", ")))
 }
+
+func Gray(text string) string {
+	return color.FgGray.Render(text)
+}

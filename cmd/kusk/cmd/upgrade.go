@@ -24,7 +24,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,13 +45,13 @@ var (
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade Kusk Gateway, envoy-fleet, api, and dashboard in a single command",
+	Short: "Upgrade Kusk Gateway, EnvoyFleet, Kusk API, and Kusk Dashboard in a single command",
 	Long: `
-	Upgrade Kusk Gateway, envoy-fleet, api, and dashboard in a single command.
+	Upgrade Kusk Gateway, EnvoyFleet, Kusk API, and Kusk Dashboard in a single command.
 
 	$ kusk cluster upgrade
 
-	Will upgrade or install Kusk Gatewway, Kusk Dashboard, Kusk API, and envoy-fleets and install them if they are not installed`,
+	Will upgrade or install Kusk Gatewway, Kusk Dashboard, Kusk API, and EnvoyFleets and install them if they are not installed`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -72,7 +71,7 @@ var upgradeCmd = &cobra.Command{
 			return err
 		}
 
-		kuskui.PrintStart("Checking if Kusk is already installed...")
+		kuskui.PrintInfo("Checking if Kusk is already installed...")
 
 		deployments := appsv1.DeploymentList{}
 		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
@@ -89,90 +88,93 @@ var upgradeCmd = &cobra.Command{
 			switch deployment.Name {
 			case "kusk-gateway-manager":
 				if !utils.IsUptodate(getVersions(deployment.Name, "manager", deployment)) {
-					kuskui.PrintStart("kusk is already installed. Upgrading...")
+					kuskGatewaySpinner := utils.NewSpinner("Upgrading Kusk Gateway...")
 					for _, c := range deployment.Spec.Template.Spec.Containers {
 						if c.Name == "manager" {
 							if err := applyk(dir); err != nil {
-								kuskui.PrintError("❌ failed upgrading kusk", err.Error())
+								kuskGatewaySpinner.Fail("Failed upgrading Kusk Gateway", err.Error())
 								reportError(err)
 								return err
 							}
-							kuskui.PrintStart("kusk upgraded")
 						}
 					}
 
 					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
-						kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
+						kuskui.PrintError("Failed upgrading EnvoyFleet", err.Error())
 						reportError(err)
 						return err
 					}
+
+					kuskGatewaySpinner.Success("Upgraded Kusk Gateway")
 				}
 
 			case "kusk-gateway-private-envoy-fleet", "kusk-gateway-envoy-fleet":
+				envoyFleetSpinner := utils.NewSpinner("Upgrading EnvoyFleet...")
 				if err := applyf(filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
-					kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
+					envoyFleetSpinner.Fail("Failed upgrading EnvoyFleet", err.Error())
 					reportError(err)
 					return err
 				}
 
 				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
-					kuskui.PrintError("❌ failed upgrading Envoy Fleets", err.Error())
+					envoyFleetSpinner.Fail("Failed upgrading EnvoyFleet", err.Error())
 					reportError(err)
 					return err
 				}
 
-				fmt.Println("✅ Envoy Fleets upgraded")
+				envoyFleetSpinner.Success("Upgraded EnvoyFleet")
 			case kuskgatewayapi:
 				if !utils.IsUptodate(getVersions(deployment.Name, kuskgatewayapi, deployment)) {
-					fmt.Println("✅ kusk API server is already installed. Upgrading...")
+					kuskApiSpinner := utils.NewSpinner("Upgrading Kusk API...")
 					if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
-						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						kuskApiSpinner.Fail("Failed upgrading Kusk API", err.Error())
 						reportError(err)
 						return err
 					}
 					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, time.Duration(5*time.Minute), "instance"); err != nil {
-						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						kuskApiSpinner.Fail("Failed upgrading Kusk API", err.Error())
 						reportError(err)
 						return err
 					}
 
 					if err := applyf(filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
-						kuskui.PrintError("❌ failed upgrading API Server", err.Error())
+						kuskApiSpinner.Fail("Failed upgrading Kusk API", err.Error())
 						reportError(err)
 						return err
 					}
-					kuskui.PrintStart("API Server installed")
+					kuskApiSpinner.Success("Upgraded Kusk API")
 				}
 			case kuskgatewaydashboard:
 				if !utils.IsUptodate(getVersions(kuskgatewaydashboard, kuskgatewaydashboard, deployment)) {
-
-					fmt.Println("✅ kusk Dashboard is already installed. Upgrading...")
+					kuskDashboardSpinner := utils.NewSpinner("Upgrading Kusk Dashboard...")
 					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						kuskDashboardSpinner.Fail("Failed upgrading Kusk Dashboard", err.Error())
 						reportError(err)
 						return err
 					}
 					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, time.Duration(5*time.Minute), "instance"); err != nil {
-						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						kuskDashboardSpinner.Fail("Failed upgrading Kusk Dashboard", err.Error())
 						reportError(err)
 						return err
 					}
 
 					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
-						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						kuskDashboardSpinner.Fail("Failed upgrading Kusk Dashboard", err.Error())
 						reportError(err)
 						return err
 					}
 
 					if err := applyf(filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
-						kuskui.PrintError("❌ failed upgrading Dashboard", err.Error())
+						kuskDashboardSpinner.Fail("Failed upgrading Kusk Dashboard", err.Error())
 						reportError(err)
 						return err
 					}
-					kuskui.PrintStart("Dashboard upgraded")
+					kuskDashboardSpinner.Success("Upgraded Kusk Dashboard")
 				}
 			}
 		}
+
+		kuskui.PrintSuccess("Kusk upgraded successfully")
 
 		return nil
 	},

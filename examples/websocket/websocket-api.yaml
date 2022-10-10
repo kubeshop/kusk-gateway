@@ -3,6 +3,9 @@ kind: API
 metadata:
   name: ws-server
 spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   # service name and port should be specified inside x-kusk annotation
   spec: |
     openapi: 3.0.0
