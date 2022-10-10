@@ -58,6 +58,7 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		analytics.SendAnonymousCMDInfo(nil)
+
 		if cmd.Name() != generateCmd.Name() &&
 			cmd.Name() != ipCmd.Name() &&
 			build.Version != "latest" {
@@ -207,7 +208,7 @@ func init() {
 func help(c *cobra.Command, s []string) {
 
 	switch c.Use {
-	case "mock":
+	case mockCmd.Use:
 		fmt.Println("")
 		mockDescription = strings.Replace(mockDescription, "Description:", kuskui.Gray("Description:"), 1)
 		mockHelp = strings.Replace(mockHelp, "Schema example:", kuskui.Gray("Schema example:"), 1)
@@ -219,7 +220,7 @@ func help(c *cobra.Command, s []string) {
 		fmt.Println(mockDescription)
 		fmt.Println(mockHelp)
 		fmt.Println("")
-	case "generate":
+	case generateCmd.Use:
 		fmt.Println("")
 		generateDescription = strings.Replace(generateDescription, "Description:", kuskui.Gray("Description:"), 1)
 		generateHelp = strings.Replace(generateHelp, "Example:", kuskui.Gray("Example:"), 1)
