@@ -39,6 +39,9 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
+	"github.com/kubeshop/testkube/pkg/ui"
+	"github.com/mattn/go-isatty"
+
 )
 
 var cfgFile string
@@ -59,8 +62,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		analytics.SendAnonymousCMDInfo(nil)
 
-		if cmd.Name() != generateCmd.Name() &&
-			cmd.Name() != ipCmd.Name() &&
+		if isatty.IsTerminal(os.Stdout.Fd()) == true &&
 			build.Version != "latest" {
 
 			if len(build.Version) != 0 {

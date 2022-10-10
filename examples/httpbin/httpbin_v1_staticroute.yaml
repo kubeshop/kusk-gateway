@@ -3,11 +3,14 @@ kind: StaticRoute
 metadata:
   name: httpbin-sample
 spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   # should work with localhost, example.org
-  hosts: [ "localhost", "*"]
+  hosts: ["localhost", "*"]
   paths:
-  # Root goes to httpbin
-    /: 
+    # Root goes to httpbin
+    /:
       get: &root_route
         route:
           upstream:
@@ -22,13 +25,13 @@ spec:
       put: *root_route
       head: *root_route
     # /static -> /
-    /static: 
+    /static:
       get:
         redirect:
           path_redirect: "/"
           response_code: 308
     # /get2 routed to k8s service httpbin in default namespace with rewrite to /get
-    /get2: 
+    /get2:
       get:
         route:
           upstream:
@@ -39,5 +42,3 @@ spec:
             rewrite:
               pattern: "^/get2$"
               substitution: "/get"
-
-
