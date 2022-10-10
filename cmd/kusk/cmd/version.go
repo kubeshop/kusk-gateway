@@ -25,6 +25,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -32,7 +33,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
 )
 
@@ -52,10 +58,47 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 	formattedVersion := VersionFormat(version)
 
 	return &cobra.Command{
-		Use:   "version",
-		Short: "version for Kusk",
-		Run: func(*cobra.Command, []string) {
-			fmt.Fprintf(writer, "%s\n", formattedVersion)
+		Use:           "version",
+		Short:         "version for Kusk",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, s []string) error {
+			reportError := func(err error) {
+				if err != nil {
+					errors.NewErrorReporter(cmd, err).Report()
+				}
+			}
+
+			fmt.Fprintf(writer, "%s\n\n", formattedVersion)
+
+			c, err := utils.GetK8sClient()
+			if err != nil {
+				reportError(err)
+				if strings.Contains(err.Error(), "connect: connection refused") {
+					kuskui.PrintInfoGray("Kusk is not installed in the cluster")
+					kuskui.PrintInfo(`To install it please run "kusk cluster install"`)
+					return err
+				}
+
+				return err
+			}
+
+			deployments := appsv1.DeploymentList{}
+			if err := c.List(context.Background(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
+				reportError(err)
+				return err
+			}
+
+			for _, deployment := range deployments.Items {
+				images := []string{}
+				for _, container := range deployment.Spec.Template.Spec.Containers {
+					if len(container.Image) > 0 {
+						images = append(images, container.Image)
+					}
+				}
+				fmt.Println(strings.Join(images, "\n"))
+			}
+			return nil
 		},
 	}
 }
