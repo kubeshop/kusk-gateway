@@ -463,10 +463,11 @@ func init() {
 }
 
 var mockDescription = `Description:
-
 Spins up a local mock API server that imitates a real API server. It does this by generating responses like the
 real API would return from your content schema or defined examples.
-Note: Kusk mock prioritises examples over schema definitions.`
+Note: Kusk mock prioritises examples over schema definitions.
+`
+
 var mockHelp = `Schema example: 
  content:
   application/json:

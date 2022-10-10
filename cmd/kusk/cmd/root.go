@@ -223,11 +223,10 @@ func help(c *cobra.Command, s []string) {
 	case generateCmd.Use:
 		fmt.Println("")
 		generateDescription = strings.Replace(generateDescription, "Description:", kuskui.Gray("Description:"), 1)
-		generateHelp = strings.Replace(generateHelp, "Example:", kuskui.Gray("Example:"), 1)
 		generateHelp = strings.Replace(generateHelp, "No name specified:", kuskui.Gray("No name specified::"), 1)
-		generateHelp = strings.Replace(generateHelp, "OpenAPI definition form URL:", kuskui.Gray("OpenAPI definition form URL:"), 1)
-		generateHelp = strings.Replace(generateHelp, "Specifying additional information:", kuskui.Gray("Specifying additional information:"), 1)
-		generateHelp = strings.Replace(generateHelp, "Namespace specified:", kuskui.Gray("Namespace specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "No API Name Specified:", kuskui.Gray("No API Name Specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "Namespace Specified:", kuskui.Gray("Namespace Specified:"), 1)
+		generateHelp = strings.Replace(generateHelp, "OpenAPI Definition from URL:", kuskui.Gray("OpenAPI Definition from URL:"), 1)
 
 		fmt.Println(generateDescription)
 		fmt.Println(generateHelp)
@@ -251,7 +250,7 @@ func help(c *cobra.Command, s []string) {
 	kuskui.PrintInfo(usage)
 	kuskui.PrintInfoGray(kuskui.Gray("Flags"))
 	kuskui.PrintInfo(c.Flags().FlagUsages())
-	kuskui.PrintInfo(kuskui.Gray("Use \"kusk [command] --help\" for more information about a command."))
+	kuskui.PrintInfo("Use \"kusk [command] --help\" for more information about a command.")
 	fmt.Println("")
 	kuskui.PrintInfo(fmt.Sprintf("%s   %s", kuskui.Gray("Docs & Support:"), "https://docs.kusk.io/"))
 	fmt.Println("")
