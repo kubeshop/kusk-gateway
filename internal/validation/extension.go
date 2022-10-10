@@ -129,6 +129,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 				err = s.validate(req, service, operation)
 				if err != nil {
 					errMsg := NewErrorBody(err)
+					errMsg.SetErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
@@ -195,6 +196,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 				err = s.validate(req, service, operation)
 				if err != nil {
 					errorMsg := NewErrorBody(err)
+					errorMsg.SetErrorBody(err)
 
 					resp = &pb.ProcessingResponse{
 						Response: &pb.ProcessingResponse_ImmediateResponse{
