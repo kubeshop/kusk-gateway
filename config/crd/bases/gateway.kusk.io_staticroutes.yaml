@@ -105,6 +105,131 @@ spec:
                         description: Route defines a routing rule that proxies to
                           upstream
                         properties:
+                          auth:
+                            description: "AuthOptions example: \n x-kusk: \n ... auth:
+                              scheme: basic auth-upstream: path_prefix: /login # optional
+                              host: hostname: example.com port: 80"
+                            properties:
+                              auth-upstream:
+                                description: REQUIRED, if `scheme == basic`. Mutually
+                                  exclusive with `OAuth2`.
+                                properties:
+                                  host:
+                                    description: REQUIRED.
+                                    properties:
+                                      hostname:
+                                        description: REQUIRED.
+                                        type: string
+                                      port:
+                                        description: REQUIRED.
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                  path_prefix:
+                                    description: OPTIONAL.
+                                    type: string
+                                type: object
+                              oauth2:
+                                description: REQUIRED, if `scheme == oauth2`. Mutually
+                                  exclusive with `AuthUpstream`.
+                                properties:
+                                  auth_scopes:
+                                    description: Optional list of OAuth scopes to
+                                      be claimed in the authorization request. If
+                                      not specified, defaults to “user” scope. OAuth
+                                      RFC https://tools.ietf.org/html/rfc6749#section-3.3.
+                                      OPTIONAL.
+                                    items:
+                                      type: string
+                                    type: array
+                                  authorization_endpoint:
+                                    description: The endpoint redirect to for authorization
+                                      in response to unauthorized requests. REQUIRED.
+                                    type: string
+                                  credentials:
+                                    description: Credentials used for OAuth. REQUIRED.
+                                    properties:
+                                      client_id:
+                                        description: REQUIRED.
+                                        type: string
+                                      client_secret:
+                                        description: REQUIRED, if `client_secret_ref`
+                                          is not set, i.e., mutually exclusive with
+                                          `client_secret_ref`.
+                                        type: string
+                                      client_secret_ref:
+                                        description: REQUIRED, if `client_secret`
+                                          is not set, i.e., mutually exclusive with
+                                          `client_secret`.
+                                        properties:
+                                          name:
+                                            description: REQUIRED.
+                                            type: string
+                                          namespace:
+                                            description: REQUIRED.
+                                            type: string
+                                        type: object
+                                      cookie_names:
+                                        description: OPTIONAL.
+                                        properties:
+                                          bearer_token:
+                                            description: Defaults to BearerToken.
+                                            type: string
+                                          oauth_expires:
+                                            description: Defaults to OauthExpires.
+                                            type: string
+                                          oauth_hmac:
+                                            description: Defaults to OauthHMAC.
+                                            type: string
+                                        type: object
+                                      hmac_secret:
+                                        description: OPTIONAL.
+                                        type: string
+                                    type: object
+                                  forward_bearer_token:
+                                    description: Forward the OAuth token as a Bearer
+                                      to upstream web service. When the authn server
+                                      validates the client and returns an authorization
+                                      token back to the OAuth filter, no matter what
+                                      format that token is, if forward_bearer_token
+                                      is set to true the filter will send over a cookie
+                                      named BearerToken to the upstream. Additionally,
+                                      the Authorization header will be populated with
+                                      the same value. REQUIRED.
+                                    type: boolean
+                                  redirect_path_matcher:
+                                    description: Matching criteria used to determine
+                                      whether a path appears to be the result of a
+                                      redirect from the authorization server. REQUIRED.
+                                    type: string
+                                  redirect_uri:
+                                    description: The redirect URI passed to the authorization
+                                      endpoint. Supports header formatting tokens.
+                                      REQUIRED.
+                                    type: string
+                                  resources:
+                                    description: 'Optional resource parameter for
+                                      authorization request RFC: https://tools.ietf.org/html/rfc8707.
+                                      OPTIONAL.'
+                                    items:
+                                      type: string
+                                    type: array
+                                  signout_path:
+                                    description: The path to sign a user out, clearing
+                                      their credential cookies. REQUIRED.
+                                    type: string
+                                  token_endpoint:
+                                    description: Endpoint on the authorization server
+                                      to retrieve the access token from. REQUIRED.
+                                    type: string
+                                type: object
+                              path_prefix:
+                                description: 'OPTIONAL. TODO(MBana): Move to `AuthUpstream`.'
+                                type: string
+                              scheme:
+                                description: '"basic", "cloudentity" "oauth2". REQUIRED.'
+                                type: string
+                            type: object
                           cors:
                             properties:
                               credentials:

@@ -87,6 +87,9 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 				if specRouteAction.Route.Websocket != nil {
 					methodOpts.Websocket = specRouteAction.Route.Websocket
 				}
+				if specRouteAction.Route.Auth != nil {
+					methodOpts.Auth = specRouteAction.Route.Auth
+				}
 			}
 		}
 	}
@@ -118,6 +121,8 @@ type Route struct {
 	// +optional
 	// Enable establishing Websocket connections, by default disabled
 	Websocket *bool `json:"websocket,omitempty"`
+	// +optional
+	Auth *options.AuthOptions `json:"auth,omitempty"`
 }
 
 // StaticRouteStatus defines the observed state of StaticRoute
@@ -133,9 +138,8 @@ type StaticRouteStatus struct {
 type StaticRoute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   StaticRouteSpec   `json:"spec,omitempty"`
-	Status StaticRouteStatus `json:"status,omitempty"`
+	Spec              StaticRouteSpec   `json:"spec,omitempty"`
+	Status            StaticRouteStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
