@@ -111,6 +111,15 @@ const sidebars = {
       ],
     },
     {
+      type: "category",
+      label: "Quick Links",
+      items: [
+        "quick-links/install",
+        "quick-links/upgrade",
+        "quick-links/helm-install",
+      ],
+    },
+    {
       type: "doc",
       label: "Contributing",
       id: "contributing",

@@ -10,18 +10,26 @@ export default function CopyButton({ code, className }) {
   const handleCopyCode = useCallback(() => {
     if (code === "brew install kubeshop/kusk/kusk") {
       window.dataLayer.push({
-        installationPlatform: "MacOS"
-      })
+        installationPlatform: "MacOS",
+        event: "installationPlatform",
+      });
     }
-    if (code === "curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash") {
+    if (
+      code ===
+      "curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash"
+    ) {
       window.dataLayer.push({
-        installationPlatform: "Linux"
-      })
+        installationPlatform: "Linux",
+        event: "installationPlatform",
+      });
     }
-    if (code === "go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest") {
+    if (
+      code === "go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest"
+    ) {
       window.dataLayer.push({
-        installationPlatform: "Windows"
-      })
+        installationPlatform: "Windows",
+        event: "installationPlatform",
+      });
     }
     copy(code);
     setIsCopied(true);
