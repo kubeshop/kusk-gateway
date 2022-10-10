@@ -39,9 +39,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
-	"github.com/kubeshop/testkube/pkg/ui"
 	"github.com/mattn/go-isatty"
-
 )
 
 var cfgFile string
