@@ -80,10 +80,6 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 					return err
 				}
 
-				if strings.Contains(err.Error(), "invalid configuration") {
-					kuskui.PrintInfoGray("To ensure that Kusk CLI has access to the cluster please configure KUBECONFIG environment variable.")
-					return err
-				}
 				return err
 			}
 
