@@ -20,9 +20,9 @@ var confirm bool
 
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Uninstall kusk-gateway, envoy-fleet, api, and dashboard in a single command",
+	Short: "Uninstall Kusk Gateway, EnvoyFleet, Kusk API, and Kusk Dashboard in a single command",
 	Long: `
-	Uninstall kusk-gateway, envoy-fleet, api, and dashboard in a single command.
+	Uninstall Kusk Gateway, EnvoyFleet, Kusk API, and Kusk Dashboard in a single command.
 
 	$ kusk uninstall
 	`,
@@ -33,6 +33,21 @@ var uninstallCmd = &cobra.Command{
 			if err != nil {
 				errors.NewErrorReporter(cmd, err).Report()
 			}
+		}
+
+		var err error
+		c, err := utils.GetK8sClient()
+
+		kuskui.PrintInfo("Checking if Kusk is already installed...")
+
+		kuskNamespace := &corev1.Namespace{}
+		if err := c.Get(cmd.Context(), client.ObjectKey{Name: kusknamespace}, kuskNamespace); err != nil {
+			if err.Error() == fmt.Sprintf(`namespaces "%s" not found`, kusknamespace) {
+				kuskui.PrintInfo("Kusk is not installed on cluster.")
+				os.Exit(0)
+			}
+			reportError(err)
+			return err
 		}
 
 		proceed := confirm
@@ -48,28 +63,14 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if result == "N" || result == "n" || result == "" {
-				kuskui.PrintInfo("exiting")
+				kuskui.PrintInfo("Exiting...")
 				return nil
 			}
 			proceed = true
 		}
 
 		if proceed {
-			var err error
-			c, err := utils.GetK8sClient()
 			if err != nil {
-				reportError(err)
-				return err
-			}
-
-			kuskui.PrintStart("Checking if kusk is already installed...")
-
-			kuskNamespace := &corev1.Namespace{}
-			if err := c.Get(cmd.Context(), client.ObjectKey{Name: kusknamespace}, kuskNamespace); err != nil {
-				if err.Error() == fmt.Sprintf(`namespaces "%s" not found`, kusknamespace) {
-					kuskui.PrintInfo("Kusk is not installed on cluster.")
-					os.Exit(0)
-				}
 				reportError(err)
 				return err
 			}
@@ -91,13 +92,14 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if apis != nil && len(apis.Items) > 0 {
-				kuskui.PrintStart("deleting APIs...")
+				apiSpinner := utils.NewSpinner("Deleting APIs...")
 				for _, api := range apis.Items {
 					if err := c.Delete(cmd.Context(), &api, &client.DeleteAllOfOptions{}); err != nil {
 						reportError(err)
 						return err
 					}
 				}
+				apiSpinner.Success("Deleted APIs")
 			}
 
 			fleets := &kuskv1.EnvoyFleetList{}
@@ -111,13 +113,14 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if fleets != nil && len(fleets.Items) > 0 {
-				kuskui.PrintStart("deleting Envoyfleets...")
+				envoyFleetSpinner := utils.NewSpinner("Deleting EnvoyFleets...")
 				for _, fleet := range fleets.Items {
 					if err := c.Delete(cmd.Context(), &fleet, &client.DeleteAllOfOptions{}); err != nil {
 						reportError(err)
 						return err
 					}
 				}
+				envoyFleetSpinner.Success("Deleted EnvoyFleets")
 			}
 
 			staticRoutes := &kuskv1.StaticRouteList{}
@@ -131,26 +134,28 @@ var uninstallCmd = &cobra.Command{
 			}
 
 			if staticRoutes != nil && len(staticRoutes.Items) > 0 {
-				kuskui.PrintStart("deleting Staticroutes...")
+				staticRoutesSpinner := utils.NewSpinner("Deleting StaticRoutes...")
 				for _, route := range staticRoutes.Items {
 					if err := c.Delete(cmd.Context(), &route, &client.DeleteAllOfOptions{}); err != nil {
 						reportError(err)
 						return err
 					}
 				}
+				staticRoutesSpinner.Success("Deleted StaticRoutes")
 			}
 
-			kuskui.PrintStart("uninstalling Kusk...")
+			kuskGatewaySpinner := utils.NewSpinner("Deleting Kusk Gateway...")
 
 			if err := deletek(dir); err != nil {
-				kuskui.PrintError("❌ failed uninstalling Kusk", err.Error())
+				kuskui.PrintError("❌ Failed uninstalling Kusk Gateway", err.Error())
 				reportError(err)
 				return err
 			}
 
+			kuskGatewaySpinner.Success("Deleted Kusk Gateway")
 		}
 
-		kuskui.PrintInfoLightGreen("\nkusk successfully uninstalled from your cluster")
+		kuskui.PrintInfoLightGreen("\nKusk successfully uninstalled from your cluster")
 
 		return nil
 	},
