@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
 )
@@ -57,8 +58,10 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 	formattedVersion := VersionFormat(version)
 
 	return &cobra.Command{
-		Use:   "version",
-		Short: "version for Kusk",
+		Use:           "version",
+		Short:         "version for Kusk",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, s []string) error {
 			reportError := func(err error) {
 				if err != nil {
@@ -71,6 +74,16 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 			c, err := utils.GetK8sClient()
 			if err != nil {
 				reportError(err)
+				if strings.Contains(err.Error(), "connect: connection refused") {
+					kuskui.PrintInfoGray("Kusk is not installed in the cluster")
+					kuskui.PrintInfo(`To install it please run "kusk cluster install"`)
+					return err
+				}
+
+				if strings.Contains(err.Error(), "invalid configuration") {
+					kuskui.PrintInfoGray("To ensure that Kusk CLI has access to the cluster please configure KUBECONFIG environment variable.")
+					return err
+				}
 				return err
 			}
 
