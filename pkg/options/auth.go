@@ -48,15 +48,12 @@ const (
 //	      hostname: example.com
 //	      port: 80
 type AuthOptions struct {
-	// "basic", "cloudentity" "oauth2".
-	// REQUIRED.
-	Scheme string `json:"scheme,omitempty" yaml:"scheme,omitempty"`
-	// OPTIONAL. TODO(MBana): Move to `AuthUpstream`.
-	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
-	// REQUIRED, if `scheme == basic`. Mutually exclusive with `OAuth2`.
-	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
-	// REQUIRED, if `scheme == oauth2`. Mutually exclusive with `AuthUpstream`.
+	// OPTIONAL
 	OAuth2 *OAuth2 `json:"oauth2,omitempty" yaml:"oauth2,omitempty"`
+	// OPTIONAL
+	Custom *Custom `json:"custom,omitempty" yaml:"custom,omitempty"`
+	// OPTIONAL
+	Cloudentity *Cloudentity `json:"cloudentity,omitempty" yaml:"cloudentity,omitempty"`
 }
 
 func (o AuthOptions) String() string {
@@ -64,24 +61,44 @@ func (o AuthOptions) String() string {
 }
 
 func (o AuthOptions) Validate() error {
-	err := validation.ValidateStruct(&o,
-		validation.Field(&o.Scheme, validation.Required, validation.In(SchemeBasic, SchemeCloudEntity, SchemeOAuth2)),
-	)
-	if err != nil {
-		return err
+
+	if o.OAuth2 == nil && o.Custom == nil && o.Cloudentity == nil {
+		return fmt.Errorf("auth must have one of the following defined OAuth2, Custom or Cloudentity")
 	}
 
-	// `basic` or `cloudentity`
-	if SchemeBasic == o.Scheme || SchemeCloudEntity == o.Scheme {
-		return validation.ValidateStruct(&o,
-			validation.Field(&o.AuthUpstream, validation.Required),
-		)
+	if o.OAuth2 != nil && o.Custom != nil {
+		return fmt.Errorf("custom auth and OAuth cannot be enabled at the same time")
 	}
 
-	// SchemeOAuth2
-	return validation.ValidateStruct(&o,
-		validation.Field(&o.OAuth2, validation.Required),
-	)
+	if o.OAuth2 != nil {
+		// SchemeOAuth2
+		err := validation.ValidateStruct(&o.OAuth2, validation.Field(&o.OAuth2, validation.Required))
+
+		return fmt.Errorf("%s - 1", err)
+	}
+
+	if o.Custom != nil {
+		err := validation.ValidateStruct(o.Custom, validation.Field(&o.Custom.AuthUpstream.Host, validation.Required))
+		return fmt.Errorf("%s - 2", err)
+	}
+
+	if o.Cloudentity != nil {
+		err := validation.ValidateStruct(&o.Cloudentity, validation.Field(&o.Cloudentity, validation.Required))
+		return fmt.Errorf("%s - 3", err)
+
+	}
+	// err := validation.ValidateStruct(&o,
+	// 	validation.Field(&o, validation.Required, validation.In(reflect.TypeOf(o.Custom), reflect.TypeOf(o.OAuth2), reflect.TypeOf(o.Cloudentity))),
+	// )
+	// if err != nil {
+	// 	fmt.Println("TADA", err)
+	// 	return err
+	// }
+	return nil
+	// // SchemeOAuth2
+	// return validation.ValidateStruct(&o,
+	// 	validation.Field(&o.OAuth2, validation.Required),
+	// )
 }
 
 type AuthUpstream struct {
@@ -231,4 +248,17 @@ type CookieNames struct {
 
 func (o CookieNames) Validate() error {
 	return nil
+}
+
+type Custom struct {
+
+	// OPTIONAL. TODO(MBana): Move to `AuthUpstream`.
+	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
+	// REQUIRED, if `scheme == basic`. Mutually exclusive with `OAuth2`.
+	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
+}
+
+type Cloudentity struct {
+	// REQUIRED, if `scheme == basic`. Mutually exclusive with `OAuth2`.
+	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
 }

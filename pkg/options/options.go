@@ -131,11 +131,11 @@ type SubOptions struct {
 
 func (o SubOptions) Validate() error {
 	if o.Upstream != nil && o.Redirect != nil {
-		return fmt.Errorf("Upstream and Service are mutually exclusive")
+		return fmt.Errorf("upstream and service are mutually exclusive")
 	}
 	// fail if doesn't have upstream or redirect and is "enabled"
 	if o.Upstream == nil && o.Redirect == nil {
-		if o.Disabled != nil && *o.Disabled == false {
+		if o.Disabled != nil && !*o.Disabled {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}

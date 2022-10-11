@@ -50,12 +50,14 @@ auth:
       port: 80
 `,
 			expected: &AuthOptions{
-				Scheme:     "basic",
-				PathPrefix: StringToPtr("/login"),
-				AuthUpstream: &AuthUpstream{
-					Host: AuthUpstreamHost{
-						Hostname: "example.com",
-						Port:     80,
+				// Scheme: "basic",
+				Custom: &Custom{
+					PathPrefix: StringToPtr("/login"),
+					AuthUpstream: &AuthUpstream{
+						Host: AuthUpstreamHost{
+							Hostname: "example.com",
+							Port:     80,
+						},
 					},
 				},
 			},
@@ -83,7 +85,7 @@ auth:
       - openid
 `,
 			expected: &AuthOptions{
-				Scheme: "oauth2",
+				// Scheme: "oauth2",
 				OAuth2: &OAuth2{
 					TokenEndpoint:         "https://oauth2.googleapis.com/token",
 					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/auth",
@@ -131,7 +133,7 @@ auth:
       - openid
 `,
 			expected: &AuthOptions{
-				Scheme: "oauth2",
+				// Scheme: "oauth2",
 				OAuth2: &OAuth2{
 					TokenEndpoint:         "https://oauth2.googleapis.com/token",
 					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/auth",
@@ -181,12 +183,14 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	assert := assert.New(t)
 
 	authOptions := &AuthOptions{
-		Scheme:     "basic",
-		PathPrefix: StringToPtr("/login"),
-		AuthUpstream: &AuthUpstream{
-			Host: AuthUpstreamHost{
-				Hostname: "example.com",
-				Port:     80,
+		// Scheme: "basic",
+		Custom: &Custom{
+			PathPrefix: StringToPtr("/login"),
+			AuthUpstream: &AuthUpstream{
+				Host: AuthUpstreamHost{
+					Hostname: "example.com",
+					Port:     80,
+				},
 			},
 		},
 	}
@@ -204,12 +208,14 @@ func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
 	assert := assert.New(t)
 
 	authOptions := &AuthOptions{
-		Scheme:     "cloudentity",
-		PathPrefix: StringToPtr("/login"),
-		AuthUpstream: &AuthUpstream{
-			Host: AuthUpstreamHost{
-				Hostname: "example.com",
-				Port:     80,
+		// Scheme: "cloudentity",
+		Custom: &Custom{
+			PathPrefix: StringToPtr("/login"),
+			AuthUpstream: &AuthUpstream{
+				Host: AuthUpstreamHost{
+					Hostname: "example.com",
+					Port:     80,
+				},
 			},
 		},
 	}
@@ -226,12 +232,13 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 	assert := assert.New(t)
 
 	authOptions := &AuthOptions{
-		Scheme:     "basic",
-		PathPrefix: StringToPtr("/login"),
-		AuthUpstream: &AuthUpstream{
-			Host: AuthUpstreamHost{
-				// Hostname: "example.com",
-				// Port: 80,
+		Custom: &Custom{
+			PathPrefix: StringToPtr("/login"),
+			AuthUpstream: &AuthUpstream{
+				Host: AuthUpstreamHost{
+					// Hostname: "example.com",
+					Port: 80,
+				},
 			},
 		},
 	}
@@ -250,7 +257,6 @@ func Test_AuthOptions_OAuth2_Mutually_Exclusive_Client_Secret_Options(t *testing
 	expected := "auth: (oauth2: (credentials: oauth2: You cannot specify both `client_secret_ref` and `client_secret`, the options are mutually exclusive.).)."
 	input := `
 auth:
-  scheme: oauth2
   oauth2:
     token_endpoint: https://oauth2.googleapis.com/token
     authorization_endpoint: https://accounts.google.com/o/oauth2/auth
@@ -272,8 +278,32 @@ auth:
       - user
       - openid
 `
-	options := &SubOptions{}
-	err := yaml.UnmarshalStrict([]byte(input), options)
+	ttt := "123"
+	options := &SubOptions{
+		Auth: &AuthOptions{
+			OAuth2: &OAuth2{
+				TokenEndpoint:         "!23",
+				AuthorizationEndpoint: "321",
+				Credentials: Credentials{
+					ClientID:     "!23",
+					ClientSecret: &ttt,
+					ClientSecretRef: &ClientSecretRef{
+						Name:      "!@3",
+						Namespace: "412",
+					},
+					HmacSecret: "!@3",
+				},
+				RedirectURI:         "!@3",
+				RedirectPathMatcher: "124",
+				ForwardBearerToken:  true,
+				AuthScopes:          []string{"1", "2"},
+				Resources:           []string{"1", "2"},
+			},
+		},
+	}
+	y, _ := yaml.Marshal(options)
+	fmt.Println(input)
+	err := yaml.UnmarshalStrict([]byte(y), options)
 	assert.NoError(err)
 
 	assert.EqualError(options.Validate(), expected)
