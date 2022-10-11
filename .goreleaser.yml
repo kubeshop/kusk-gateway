@@ -2,7 +2,7 @@ before:
   hooks:
     - go mod tidy
     - go mod verify
-    - go generate 
+    - go generate
 builds:
   - id: kusk-gateway
     skip: true
@@ -62,3 +62,10 @@ brews:
     install: bin.install "kusk"
     ids:
     - kusk
+
+nfpms:
+  - maintainer: Kusk Team
+    license: "MIT"
+    formats:
+      - deb
+    description: Kusk - Make your OpenAPI definition the source of truth for API resources in cluster
