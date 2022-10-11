@@ -42,21 +42,19 @@ func Test_AuthOptions_UnmarshalStrict(t *testing.T) {
 		{
 			input: `
 auth:
-  scheme: basic
-  path_prefix: /login
-  auth-upstream:
-    host:
-      hostname: example.com
-      port: 80
+  custom:
+    path_prefix: /login
+    auth-upstream:
+      host:
+        hostname: example.com
 `,
 			expected: &AuthOptions{
-				// Scheme: "basic",
 				Custom: &Custom{
 					PathPrefix: StringToPtr("/login"),
 					AuthUpstream: &AuthUpstream{
 						Host: AuthUpstreamHost{
 							Hostname: "example.com",
-							Port:     80,
+							// Port:     80,
 						},
 					},
 				},
@@ -65,7 +63,6 @@ auth:
 		{
 			input: `
 auth:
-  scheme: oauth2
   oauth2:
     token_endpoint: https://oauth2.googleapis.com/token
     authorization_endpoint: https://accounts.google.com/o/oauth2/auth
@@ -85,7 +82,6 @@ auth:
       - openid
 `,
 			expected: &AuthOptions{
-				// Scheme: "oauth2",
 				OAuth2: &OAuth2{
 					TokenEndpoint:         "https://oauth2.googleapis.com/token",
 					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/auth",
@@ -111,7 +107,6 @@ auth:
 		{
 			input: `
 auth:
-  scheme: oauth2
   oauth2:
     token_endpoint: https://oauth2.googleapis.com/token
     authorization_endpoint: https://accounts.google.com/o/oauth2/auth
@@ -133,7 +128,6 @@ auth:
       - openid
 `,
 			expected: &AuthOptions{
-				// Scheme: "oauth2",
 				OAuth2: &OAuth2{
 					TokenEndpoint:         "https://oauth2.googleapis.com/token",
 					AuthorizationEndpoint: "https://accounts.google.com/o/oauth2/auth",
@@ -183,7 +177,6 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	assert := assert.New(t)
 
 	authOptions := &AuthOptions{
-		// Scheme: "basic",
 		Custom: &Custom{
 			PathPrefix: StringToPtr("/login"),
 			AuthUpstream: &AuthUpstream{
@@ -200,7 +193,6 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	}
 
 	assert.NoError(options.Validate())
-	// assert.Equal(expected, options.Auth)
 }
 
 func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
@@ -208,7 +200,6 @@ func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
 	assert := assert.New(t)
 
 	authOptions := &AuthOptions{
-		// Scheme: "cloudentity",
 		Custom: &Custom{
 			PathPrefix: StringToPtr("/login"),
 			AuthUpstream: &AuthUpstream{
@@ -247,7 +238,7 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 		Auth: authOptions,
 	}
 
-	assert.EqualError(options.Validate(), "auth: (auth-upstream: (host: (hostname: cannot be blank; port: cannot be blank.).).).")
+	assert.EqualError(options.Validate(), "auth: (custom: (auth-upstream: (host: (hostname: cannot be blank.).).).).")
 }
 
 func Test_AuthOptions_OAuth2_Mutually_Exclusive_Client_Secret_Options(t *testing.T) {
@@ -278,32 +269,9 @@ auth:
       - user
       - openid
 `
-	ttt := "123"
-	options := &SubOptions{
-		Auth: &AuthOptions{
-			OAuth2: &OAuth2{
-				TokenEndpoint:         "!23",
-				AuthorizationEndpoint: "321",
-				Credentials: Credentials{
-					ClientID:     "!23",
-					ClientSecret: &ttt,
-					ClientSecretRef: &ClientSecretRef{
-						Name:      "!@3",
-						Namespace: "412",
-					},
-					HmacSecret: "!@3",
-				},
-				RedirectURI:         "!@3",
-				RedirectPathMatcher: "124",
-				ForwardBearerToken:  true,
-				AuthScopes:          []string{"1", "2"},
-				Resources:           []string{"1", "2"},
-			},
-		},
-	}
-	y, _ := yaml.Marshal(options)
-	fmt.Println(input)
-	err := yaml.UnmarshalStrict([]byte(y), options)
+
+	options := &SubOptions{}
+	err := yaml.Unmarshal([]byte(input), options)
 	assert.NoError(err)
 
 	assert.EqualError(options.Validate(), expected)
