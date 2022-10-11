@@ -232,3 +232,8 @@ install-deps:
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@echo "[INFO]: Installing protobuf go generation plugin."
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+
+# `build-goreleaser` is just for local testing.
+.PHONY: build-goreleaser
+build-goreleaser:
+	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" goreleaser release --rm-dist --skip-publish --skip-validate
