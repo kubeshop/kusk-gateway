@@ -67,6 +67,8 @@ docs-preview: ## Preview the documentation
 
 .PHONY: tail-logs
 tail-logs: install-deps ## Tail logs of all containers across all namespaces
+	go install github.com/stern/stern@latest
+	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
 	stern --all-namespaces --selector app.kubernetes.io/name
 
 .PHONY: tail-xds
@@ -145,11 +147,6 @@ testing: ## Run the integration tests from development/testing and then delete t
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager -ldflags="${LD_FLAGS}" cmd/manager/main.go
 
-.PHONY: run
-run: install-deps install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
-	go build -o bin/manager cmd/manager/main.go
-	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
-
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
 	docker build \
@@ -222,9 +219,6 @@ check-all: install-deps $(smoketests)
 
 .PHONY: install-deps
 install-deps:
-	go install github.com/omrikiei/ktunnel@v1.4.7
-	go install github.com/stern/stern@latest
-	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
 	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
 	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
