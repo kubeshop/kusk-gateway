@@ -7,9 +7,9 @@ spec:
     name: default
     namespace: default
   paths:
-    /frontend:
+    /:
       get:
-        route: &root_route
+        route:
           upstream:
             service:
               name: frontend-app-svc
