@@ -21,7 +21,7 @@ spec:
         app.kubernetes.io/component: kusk-gateway-manager
     spec:
       securityContext:
-        runAsNonRoot: true
+        runAsNonRoot: false
       containers:
         - command:
             - /manager
