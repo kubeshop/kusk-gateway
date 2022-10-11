@@ -1,0 +1,90 @@
+name: skaffold
+on: [push]
+env:
+  GO_VERSION: "1.19.2"
+  # https://minikube.sigs.k8s.io/docs/faq/#can-i-get-rid-of-the-emoji-in-minikubes-output
+  MINIKUBE_IN_STYLE: 0
+  MINIKUBE_VERSION: "v1.26.1"
+  # KUBERNETES_VERSION: "v1.23.3" # Not currently used
+
+jobs:
+  download-binaries:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    steps:
+      - name: download-dependencies
+        # continue-on-error: false
+        run: |
+          sudo apt-get install -y curl
+      - name: download-minikube
+        run: |
+          ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
+          curl -LO https://storage.googleapis.com/minikube/releases/${{env.MINIKUBE_VERSION}}/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          rm minikube-linux-amd64
+      - uses: actions/upload-artifact@v3
+        with:
+          name: minikube
+          path: /usr/local/bin/minikube
+      - name: download-kubectl
+        run: |
+          ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
+          curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${ARCH}/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client=true
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kubectl
+          path: /usr/local/bin/kubectl
+      - name: download-skaffold
+        run: |
+          ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
+          sudo curl -L --output /usr/local/bin/skaffold "https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-${ARCH}"
+          sudo chmod +x /usr/local/bin/skaffold
+      - uses: actions/upload-artifact@v3
+        with:
+          name: skaffold
+          path: /usr/local/bin/skaffold
+  e2e:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    needs: download-binaries
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: minikube
+          # path: /usr/local/bin/minikube
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubectl
+          # path: /usr/local/bin/kubectl
+      - uses: actions/download-artifact@v3
+        with:
+          name: skaffold
+          # path: /usr/local/bin/skaffold
+      - name: minikube-start
+        run: |
+          minikube start --profile kgw --addons=metallb
+          echo
+          kubectl get svc -A
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: skaffold-run
+        run: |
+          ./skaffold.sh run
+          echo
+          sleep 8
+          echo
+          kubectl get svc -A
+      - name: e2e-download-dependencies
+        run: |
+          sudo apt-get install -y make
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: e2e-run
+        run: |
+          make check-all

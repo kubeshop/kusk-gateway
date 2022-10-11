@@ -6,9 +6,20 @@ set -o errexit  # Used to exit upon error, avoiding cascading errors
 set -o pipefail # Unveils hidden failures
 set -o nounset  # Exposes unset variables
 
-PROFILE="${PROFILE:-kgw}"
+install_and_configure_skaffold() {
+  ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
+  sudo curl -L --output /usr/local/bin/skaffold "https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-${ARCH}"
+  sudo chmod +x /usr/local/bin/skaffold
+  echo
+  skaffold version
+  echo
+  skaffold config set --global local-cluster true
+  echo
+  mkdir -pv /tmp/skaffold || echo '`/tmp/skaffold` already exist - skipping create'
+}
+skaffold version || install_and_configure_skaffold
 
-mkdir -pv /tmp/skaffold || echo '`/tmp/skaffold` already exist - skipping create'
+PROFILE="${PROFILE:-kgw}"
 
 kustomize build config/crd >/tmp/skaffold/config-crd.yaml
 # For debugging support changing this value, otherwise we get this error:

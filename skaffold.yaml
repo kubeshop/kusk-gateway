@@ -2,6 +2,7 @@ apiVersion: skaffold/v2beta29
 kind: Config
 build:
   local:
+    useBuildkit: true
     push: false
   tagPolicy:
     sha256: {}

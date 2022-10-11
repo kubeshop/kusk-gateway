@@ -1,3 +1,5 @@
+# syntax = docker/dockerfile:experimental
+
 # Build the manager binary
 FROM --platform=$BUILDPLATFORM docker.io/golang:1.19 as builder
 
@@ -9,7 +11,9 @@ COPY go.sum go.sum
 
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+RUN \
+  --mount=type=cache,target=/go/pkg/mod \
+  go mod download
 
 ARG TARGETARCH
 ARG TARGETOS
@@ -22,7 +26,11 @@ ARG SKAFFOLD_GO_GCFLAGS
 COPY . .
 
 # Build
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -v -ldflags "-X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$TELEMETRY_TOKEN' -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$VERSION'" -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o manager cmd/manager/main.go
+RUN \
+  --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+  GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 \
+  go build -v -ldflags "-X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=$TELEMETRY_TOKEN' -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=$VERSION'" -gcflags="${SKAFFOLD_GO_GCFLAGS}" -o manager cmd/manager/main.go
 
 # Directory for the files created and used by the manager, to be copied for static rootless images since we don't have shell to create it there
 RUN mkdir -m 00755 /opt/manager
