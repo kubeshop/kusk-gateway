@@ -1,10 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../crd
-- ../rbac
-- ../manager
-- ../webhook
+  - ../crd
+  - ../rbac
+  - ../manager
+  - ../webhook
 
 # Adds namespace to all resources.
 namespace: kusk-system
@@ -22,13 +22,13 @@ commonLabels:
   app.kubernetes.io/name: kusk-gateway
 
 patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
-- manager_webhook_patch.yaml
+  - manager_auth_proxy_patch.yaml
+  - manager_webhook_patch.yaml
 
 images:
-- name: kusk-gateway
-  newName: kubeshop/kusk-gateway
-  newTag: v1.3.3
-- name: kusk-gateway:dev
-  newName: kubeshop/kusk-gateway
-  newTag: latest
+  - name: kusk-gateway
+    newName: jasmingacic/kusk-gateway
+    newTag: latest
+  - name: kusk-gateway:dev
+    newName: kubeshop/kusk-gateway
+    newTag: latest

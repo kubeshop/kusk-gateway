@@ -19,11 +19,11 @@ spec:
     - https
     x-kusk:
       auth:
-        scheme: basic
-        auth-upstream:
-          host:
-            hostname: ext-authz-http-basic-auth
-            port: 80
+        custom:
+          auth-upstream:
+            host:
+              hostname: ext-authz-http-basic-auth
+              port: 80
       upstream:
         service:
           name: ext-authz-httpbin
