@@ -107,19 +107,19 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 			body := map[string]string{}
 			t.NoError(json.Unmarshal(responseBody, &body))
 
-			if body["uuid"] == "" {
-				t.Fail("uuid is empty - expecting a uuid")
-			}
+			actual, ok := body["uuid"]
+			t.True(ok, "uuid is not present in body")
+			t.NotEqual("", actual, "uuid is empty - expecting a uuid")
 
 			if uuidCached == "" && x == 0 {
 				uuidCached = body["uuid"]
 			}
 
-			if uuidCached != body["uuid"] {
-				t.Fail("uuid has changed - expecting the same uuid")
-			}
+			uuidActual, ok := body["uuid"]
+			t.True(ok, "uuid is not present in body")
+			t.NotEqual(uuidCached, uuidActual, "uuid has changed - expecting the same uuid")
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 		}()
 	}
 

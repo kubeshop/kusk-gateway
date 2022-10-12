@@ -8,7 +8,7 @@ env:
   # KUBERNETES_VERSION: "v1.23.3" # Not currently used
 
 jobs:
-  download-binaries:
+  download-minikube:
     runs-on: ubuntu-22.04
     continue-on-error: true
     steps:
@@ -26,6 +26,44 @@ jobs:
         with:
           name: minikube
           path: /usr/local/bin/minikube
+      - name: cache-minikube
+        id: cache-minikube
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/bin/minikube
+          key: minikube
+  download-kind:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    steps:
+      - name: download-dependencies
+        # continue-on-error: false
+        run: |
+          sudo apt-get install -y curl
+      - name: download-minikube
+        run: |
+          ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
+          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.16.0/kind-linux-${ARCH}"
+          chmod +x ./kind
+          sudo mv -v ./kind /usr/local/bin/kind
+      - uses: actions/upload-artifact@v3
+        with:
+          name: kind
+          path: /usr/local/bin/kind
+      - name: cache-kind
+        id: cache-kind
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/bin/kind
+          key: kind
+  download-kubectl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: download-dependencies
+        run: |
+          sudo apt-get install -y curl
       - name: download-kubectl
         run: |
           ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
@@ -36,6 +74,19 @@ jobs:
         with:
           name: kubectl
           path: /usr/local/bin/kubectl
+      - name: cache-kubectl
+        id: cache-kubectl
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/bin/kubectl
+          key: kubectl
+  download-skaffold:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: download-dependencies
+        run: |
+          sudo apt-get install -y curl
       - name: download-skaffold
         run: |
           ARCH="$([ $(uname -m) = "aarch64" ] && echo "arm64" || echo "amd64")"
@@ -45,26 +96,70 @@ jobs:
         with:
           name: skaffold
           path: /usr/local/bin/skaffold
+      - name: cache-skaffold
+        id: cache-skaffold
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/bin/skaffold
+          key: skaffold
+  # e2e-go-mod-download:
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0
+  #     - name: setup-golang
+  #       uses: actions/setup-go@v2
+  #       with:
+  #         go-version: 1.19
+  #     - name: e2e-go-dependencies
+  #       run: |
+  #         go mod download
   e2e:
     runs-on: ubuntu-22.04
     continue-on-error: true
-    needs: download-binaries
+    needs:
+      - download-minikube
+      - download-kind
+      - download-kubectl
+      - download-skaffold
     steps:
-      - uses: actions/download-artifact@v3
+      - name: cache-minikube
+        id: cache-minikube
+        uses: actions/cache@v3
         with:
-          name: minikube
-          # path: /usr/local/bin/minikube
-      - uses: actions/download-artifact@v3
+          path: |
+            /usr/local/bin/minikube
+          key: minikube
+      - name: cache-kind
+        id: cache-kind
+        uses: actions/cache@v3
         with:
-          name: kubectl
-          # path: /usr/local/bin/kubectl
-      - uses: actions/download-artifact@v3
+          path: |
+            /usr/local/bin/kind
+          key: kind
+      - name: cache-kubectl
+        id: cache-kubectl
+        uses: actions/cache@v3
         with:
-          name: skaffold
-          # path: /usr/local/bin/skaffold
+          path: |
+            /usr/local/bin/kubectl
+          key: kubectl
+      - name: cache-skaffold
+        id: cache-skaffold
+        uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/bin/skaffold
+          key: minikube
       - name: minikube-start
         run: |
-          minikube start --profile kgw --addons=metallb
+          # minikube start --profile kgw --addons=metallb
+          kind create cluster --name kgw
+          echo
+          kubectl cluster-info --context kind-kgw
           echo
           kubectl get svc -A
       - name: checkout
@@ -73,11 +168,16 @@ jobs:
           fetch-depth: 0
       - name: skaffold-run
         run: |
+          kubectl cluster-info --context kind-kgw
+          echo
           ./skaffold.sh run
           echo
-          sleep 8
+          sleep 2
           echo
           kubectl get svc -A
+  check-all-dependencies:
+    runs-on: ubuntu-22.04
+    steps:
       - name: e2e-download-dependencies
         run: |
           sudo apt-get install -y make
@@ -85,6 +185,52 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: go-mod-download
+        run: |
+          go env
+          go mod download
+      - name: cache-go
+        id: cache-go
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-modules
+  check-all:
+    runs-on: ubuntu-22.04
+    needs:
+      - e2e
+    steps:
+      - name: e2e-download-dependencies
+        run: |
+          sudo apt-get install -y make
+      - uses: actions/download-artifact@v3
+        with:
+          name: kubectl
+          # path: /usr/local/bin/kubectl
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: cache-go
+        id: cache-go
+        uses: actions/cache@v3
+        with:
+          key: go-modules
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+      - name: cache-kubeconfig
+        id: cache-kubeconfig
+        uses: actions/cache@v3
+        with:
+          key: kubeconfig
+          path: |
+            ~/.kube/config
       - name: e2e-run
         run: |
+          cat ~/.kube/config
+          # kubectl rollout status deployment/kusk-gateway-manager --namespace kusk-system --watch --timeout=132s
+          kubectl get svc -A
           make check-all

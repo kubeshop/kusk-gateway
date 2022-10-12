@@ -13,25 +13,34 @@ build:
         dockerfile: build/manager/Dockerfile
       context: .
 deploy:
-  kubeContext: kgw
+  kubeContext: kind-kgw
   kubectl:
     manifests:
       - /tmp/skaffold/config-crd.yaml
       - /tmp/skaffold/config-default.yaml
-      - /tmp/skaffold/config-map-metallb.yaml
+      - /tmp/skaffold/metallb/metallb-native.yaml
     hooks:
       after:
         - host:
             command:
               - /bin/sh
               - -c
-              - echo 'sleeping for 2 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`'
-              - sleep 2
+              - echo 'sleeping for 4 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`'
+              - sleep 4
 ---
 apiVersion: skaffold/v2beta29
 kind: Config
 deploy:
-  kubeContext: kgw
+  kubeContext: kind-kgw
   kubectl:
     manifests:
       - config/samples/gateway_v1_envoyfleet.yaml
+      - /tmp/skaffold/metallb/metallb-config.yaml
+    hooks:
+      before:
+        - host:
+            command:
+              - /bin/sh
+              - -c
+              - echo 'sleeping for 8 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`'
+              - sleep 8

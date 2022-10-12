@@ -8,7 +8,14 @@ check-cache:
 	kubectl apply -f ./samples/cache/cache-upstream.yaml
 	@echo "sleeping for 2s ..."
 	@sleep 2
-	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
+	kubectl get svc -A
+	-go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
+ 	-minikube --profile kgw ip && ([ $$? -eq 0 ] && curl -v "http://$(shell minikube --profile kgw ip)/uuid") || echo 'failed to get `/uuid`'
+	sleep 1
+	-minikube --profile kgw ip && ([ $$? -eq 0 ] && curl -v "http://$(shell minikube --profile kgw ip)/uuid") || echo 'failed to get `/uuid`'
+	sleep 1
+	-minikube --profile kgw ip && ([ $$? -eq 0 ] && curl -v "http://$(shell minikube --profile kgw ip)/uuid") || echo 'failed to get `/uuid`'
+	sleep 1
 	kubectl delete -f ./samples/cache/cache-upstream.yaml
 
 check-basic_auth:
