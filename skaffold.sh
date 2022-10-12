@@ -13,11 +13,11 @@ install_and_configure_skaffold() {
   echo
   skaffold version
   echo
-  skaffold config set --global local-cluster true
-  echo
-  mkdir -pv /tmp/skaffold || echo '`/tmp/skaffold` already exist - skipping create'
 }
 skaffold version || install_and_configure_skaffold
+skaffold config set --global local-cluster true
+
+mkdir -pv /tmp/skaffold || echo '`/tmp/skaffold` already exist - skipping create'
 
 PROFILE="${PROFILE:-kgw}"
 
