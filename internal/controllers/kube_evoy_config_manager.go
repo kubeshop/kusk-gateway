@@ -51,6 +51,10 @@ const (
 	tlsCrt = "tls.crt"
 )
 
+var (
+	configManagerLogger = ctrl.Log.WithName("controller.config-manager")
+)
+
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
@@ -62,10 +66,6 @@ type KubeEnvoyConfigManager struct {
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
 	OpenApiParser      spec.Parser
 }
-
-var (
-	configManagerLogger = ctrl.Log.WithName("controller.config-manager")
-)
 
 // UpdateConfiguration is the main method to gather all routing configs and to create and apply Envoy config
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetID gateway.EnvoyFleetID) error {
@@ -130,20 +130,25 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 	}
 
 	l.Info("Successfully processed APIs", "fleet", fleetIDstr)
+
 	l.Info("Getting Static Routes", "fleet", fleetIDstr)
 	staticRoutes, err := c.getDeployedStaticRoutes(ctx, fleetIDstr)
 	if err != nil {
 		l.Error(err, "Failed getting StaticRoutes for the fleet", "fleet", fleetIDstr)
 		return err
 	}
+
 	for _, sr := range staticRoutes {
 		l.Info("Processing static routes", "fleet", fleetIDstr, "route", sr.Name)
 		opts, err := sr.Spec.GetOptionsFromSpec()
 		if err != nil {
-			return fmt.Errorf("failed to generate options from the static route config: %w", err)
+			return fmt.Errorf("failed to generate options from the StaticRoute config: %w", err)
 		}
 
-		if err := UpdateConfigFromOpts(envoyConfig, opts); err != nil {
+		// UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name, kubernetesClient)
+		clBuilder := cloudentity.NewBuilder()
+		kubernetesClient := c.Client
+		if err := UpdateConfigFromOpts(envoyConfig, opts, httpConnectionManagerBuilder, clBuilder, sr.Name, kubernetesClient); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 	}
@@ -289,6 +294,7 @@ func (c *KubeEnvoyConfigManager) getDeployedStaticRoutes(ctx context.Context, fl
 	); err != nil {
 		return nil, fmt.Errorf("failure querying for the deployed StaticRoutes: %w", err)
 	}
+
 	var staticRoutes []gateway.StaticRoute
 	// filter out apis are in the process of deletion
 	for _, staticRoute := range staticRoutesObjs.Items {
