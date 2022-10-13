@@ -36,7 +36,7 @@ x-kusk:
   hosts: 
   - "*"
   - "example.org"
-  disabled: false
+  hidden: false
   cors:
     origins:
     - "*"
@@ -64,10 +64,10 @@ x-kusk:
 paths:
   /pet:
     x-kusk:
-      disabled: true
+      hidden: true
     post:
       x-kusk:
-        disabled: false
+        hidden: false
         upstream:
           host:
             hostname: petstore1.default1.svc.cluster.local
@@ -240,7 +240,7 @@ paths:
   '/pet/{petId}':
     get:
       x-kusk:
-        disabled: false
+        hidden: false
         cors:
           origins:
           - "http://example.com"
