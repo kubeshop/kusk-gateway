@@ -35,4 +35,4 @@ env
 
 # Ignore goreleaser output
 dist/
-
+cmd/kusk/cmd/manifest_data.go
