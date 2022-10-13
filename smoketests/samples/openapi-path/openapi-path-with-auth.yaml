@@ -18,11 +18,11 @@ spec:
     x-kusk:
       openapi-path: openapi.json
       auth:
-        scheme: basic
-        auth-upstream:
-          host:
-            hostname: ext-authz-http-basic-auth-openapi-path-with-auth
-            port: 80
+        custom:
+          auth-upstream:
+            host:
+              hostname: ext-authz-http-basic-auth-openapi-path-with-auth
+              port: 80
       upstream:
         service:
           name: httpbin

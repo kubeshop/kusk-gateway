@@ -51,11 +51,11 @@ spec:
               description: ""
     x-kusk:
       auth:
-        scheme: basic
-        auth-upstream:
-          host:
-            hostname: ext-authz-http-basic-auth
-            port: 80
+        custom:
+          auth-upstream:
+            host:
+              hostname: ext-authz-http-basic-auth
+              port: 80
       cors:
         methods:
         - GET
