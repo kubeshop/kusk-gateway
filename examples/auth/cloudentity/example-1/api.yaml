@@ -23,11 +23,11 @@ spec:
           namespace: default
           port: 80
       auth:
-        scheme: cloudentity
-        auth-upstream:
-          host:
-            hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
-            port: 9004
+        cloudentity
+          auth-upstream:
+            host:
+              hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
+              port: 9004
     paths:
       "/":
         get:
