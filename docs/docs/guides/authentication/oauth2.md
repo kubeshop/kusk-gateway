@@ -1,6 +1,8 @@
-# OAuth2
+# OAuth2 via OIDC
 
 OAuth2 ensures that your application (upstream) doesn't get requests which are not authenticated and authorized. It effectively helps to protect your API.
+
+Kusk implements the OpenID Connect (OIDC) layer which ensures you can choose any OAuth2 provider and Kusk will support it as long as the OAuth2 provider also supports OIDC.
 
 Kusk makes it easy to configure OAuth2, using the `auth` option in the `x-kusk` extension.
 

@@ -69,8 +69,3 @@ manifests: install-deps
 .PHONY: build
 build: manifests
 	go build -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
-
-# `build-goreleaser` is just for local testing.
-.PHONY: build-goreleaser
-build-goreleaser:
-	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" goreleaser release --rm-dist --skip-publish --skip-validate
