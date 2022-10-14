@@ -348,12 +348,11 @@ The `auth` object contains the following properties to configure HTTP authentica
 x-kusk:
 ...
   auth:
-    scheme: basic
-    path_prefix: /login # optional
-    auth-upstream:
-      host:
-        hostname: example.com
-        port: 80
+    custom:
+      path_prefix: /login # optional
+        host:
+          hostname: example.com
+          port: 80
 ...
 ```
 
@@ -366,8 +365,7 @@ Check the [Custom Upstream auth guide](./guides/authentication/custom-auth-upstr
 x-kusk:
 ...
   auth:
-    scheme: cloudentity
-    auth-upstream:
+    auth-cloudentity:
       host:
         hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
         port: 9004

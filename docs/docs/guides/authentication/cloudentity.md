@@ -52,8 +52,8 @@ x-kusk:
   mocking:
     enabled: true
   auth:
-    scheme: cloudentity
-    auth-upstream:
+    
+    cloudentity:
       host:
         hostname: cloudentity-authorizer-standalone-authorizer.kusk-system # default authorizer service, change in case your authorizer is installed differently
         port: 9004

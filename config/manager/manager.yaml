@@ -26,7 +26,7 @@ spec:
         - command:
             - /manager
           image: kusk-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           name: manager
           envFrom:
             - configMapRef:

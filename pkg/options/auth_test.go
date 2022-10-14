@@ -44,18 +44,15 @@ func Test_AuthOptions_UnmarshalStrict(t *testing.T) {
 auth:
   custom:
     path_prefix: /login
-    auth-upstream:
-      host:
-        hostname: example.com
+    host:
+       hostname: example.com
 `,
 			expected: &AuthOptions{
 				Custom: &Custom{
 					PathPrefix: StringToPtr("/login"),
-					AuthUpstream: &AuthUpstream{
-						Host: AuthUpstreamHost{
-							Hostname: "example.com",
-							// Port:     80,
-						},
+					Host: AuthUpstreamHost{
+						Hostname: "example.com",
+						// Port:     80,
 					},
 				},
 			},
@@ -165,7 +162,8 @@ auth:
 			assert := assert.New(t)
 			options := &SubOptions{}
 			err := yaml.UnmarshalStrict([]byte(test.input), options)
-
+			jsn, _ := yaml.Marshal(test.expected)
+			fmt.Println(string(jsn))
 			assert.NoError(err)
 			assert.Equal(test.expected, options.Auth)
 		})
@@ -179,11 +177,9 @@ func Test_AuthOptions_Validate_OK(t *testing.T) {
 	authOptions := &AuthOptions{
 		Custom: &Custom{
 			PathPrefix: StringToPtr("/login"),
-			AuthUpstream: &AuthUpstream{
-				Host: AuthUpstreamHost{
-					Hostname: "example.com",
-					Port:     80,
-				},
+			Host: AuthUpstreamHost{
+				Hostname: "example.com",
+				Port:     80,
 			},
 		},
 	}
@@ -202,11 +198,9 @@ func Test_AuthOptions_Validate_CloudEntity_OK(t *testing.T) {
 	authOptions := &AuthOptions{
 		Custom: &Custom{
 			PathPrefix: StringToPtr("/login"),
-			AuthUpstream: &AuthUpstream{
-				Host: AuthUpstreamHost{
-					Hostname: "example.com",
-					Port:     80,
-				},
+			Host: AuthUpstreamHost{
+				Hostname: "example.com",
+				Port:     80,
 			},
 		},
 	}
@@ -225,11 +219,9 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 	authOptions := &AuthOptions{
 		Custom: &Custom{
 			PathPrefix: StringToPtr("/login"),
-			AuthUpstream: &AuthUpstream{
-				Host: AuthUpstreamHost{
-					// Hostname: "example.com",
-					Port: 80,
-				},
+			Host: AuthUpstreamHost{
+				// Hostname: "example.com",
+				Port: 80,
 			},
 		},
 	}
@@ -238,7 +230,7 @@ func Test_AuthOptions_Validate_Error(t *testing.T) {
 		Auth: authOptions,
 	}
 
-	assert.EqualError(options.Validate(), "auth: (custom: (auth-upstream: (host: (hostname: cannot be blank.).).).).")
+	assert.EqualError(options.Validate(), "auth: (custom: (host: (hostname: cannot be blank.).).).")
 }
 
 func Test_AuthOptions_OAuth2_Mutually_Exclusive_Client_Secret_Options(t *testing.T) {

@@ -441,12 +441,12 @@ func UpdateConfigFromAPIOpts(
 
 				perRouteAuth, err := auth.RouteAuthzDisabled()
 				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: public-api-path=%q, %w", opts.PublicAPIPath, err)
+					return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.PublicAPIPath, err)
 				}
 
 				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 
-				logger.Info("disabled `auth` for route", "public-api-path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
+				logger.Info("disabled `auth` for route", "public_api_path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {

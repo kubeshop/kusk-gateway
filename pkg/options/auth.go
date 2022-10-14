@@ -84,23 +84,6 @@ func (o AuthOptions) Validate() error {
 	return nil
 }
 
-type AuthUpstream struct {
-	// REQUIRED.
-	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`
-	// OPTIONAL.
-	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
-}
-
-func (o AuthUpstream) String() string {
-	return ToCompactJSON(o)
-}
-
-func (o AuthUpstream) Validate() error {
-	return validation.ValidateStruct(&o,
-		validation.Field(&o.Host, validation.Required),
-	)
-}
-
 type AuthUpstreamHost struct {
 	// REQUIRED.
 	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty"`
@@ -234,10 +217,10 @@ func (o CookieNames) Validate() error {
 }
 
 type Custom struct {
+	// REQUIRED.
+	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`
 	// OPTIONAL.
 	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
-	// REQUIRED, if `scheme == basic`. Mutually exclusive with `OAuth2`.
-	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
 }
 
 func (o Custom) String() string {
@@ -246,13 +229,15 @@ func (o Custom) String() string {
 
 func (o Custom) Validate() error {
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.AuthUpstream, validation.Required),
+		validation.Field(&o.Host, validation.Required),
 	)
 }
 
 type Cloudentity struct {
-	// REQUIRED, if `scheme == basic`. Mutually exclusive with `OAuth2`.
-	AuthUpstream *AuthUpstream `json:"auth-upstream,omitempty" yaml:"auth-upstream,omitempty"`
+	// REQUIRED.
+	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`
+	// OPTIONAL.
+	PathPrefix *string `json:"path_prefix,omitempty" yaml:"path_prefix,omitempty"`
 }
 
 func (o Cloudentity) String() string {
@@ -261,6 +246,6 @@ func (o Cloudentity) String() string {
 
 func (o Cloudentity) Validate() error {
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.AuthUpstream, validation.Required),
+		validation.Field(&o.Host, validation.Required),
 	)
 }

@@ -58,4 +58,4 @@ spec:
         - '*'
       mocking:
         enabled: true
-      public-api-path: "simple/spec.json"
+      public_api_path: "simple/spec.json"

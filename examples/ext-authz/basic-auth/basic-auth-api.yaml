@@ -20,10 +20,9 @@ spec:
     x-kusk:
       auth:
         custom:
-          auth-upstream:
-            host:
-              hostname: ext-authz-http-basic-auth
-              port: 80
+          host:
+            hostname: ext-authz-http-basic-auth
+            port: 80
       upstream:
         service:
           name: ext-authz-httpbin

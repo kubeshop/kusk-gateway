@@ -14,10 +14,9 @@ x-kusk:
       port: 80
   auth:
     cloudentity:
-      auth-upstream:
-        host:
-          hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
-          port: 9004
+      host:
+        hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
+        port: 9004
 paths:
   "/":
     get:

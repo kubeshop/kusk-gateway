@@ -125,7 +125,7 @@ type SubOptions struct {
 	Mocking       *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
 	RateLimit     *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
 	Cache         *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
-	PublicAPIPath string             `json:"public-api-path,omitempty" yaml:"public-api-path,omitempty"`
+	PublicAPIPath string             `json:"public_api_path,omitempty" yaml:"public-api-path,omitempty"`
 	Auth          *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
 }
 
