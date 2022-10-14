@@ -4,5 +4,4 @@ smoketests := \
     check-rate_limit \
     check-basic_auth \
     check-auth_oauth2 \
-    check-openapi-path \
-    check-cache 
+    check-openapi-path 
