@@ -26,9 +26,9 @@ patchesStrategicMerge:
   - manager_webhook_patch.yaml
 
 images:
-  - name: kusk-gateway
-    newName: jasmingacic/kusk-gateway
-    newTag: latest
-  - name: kusk-gateway:dev
-    newName: kubeshop/kusk-gateway
-    newTag: latest
+- name: kusk-gateway
+  newName: kubeshop/kusk-gateway
+  newTag: v1.3.4
+- name: kusk-gateway:dev
+  newName: kubeshop/kusk-gateway
+  newTag: latest

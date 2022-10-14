@@ -2,6 +2,8 @@
 
 To upgrade Kusk Gateway in your cluster, you will need to install the new version of Kusk CLI first and then upgrade Kusk Gateway with it.
 
+Check the [Helm upgrade guide](./helm-install.md) in case you are using Helm. 
+
 ## 1. Update Kusk CLI
 
 #### MacOS
