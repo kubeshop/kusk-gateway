@@ -2,7 +2,7 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
-  name: mock-api
+  name: mock-api2
   namespace: default
 spec:
   fleet:

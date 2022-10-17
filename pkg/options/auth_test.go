@@ -162,8 +162,7 @@ auth:
 			assert := assert.New(t)
 			options := &SubOptions{}
 			err := yaml.UnmarshalStrict([]byte(test.input), options)
-			jsn, _ := yaml.Marshal(test.expected)
-			fmt.Println(string(jsn))
+
 			assert.NoError(err)
 			assert.Equal(test.expected, options.Auth)
 		})
