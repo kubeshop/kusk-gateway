@@ -52,7 +52,6 @@ auth:
 					PathPrefix: StringToPtr("/login"),
 					Host: AuthUpstreamHost{
 						Hostname: "example.com",
-						// Port:     80,
 					},
 				},
 			},

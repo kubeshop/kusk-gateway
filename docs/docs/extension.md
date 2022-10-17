@@ -365,7 +365,7 @@ Check the [Custom Upstream auth guide](./guides/authentication/custom-auth-upstr
 x-kusk:
 ...
   auth:
-    auth-cloudentity:
+    cloudentity:
       host:
         hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
         port: 9004
