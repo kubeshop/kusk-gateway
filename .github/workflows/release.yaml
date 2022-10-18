@@ -99,6 +99,48 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
 
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Publish Debian Packages
+        env:
+          APTLY_USERNAME: "aptly"
+          APTLY_PASSWORD: ${{ secrets.APTLY_PASSWORD }}
+          APTLY_URL: "https://repo.kubeshop.io"
+          VERSION: ${{ steps.tag.outputs.tag }}
+        run: |
+          ### Upload files
+          curl -u $APTLY_USERNAME:$APTLY_PASSWORD -X POST -F file="@dist/kusk_${VERSION}_linux_386.deb" "${APTLY_URL}/api/files/kusk"
+          curl -u $APTLY_USERNAME:$APTLY_PASSWORD -X POST -F file="@dist/kusk_${VERSION}_linux_arm64.deb" "${APTLY_URL}/api/files/kusk"
+          curl -u $APTLY_USERNAME:$APTLY_PASSWORD -X POST -F file="@dist/kusk_${VERSION}_linux_amd64.deb" "${APTLY_URL}/api/files/kusk"
+
+          ### Add file to repo
+          curl -u $APTLY_USERNAME:$APTLY_PASSWORD -X POST "${APTLY_URL}/api/repos/kusk/file/kusk?forceReplace=1"
+
+          ### Create snapshot
+          curl -u $APTLY_USERNAME:$APTLY_PASSWORD -X POST -H 'Content-Type: application/json' --data '{"Name":"kusk-'${VERSION}'"}' "${APTLY_URL}/api/repos/kusk/snapshots"
+
+          ### Publish repo
+          already_published=$(curl --silent -u $APTLY_USERNAME:$APTLY_PASSWORD "${APTLY_URL}/api/publish" | jq ".[] | .Sources | .[] | .Name==\"kusk-${VERSION}\"")
+          if [[ -z $already_published || $already_published == *"false"* ]]; then
+            curl \
+              -u $APTLY_USERNAME:$APTLY_PASSWORD \
+              -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{"Storage": "", "SourceKind": "snapshot", "Distribution": "linux", "Sources": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+              "https://repo.kubeshop.io/api/publish/:kusk"
+          else
+            curl \
+              -u $APTLY_USERNAME:$APTLY_PASSWORD \
+              -X PUT \
+              -H 'Content-Type: application/json' \
+              --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+              "https://repo.kubeshop.io/api/publish/:kusk/linux"
+          fi
+
       - name: Check if we have modified CRDs or RBAC between the 2 last tags
         id: check_modified_resources
         run: |
