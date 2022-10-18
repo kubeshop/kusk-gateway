@@ -350,9 +350,9 @@ x-kusk:
   auth:
     custom:
       path_prefix: /login # optional
-        host:
-          hostname: example.com
-          port: 80
+      host:
+        hostname: example.com
+        port: 80
 ...
 ```
 
