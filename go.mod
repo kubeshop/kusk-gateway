@@ -48,7 +48,6 @@ require (
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	k8s.io/component-helpers v0.25.0 // indirect
 	k8s.io/metrics v0.25.0 // indirect
