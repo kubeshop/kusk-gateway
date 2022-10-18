@@ -131,14 +131,14 @@ jobs:
               -X POST \
               -H 'Content-Type: application/json' \
               --data '{"Storage": "", "SourceKind": "snapshot", "Distribution": "linux", "Sources": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
-              "https://repo.kubeshop.io/api/publish/:kusk"
+              "${APTLY_URL}/api/publish/:kusk"
           else
             curl \
               -u $APTLY_USERNAME:$APTLY_PASSWORD \
               -X PUT \
               -H 'Content-Type: application/json' \
               --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
-              "https://repo.kubeshop.io/api/publish/:kusk/linux"
+              "${APTLY_URL}/api/publish/:kusk/linux"
           fi
 
       - name: Check if we have modified CRDs or RBAC between the 2 last tags
