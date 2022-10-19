@@ -56,10 +56,6 @@ jobs:
           flavor: |
             latest=true
 
-      - name: build-cli
-        working-directory: cmd/kusk
-        run: VERSION=${{ github.sha }} make build
-
       - name: setup-goreleaser-environment-variables
         run: |
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
