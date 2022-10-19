@@ -110,11 +110,11 @@ func PostProcessedDef(apiSpec openapi3.T, opt options.Options) *openapi3.T {
 	for path, pathItem := range apiSpec.Paths {
 		pathOptions, _, _ := getPathOptions(pathItem)
 		for method := range pathItem.Operations() {
-			if pathOptions.Disabled != nil && *pathOptions.Disabled {
+			if pathOptions.Hidden != nil && *pathOptions.Hidden {
 				item := &openapi3.PathItem{}
 				fOpt := opt.OperationFinalSubOptions[method+path]
-				if fOpt.Disabled != nil && !*fOpt.Disabled {
-					if pathOptions.Disabled != nil && *pathOptions.Disabled {
+				if fOpt.Hidden != nil && !*fOpt.Hidden {
+					if pathOptions.Hidden != nil && *pathOptions.Hidden {
 						if item = parsePathItem(pathItem); len(item.Operations()) > 0 {
 							postProcessed.Paths[path] = item
 						}
@@ -135,12 +135,12 @@ func parsePathItem(pathItem *openapi3.PathItem) (result *openapi3.PathItem) {
 	delete(result.ExtensionProps.Extensions, kuskExtensionKey)
 	for operation, oper := range pathItem.Operations() {
 		opts, _, _ := getOperationOptions(oper)
-		if opts.Disabled != nil && !*opts.Disabled {
+		if opts.Hidden != nil && !*opts.Hidden {
 			delete(oper.ExtensionProps.Extensions, kuskExtensionKey)
 			result.SetOperation(operation, oper)
-		} else if opts.Disabled != nil && *opts.Disabled {
+		} else if opts.Hidden != nil && *opts.Hidden {
 			result.SetOperation(operation, nil)
-		} else if opts.Disabled == nil {
+		} else if opts.Hidden == nil {
 			result.SetOperation(operation, nil)
 		}
 

@@ -111,31 +111,31 @@ func (o Options) Validate() error {
 
 // SubOptions allow user to overwrite certain options at path/operation level using x-kusk extension
 type SubOptions struct {
-	Disabled *bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
+	Hidden *bool `yaml:"hidden,omitempty" json:"hidden,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
 	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path        *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
-	QoS         *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
-	CORS        *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
-	Websocket   *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
-	Validation  *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
-	Mocking     *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
-	RateLimit   *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
-	Cache       *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
-	OpenAPIPath string             `json:"openapi-path,omitempty" yaml:"openapi-path,omitempty"`
-	Auth        *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Path          *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS           *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS          *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Websocket     *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
+	Validation    *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
+	Mocking       *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
+	RateLimit     *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
+	Cache         *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
+	PublicAPIPath string             `json:"public_api_path,omitempty" yaml:"public-api-path,omitempty"`
+	Auth          *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
 	if o.Upstream != nil && o.Redirect != nil {
-		return fmt.Errorf("Upstream and Service are mutually exclusive")
+		return fmt.Errorf("upstream and service are mutually exclusive")
 	}
 	// fail if doesn't have upstream or redirect and is "enabled"
 	if o.Upstream == nil && o.Redirect == nil {
-		if o.Disabled != nil && *o.Disabled == false {
+		if o.Hidden != nil && !*o.Hidden {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}
@@ -153,8 +153,8 @@ func (o SubOptions) Validate() error {
 
 // MergeInSubOptions handles merging other SubOptions (usually - upper level in root/path/method hierarchy)
 func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
-	if o.Disabled == nil && in.Disabled != nil {
-		o.Disabled = in.Disabled
+	if o.Hidden == nil && in.Hidden != nil {
+		o.Hidden = in.Hidden
 	}
 	if o.Upstream == nil && o.Redirect == nil {
 		if in.Upstream != nil {
