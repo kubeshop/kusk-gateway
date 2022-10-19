@@ -23,7 +23,6 @@ spec:
           namespace: default
           port: 80
       auth:
-        scheme: oauth2
         oauth2:
           token_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token
           authorization_endpoint: https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/authorize

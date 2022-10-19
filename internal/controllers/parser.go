@@ -110,7 +110,7 @@ func UpdateConfigFromAPIOpts(
 		for method, operation := range pathItem.Operations() {
 
 			finalOpts := opts.OperationFinalSubOptions[method+path]
-			if finalOpts.Disabled != nil && *finalOpts.Disabled {
+			if finalOpts.Hidden != nil && *finalOpts.Hidden {
 				continue
 			}
 
@@ -414,18 +414,18 @@ func UpdateConfigFromAPIOpts(
 		}
 	}
 
-	if opts.OpenAPIPath != "" {
+	if opts.PublicAPIPath != "" {
 		for _, vh := range opts.Hosts {
 			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json", &route.Route{})
 			if err != nil {
 				return fmt.Errorf("cannot build mocked route: %w", err)
 			}
 
-			if !strings.HasPrefix(opts.OpenAPIPath, "/") {
-				opts.OpenAPIPath = fmt.Sprintf("/%s", opts.OpenAPIPath)
+			if !strings.HasPrefix(opts.PublicAPIPath, "/") {
+				opts.PublicAPIPath = fmt.Sprintf("/%s", opts.PublicAPIPath)
 			}
 			openapiRt, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
-				RoutePath:      opts.OpenAPIPath,
+				RoutePath:      opts.PublicAPIPath,
 				Method:         "GET",
 				StatusCode:     uint32(200),
 				ExampleContent: parseSpec.PostProcessedDef(*spec, *opts),
@@ -441,12 +441,12 @@ func UpdateConfigFromAPIOpts(
 
 				perRouteAuth, err := auth.RouteAuthzDisabled()
 				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: openapi-path=%q, %w", opts.OpenAPIPath, err)
+					return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.PublicAPIPath, err)
 				}
 
 				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 
-				logger.Info("disabled `auth` for route", "openapi-path", opts.OpenAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
+				logger.Info("disabled `auth` for route", "public_api_path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {

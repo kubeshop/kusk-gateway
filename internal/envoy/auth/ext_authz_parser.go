@@ -33,9 +33,9 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *parseAuthOptionsArguments, scheme string) error {
-	upstreamServiceHost := authUpstreamOptions.Host.Hostname
-	upstreamServicePort := authUpstreamOptions.Host.Port
+func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, args *parseAuthOptionsArguments, scheme string) error {
+	upstreamServiceHost := host.Hostname
+	upstreamServicePort := host.Port
 
 	clusterName := args.GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
@@ -69,11 +69,6 @@ func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *p
 			upstreamServiceHost,
 			upstreamServicePort,
 		)
-	}
-
-	pathPrefix := ""
-	if authUpstreamOptions.PathPrefix != nil {
-		pathPrefix = *authUpstreamOptions.PathPrefix
 	}
 
 	typedConfig, err := NewFilterHTTPExternalAuthorization(

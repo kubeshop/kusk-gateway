@@ -15,7 +15,7 @@ spec:
       version: 1.0.0
     x-kusk:
       hosts: [ "example.org"]
-      disabled: true
+      hidden: true
       cors:
         origins:
           - 'http://example.org'
@@ -43,7 +43,7 @@ spec:
         get:
           # All GET are redirected to usual API with the rewrite (/second/todos/2 -> /testing/todos/2)
           x-kusk:
-            disabled: false
+            hidden: false
             redirect:
               host_redirect: "example.com"
               rewrite_regex:
@@ -200,7 +200,7 @@ spec:
         get:
           # Enable only GET
           x-kusk:
-            disabled: false
+            hidden: false
           responses:
             '200':
               description: The full list of todos
@@ -297,7 +297,7 @@ spec:
             - Todo
         delete:
           x-kusk:
-            disabled: true
+            hidden: true
           responses:
             '200':
               description: ''
