@@ -129,4 +129,4 @@ spec:
   selector:
     app.kubernetes.io/instance: kusk-gateway-api
     app.kubernetes.io/name: kusk-gateway-api
-  type: LoadBalancer
+  type: ClusterIP
