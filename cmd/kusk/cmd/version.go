@@ -114,7 +114,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 			}
 
 			if outdated {
-				fmt.Println(kuskui.Red("\nℹ️  Outdated Kusk version in your cluster."), "\nPlease run the following command to update your cluster \n\n kusk cluster upgrade\n")
+				fmt.Println(kuskui.Red("\nℹ️  Outdated Kusk version in your cluster."), "\nPlease run the following command to update your cluster \n\n kusk cluster upgrade")
 			}
 			return nil
 		},
