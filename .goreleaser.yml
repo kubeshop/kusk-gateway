@@ -65,6 +65,9 @@ brews:
 
 nfpms:
   - maintainer: Kusk Team
+    package_name: kusk
+    builds:
+      - kusk
     license: "MIT"
     formats:
       - deb
