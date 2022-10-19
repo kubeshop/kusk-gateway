@@ -56,7 +56,7 @@ func TestGetOptions(t *testing.T) {
 					"/pet": &openapi3.PathItem{
 						ExtensionProps: openapi3.ExtensionProps{
 							Extensions: map[string]interface{}{
-								kuskExtensionKey: json.RawMessage(`{"hidden":true}`),
+								kuskExtensionKey: json.RawMessage(`{"disabled":true}`),
 							},
 						},
 						Get: &openapi3.Operation{},
@@ -66,7 +66,7 @@ func TestGetOptions(t *testing.T) {
 			res: options.Options{
 				OperationFinalSubOptions: map[string]options.SubOptions{
 					"GET/pet": {
-						Hidden: &trueValue,
+						Disabled: &trueValue,
 					},
 				},
 			},
@@ -79,7 +79,7 @@ func TestGetOptions(t *testing.T) {
 						Put: &openapi3.Operation{
 							ExtensionProps: openapi3.ExtensionProps{
 								Extensions: map[string]interface{}{
-									kuskExtensionKey: json.RawMessage(`{"hidden":true}`),
+									kuskExtensionKey: json.RawMessage(`{"disabled":true}`),
 								},
 							},
 						},
@@ -89,7 +89,7 @@ func TestGetOptions(t *testing.T) {
 			res: options.Options{
 				OperationFinalSubOptions: map[string]options.SubOptions{
 					"PUT/pet": {
-						Hidden: &trueValue,
+						Disabled: &trueValue,
 					},
 				},
 			},

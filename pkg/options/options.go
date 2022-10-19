@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -111,7 +111,7 @@ func (o Options) Validate() error {
 
 // SubOptions allow user to overwrite certain options at path/operation level using x-kusk extension
 type SubOptions struct {
-	Hidden *bool `yaml:"hidden,omitempty" json:"hidden,omitempty"`
+	Disabled *bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
 	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
@@ -135,7 +135,7 @@ func (o SubOptions) Validate() error {
 	}
 	// fail if doesn't have upstream or redirect and is "enabled"
 	if o.Upstream == nil && o.Redirect == nil {
-		if o.Hidden != nil && !*o.Hidden {
+		if o.Disabled != nil && !*o.Disabled {
 			return fmt.Errorf("either Upstream or Service must be specified")
 		}
 	}
@@ -153,8 +153,8 @@ func (o SubOptions) Validate() error {
 
 // MergeInSubOptions handles merging other SubOptions (usually - upper level in root/path/method hierarchy)
 func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
-	if o.Hidden == nil && in.Hidden != nil {
-		o.Hidden = in.Hidden
+	if o.Disabled == nil && in.Disabled != nil {
+		o.Disabled = in.Disabled
 	}
 	if o.Upstream == nil && o.Redirect == nil {
 		if in.Upstream != nil {

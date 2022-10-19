@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -110,11 +110,11 @@ func PostProcessedDef(apiSpec openapi3.T, opt options.Options) *openapi3.T {
 	for path, pathItem := range apiSpec.Paths {
 		pathOptions, _, _ := getPathOptions(pathItem)
 		for method := range pathItem.Operations() {
-			if pathOptions.Hidden != nil && *pathOptions.Hidden {
+			if pathOptions.Disabled != nil && *pathOptions.Disabled {
 				item := &openapi3.PathItem{}
 				fOpt := opt.OperationFinalSubOptions[method+path]
-				if fOpt.Hidden != nil && !*fOpt.Hidden {
-					if pathOptions.Hidden != nil && *pathOptions.Hidden {
+				if fOpt.Disabled != nil && !*fOpt.Disabled {
+					if pathOptions.Disabled != nil && *pathOptions.Disabled {
 						if item = parsePathItem(pathItem); len(item.Operations()) > 0 {
 							postProcessed.Paths[path] = item
 						}
@@ -135,12 +135,12 @@ func parsePathItem(pathItem *openapi3.PathItem) (result *openapi3.PathItem) {
 	delete(result.ExtensionProps.Extensions, kuskExtensionKey)
 	for operation, oper := range pathItem.Operations() {
 		opts, _, _ := getOperationOptions(oper)
-		if opts.Hidden != nil && !*opts.Hidden {
+		if opts.Disabled != nil && !*opts.Disabled {
 			delete(oper.ExtensionProps.Extensions, kuskExtensionKey)
 			result.SetOperation(operation, oper)
-		} else if opts.Hidden != nil && *opts.Hidden {
+		} else if opts.Disabled != nil && *opts.Disabled {
 			result.SetOperation(operation, nil)
-		} else if opts.Hidden == nil {
+		} else if opts.Disabled == nil {
 			result.SetOperation(operation, nil)
 		}
 

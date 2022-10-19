@@ -110,7 +110,7 @@ func UpdateConfigFromAPIOpts(
 		for method, operation := range pathItem.Operations() {
 
 			finalOpts := opts.OperationFinalSubOptions[method+path]
-			if finalOpts.Hidden != nil && *finalOpts.Hidden {
+			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
 			}
 

@@ -111,7 +111,7 @@ spec:
       "/xml":
         # Disable this path for test
         x-kusk:
-          hidden: true
+          disabled: true
         get:
           description: Returns some XML.
           operationId: "/xml"

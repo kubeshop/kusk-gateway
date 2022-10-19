@@ -36,7 +36,7 @@ x-kusk:
   hosts: 
   - "*"
   - "example.org"
-  hidden: false
+  disabled: false
   cors:
     origins:
     - "*"
@@ -64,10 +64,10 @@ x-kusk:
 paths:
   /pet:
     x-kusk:
-      hidden: true
+      disabled: true
     post:
       x-kusk:
-        hidden: false
+        disabled: false
         host:
           hostname: petstore1.default1.svc.cluster.local
           port: 8080
@@ -240,7 +240,7 @@ paths:
     # This paths is mocked!
     get:
       x-kusk:
-        hidden: false
+        disabled: false
         # Routing to mocking here
         upstream:
           service:

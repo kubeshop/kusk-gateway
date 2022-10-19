@@ -417,16 +417,16 @@ This will expose your entire OpenAPI definition, without the Kusk extensions, on
 
 To remove some paths or operations from the exposed OpenAPI, use the [`disabled` option](./#disabled).
 
-### **Hidden**
+### **Disabled**
 
-This boolean property allows you to hide the corresponding path/operation from being added to the [exposed OpenAPI definition](#exposing-openapi-defintion) when the `public_api_path` is set to `true`.
+This boolean property allows you to hide the corresponding path/operation from being exposed and managed by Kusk.
 
-When set to true at the top level, all paths will be hidden; you will have to override specific paths/operations with `hidden: false` to make those operations visible.
+When set to true at the top level, all paths will be disabled; you will have to override specific paths/operations with `disabled: false` to make those operations visible.
 
 ```yaml title="openapi.yaml"
 ...
   /path:
     x-kusk:
-      hidden: true
+      disabled: true
 ...
 ```
