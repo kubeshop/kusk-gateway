@@ -105,7 +105,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 			var outdated bool
 			for k, v := range images {
 				if v.Outdated {
-					kuskui.PrintInfo(k, "<", v.Latest, kuskui.Red("outdated"))
+					kuskui.PrintInfo(fmt.Sprintf("%s < %s %s", k, v.Latest, kuskui.Red("outdated")))
 					outdated = v.Outdated
 					continue
 				}
@@ -114,7 +114,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 			}
 
 			if outdated {
-				kuskui.PrintWarning("Kusk version seem to be outdated. Please run 'kusk cluster upgrade'")
+				fmt.Println(kuskui.Red("ℹ️ Kusk version seem to be outdated."), "Please run 'kusk cluster upgrade'")
 			}
 			return nil
 		},
