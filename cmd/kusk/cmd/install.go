@@ -127,9 +127,7 @@ var installCmd = &cobra.Command{
 
 		if len(deployments.Items) != 0 {
 			kuskui.PrintInfo("Kusk is already installed in the cluster.\n")
-			kuskui.PrintInfo("Skipped installation.\n")
-			printPortForwardInstructions(false)
-			os.Exit(0)
+			kuskui.PrintInfo("Reinstalling components.\n")
 		}
 
 		kuskui.PrintInfo("🚀 Installing Kusk in your cluster")
