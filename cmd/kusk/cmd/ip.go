@@ -112,12 +112,12 @@ var ipCmd = &cobra.Command{
 		}
 		//kubectl port-forward svc/kusk-gateway-dashboard -n kusk-system 8080:80
 		if svc.Spec.Type == "ClusterIP" {
-			err := fmt.Errorf("your envoyfleet doesn't have a public IP address assigned. Try port-forwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+			err := fmt.Errorf("EnvoyFleet doesn't have an External IP address assigned. Try port-forwarding by running the following command: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
 			reportError(err)
 			return err
 		}
 		if ip == "" {
-			err := fmt.Errorf("your envoyfleet doesn't have a public IP address assigned yet retry or try port-forwarding %q", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+			err := fmt.Errorf("EnvoyFleet doesn't have an External IP address assigned yet. Retry or try port-forwarding by running the following command: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
 			reportError(err)
 			return err
 
