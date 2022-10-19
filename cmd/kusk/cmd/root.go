@@ -51,6 +51,7 @@ const (
 	kusknamespace        = "kusk-system"
 	kuskgatewayapi       = "kusk-gateway-api"
 	kuskgatewaydashboard = "kusk-gateway-dashboard"
+	kuskgatewaymanager   = "kusk-gateway-manager"
 )
 
 // rootCmd represents the base command when called without any subcommands

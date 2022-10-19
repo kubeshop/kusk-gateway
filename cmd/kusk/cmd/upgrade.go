@@ -194,10 +194,21 @@ func getVersions(component, container string, deployment appsv1.Deployment) (lat
 		return "", ""
 	}
 
-	latest, err = githubClient.GetLatest(component)
+	var repoName string
+	switch component {
+	case kuskgatewaymanager:
+		repoName = "kusk-gateway"
+	case kuskgatewayapi:
+		repoName = "kuskgateway-api-server"
+	default:
+		repoName = component
+	}
+
+	latest, err = githubClient.GetLatest(repoName)
 	if err != nil {
 		return "", ""
 	}
+
 	for _, c := range deployment.Spec.Template.Spec.Containers {
 		if c.Name == container {
 			current = strings.Split(c.Image, ":")[1]
