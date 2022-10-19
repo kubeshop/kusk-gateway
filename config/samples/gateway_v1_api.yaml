@@ -43,7 +43,7 @@ spec:
           description: Find out more about our store
           url: 'http://swagger.io'
     x-kusk:
-      disabled: false
+      hidden: false
       cors:
         origins:
         - "*"
@@ -72,10 +72,10 @@ spec:
     paths:
       /pet:
         x-kusk:
-          disabled: true
+          hidden: true
         post:
           x-kusk:
-            disabled: false
+            hidden: false
             upstream:
               host:
                 hostname: petstore1.default1.svc.cluster.local
@@ -196,7 +196,7 @@ spec:
       '/pet/{petId}':
         get:
           x-kusk:
-            disabled: false
+            hidden: false
             cors:
               origins:
               - "http://example.com"

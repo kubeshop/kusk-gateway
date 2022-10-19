@@ -15,8 +15,7 @@ info:
   version: 0.1.0
 x-kusk:
   auth:
-    scheme: basic
-    auth-upstream:
+    custom:
       host:
         hostname: auth-upstream-svc.default
         port:8080
@@ -37,8 +36,7 @@ paths:
     get:
       operationId: getHello
       auth:
-        scheme: basic
-        auth-upstream:
+        custom:
           host:
             hostname: auth-upstream-svc.default
             port:8080

@@ -79,23 +79,35 @@ func ParseAuthOptions(finalOpts options.SubOptions, args *parseAuthOptionsArgume
 	if finalOpts.Auth == nil {
 		return ErrorAuthIsNil
 	}
-
-	authUpstream := finalOpts.Auth.AuthUpstream
+	custom := finalOpts.Auth.Custom
 	oauth2 := finalOpts.Auth.OAuth2
+	cloudentity := finalOpts.Auth.Cloudentity
 
-	if authUpstream != nil && oauth2 != nil {
+	if custom != nil && oauth2 != nil {
 		return ErrorMutuallyExclusiveOptions
 	}
 
-	if authUpstream != nil {
-		scheme := finalOpts.Auth.Scheme
-		err := ParseAuthUpstreamOptions(authUpstream, args, scheme)
+	if custom != nil {
+		scheme := "custom"
+		var pathPrefix string
+		if custom.PathPrefix != nil {
+			pathPrefix = *custom.PathPrefix
+		}
+		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme)
 		if err != nil {
 			return err
 		}
-	}
-
-	if oauth2 != nil {
+	} else if cloudentity != nil {
+		scheme := "cloudentity"
+		var pathPrefix string
+		if cloudentity.PathPrefix != nil {
+			pathPrefix = *custom.PathPrefix
+		}
+		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme)
+		if err != nil {
+			return err
+		}
+	} else if oauth2 != nil {
 		err := ParseOAuth2Options(oauth2, args)
 		if err != nil {
 			return err

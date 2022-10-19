@@ -51,8 +51,7 @@ spec:
               description: ""
     x-kusk:
       auth:
-        scheme: basic
-        auth-upstream:
+        custom:
           host:
             hostname: ext-authz-http-basic-auth
             port: 80
