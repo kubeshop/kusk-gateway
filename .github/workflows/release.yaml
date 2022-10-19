@@ -77,18 +77,6 @@ jobs:
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
             VERSION=${{ env.VERSION }}
 
-      # Possibly not needed. Please remove, if it turns out go has already been setup.
-      - name: setup-golang
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.19
-
-      - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
-        working-directory: cmd/kusk
-        run: |
-          go version
-          VERSION=${{ env.VERSION }} make manifests
-
       - name: Run GoReleaser to publish release notes
         uses: goreleaser/goreleaser-action@v2
         with:
