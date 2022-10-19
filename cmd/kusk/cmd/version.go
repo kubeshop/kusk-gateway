@@ -89,18 +89,83 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 				return err
 			}
 
+			images := make(map[string]imgStatus)
 			for _, deployment := range deployments.Items {
-				images := []string{}
 				for _, container := range deployment.Spec.Template.Spec.Containers {
 					if len(container.Image) > 0 {
-						images = append(images, container.Image)
+						imgStatus, err := checkVersion(container.Image)
+						if err != nil {
+							continue
+						}
+						images[container.Image] = imgStatus
 					}
 				}
-				fmt.Println(strings.Join(images, "\n"))
+
+			}
+			var outdated bool
+			for k, v := range images {
+				if v.Outdated {
+					kuskui.PrintInfo(k, "<", v.Latest, kuskui.Red("outdated"))
+					outdated = v.Outdated
+					continue
+				}
+				kuskui.PrintInfo(k)
+
+			}
+
+			if outdated {
+				kuskui.PrintWarning("Kusk version seem to be outdated. Please run 'kusk cluster upgrade'")
 			}
 			return nil
 		},
 	}
+}
+
+func checkVersion(img string) (status imgStatus, err error) {
+	var current string
+	var imageName string
+
+	ghClient, err := utils.NewGithubClient("", nil)
+	if err != nil {
+		return status, err
+	}
+
+	split := strings.Split(img, ":")
+	if len(split) > 1 {
+		current = split[1]
+		imageName = split[0]
+	}
+
+	var repo string
+
+	switch imageName {
+	case "kubeshop/kusk-gateway-dashboard":
+		repo = kuskgatewaydashboard
+	case "kubeshop/kusk-gateway-api":
+		repo = "kuskgateway-api-server"
+	case "kubeshop/kusk-gateway":
+		repo = kuskgateway
+	default:
+		return status, err
+	}
+
+	// fmt.Println("repo", repo, current)
+	// if len(current) > 0 {
+	latestImg, err := ghClient.GetLatest(repo)
+	if err != nil {
+		return status, err
+	}
+
+	status.Latest = latestImg
+	status.Outdated = !utils.IsUptodate(latestImg, current)
+	// }
+	return status, err
+
+}
+
+type imgStatus struct {
+	Latest   string
+	Outdated bool
 }
 
 func VersionFormat(version string) string {
