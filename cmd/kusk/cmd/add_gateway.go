@@ -53,7 +53,7 @@ var addGatewayCMD = &cobra.Command{
 	Short:         "Installs instance of Envoyfleet",
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	RunE:          Run,
+	RunE:          addRun,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 
 		if len(svcType) > 0 {
@@ -110,7 +110,7 @@ func init() {
 	addGatewayCMD.Flags().BoolVarP(&defaultGateway, "default", "", false, "Indicates if the geteway is the default gateway in the cluster")
 }
 
-func Run(cmd *cobra.Command, args []string) error {
+func addRun(cmd *cobra.Command, args []string) error {
 	reportError := func(err error) {
 		if err != nil {
 			errors.NewErrorReporter(cmd, err).Report()
@@ -204,7 +204,7 @@ func Run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("%s fleet created", fleet.Name)
+	fmt.Printf("%s fleet created\n", fleet.Name)
 	return nil
 }
 
