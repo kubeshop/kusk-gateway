@@ -1,6 +1,6 @@
 # Cloudentity
 
-Kusk Gateway enables using third-party authentication and authorization management solutions such as Cloudentity.
+Kusk Gateway enables using third-party authentication and authorization management solutions such as [Cloudentity](https://cloudentity.com/).
 
 Developers can utilize Cloudentity's platform to control their authorization flows while still using OpenAPI with Kusk to configure gateway level rules.
 

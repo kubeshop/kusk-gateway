@@ -46,7 +46,6 @@ x-kusk:
   mocking:
     enabled: true
   auth:
-    scheme: oauth2
     oauth2:
       token_endpoint: https://**YOUR_DOMAIN**.eu.auth0.com/oauth/token
       authorization_endpoint: https://**YOUR_DOMAIN**.eu.auth0.com/authorize
