@@ -158,7 +158,6 @@ func checkVersion(img string) (status imgStatus, err error) {
 
 	status.Latest = latestImg
 	status.Outdated = !utils.IsUptodate(latestImg, current)
-	// }
 	return status, err
 
 }
