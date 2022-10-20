@@ -86,8 +86,6 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		ctx := context.Background()
-		cmd.SilenceUsage = true
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
 			reportError(err)
