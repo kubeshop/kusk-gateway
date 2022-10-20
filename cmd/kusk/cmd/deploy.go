@@ -61,7 +61,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
-	deployCmd.MarkFlagRequired("file")
+	deployCmd.MarkFlagRequired("in")
 
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
 	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
@@ -77,6 +77,7 @@ var deployCmd = &cobra.Command{
 	Use:           "deploy",
 	Short:         "deploy command to deploy your apis",
 	SilenceErrors: true,
+	SilenceUsage:  true,
 	Long:          ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
@@ -85,8 +86,6 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		ctx := context.Background()
-		cmd.SilenceUsage = true
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
 			reportError(err)
@@ -104,7 +103,11 @@ var deployCmd = &cobra.Command{
 
 		api := &v1alpha1.API{}
 
-		yaml.Unmarshal([]byte(originalManifest), api)
+		if err := yaml.Unmarshal([]byte(originalManifest), api); err != nil {
+			reportError(err)
+			return err
+		}
+
 		if len(api.Namespace) == 0 {
 			api.Namespace = "default"
 		}
@@ -112,23 +115,24 @@ var deployCmd = &cobra.Command{
 			api.Name = name
 		}
 
+		ctx := context.Background()
 		if err := k8sclient.Create(ctx, api, &client.CreateOptions{}); err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				ap := &v1alpha1.API{}
-				if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
-					reportError(err)
-					return err
-				}
-				api.SetResourceVersion(ap.GetResourceVersion())
-				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-					reportError(err)
-					return err
-				}
-				kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
-			} else {
+			if !apierrors.IsAlreadyExists(err) {
 				reportError(err)
 				return err
 			}
+
+			ap := &v1alpha1.API{}
+			if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+				reportError(err)
+				return err
+			}
+			api.SetResourceVersion(ap.GetResourceVersion())
+			if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+				reportError(err)
+				return err
+			}
+			kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
 		} else {
 			kuskui.PrintInfo(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name))
 		}
@@ -192,7 +196,7 @@ var deployCmd = &cobra.Command{
 				}
 				<-done
 			}
-		} else if e == nil {
+		} else if e == nil && watch {
 			kuskui.PrintWarning("Warning: cannot watch URL. '--watch, -w' flag ignored!")
 		}
 		return nil
@@ -202,7 +206,7 @@ var deployCmd = &cobra.Command{
 func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	const KuskExtensionKey = "x-kusk"
 
-	parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
+	parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
 	if err != nil {
 		return "", err
 	}
