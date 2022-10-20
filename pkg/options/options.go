@@ -83,22 +83,29 @@ func (o Options) Validate() error {
 	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
 
 	for pathAndMethod, op := range o.OperationFinalSubOptions {
+		if op.Disabled != nil {
+			continue
+		}
+
 		if op.Mocking != nil {
 			if err := op.Mocking.Validate(); err != nil {
 				return err
 			}
-		}
-
-		if op.Upstream != nil {
-			if err := op.Upstream.Validate(); err != nil {
-				return err
-			}
+			continue
 		}
 
 		if op.Redirect != nil {
 			if err := op.Redirect.Validate(); err != nil {
 				return err
 			}
+			continue
+		}
+
+		if op.Upstream != nil {
+			if err := op.Upstream.Validate(); err != nil {
+				return err
+			}
+			continue
 		}
 
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
@@ -131,7 +138,7 @@ type SubOptions struct {
 
 func (o SubOptions) Validate() error {
 	if o.Upstream != nil && o.Redirect != nil {
-		return fmt.Errorf("upstream and service are mutually exclusive")
+		return fmt.Errorf("upstream and redirect are mutually exclusive")
 	}
 	// fail if doesn't have upstream or redirect and is "enabled"
 	if o.Upstream == nil && o.Redirect == nil {
