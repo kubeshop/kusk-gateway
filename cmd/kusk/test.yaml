@@ -1,0 +1,42 @@
+openapi: 3.0.0
+info:
+  title: containerp
+  version: 0.0.0
+x-kusk:
+  mocking:
+    enabled: true
+paths:
+  /accounting/v0/accounts:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'https://gist.githubusercontent.com/kylehodgetts/1fca13c6e2ff3e2b7a9646d516e489d3/raw/f784fac9ad85437e8d2b57ccc4ca316b41b1e7de/openapi-schemas.yaml#/components/schemas/Account'
+      responses:
+        '201':
+          description: Create a new accounting account
+          content:
+            application/json:
+              schema:
+                $ref: 'https://gist.githubusercontent.com/kylehodgetts/1fca13c6e2ff3e2b7a9646d516e489d3/raw/f784fac9ad85437e8d2b57ccc4ca316b41b1e7de/openapi-schemas.yaml#/components/schemas/Account'
+    get:
+      responses:
+        '200':
+          description: Some description value text
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'https://gist.githubusercontent.com/kylehodgetts/1fca13c6e2ff3e2b7a9646d516e489d3/raw/f784fac9ad85437e8d2b57ccc4ca316b41b1e7de/openapi-schemas.yaml#/components/schemas/Account'
+  /accounting/v0/journal/entries:
+    get:
+      responses:
+        '200':
+          description: Some description value text
+          content:
+            application/json:
+              schema:
+                $ref: 'https://gist.githubusercontent.com/kylehodgetts/1fca13c6e2ff3e2b7a9646d516e489d3/raw/f784fac9ad85437e8d2b57ccc4ca316b41b1e7de/openapi-schemas.yaml#/components/schemas/JournalEntry'
+
