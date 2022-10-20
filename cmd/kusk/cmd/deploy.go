@@ -206,7 +206,7 @@ var deployCmd = &cobra.Command{
 func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	const KuskExtensionKey = "x-kusk"
 
-	parsedApiSpec, err := spec.NewParser(openapi3.NewLoader()).Parse(apiSpecPath)
+	parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
 	if err != nil {
 		return "", err
 	}
