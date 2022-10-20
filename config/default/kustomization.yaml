@@ -28,7 +28,7 @@ patchesStrategicMerge:
 images:
 - name: kusk-gateway
   newName: kubeshop/kusk-gateway
-  newTag: v1.3.9
+  newTag: v1.3.10
 - name: kusk-gateway:dev
   newName: kubeshop/kusk-gateway
   newTag: latest
