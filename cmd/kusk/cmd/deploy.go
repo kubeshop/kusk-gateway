@@ -77,6 +77,7 @@ var deployCmd = &cobra.Command{
 	Use:           "deploy",
 	Short:         "deploy command to deploy your apis",
 	SilenceErrors: true,
+	SilenceUsage:  true,
 	Long:          ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
