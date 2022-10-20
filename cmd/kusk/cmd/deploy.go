@@ -61,7 +61,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
-	deployCmd.MarkFlagRequired("file")
+	deployCmd.MarkFlagRequired("in")
 
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
 	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
@@ -112,23 +112,24 @@ var deployCmd = &cobra.Command{
 			api.Name = name
 		}
 
+		ctx := context.Background()
 		if err := k8sclient.Create(ctx, api, &client.CreateOptions{}); err != nil {
-			if apierrors.IsAlreadyExists(err) {
-				ap := &v1alpha1.API{}
-				if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
-					reportError(err)
-					return err
-				}
-				api.SetResourceVersion(ap.GetResourceVersion())
-				if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
-					reportError(err)
-					return err
-				}
-				kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
-			} else {
+			if !apierrors.IsAlreadyExists(err) {
 				reportError(err)
 				return err
 			}
+
+			ap := &v1alpha1.API{}
+			if err := k8sclient.Get(ctx, client.ObjectKey{Namespace: api.Namespace, Name: api.Name}, ap); err != nil {
+				reportError(err)
+				return err
+			}
+			api.SetResourceVersion(ap.GetResourceVersion())
+			if err := k8sclient.Update(ctx, api, &client.UpdateOptions{}); err != nil {
+				reportError(err)
+				return err
+			}
+			kuskui.PrintSuccess(fmt.Sprintf("api.gateway.kusk.io/%s updated", api.Name))
 		} else {
 			kuskui.PrintInfo(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name))
 		}
