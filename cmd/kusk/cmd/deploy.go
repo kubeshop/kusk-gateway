@@ -218,6 +218,8 @@ func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	if name == "" {
 		// kubernetes manifests cannot have . in the name so replace them
 		name = strings.ReplaceAll(parsedApiSpec.Info.Title, ".", "-")
+		name = strings.ReplaceAll(name, " ", "-")
+		name = strings.ToLower(name)
 	}
 
 	opts, err := spec.GetOptions(parsedApiSpec)
