@@ -196,7 +196,7 @@ var deployCmd = &cobra.Command{
 				}
 				<-done
 			}
-		} else if e == nil {
+		} else if e == nil && watch {
 			kuskui.PrintWarning("Warning: cannot watch URL. '--watch, -w' flag ignored!")
 		}
 		return nil
