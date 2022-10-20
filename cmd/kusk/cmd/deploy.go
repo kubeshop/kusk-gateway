@@ -103,7 +103,11 @@ var deployCmd = &cobra.Command{
 
 		api := &v1alpha1.API{}
 
-		yaml.Unmarshal([]byte(originalManifest), api)
+		if err := yaml.Unmarshal([]byte(originalManifest), api); err != nil {
+			reportError(err)
+			return err
+		}
+
 		if len(api.Namespace) == 0 {
 			api.Namespace = "default"
 		}
