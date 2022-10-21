@@ -38,6 +38,7 @@ import (
 
 	gatewayv1alpha1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
+	envoyConfig "github.com/kubeshop/kusk-gateway/pkg/config"
 )
 
 const (
@@ -50,7 +51,7 @@ const (
 type EnvoyFleetReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
-	ConfigManager *KubeEnvoyConfigManager
+	ConfigManager *envoyConfig.KubeEnvoyConfigManager
 }
 
 // +kubebuilder:rbac:groups=gateway.kusk.io,resources=envoyfleet,verbs=get;list;watch;create;update;patch;delete

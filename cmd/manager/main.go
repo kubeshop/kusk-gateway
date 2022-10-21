@@ -66,6 +66,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
+	envoyConfig "github.com/kubeshop/kusk-gateway/pkg/config"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
@@ -267,7 +268,7 @@ func main() {
 	}()
 
 	secretsChan := make(chan *corev1.Secret)
-	controllerConfigManager := controllers.KubeEnvoyConfigManager{
+	controllerConfigManager := envoyConfig.KubeEnvoyConfigManager{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		EnvoyManager:       envoyManager,

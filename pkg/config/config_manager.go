@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package controllers
+package config
 
 import (
 	"context"
@@ -43,6 +43,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	"github.com/kubeshop/kusk-gateway/pkg/parser"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
@@ -112,7 +113,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		}
 
 		kubernetesClient := c.Client
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name, kubernetesClient); err != nil {
+		if err = parser.UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name, kubernetesClient); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
@@ -143,7 +144,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
 		}
 
-		if err := UpdateConfigFromOpts(envoyConfig, opts); err != nil {
+		if err := parser.UpdateConfigFromOpts(envoyConfig, opts); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 	}
