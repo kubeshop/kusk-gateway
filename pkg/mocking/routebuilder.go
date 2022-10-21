@@ -32,7 +32,7 @@ import (
 	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/types"
 )
 
 var (

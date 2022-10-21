@@ -41,7 +41,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/types"
 )
 
 // Simplified objects hierarchy configuration as for the static Envoy config

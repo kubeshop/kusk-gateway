@@ -28,8 +28,8 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	"github.com/kubeshop/kusk-gateway/pkg/cloudentity"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/config"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 

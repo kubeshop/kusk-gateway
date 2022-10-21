@@ -29,7 +29,7 @@ import (
 	envoy_extensions_filters_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
-	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
+	"github.com/kubeshop/kusk-gateway/pkg/cloudentity"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 

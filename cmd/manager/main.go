@@ -60,14 +60,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/internal/authz"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
-	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
+	"github.com/kubeshop/kusk-gateway/pkg/authz"
 	envoyConfig "github.com/kubeshop/kusk-gateway/pkg/config"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
+	"github.com/kubeshop/kusk-gateway/pkg/validation"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
-	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
+	"github.com/kubeshop/kusk-gateway/pkg/cloudentity"
 )
 
 type AuthorizationServer struct {

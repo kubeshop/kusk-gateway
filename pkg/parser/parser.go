@@ -42,15 +42,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/auth"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
-	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
-	"github.com/kubeshop/kusk-gateway/internal/mocking"
-	"github.com/kubeshop/kusk-gateway/internal/validation"
+	"github.com/kubeshop/kusk-gateway/pkg/cloudentity"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/auth"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/config"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/cors"
+	"github.com/kubeshop/kusk-gateway/pkg/envoy/types"
+	"github.com/kubeshop/kusk-gateway/pkg/mocking"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
+	"github.com/kubeshop/kusk-gateway/pkg/validation"
 )
 
 /* This is the copy of https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/route_matching to remind how Envoy matches the route.
