@@ -39,12 +39,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/pkg/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/cloudentity"
 	"github.com/kubeshop/kusk-gateway/pkg/envoy/config"
 	"github.com/kubeshop/kusk-gateway/pkg/envoy/manager"
 	"github.com/kubeshop/kusk-gateway/pkg/parser"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
+	"github.com/kubeshop/kusk-gateway/pkg/validation"
 )
 
 const (
