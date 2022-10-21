@@ -37,6 +37,9 @@ helm upgrade \
   --install \
   --wait \
   --set service.type=LoadBalancer \
+  --set fullnameOverride=kusk-gateway-envoy-fleet \
+  --set default=true \
+  --namespace kusk-system \
   kusk-gateway-envoy-fleet \
   kubeshop/kusk-gateway-envoyfleet
 ```
@@ -56,6 +59,7 @@ helm upgrade \
   --wait \
   --set fullnameOverride=kusk-gateway-private-envoy-fleet \
   --set service.type=ClusterIP \
+  --namespace kusk-system \
   kusk-gateway-private-envoy-fleet \
   kubeshop/kusk-gateway-envoyfleet
 ```
@@ -67,6 +71,7 @@ Now install Kusk API, which is an API server that Kusk Dashboard uses to configu
 helm upgrade \
   --install \
   --wait \
+  --namespace kusk-system \
   --set envoyfleet.name=kusk-gateway-private-envoy-fleet \
   --set envoyfleet.namespace=kusk-system \
   kusk-gateway-api \
@@ -79,6 +84,7 @@ helm upgrade \
 helm upgrade \
   --install \
   --wait \
+  --namespace kusk-system \
   --set envoyfleet.name=kusk-gateway-private-envoy-fleet \
   --set envoyfleet.namespace=kusk-system \
   kusk-gateway-dashboard \
