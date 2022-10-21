@@ -84,6 +84,7 @@ var ipCmd = &cobra.Command{
 		if len(defaultFleet.Name) == 0 {
 			err := fmt.Errorf("there is no default envoyfleet in your cluster")
 			reportError(err)
+			return err
 		}
 
 		list := &corev1.ServiceList{}
