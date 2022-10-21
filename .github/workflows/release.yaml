@@ -92,6 +92,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
+          TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
@@ -133,7 +134,6 @@ jobs:
           args: release -f .goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
-          TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
       - name: Store Intermediate Artifacts
