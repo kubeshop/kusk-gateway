@@ -110,7 +110,7 @@ spec:
         app.kubernetes.io/instance: kusk-gateway-api
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-api:v1.1.8
+        - image: kubeshop/kusk-gateway-api:v1.1.10
           imagePullPolicy: Always
           name: kusk-gateway-api
       serviceAccountName: kusk-gateway-manager
