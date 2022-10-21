@@ -6,6 +6,7 @@ before:
 dist: darwin
 builds:
   - main: ./cmd/kusk
+    id: kusk
     binary: kusk
     env:
       - CGO_ENABLED=0

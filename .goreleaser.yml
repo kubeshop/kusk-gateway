@@ -4,7 +4,6 @@ builds:
 #    skip: true
   - id: kusk
     main: ./cmd/kusk/
-    binary: kusk
     goos:
       - linux
       - windows
@@ -15,6 +14,7 @@ builds:
       - 386
     prebuilt:
       path: "{{ .Os }}/kusk{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
+    binary: kusk
    #   path: output/kusk_{{ .Os }}_{{ .Arch }}_{{ with .Amd64 }}_{{ . }}{{ end }}/kusk
   #    path: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
 archives:

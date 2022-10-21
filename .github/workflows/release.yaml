@@ -83,7 +83,7 @@ jobs:
 #            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
 #            VERSION=${{ env.VERSION }}
 
-      - name: Run GoReleaser to publish release notes
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser-pro
