@@ -91,7 +91,7 @@ jobs:
           args: release -f ${{ matrix.path }} --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
@@ -135,7 +135,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
       - name: Store Intermediate Artifacts
         uses: actions/upload-artifact@master
         with:
