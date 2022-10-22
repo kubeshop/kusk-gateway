@@ -1,9 +1,5 @@
 builds:
   - builder: prebuilt
-#  - id: kusk-gateway
-#    skip: true
-  - id: kusk
-    main: ./cmd/kusk/
     goos:
       - linux
       - windows
@@ -12,11 +8,11 @@ builds:
       - amd64
       - arm64
       - 386
+    goamd64:
+      - v1
     prebuilt:
       path: "{{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
-    binary: kusk
-   #   path: output/kusk_{{ .Os }}_{{ .Arch }}_{{ with .Amd64 }}_{{ . }}{{ end }}/kusk
-  #    path: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
+    binary: kusk-gateway
 archives:
   - replacements:
       darwin: macOS
@@ -24,10 +20,6 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
-   # id: kusk
-  #  name_template: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
-    builds:
-    - kusk
 checksum:
   name_template: "checksums.txt"
 changelog:
