@@ -11,7 +11,7 @@ builds:
     goamd64:
       - v1
     prebuilt:
-      path: "{{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
+      path: "{{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
     binary: kusk
 archives:
   - replacements:
