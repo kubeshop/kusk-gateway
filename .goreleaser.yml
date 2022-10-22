@@ -14,8 +14,6 @@ builds:
     prebuilt:
       path: '{{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
     binary: kusk
-    hooks:
-      pre: 'du -hs {{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
 archives:
   - replacements:
       darwin: macOS
@@ -23,6 +21,10 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+    id: kusk
+    name_template: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
+    builds:
+      - kusk
 checksum:
   name_template: "checksums.txt"
 changelog:
