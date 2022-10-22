@@ -6,7 +6,7 @@ before:
 dist: windows
 builds:
   - main: ./cmd/kusk
-#    id: kusk
+    id: kusk
     binary: kusk
     env:
       - CGO_ENABLED=0
