@@ -99,7 +99,7 @@ jobs:
         with:
           name: kusk_${{ matrix.name }}
           path: |
-            ${{ matrix.name }}/kusk-gateway_${{ matrix.name }}_*
+            ${{ matrix.name }}/kusk_${{ matrix.name }}_*
           retention-days: 1
   release:
     name: Create and upload release-artifacts
