@@ -24,7 +24,7 @@ archives:
     id: kusk
     name_template: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
     builds:
-      - kusk
+    - kusk
 checksum:
   name_template: "checksums.txt"
 changelog:
@@ -33,6 +33,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
 release:
   # Create a thread in the General category in the repo's discussion tab.
   discussion_category_name: General
