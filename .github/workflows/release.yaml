@@ -1,13 +1,13 @@
 name: Release Kusk Gateway
 
-# Cancel any pending or running workflow if the new one is triggered
-#concurrency:
-#  group: "release"
-#  cancel-in-progress: true
-#
-#defaults:
-#  run:
-#    shell: bash
+ Cancel any pending or running workflow if the new one is triggered
+concurrency:
+  group: "release"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 on:
   push:
@@ -17,7 +17,7 @@ on:
 
 jobs:
   pre_build:
-    name: Pre-build
+    name: Pre-build binaries, build and push Docker image
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -45,43 +45,43 @@ jobs:
         with:
           go-version: 1.19
 
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v1
-#
-#      - name: Login to DockerHub
-#        if: github.event_name != 'pull_request'
-#        uses: docker/login-action@v1
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#
-#      - name: Docker metadata for Kusk Gateway
-#        id: meta-kusk-gateway
-#        uses: docker/metadata-action@v3
-#        with:
-#          images: kubeshop/kusk-gateway
-#          tags: |
-#            type=match,pattern=v(.*)
-#            type=sha
-#          flavor: |
-#            latest=true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker metadata for Kusk Gateway
+        id: meta-kusk-gateway
+        uses: docker/metadata-action@v3
+        with:
+          images: kubeshop/kusk-gateway
+          tags: |
+            type=match,pattern=v(.*)
+            type=sha
+          flavor: |
+            latest=true
 
       - name: setup-goreleaser-environment-variables
         run: |
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
 
-#      - name: Build and push Kusk Gateway
-#        uses: docker/build-push-action@v2
-#        with:
-#          context: .
-#          file: build/manager/Dockerfile
-#          push: ${{ github.event_name != 'pull_request' }}
-#          platforms: linux/amd64,linux/arm64
-#          tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
-#          labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
-#          build-args: |
-#            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
-#            VERSION=${{ env.VERSION }}
+      - name: Build and push Kusk Gateway
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: build/manager/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta-kusk-gateway.outputs.tags }}
+          labels: ${{ steps.meta-kusk-gateway.outputs.labels }}
+          build-args: |
+            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
+            VERSION=${{ env.VERSION }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
@@ -101,8 +101,9 @@ jobs:
           path: |
             ${{ matrix.name }}/kusk_${{ matrix.name }}_*
           retention-days: 1
+
   release:
-    name: Create and upload release-artifacts
+    name: Build binaries, upload release-artifacts
     needs: pre_build
     runs-on: ubuntu-latest
 
@@ -142,27 +143,6 @@ jobs:
           name: bin-artifacts
           path: dist
           retention-days: 1
-
-
-  build-and-publish-windows-installer:
-    needs: release
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Get Intermediate Artifacts
-        uses: actions/download-artifact@master
-        with:
-          name: bin-artifacts
-          path: dist
-
-      - name: List files
-        run: |
-          Get-ChildItem -Recurse .\dist
 
 
   #      - name: Check if we have modified CRDs or RBAC between the 2 last tags
