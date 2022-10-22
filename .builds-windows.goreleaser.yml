@@ -6,7 +6,7 @@ before:
 dist: windows
 builds:
   - main: ./cmd/kusk
-    id: kusk
+#    id: kusk
     binary: kusk
     env:
       - CGO_ENABLED=0
@@ -17,11 +17,8 @@ builds:
       - arm64
       - 386
     ldflags:
-      - -s -w -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
-      - -X main.builtBy=goreleaser
-      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
-      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
+      - -w -s
+#      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
+#      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
 archives:
   - format: binary

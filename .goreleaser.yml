@@ -13,7 +13,7 @@ builds:
       - arm64
       - 386
     prebuilt:
-      path: "{{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
+      path: "{{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}"
     binary: kusk
    #   path: output/kusk_{{ .Os }}_{{ .Arch }}_{{ with .Amd64 }}_{{ . }}{{ end }}/kusk
   #    path: "kusk_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 \"v1\") }}{{ .Amd64 }}{{ end }}"
