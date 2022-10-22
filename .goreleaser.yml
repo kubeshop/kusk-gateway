@@ -1,5 +1,6 @@
 builds:
   - builder: prebuilt
+    id: kusk
     goos:
       - linux
       - windows
@@ -11,10 +12,10 @@ builds:
     goamd64:
       - v1
     prebuilt:
-      path: {{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}
+      path: '{{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
     binary: kusk
     hooks:
-      pre: 'du -hs {{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
+      pre: 'du -hs {{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
 archives:
   - replacements:
       darwin: macOS
@@ -30,7 +31,6 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-
 release:
   # Create a thread in the General category in the repo's discussion tab.
   discussion_category_name: General

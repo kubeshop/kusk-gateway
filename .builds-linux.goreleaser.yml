@@ -6,7 +6,7 @@ before:
 dist: linux
 builds:
   - main: ./cmd/kusk
-#    id: kusk
+    id: kusk
     binary: kusk
     env:
       - CGO_ENABLED=0
@@ -18,7 +18,7 @@ builds:
       - 386
     ldflags:
       - -w -s
-      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
-      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
+#      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
+#      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
 archives:
   - format: binary
