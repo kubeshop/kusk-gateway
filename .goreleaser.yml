@@ -1,5 +1,6 @@
 builds:
   - builder: prebuilt
+    id: kusk-gateway
     goos:
       - linux
       - windows
@@ -11,7 +12,7 @@ builds:
     goamd64:
       - v1
     prebuilt:
-      path: {{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}
+      path: '{{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
     binary: kusk
     hooks:
       pre: 'du -hs {{ .Os }}/kusk-gateway_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
