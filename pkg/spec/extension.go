@@ -56,7 +56,20 @@ func getOperationOptions(operation *openapi3.Operation) (options.SubOptions, boo
 // For each found method in the document top and path level x-kusk options will be merged in
 // to form OperationFinalSubOptions map that has the complete configuration for each method.
 func GetOptions(spec *openapi3.T) (*options.Options, error) {
+	subOptions := options.SubOptions{}
+	extension := spec.ExtensionProps.Extensions
+	if globalOptsNotAlreadySet := extension == nil; globalOptsNotAlreadySet {
+		extension = make(map[string]interface{})
+	}
+
+	// extract already set global options if they exist
+	// so, they can be merged later with path/operation level options
+	if so, ok := extension[kuskExtensionKey]; ok {
+		subOptions = so.(options.SubOptions)
+	}
+
 	res := options.Options{
+		SubOptions:               subOptions,
 		OperationFinalSubOptions: make(map[string]options.SubOptions),
 	}
 

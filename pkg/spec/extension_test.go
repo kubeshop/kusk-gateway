@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -110,6 +110,37 @@ func TestGetOptions(t *testing.T) {
 				},
 			},
 			err: true,
+		},
+		{
+			name: "global options are already set",
+			spec: &openapi3.T{
+				ExtensionProps: openapi3.ExtensionProps{
+					Extensions: map[string]interface{}{
+						kuskExtensionKey: options.SubOptions{
+							Mocking: &options.MockingOptions{
+								Enabled: &trueValue,
+							},
+						},
+					},
+				},
+				Paths: openapi3.Paths{
+					"/pet": &openapi3.PathItem{
+						Put: &openapi3.Operation{},
+					},
+				},
+			},
+			res: options.Options{
+				SubOptions: options.SubOptions{
+					Mocking: &options.MockingOptions{
+						Enabled: &trueValue,
+					},
+				},
+				OperationFinalSubOptions: map[string]options.SubOptions{
+					"PUT/pet": {
+						Mocking: &options.MockingOptions{Enabled: &trueValue},
+					},
+				},
+			},
 		},
 	}
 
