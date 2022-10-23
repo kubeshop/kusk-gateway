@@ -56,20 +56,13 @@ func getOperationOptions(operation *openapi3.Operation) (options.SubOptions, boo
 // For each found method in the document top and path level x-kusk options will be merged in
 // to form OperationFinalSubOptions map that has the complete configuration for each method.
 func GetOptions(spec *openapi3.T) (*options.Options, error) {
-	subOptions := options.SubOptions{}
-	extension := spec.ExtensionProps.Extensions
-	if globalOptsNotAlreadySet := extension == nil; globalOptsNotAlreadySet {
-		extension = make(map[string]interface{})
-	}
-
-	// extract already set global options if they exist
-	// so, they can be merged later with path/operation level options
-	if so, ok := extension[kuskExtensionKey]; ok {
-		subOptions = so.(options.SubOptions)
+	globalOpts, err := getGlobalOptsFromSpec(spec)
+	if err != nil {
+		return nil, err
 	}
 
 	res := options.Options{
-		SubOptions:               subOptions,
+		SubOptions:               globalOpts,
 		OperationFinalSubOptions: make(map[string]options.SubOptions),
 	}
 
@@ -98,6 +91,27 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 	}
 
 	return &res, nil
+}
+
+func getGlobalOptsFromSpec(spec *openapi3.T) (options.SubOptions, error) {
+	optsToReturn := options.SubOptions{}
+
+	allExtensions := spec.ExtensionProps.Extensions
+	if globalOptsNotAlreadySet := allExtensions == nil; globalOptsNotAlreadySet {
+		allExtensions = make(map[string]interface{})
+	}
+
+	// extract already set global options if they exist
+	// so, they can be merged later with path/operation level options
+	if so, ok := allExtensions[kuskExtensionKey]; ok {
+		if kuskExtension, ok := so.(json.RawMessage); ok {
+			if err := yaml.UnmarshalStrict(kuskExtension, &optsToReturn); err != nil {
+				return options.SubOptions{}, fmt.Errorf("failed to parse allExtensions: %w. Check the extensions supported by Kusk at  https://docs.kusk.io/extension", err)
+			}
+		}
+	}
+
+	return optsToReturn, nil
 }
 
 func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{}) (bool, error) {

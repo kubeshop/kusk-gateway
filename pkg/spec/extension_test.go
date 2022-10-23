@@ -116,11 +116,7 @@ func TestGetOptions(t *testing.T) {
 			spec: &openapi3.T{
 				ExtensionProps: openapi3.ExtensionProps{
 					Extensions: map[string]interface{}{
-						kuskExtensionKey: options.SubOptions{
-							Mocking: &options.MockingOptions{
-								Enabled: &trueValue,
-							},
-						},
+						kuskExtensionKey: json.RawMessage(`{"mocking": {"enabled":true}}`),
 					},
 				},
 				Paths: openapi3.Paths{
