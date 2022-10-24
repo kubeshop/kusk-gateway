@@ -171,7 +171,7 @@ jobs:
             echo "::set-output name=changed_resources::false"
           fi
 
-   This job runs when we have changed_resources from the upstream release job
+#   This job runs when we have changed_resources from the upstream release job
   notify_slack_if_resources_changed:
     name: "Notify when CRD or RBAC changed"
     needs: "release"
@@ -191,7 +191,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-   This job runs when we there is no changed resources in the upstream job
+#   This job runs when we there is no changed resources in the upstream job
   helm_chart_version_bump:
     name: "Trigger Helm chart appVersion update"
     needs: "release"
