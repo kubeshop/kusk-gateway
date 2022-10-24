@@ -143,6 +143,10 @@ jobs:
         with:
           name: kusk_darwin
           path: darwin
+      # Added as a workaround since files lose their permissions when being moved from one stage to another in GH. A bug was reported
+      # and will be fixed in the next release of GoReleaser, thus we will be able to remove this code.
+      - name: Add executable mode
+        run: chmod -R +x linux/ darwin/
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
@@ -153,6 +157,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
+      - name: Store Intermediate Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: bin-artifacts
+          path: dist
 
       - name: Check if we have modified CRDs or RBAC between the 2 last tags
         id: check_modified_resources
@@ -171,7 +180,55 @@ jobs:
             echo "::set-output name=changed_resources::false"
           fi
 
-#   This job runs when we have changed_resources from the upstream release job
+  build-and-publish-linux-installer:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Intermediate Artifacts
+        uses: actions/download-artifact@master
+        with:
+          name: bin-artifacts
+          path: dist
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+      - name: Publish package
+        env:
+          APTLY_USERNAME: "aptly"
+          PASSWORD: ${{ secrets.APTLY_PASSWORD }}
+          APTLY_URL: "https://repo.kubeshop.io"
+          VERSION: ${{steps.tag.outputs.tag}}
+        run: |
+          ### Upload files
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_386.deb ${APTLY_URL}/api/files/kusk
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_arm64.deb ${APTLY_URL}/api/files/kusk
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_amd64.deb ${APTLY_URL}/api/files/kusk
+          ### Add file to repo
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST ${APTLY_URL}/api/repos/kusk/file/kusk?forceReplace=1
+          ### Create snapshot
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -H 'Content-Type: application/json' --data '{"Name":"kusk-'${VERSION}'"}' ${APTLY_URL}/api/repos/kusk/snapshots
+          ### Publish repo
+          already_published=$(curl --silent -u ${APTLY_USERNAME}:${PASSWORD} ${APTLY_URL}/api/publish | jq ".[] | .Sources | .[] | .Name==\"kusk-${VERSION}\"")
+          if [[ -z $already_published || $already_published == *"false"* ]]; then
+            curl \
+              -u ${APTLY_USERNAME}:${PASSWORD} \
+              -X POST \
+              -H 'Content-Type: application/json' \
+              --data '{"Storage": "", "SourceKind": "snapshot", "Distribution": "linux", "Sources": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+              "${APTLY_URL}/api/publish/:kusk"
+          else
+            curl \
+              -u ${APTLY_USERNAME}:${PASSWORD} \
+              -X PUT \
+              -H 'Content-Type: application/json' \
+              --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+              "${APTLY_URL}/api/publish/:${REPO_NAME}/linux"
+          fi
+
+  #   This job runs when we have changed_resources from the upstream release job
   notify_slack_if_resources_changed:
     name: "Notify when CRD or RBAC changed"
     needs: "release"
