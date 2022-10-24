@@ -1,11 +1,11 @@
 # Getting Started
 
 In this section, you will:
-1. Install Kusk CLI in your development environment and install Kusk Gateway in your cluster 
+1. Install Kusk CLI in your development environment and install Kusk Gateway in your cluster
 3. Deploy an API to Kusk Gateway with mocking enabled
 4. Deploy a sample application and connect it to Kusk Gateway
 
-### **1. Install Kusk CLI** 
+### **1. Install Kusk CLI**
 
 To install Kusk CLI, you will need the following tools available in your terminal:
 
@@ -18,8 +18,31 @@ brew install kubeshop/kusk/kusk
 ```
 
 **Linux**
+
+Install Script
 ```sh
 curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash
+```
+
+APT (Debian/Ubuntu)
+1. Download our public GPG key, and add it to the trusted keys:
+```sh
+wget -qO - https://repo.kubeshop.io/key.pub | sudo apt-key add -
+```
+
+2. Add our repository to your apt sources:
+```sh
+echo "deb https://repo.kubeshop.io/kusk linux main" | sudo tee -a /etc/apt/sources.list
+```
+
+3. Update your local package index:
+```sh
+sudo apt-get update
+```
+
+4: Install Kusk
+```sh
+sudo apt-get install -y kusk
 ```
 
 **Windows (go binary needed)**
@@ -29,7 +52,7 @@ go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 
 ### **2. Install Kusk Gateway in your cluster**
 
-Use the Kusk CLIs [install command](./reference/cli/install-cmd.md) to install Kusk Gateway components in your cluster. 
+Use the Kusk CLIs [install command](./reference/cli/install-cmd.md) to install Kusk Gateway components in your cluster.
 
 ```sh
 kusk cluster install
@@ -62,7 +85,7 @@ paths:
               example: Hello from a mocked response!
 ```
 
-This approach of deploying an API and mocking it fits great in an **Design-First approach**, allowing, for example, frontend teams to work at the same time as the backend teams as the frontend team can start developing by using the mock results provided by Kusk Gateway. 
+This approach of deploying an API and mocking it fits great in an **Design-First approach**, allowing, for example, frontend teams to work at the same time as the backend teams as the frontend team can start developing by using the mock results provided by Kusk Gateway.
 
 ### **4. Deploy the API**
 
@@ -72,7 +95,7 @@ kusk deploy -i openapi.yaml
 
 **Given we have enabled gateway-level mocks**, we don't need to have any applications deployed to test the API. Kusk Gateway will provide with mock responses.
 
-Get the IP of Kusk's LoadBalancer with: 
+Get the IP of Kusk's LoadBalancer with:
 
 ```sh
 $ kusk ip
@@ -98,11 +121,11 @@ kubectl expose deployment hello-world --name hello-world-svc --port=8080
 ```
 ### **7. Update the OpenAPI definition to connect the application to Kusk Gateway**
 
-First, you will need to stop the mocking of the API. Delete the `mocking` section from the `openapi.yaml` file: 
+First, you will need to stop the mocking of the API. Delete the `mocking` section from the `openapi.yaml` file:
 
 ```diff
 ...
-- mocking: 
+- mocking:
 -  enabled: true
 ...
 ```
@@ -118,7 +141,7 @@ x-kusk:
     port: 8080
 ```
 
-The resulting file should look like this: 
+The resulting file should look like this:
 ```yaml
 openapi: 3.0.0
 info:
@@ -158,7 +181,7 @@ $ curl 100.12.34.56/hello
 Hello from an implemented service!
 ```
 
-This response is served from the deployed application. Now you have successfully deployed an application to Kusk Gateway! 
+This response is served from the deployed application. Now you have successfully deployed an application to Kusk Gateway!
 
 ## Next Steps
 
