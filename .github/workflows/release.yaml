@@ -16,24 +16,16 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
-  release:
-    name: Create and upload release-artifacts, triggers Helm charts release
-    if: github.event.base_ref == 'refs/heads/main'
+  image_build:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
-    outputs:
-      changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
-      release_version: ${{ steps.check_modified_resources.outputs.release_version }}
+    if: github.event.base_ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: setup-golang
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.19
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -73,15 +65,94 @@ jobs:
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
             VERSION=${{ env.VERSION }}
 
-      - name: Run GoReleaser to publish release notes
+
+  pre_build:
+    name: Pre-build binaries
+    if: github.event.base_ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "linux"
+            path: .builds-linux.goreleaser.yml
+          - name: "windows"
+            path: .builds-windows.goreleaser.yml
+          - name: "darwin"
+            path: .builds-darwin.goreleaser.yml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: setup-golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+
+      - name: setup-goreleaser-environment-variables
+        run: |
+          echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
+
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          distribution: goreleaser
+          distribution: goreleaser-pro
           version: latest
-          args: release --rm-dist --skip-sign
+          args: release -f ${{ matrix.path }} --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
           TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: kusk_${{ matrix.name }}
+          path: |
+            ${{ matrix.name }}/kusk_${{ matrix.name }}_*
+          retention-days: 1
+
+  release:
+    name: Build binaries, upload release-artifacts
+    needs: pre_build
+    runs-on: ubuntu-latest
+
+    outputs:
+      changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
+      release_version: ${{ steps.check_modified_resources.outputs.release_version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Artifacts for Linux
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_linux
+          path: linux
+      - name: Download Artifacts for Windows
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_windows
+          path: windows
+      - name: Download Artifacts for Darwin
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_darwin
+          path: darwin
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser-pro
+          version: latest
+          args: release -f .goreleaser.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+          # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
 
       - name: Check if we have modified CRDs or RBAC between the 2 last tags
         id: check_modified_resources
@@ -100,7 +171,7 @@ jobs:
             echo "::set-output name=changed_resources::false"
           fi
 
-  # This job runs when we have changed_resources from the upstream release job
+#   This job runs when we have changed_resources from the upstream release job
   notify_slack_if_resources_changed:
     name: "Notify when CRD or RBAC changed"
     needs: "release"
@@ -120,7 +191,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-  # This job runs when we there is no changed resources in the upstream job
+#   This job runs when we there is no changed resources in the upstream job
   helm_chart_version_bump:
     name: "Trigger Helm chart appVersion update"
     needs: "release"
