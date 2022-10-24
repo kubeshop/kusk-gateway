@@ -41,10 +41,11 @@ import (
 )
 
 var (
-	gatewayName    string
-	svcType        string
-	port           string
-	defaultGateway bool
+	gatewayName      string
+	svcType          string
+	port             string
+	defaultGateway   bool
+	gatewayNamespace string
 )
 
 var addGatewayCMD = &cobra.Command{
@@ -103,7 +104,8 @@ var addGatewayCMD = &cobra.Command{
 
 func init() {
 	gatewayCMD.AddCommand(addGatewayCMD)
-	addGatewayCMD.Flags().StringVarP(&namespace, "namespace", "n", "", "namespace where the new gateway will be created")
+
+	addGatewayCMD.Flags().StringVarP(&gatewayNamespace, "namespace", "n", "", "namespace where the new gateway will be created")
 	addGatewayCMD.Flags().StringVarP(&svcType, "serviceType", "s", "", "Service type of the gateway. Supported options LoadBalancer, ClusterIP")
 	addGatewayCMD.Flags().StringVarP(&port, "port", "p", "", "port for the gateway. Supported values are from 0 to 65536")
 	addGatewayCMD.Flags().StringVarP(&gatewayName, "name", "", "", "name of the gateway")
@@ -157,7 +159,7 @@ func addRun(cmd *cobra.Command, args []string) error {
 		fleet.Spec.Default = deflt
 	}
 
-	if len(namespace) == 0 {
+	if len(gatewayNamespace) == 0 {
 		namespaces := &corev1.NamespaceList{}
 		if err := c.List(cmd.Context(), namespaces, &client.ListOptions{}); err != nil {
 			reportError(err)
@@ -173,10 +175,10 @@ func addRun(cmd *cobra.Command, args []string) error {
 			namespaceNames = append(namespaceNames, ns.Name)
 		}
 		namespacesPrompt.Items = namespaceNames
-		_, namespace, _ = namespacesPrompt.Run()
+		_, gatewayNamespace, _ = namespacesPrompt.Run()
 	}
 
-	fleet.Namespace = namespace
+	fleet.Namespace = gatewayNamespace
 
 	if len(svcType) == 0 {
 		_, svcType, _ = serviceTypePrompt.Run()

@@ -36,6 +36,7 @@ import (
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
@@ -47,7 +48,7 @@ var ipCmd = &cobra.Command{
 	Use:           "ip",
 	Short:         "return IP address of the default envoyfleet",
 	SilenceErrors: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		reportError := func(err error) {
 			if err != nil {
 				errors.NewErrorReporter(cmd, err).Report()
@@ -59,19 +60,22 @@ var ipCmd = &cobra.Command{
 		k8sclient, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
-			return err
+			kuskui.PrintError(err.Error())
+			return
 		}
 
 		envoyFleets := &kuskv1.EnvoyFleetList{}
 
 		if err := k8sclient.List(context.TODO(), envoyFleets, &client.ListOptions{}); err != nil {
 			reportError(err)
-			return err
+			kuskui.PrintError(err.Error())
+			return
 		}
 		if len(envoyFleets.Items) == 0 {
 			err := fmt.Errorf("there are no envoyfleets in your cluster")
 			reportError(err)
-			return err
+			kuskui.PrintError(err.Error())
+			return
 		}
 		defaultFleet := kuskv1.EnvoyFleet{}
 		for _, f := range envoyFleets.Items {
@@ -84,6 +88,8 @@ var ipCmd = &cobra.Command{
 		if len(defaultFleet.Name) == 0 {
 			err := fmt.Errorf("there is no default envoyfleet in your cluster")
 			reportError(err)
+			kuskui.PrintError(err.Error())
+			return
 		}
 
 		list := &corev1.ServiceList{}
@@ -91,12 +97,14 @@ var ipCmd = &cobra.Command{
 		labelSelector, err := labels.Parse("app.kubernetes.io/managed-by=kusk-gateway-manager,fleet=" + defaultFleet.Name + "." + defaultFleet.Namespace)
 		if err != nil {
 			reportError(err)
-			return err
+			kuskui.PrintError(err.Error())
+			return
 		}
 
 		if err := k8sclient.List(context.TODO(), list, &client.ListOptions{LabelSelector: labelSelector}); err != nil {
 			reportError(err)
-			return err
+			kuskui.PrintError(err.Error())
+			return
 		}
 
 		ip := ""
@@ -112,17 +120,14 @@ var ipCmd = &cobra.Command{
 		}
 		//kubectl port-forward svc/kusk-gateway-dashboard -n kusk-system 8080:80
 		if svc.Spec.Type == "ClusterIP" {
-			err := fmt.Errorf("EnvoyFleet doesn't have an External IP address assigned. Try port-forwarding by running the following command: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
-			reportError(err)
-			return err
+			kuskui.PrintWarning(fmt.Sprintf("EnvoyFleet doesn't have an External IP address assigned. Try port-forwarding by running: \n\n kubectl port-forward svc/%s -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+			return
 		}
 		if ip == "" {
-			err := fmt.Errorf("EnvoyFleet doesn't have an External IP address assigned yet. Retry or try port-forwarding by running the following command: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s  -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
-			reportError(err)
-			return err
-
+			kuskui.PrintWarning("EnvoyFleet doesn't have an External IP address assigned yet. Try port-forwarding by running: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+			return
 		}
 		fmt.Println(ip)
-		return nil
+		return
 	},
 }
