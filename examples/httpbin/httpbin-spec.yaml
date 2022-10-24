@@ -7,6 +7,9 @@ host: httpbin.org
 schemes:
   - http
   - https
+x-kusk:
+  mocking:
+    enabled: true
 paths:
   "/status/{code}":
     get:
