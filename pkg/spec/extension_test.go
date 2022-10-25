@@ -138,6 +138,34 @@ func TestGetOptions(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "host options defined in openapi spec",
+			spec: &openapi3.T{
+				ExtensionProps: openapi3.ExtensionProps{
+					Extensions: map[string]interface{}{
+						kuskExtensionKey: json.RawMessage(`{"hosts": ["example.com"],"mocking": {"enabled":true}}`),
+					},
+				},
+				Paths: openapi3.Paths{
+					"/pet": &openapi3.PathItem{
+						Put: &openapi3.Operation{},
+					},
+				},
+			},
+			res: options.Options{
+				Hosts: []options.Host{"example.com"},
+				SubOptions: options.SubOptions{
+					Mocking: &options.MockingOptions{
+						Enabled: &trueValue,
+					},
+				},
+				OperationFinalSubOptions: map[string]options.SubOptions{
+					"PUT/pet": {
+						Mocking: &options.MockingOptions{Enabled: &trueValue},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
