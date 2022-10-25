@@ -48,7 +48,7 @@ const (
 )
 
 // StaticRouteMutator handles StaticRoute objects defaulting and any additional mutation.
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type StaticRouteMutator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -111,7 +111,7 @@ func (s *StaticRouteMutator) InjectDecoder(d *admission.Decoder) error {
 //+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-staticroute,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1alpha1,name=vstaticroute.kb.io,admissionReviewVersions=v1
 
 // StaticRouteValidator handles StaticRoute objects validation
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type StaticRouteValidator struct {
 	decoder *admission.Decoder
 }

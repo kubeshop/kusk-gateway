@@ -239,7 +239,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 	}
 }
 
-//  UpdateServices adds or updates Services to the validation service
+// UpdateServices adds or updates Services to the validation service
 func (s *Server) UpdateServices(services []*Service) {
 	s.m.Lock()
 	defer s.m.Unlock()
