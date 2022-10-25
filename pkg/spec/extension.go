@@ -61,12 +61,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 		return nil, err
 	}
 
-	res := options.Options{
-		SubOptions:               globalOpts,
-		OperationFinalSubOptions: make(map[string]options.SubOptions),
-	}
-
-	if _, err := parseExtension(&spec.ExtensionProps, &res); err != nil {
+	if _, err := parseExtension(&spec.ExtensionProps, &globalOpts); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +72,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 		}
 
 		// Merge in top level.
-		pathSubOptions.MergeInSubOptions(&res.SubOptions)
+		pathSubOptions.MergeInSubOptions(&globalOpts.SubOptions)
 		for method, operation := range pathItem.Operations() {
 			operationSubOptions, _, err := getOperationOptions(operation)
 			if err != nil {
@@ -86,15 +81,18 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 
 			// Merged in path
 			operationSubOptions.MergeInSubOptions(&pathSubOptions)
-			res.OperationFinalSubOptions[method+path] = operationSubOptions
+			globalOpts.OperationFinalSubOptions[method+path] = operationSubOptions
 		}
 	}
 
-	return &res, nil
+	return &globalOpts, nil
 }
 
-func getGlobalOptsFromSpec(spec *openapi3.T) (options.SubOptions, error) {
-	optsToReturn := options.SubOptions{}
+func getGlobalOptsFromSpec(spec *openapi3.T) (options.Options, error) {
+	opts := options.Options{
+		SubOptions:               options.SubOptions{},
+		OperationFinalSubOptions: map[string]options.SubOptions{},
+	}
 
 	allExtensions := spec.ExtensionProps.Extensions
 	if globalOptsNotAlreadySet := allExtensions == nil; globalOptsNotAlreadySet {
@@ -105,13 +103,13 @@ func getGlobalOptsFromSpec(spec *openapi3.T) (options.SubOptions, error) {
 	// so, they can be merged later with path/operation level options
 	if so, ok := allExtensions[kuskExtensionKey]; ok {
 		if kuskExtension, ok := so.(json.RawMessage); ok {
-			if err := yaml.UnmarshalStrict(kuskExtension, &optsToReturn); err != nil {
-				return options.SubOptions{}, fmt.Errorf("failed to parse allExtensions: %w. Check the extensions supported by Kusk at  https://docs.kusk.io/extension", err)
+			if err := yaml.UnmarshalStrict(kuskExtension, &opts); err != nil {
+				return options.Options{}, fmt.Errorf("failed to parse allExtensions: %w. Check the extensions supported by Kusk at  https://docs.kusk.io/extension", err)
 			}
 		}
 	}
 
-	return optsToReturn, nil
+	return opts, nil
 }
 
 func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{}) (bool, error) {
