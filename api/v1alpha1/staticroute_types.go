@@ -64,36 +64,13 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 	paths := make(map[string]options.StaticOperationSubOptions)
 	opts := &options.StaticOptions{
 		Paths: paths,
+		Auth:  spec.Auth,
 		Hosts: spec.Hosts,
 	}
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
 	}
 
-	//if spec.Auth != nil && spec.Auth.OAuth2 != nil {
-	//	opts.Auth = &options.AuthOptions{
-	//		OAuth2: &options.OAuth2{
-	//			TokenEndpoint:         spec.Auth.OAuth2.TokenEndpoint,
-	//			AuthorizationEndpoint: spec.Auth.OAuth2.AuthorizationEndpoint,
-	//			Credentials: options.Credentials{
-	//				ClientID:     spec.Auth.OAuth2.Credentials.ClientID,
-	//				ClientSecret: spec.Auth.OAuth2.Credentials.ClientSecret,
-	//				HmacSecret:   spec.Auth.OAuth2.Credentials.HmacSecret,
-	//				CookieNames: options.CookieNames{
-	//					BearerToken:  spec.Auth.OAuth2.Credentials.CookieNames.BearerToken,
-	//					OauthHMAC:    spec.Auth.OAuth2.Credentials.CookieNames.OauthHMAC,
-	//					ExpiresOauth: spec.Auth.OAuth2.Credentials.CookieNames.ExpiresOauth,
-	//				},
-	//			},
-	//			RedirectURI:         spec.Auth.OAuth2.RedirectURI,
-	//			ForwardBearerToken:  spec.Auth.OAuth2.ForwardBearerToken,
-	//			AuthScopes:          spec.Auth.OAuth2.AuthScopes,
-	//			Resources:           spec.Auth.OAuth2.Resources,
-	//			SignoutPath:         spec.Auth.OAuth2.SignoutPath,
-	//			RedirectPathMatcher: spec.Auth.OAuth2.RedirectPathMatcher,
-	//		},
-	//	}
-	//}
 	for specPath, specMethods := range spec.Paths {
 		path := string(specPath)
 		opts.Paths[path] = make(options.StaticOperationSubOptions)
