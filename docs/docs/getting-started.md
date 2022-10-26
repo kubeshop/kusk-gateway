@@ -52,7 +52,7 @@ go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 
 **Windows (Chocolatey)**
 
-Please run the commands  from an elevated command shell.
+Please run the commands from an elevated command shell.
 1. Add our repository URL to the list of Chocolatey sources:
 ```sh
 choco source add --name=kubeshop_repo --source=https://chocolatey.kubeshop.io/chocolatey

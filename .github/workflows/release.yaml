@@ -242,9 +242,6 @@ jobs:
         with:
           strip_v: true
 
-      - name: Use tag
-        run: echo ${{steps.tag.outputs.tag}}
-
       - name: Download newest version
         id: cliDownload
         run: |
