@@ -51,6 +51,8 @@ type StaticOptions struct {
 	*/
 	Hosts []Host
 
+	Auth *AuthOptions `json:"auth,omitempty" yaml:"auth,omitempty"`
+
 	// Paths allow to specify a specific set of option for a given path and a method.
 	// This is a 2-dimensional map[path][method].
 	// The map key is the path and the next map key is a HTTP method (operation).

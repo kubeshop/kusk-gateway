@@ -35,6 +35,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// +kubebuilder:object:generate=true
 // StaticRouteSpec defines the desired state of StaticRoute
 type StaticRouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -49,6 +50,9 @@ type StaticRouteSpec struct {
 	// Defaults to "*" - vhost that matches all domain names.
 	// +optional
 	Hosts []options.Host `json:"hosts,omitempty"`
+
+	// +optional
+	Auth *options.AuthOptions `json:"auth,omitempty"`
 
 	// Paths is a multidimensional map of path / method to the routing rules
 	Paths map[Path]Methods `json:"paths"`
@@ -65,6 +69,31 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
 	}
+
+	//if spec.Auth != nil && spec.Auth.OAuth2 != nil {
+	//	opts.Auth = &options.AuthOptions{
+	//		OAuth2: &options.OAuth2{
+	//			TokenEndpoint:         spec.Auth.OAuth2.TokenEndpoint,
+	//			AuthorizationEndpoint: spec.Auth.OAuth2.AuthorizationEndpoint,
+	//			Credentials: options.Credentials{
+	//				ClientID:     spec.Auth.OAuth2.Credentials.ClientID,
+	//				ClientSecret: spec.Auth.OAuth2.Credentials.ClientSecret,
+	//				HmacSecret:   spec.Auth.OAuth2.Credentials.HmacSecret,
+	//				CookieNames: options.CookieNames{
+	//					BearerToken:  spec.Auth.OAuth2.Credentials.CookieNames.BearerToken,
+	//					OauthHMAC:    spec.Auth.OAuth2.Credentials.CookieNames.OauthHMAC,
+	//					ExpiresOauth: spec.Auth.OAuth2.Credentials.CookieNames.ExpiresOauth,
+	//				},
+	//			},
+	//			RedirectURI:         spec.Auth.OAuth2.RedirectURI,
+	//			ForwardBearerToken:  spec.Auth.OAuth2.ForwardBearerToken,
+	//			AuthScopes:          spec.Auth.OAuth2.AuthScopes,
+	//			Resources:           spec.Auth.OAuth2.Resources,
+	//			SignoutPath:         spec.Auth.OAuth2.SignoutPath,
+	//			RedirectPathMatcher: spec.Auth.OAuth2.RedirectPathMatcher,
+	//		},
+	//	}
+	//}
 	for specPath, specMethods := range spec.Paths {
 		path := string(specPath)
 		opts.Paths[path] = make(options.StaticOperationSubOptions)
