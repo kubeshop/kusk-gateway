@@ -36,8 +36,13 @@ sudo apt-get upgrade -y kusk
 ```
 
 #### Windows
+Chocolatey
 
-For Windows installation you can either download the [latest release binary](https://github.com/kubeshop/kusk-gateway/releases/latest) or use the following command ([`go` binary](https://go.dev/doc/install)  needed):
+Please run the command from an elevated command shell.
+```sh
+choco upgrade kusk -y
+```
+For other ways of installation, you can download the [latest release binary](https://github.com/kubeshop/kusk-gateway/releases/latest) or use the following command ([`go` binary](https://go.dev/doc/install)  needed):
 
 ```sh
 go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest

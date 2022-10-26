@@ -228,6 +228,54 @@ jobs:
               "${APTLY_URL}/api/publish/:${REPO_NAME}/linux"
           fi
 
+  build-and-publish-windows-installer:
+    needs: release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Download newest version
+        id: cliDownload
+        run: |
+          $tag = $env:TAG
+
+          Invoke-Webrequest -UseBasicParsing -URI "https://github.com/kubeshop/kusk-gateway/releases/download/v${tag}/kusk_${tag}_Windows_x86_64.tar.gz" -OutFile kusk.tar.gz
+          $hash = Get-FileHash kusk.tar.gz | Select -ExpandProperty Hash
+
+          #setting set-output function for now since new commands with were not working as expected
+          echo '::echo::on'
+          echo "::set-output name=hash::$hash"
+        env:
+          TAG: ${{steps.tag.outputs.tag}}
+
+      - name: Update choco files
+        run: |
+
+          (Get-Content choco/tools/chocolateyinstall.ps1) -Replace '%checksum%', $env:PACKAGE_CHECKSUM | Set-Content choco/tools/chocolateyinstall.ps1
+          (Get-Content choco/kusk.nuspec) -Replace '%version%', $env:PACKAGE_VERSION | Set-Content choco/kusk.nuspec
+        env:
+          PACKAGE_CHECKSUM: ${{ steps.cliDownload.outputs.hash }}
+          PACKAGE_VERSION: ${{steps.tag.outputs.tag}}
+
+      - name: Pack and release
+        run: |
+          cd choco
+          choco pack
+
+          choco apikey --key  ${{ secrets.COMMOM_CHOCO_API_KEY }} --source ${{ env.COMMOM_CHOCO_REPO }}
+          choco push kusk.$env:PACKAGE_VERSION.nupkg --source ${{ env.COMMOM_CHOCO_REPO }}
+        env:
+          COMMOM_CHOCO_REPO: "https://chocolatey.kubeshop.io/chocolatey"
+          PACKAGE_VERSION: ${{steps.tag.outputs.tag}}
+
   #   This job runs when we have changed_resources from the upstream release job
   notify_slack_if_resources_changed:
     name: "Notify when CRD or RBAC changed"

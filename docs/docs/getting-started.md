@@ -50,6 +50,19 @@ sudo apt-get install -y kusk
 go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest
 ```
 
+**Windows (Chocolatey)**
+
+Please run the commands from an elevated command shell.
+1. Add our repository URL to the list of Chocolatey sources:
+```sh
+choco source add --name=kubeshop_repo --source=https://chocolatey.kubeshop.io/chocolatey
+```
+
+2. Install `kusk`:
+```sh
+choco install kusk -y
+```
+
 ### **2. Install Kusk Gateway in your cluster**
 
 Use the Kusk CLIs [install command](./reference/cli/install-cmd.md) to install Kusk Gateway components in your cluster.
