@@ -245,16 +245,13 @@ jobs:
       - name: Download newest version
         id: cliDownload
         run: |
-          $tag = $env:TAG
 
-          Invoke-Webrequest -UseBasicParsing -URI "https://github.com/kubeshop/kusk-gateway/releases/download/v${tag}/kusk_${tag}_Windows_x86_64.tar.gz" -OutFile kusk.tar.gz
+          Invoke-Webrequest -UseBasicParsing -URI "https://github.com/kubeshop/kusk-gateway/releases/download/v${{steps.tag.outputs.tag}}/kusk_${{steps.tag.outputs.tag}}_Windows_x86_64.tar.gz" -OutFile kusk.tar.gz
           $hash = Get-FileHash kusk.tar.gz | Select -ExpandProperty Hash
 
           #setting set-output function for now since new commands with were not working as expected
           echo '::echo::on'
           echo "::set-output name=hash::$hash"
-        env:
-          TAG: ${{steps.tag.outputs.tag}}
 
       - name: Update choco files
         run: |
