@@ -8,6 +8,11 @@ set -o nounset  # Exposes unset variables
 
 PROFILE="${PROFILE:-kgw}"
 
+if ! minikube status --profile "${PROFILE}"; then
+  echo "minikube profile=${PROFILE} is not running"
+  exit 1
+fi
+
 mkdir -pv /tmp/skaffold || echo '`/tmp/skaffold` already exist - skipping create'
 
 kustomize build config/crd >/tmp/skaffold/config-crd.yaml

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-app
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: frontend-app
+  template:
+    metadata:
+      labels:
+        app: frontend-app
+    spec:
+      containers:
+        - name: frontend-app
+          image: docker.io/aabedraba/kusk-frontend-example:v1.0.0
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-app-svc
+  namespace: default
+spec:
+  selector:
+    app: frontend-app
+  ports:
+    - port: 3000
+      targetPort: 3000

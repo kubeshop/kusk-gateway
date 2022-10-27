@@ -48,7 +48,7 @@ func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, 
 			cloudEntityPort     uint32 = 19000
 		)
 
-		args.CloudEntityBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, args.Name, args.Name, args.RoutePath, args.Method)
+		args.CloudEntityBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.RoutePath, args.CloudEntityBuilderArguments.Method)
 		authHeaders = []*envoy_config_core_v3.HeaderValue{
 			{
 				Key:   cloudentity.HeaderAuthorizerURL,
@@ -56,7 +56,7 @@ func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, 
 			},
 			{
 				Key:   cloudentity.HeaderAPIGroup,
-				Value: args.Name,
+				Value: args.CloudEntityBuilderArguments.Name,
 			},
 		}
 		upstreamServiceHost = cloudEntityHostname

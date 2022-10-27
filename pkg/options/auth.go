@@ -30,23 +30,8 @@ import (
 )
 
 const (
-	SchemeBasic       = "basic"
-	SchemeOAuth2      = "oauth2"
 	SchemeCloudEntity = "cloudentity"
 )
-
-// AuthOptions example:
-//
-// x-kusk:
-//
-//	...
-//	auth:
-//	  scheme: basic
-//	  auth-upstream:
-//	    path_prefix: /login # optional
-//	    host:
-//	      hostname: example.com
-//	      port: 80
 
 // +kubebuilder:object:generate=true
 type AuthOptions struct {
@@ -72,7 +57,6 @@ func (o AuthOptions) Validate() error {
 	}
 
 	if o.OAuth2 != nil {
-		// SchemeOAuth2
 		return validation.ValidateStruct(&o, validation.Field(&o.OAuth2, validation.Required))
 	}
 	if o.Custom != nil {

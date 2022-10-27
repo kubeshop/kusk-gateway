@@ -35,18 +35,22 @@ import (
 
 var (
 	ErrorAuthIsNil                = fmt.Errorf("auth.ParseAuthOptions: `auth` is nil")
-	ErrorMutuallyExclusiveOptions = fmt.Errorf("auth.ParseAuthOptions: `auth.auth-upstream` and `auth.oauth2` are enabled but are mutually exclusive")
+	ErrorMutuallyExclusiveOptions = fmt.Errorf("auth.ParseAuthOptions: `auth.custom` and `auth.oauth2` are enabled but are mutually exclusive")
 )
 
 type generateClusterNameFunc func( /*name*/ string /*port*/, uint32) string
+
+type CloudEntityBuilderArguments struct {
+	Name      string
+	RoutePath string
+	Method    string
+}
 
 type parseAuthOptionsArguments struct {
 	Logger                       logr.Logger
 	EnvoyConfiguration           *config.EnvoyConfiguration
 	HTTPConnectionManagerBuilder *config.HCMBuilder
-	Name                         string
-	RoutePath                    string
-	Method                       string
+	CloudEntityBuilderArguments  *CloudEntityBuilderArguments
 	CloudEntityBuilder           *cloudentity.Builder
 	GenerateClusterName          generateClusterNameFunc
 	KubernetesClient             client.Client
@@ -56,9 +60,8 @@ func NewParseAuthOptionsArguments(
 	logger logr.Logger,
 	envoyConfiguration *config.EnvoyConfiguration,
 	httpConnectionManagerBuilder *config.HCMBuilder,
-	name string, routePathstring,
-	method string,
 	cloudEntityBuilder *cloudentity.Builder,
+	cloudEntityBuilderArguments *CloudEntityBuilderArguments,
 	generateClusterName generateClusterNameFunc,
 	kubernetesClient client.Client,
 ) *parseAuthOptionsArguments {
@@ -66,22 +69,20 @@ func NewParseAuthOptionsArguments(
 		Logger:                       logger,
 		EnvoyConfiguration:           envoyConfiguration,
 		HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
-		Name:                         name,
-		RoutePath:                    routePathstring,
-		Method:                       method,
 		CloudEntityBuilder:           cloudEntityBuilder,
 		GenerateClusterName:          generateClusterName,
 		KubernetesClient:             kubernetesClient,
+		CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
 	}
 }
 
-func ParseAuthOptions(finalOpts options.SubOptions, args *parseAuthOptionsArguments) error {
-	if finalOpts.Auth == nil {
+func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments) error {
+	if auth == nil {
 		return ErrorAuthIsNil
 	}
-	custom := finalOpts.Auth.Custom
-	oauth2 := finalOpts.Auth.OAuth2
-	cloudentity := finalOpts.Auth.Cloudentity
+	custom := auth.Custom
+	oauth2 := auth.OAuth2
+	cloudentity := auth.Cloudentity
 
 	if custom != nil && oauth2 != nil {
 		return ErrorMutuallyExclusiveOptions

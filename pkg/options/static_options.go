@@ -70,6 +70,7 @@ func (o *StaticOptions) fillDefaults() {
 
 func (o StaticOptions) Validate() error {
 	return v.ValidateStruct(&o,
+		v.Field(&o.Auth),
 		v.Field(&o.Hosts, v.Each()),
 		v.Field(&o.Paths, v.Each()),
 	)

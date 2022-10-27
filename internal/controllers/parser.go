@@ -82,7 +82,7 @@ func UpdateConfigFromAPIOpts(
 	opts *options.Options,
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
-	clBuilder *cloudentity.Builder,
+	cloudEntityBuilder *cloudentity.Builder,
 	name string,
 	kubernetesClient client.Client,
 ) error {
@@ -153,19 +153,22 @@ func UpdateConfigFromAPIOpts(
 
 			if finalOpts.Auth != nil {
 				logger.Info("parsing `auth` options", "finalOpts.Auth", fmt.Sprintf("%+#v", finalOpts.Auth))
+				cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+					Name:      name,
+					RoutePath: routePath,
+					Method:    method,
+				}
 				arguments := auth.NewParseAuthOptionsArguments(
 					ctrl.Log,
 					envoyConfiguration,
 					httpConnectionManagerBuilder,
-					name,
-					routePath,
-					method,
-					clBuilder,
+					cloudEntityBuilder,
+					cloudEntityBuilderArguments,
 					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 					kubernetesClient,
 				)
 
-				err := auth.ParseAuthOptions(finalOpts, arguments)
+				err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
 				if err != nil {
 					return err
 				}
@@ -495,8 +498,41 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 }
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
-func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
+func UpdateConfigFromOpts(
+	envoyConfiguration *config.EnvoyConfiguration,
+	opts *options.StaticOptions,
+	httpConnectionManagerBuilder *config.HCMBuilder,
+	cloudEntityBuilder *cloudentity.Builder,
+	kubernetesClient client.Client,
+) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
+
+	if opts.Auth != nil {
+		logger.Info("parsing `auth` options", "opts.Auth (*options.StaticOptions.AuthOptions)", fmt.Sprintf("%+#v", opts.Auth))
+
+		// Ignore CloudEntity for now ...
+		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+			Name:      "",
+			RoutePath: "",
+			Method:    "",
+		}
+		arguments := auth.NewParseAuthOptionsArguments(
+			ctrl.Log,
+			envoyConfiguration,
+			httpConnectionManagerBuilder,
+			cloudEntityBuilder,
+			cloudEntityBuilderArguments,
+			generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+			kubernetesClient,
+		)
+
+		err := auth.ParseAuthOptions(opts.Auth, arguments)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Info("nil `auth` options", "opts (*options.StaticOptions)", fmt.Sprintf("%+#v", opts))
+	}
 
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
