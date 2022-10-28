@@ -117,6 +117,9 @@ type OAuth2 struct {
 	// Optional resource parameter for authorization request RFC: https://tools.ietf.org/html/rfc8707.
 	// OPTIONAL.
 	Resources []string `json:"resources,omitempty" yaml:"resources,omitempty"`
+	// Any request that matches any of the provided matchers will be passed through without OAuth validation.
+	// OPTIONAL.
+	PassThroughMatcher []string `json:"pass_through_matcher,omitempty" yaml:"pass_through_matcher,omitempty"`
 }
 
 func (o OAuth2) String() string {

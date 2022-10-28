@@ -33,6 +33,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_extensions_filter_http_oauth2_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/oauth2/v3"
 	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 
@@ -153,15 +154,28 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	authScopes := oauth2Options.AuthScopes
 	resources := oauth2Options.Resources
 
-	// // Disable OAuth2 on the root path - "/" - see: <https://github.com/kubeshop/kusk-gateway/issues/680>.
-	// passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{
-	// 	{
-	// 		Name: ":path",
-	// 		HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_ExactMatch{
-	// 			ExactMatch: "/",
-	// 		},
-	// 	},
-	// }
+	passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{}
+	if len(oauth2Options.PassThroughMatcher) > 0 {
+		for _, exactMatch := range oauth2Options.PassThroughMatcher {
+			passThroughMatcher = append(passThroughMatcher, &envoy_config_route_v3.HeaderMatcher{
+				Name: ":path",
+				HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_ExactMatch{
+					ExactMatch: exactMatch,
+				},
+			})
+		}
+	} else {
+		// Disable OAuth2 on the root path - "/" - see: <https://github.com/kubeshop/kusk-gateway/issues/680>.
+		// if `pass_through_matcher` has not been specified.
+		passThroughMatcher = []*envoy_config_route_v3.HeaderMatcher{
+			{
+				Name: ":path",
+				HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_ExactMatch{
+					ExactMatch: "/",
+				},
+			},
+		}
+	}
 
 	config := &envoy_extensions_filter_http_oauth2_v3.OAuth2Config{
 		// Endpoint on the authorization server to retrieve the access token from.
@@ -182,8 +196,8 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		SignoutPath: signoutPath,
 		// Forward the OAuth token as a Bearer to upstream web service.
 		ForwardBearerToken: forwardBearerToken,
-		// // Any request that matches any of the provided matchers will be passed through without OAuth validation.
-		// PassThroughMatcher: passThroughMatcher,
+		// Any request that matches any of the provided matchers will be passed through without OAuth validation.
+		PassThroughMatcher: passThroughMatcher,
 		// Optional list of OAuth scopes to be claimed in the authorization request. If not specified,
 		// defaults to "user" scope.
 		// OAuth RFC https://tools.ietf.org/html/rfc6749#section-3.3
