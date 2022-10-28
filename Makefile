@@ -92,9 +92,9 @@ enable-logging: ## Set some particular logger's level
 	curl -s -X POST "http://localhost:19000/logging?filter=trace"
 	curl -s -X POST "http://localhost:19000/logging?misc=trace"
 	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?connection=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http2=trace"
+	curl -s -X POST "http://localhost:19000/logging?connection=trace"
+	curl -s -X POST "http://localhost:19000/logging?http=trace"
+	curl -s -X POST "http://localhost:19000/logging?http2=trace"
 	@# curl -s -X POST "http://localhost:19000/logging?admin=trace"
 	@# bash -c "trap 'pkill -F /tmp/kube-port-forward-logging.pid' SIGINT SIGTERM ERR EXIT"
 	@echo

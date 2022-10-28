@@ -54,6 +54,7 @@ type parseAuthOptionsArguments struct {
 	CloudEntityBuilder           *cloudentity.Builder
 	GenerateClusterName          generateClusterNameFunc
 	KubernetesClient             client.Client
+	PathsToIgnore                []string
 }
 
 func NewParseAuthOptionsArguments(
@@ -76,16 +77,23 @@ func NewParseAuthOptionsArguments(
 	}
 }
 
-func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments) error {
+type ParseAuthOutput struct {
+	GeneratedClusterName string
+}
+
+func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments) (*ParseAuthOutput, error) {
+	var parseAuthOutput *ParseAuthOutput
+
 	if auth == nil {
-		return ErrorAuthIsNil
+		return nil, ErrorAuthIsNil
 	}
+
 	custom := auth.Custom
 	oauth2 := auth.OAuth2
 	cloudentity := auth.Cloudentity
 
 	if custom != nil && oauth2 != nil {
-		return ErrorMutuallyExclusiveOptions
+		return nil, ErrorMutuallyExclusiveOptions
 	}
 
 	if custom != nil {
@@ -96,7 +104,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments
 		}
 		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if cloudentity != nil {
 		scheme := "cloudentity"
@@ -106,12 +114,13 @@ func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments
 		}
 		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if oauth2 != nil {
-		err := ParseOAuth2Options(oauth2, args)
+		var err error
+		parseAuthOutput, err = ParseOAuth2Options(oauth2, args)
 		if err != nil {
-			return err
+			return parseAuthOutput, err
 		}
 	}
 
@@ -119,5 +128,5 @@ func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments
 		WithName("auth.ParseAuthOptions").
 		Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
-	return nil
+	return parseAuthOutput, nil
 }

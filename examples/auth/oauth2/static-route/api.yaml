@@ -2,6 +2,7 @@ apiVersion: gateway.kusk.io/v1alpha1
 kind: StaticRoute
 metadata:
   name: sample
+  namespace: default
 spec:
   fleet:
     name: default
@@ -22,7 +23,7 @@ spec:
   paths:
     /:
       get:
-        route: &root_route
+        route:
           upstream:
             service:
               name: frontend-app-svc
