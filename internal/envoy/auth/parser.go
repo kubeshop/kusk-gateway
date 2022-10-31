@@ -46,7 +46,7 @@ type CloudEntityBuilderArguments struct {
 	Method    string
 }
 
-type parseAuthOptionsArguments struct {
+type ParseAuthArguments struct {
 	Logger                       logr.Logger
 	EnvoyConfiguration           *config.EnvoyConfiguration
 	HTTPConnectionManagerBuilder *config.HCMBuilder
@@ -54,7 +54,6 @@ type parseAuthOptionsArguments struct {
 	CloudEntityBuilder           *cloudentity.Builder
 	GenerateClusterName          generateClusterNameFunc
 	KubernetesClient             client.Client
-	PathsToIgnore                []string
 }
 
 func NewParseAuthOptionsArguments(
@@ -65,8 +64,8 @@ func NewParseAuthOptionsArguments(
 	cloudEntityBuilderArguments *CloudEntityBuilderArguments,
 	generateClusterName generateClusterNameFunc,
 	kubernetesClient client.Client,
-) *parseAuthOptionsArguments {
-	return &parseAuthOptionsArguments{
+) *ParseAuthArguments {
+	return &ParseAuthArguments{
 		Logger:                       logger,
 		EnvoyConfiguration:           envoyConfiguration,
 		HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
@@ -81,7 +80,7 @@ type ParseAuthOutput struct {
 	GeneratedClusterName string
 }
 
-func ParseAuthOptions(auth *options.AuthOptions, args *parseAuthOptionsArguments) (*ParseAuthOutput, error) {
+func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*ParseAuthOutput, error) {
 	var parseAuthOutput *ParseAuthOutput
 
 	if auth == nil {

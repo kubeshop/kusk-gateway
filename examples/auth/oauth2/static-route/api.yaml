@@ -20,6 +20,8 @@ spec:
       forward_bearer_token: true
       auth_scopes:
         - openid
+      pass_through_matcher:
+        - /version
   paths:
     /:
       get:
@@ -29,3 +31,11 @@ spec:
               name: frontend-app-svc
               namespace: default
               port: 3000
+    /version:
+      get:
+        route:
+          upstream:
+            service:
+              name: version-svc
+              namespace: default
+              port: 80

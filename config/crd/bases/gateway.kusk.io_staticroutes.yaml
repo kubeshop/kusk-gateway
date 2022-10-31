@@ -135,6 +135,13 @@ spec:
                           BearerToken to the upstream. Additionally, the Authorization
                           header will be populated with the same value. REQUIRED.
                         type: boolean
+                      pass_through_matcher:
+                        description: Any request that matches any of the provided
+                          matchers will be passed through without OAuth validation.
+                          OPTIONAL.
+                        items:
+                          type: string
+                        type: array
                       redirect_path_matcher:
                         description: Matching criteria used to determine whether a
                           path appears to be the result of a redirect from the authorization

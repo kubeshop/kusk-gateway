@@ -32,7 +32,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *parseAuthOptionsArguments) (*ParseAuthOutput, error) {
+func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArguments) (*ParseAuthOutput, error) {
 	typedConfig, parseAuthOutput, err := NewFilterHTTPOAuth2(oauth2Options, arguments)
 	if err != nil {
 		return parseAuthOutput, err

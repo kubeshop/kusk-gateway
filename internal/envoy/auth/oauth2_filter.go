@@ -45,7 +45,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsArguments) (*anypb.Any, *ParseAuthOutput, error) {
+func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *ParseAuthArguments) (*anypb.Any, *ParseAuthOutput, error) {
 	logger := args.Logger
 
 	parseAuthOutput := &ParseAuthOutput{}

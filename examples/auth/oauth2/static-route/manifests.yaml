@@ -29,3 +29,44 @@ spec:
   ports:
     - port: 3000
       targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: version-deployment
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: version-deployment
+  template:
+    metadata:
+      labels:
+        app: version-deployment
+    spec:
+      containers:
+        - name: version-deployment
+          image: docker.io/colinodell/static-response-server:1.0.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: HTTP_VERBOSE
+              value: "1"
+            - name: HTTP_CODE
+              value: "200"
+            - name: HTTP_HEADERS
+              value: 'Content-Type: "application/json"'
+            - name: HTTP_BODY
+              value: '{ "kusk-gateway-manager": "v1.3.18" }'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: version-svc
+  namespace: default
+spec:
+  selector:
+    app: version-deployment
+  ports:
+    - port: 80
+      targetPort: 8080

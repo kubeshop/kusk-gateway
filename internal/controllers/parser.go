@@ -509,8 +509,9 @@ func UpdateConfigFromOpts(
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
 	var oauth2ClusterName string
-	if opts.Auth != nil {
-		logger.Info("parsing `auth` options", "opts.Auth (*options.StaticOptions.AuthOptions)", spew.Sprint(opts.Auth))
+
+	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
+		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
 
 		// Ignore CloudEntity for now ...
 		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
@@ -518,27 +519,27 @@ func UpdateConfigFromOpts(
 			RoutePath: "",
 			Method:    "",
 		}
-		parseAuthArguments := auth.NewParseAuthOptionsArguments(
-			ctrl.Log,
-			envoyConfiguration,
-			httpConnectionManagerBuilder,
-			cloudEntityBuilder,
-			cloudEntityBuilderArguments,
-			generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-			kubernetesClient,
-		)
+		parseAuthArguments := &auth.ParseAuthArguments{
+			Logger:                       logger,
+			EnvoyConfiguration:           envoyConfiguration,
+			HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+			CloudEntityBuilder:           cloudEntityBuilder,
+			CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+			GenerateClusterName:          generateClusterName,
+			KubernetesClient:             kubernetesClient,
+		}
 
 		parseAuthOutput, err := auth.ParseAuthOptions(opts.Auth, parseAuthArguments)
 		if err != nil {
 			return err
 		}
 
-		// Should not be nil when `oauth2` is used.
+		// Should not be nil when `oauth2` is configured.
 		if parseAuthOutput != nil {
 			oauth2ClusterName = parseAuthOutput.GeneratedClusterName
 		}
 	} else {
-		logger.Info("nil `auth` options", "opts (*options.StaticOptions)", spew.Sprint(opts))
+		logger.Info("nil `auth.oauth2` options", "opts", spew.Sprint(opts))
 	}
 
 	// Add new vhost if already not present.
@@ -582,23 +583,24 @@ func UpdateConfigFromOpts(
 
 				rt.Action = routeRedirect
 			} else {
+				var clusterName string
+
+				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
+				// if opts.Auth != nil && opts.Auth.OAuth2 != nil && oauth2ClusterName != "" {
+				// 	clusterName = oauth2ClusterName
+				// 	logger.Info("`StaticRoute` using `clusterName` from `oauth2ClusterName`", "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
+				// } else {
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
 				}
 
-				var clusterName string
-				logger.Info("`StaticRoute` determining `clusterName`", "opts.Auth", opts.Auth, "oauth2ClusterName", oauth2ClusterName)
-				if opts.Auth != nil && oauth2ClusterName != "" {
-					clusterName = oauth2ClusterName
-					logger.Info("`StaticRoute` using `clusterName` from `oauth2ClusterName`", "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName)
-				} else {
-					clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
-					logger.Info("`StaticRoute` generated cluster name", "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName)
-					if !envoyConfiguration.ClusterExist(clusterName) {
-						envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
-					}
+				clusterName = generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
+				if !envoyConfiguration.ClusterExist(clusterName) {
+					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
+				// }
 
 				var rewriteOpts *options.RewriteRegex
 				if methodOpts.Upstream.Rewrite.Pattern != "" {
