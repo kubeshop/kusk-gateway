@@ -66,7 +66,7 @@ func (s *Server) Start(port string) error {
 }
 
 func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
-	s.log.WithName("Request validation:")
+	s.log = s.log.WithName("Request validation:")
 	header := make(http.Header)
 	ctx := srv.Context()
 	for {
