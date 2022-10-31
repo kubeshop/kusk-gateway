@@ -159,15 +159,15 @@ func UpdateConfigFromAPIOpts(
 					RoutePath: routePath,
 					Method:    method,
 				}
-				arguments := auth.NewParseAuthOptionsArguments(
-					ctrl.Log,
-					envoyConfiguration,
-					httpConnectionManagerBuilder,
-					cloudEntityBuilder,
-					cloudEntityBuilderArguments,
-					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-					kubernetesClient,
-				)
+				arguments := &auth.ParseAuthArguments{
+					Logger:                       ctrl.Log,
+					EnvoyConfiguration:           envoyConfiguration,
+					HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+					CloudEntityBuilder:           cloudEntityBuilder,
+					CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+					GenerateClusterName:          generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+					KubernetesClient:             kubernetesClient,
+				}
 
 				_, err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
 				if err != nil {
@@ -586,10 +586,6 @@ func UpdateConfigFromOpts(
 				var clusterName string
 
 				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
-				// if opts.Auth != nil && opts.Auth.OAuth2 != nil && oauth2ClusterName != "" {
-				// 	clusterName = oauth2ClusterName
-				// 	logger.Info("`StaticRoute` using `clusterName` from `oauth2ClusterName`", "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
-				// } else {
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
@@ -600,7 +596,6 @@ func UpdateConfigFromOpts(
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
-				// }
 
 				var rewriteOpts *options.RewriteRegex
 				if methodOpts.Upstream.Rewrite.Pattern != "" {

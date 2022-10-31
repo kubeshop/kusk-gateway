@@ -56,26 +56,6 @@ type ParseAuthArguments struct {
 	KubernetesClient             client.Client
 }
 
-func NewParseAuthOptionsArguments(
-	logger logr.Logger,
-	envoyConfiguration *config.EnvoyConfiguration,
-	httpConnectionManagerBuilder *config.HCMBuilder,
-	cloudEntityBuilder *cloudentity.Builder,
-	cloudEntityBuilderArguments *CloudEntityBuilderArguments,
-	generateClusterName generateClusterNameFunc,
-	kubernetesClient client.Client,
-) *ParseAuthArguments {
-	return &ParseAuthArguments{
-		Logger:                       logger,
-		EnvoyConfiguration:           envoyConfiguration,
-		HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
-		CloudEntityBuilder:           cloudEntityBuilder,
-		GenerateClusterName:          generateClusterName,
-		KubernetesClient:             kubernetesClient,
-		CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
-	}
-}
-
 type ParseAuthOutput struct {
 	GeneratedClusterName string
 }
