@@ -32,10 +32,10 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArguments) (*ParseAuthOutput, error) {
-	typedConfig, parseAuthOutput, err := NewFilterHTTPOAuth2(oauth2Options, arguments)
+func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArguments) error {
+	typedConfig, err := NewFilterHTTPOAuth2(oauth2Options, arguments)
 	if err != nil {
-		return parseAuthOutput, err
+		return err
 	}
 
 	filter := &envoy_extensions_filters_network_http_connection_manager_v3.HttpFilter{
@@ -47,10 +47,10 @@ func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArgum
 
 	if err := arguments.HTTPConnectionManagerBuilder.AddFilter(filter); err != nil {
 		arguments.Logger.WithName("auth.ParseOAuth2Options").Error(err, "failed to add filter", "filter", fmt.Sprintf("%+#v", filter))
-		return parseAuthOutput, err
+		return err
 	}
 
-	return parseAuthOutput, nil
+	return nil
 }
 
 // RouteAuthzDisabled

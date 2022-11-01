@@ -56,15 +56,9 @@ type ParseAuthArguments struct {
 	KubernetesClient             client.Client
 }
 
-type ParseAuthOutput struct {
-	GeneratedClusterName string
-}
-
-func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*ParseAuthOutput, error) {
-	var parseAuthOutput *ParseAuthOutput
-
+func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error {
 	if auth == nil {
-		return nil, ErrorAuthIsNil
+		return ErrorAuthIsNil
 	}
 
 	custom := auth.Custom
@@ -72,7 +66,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*Par
 	cloudentity := auth.Cloudentity
 
 	if custom != nil && oauth2 != nil {
-		return nil, ErrorMutuallyExclusiveOptions
+		return ErrorMutuallyExclusiveOptions
 	}
 
 	if custom != nil {
@@ -83,7 +77,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*Par
 		}
 		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if cloudentity != nil {
 		scheme := "cloudentity"
@@ -93,13 +87,13 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*Par
 		}
 		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if oauth2 != nil {
 		var err error
-		parseAuthOutput, err = ParseOAuth2Options(oauth2, args)
+		err = ParseOAuth2Options(oauth2, args)
 		if err != nil {
-			return parseAuthOutput, err
+			return err
 		}
 	}
 
@@ -107,5 +101,5 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) (*Par
 		WithName("auth.ParseAuthOptions").
 		Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
-	return parseAuthOutput, nil
+	return nil
 }

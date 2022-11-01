@@ -169,7 +169,7 @@ func UpdateConfigFromAPIOpts(
 					KubernetesClient:             kubernetesClient,
 				}
 
-				_, err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
+				err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
 				if err != nil {
 					return err
 				}
@@ -508,8 +508,6 @@ func UpdateConfigFromOpts(
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
-	var oauth2ClusterName string
-
 	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
 		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
 
@@ -529,14 +527,9 @@ func UpdateConfigFromOpts(
 			KubernetesClient:             kubernetesClient,
 		}
 
-		parseAuthOutput, err := auth.ParseAuthOptions(opts.Auth, parseAuthArguments)
+		err := auth.ParseAuthOptions(opts.Auth, parseAuthArguments)
 		if err != nil {
 			return err
-		}
-
-		// Should not be nil when `oauth2` is configured.
-		if parseAuthOutput != nil {
-			oauth2ClusterName = parseAuthOutput.GeneratedClusterName
 		}
 	} else {
 		logger.Info("nil `auth.oauth2` options", "opts", spew.Sprint(opts))
@@ -585,14 +578,14 @@ func UpdateConfigFromOpts(
 			} else {
 				var clusterName string
 
-				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
+				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "path", path, "method", method)
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
 				}
 
 				clusterName = generateClusterName(hostPortPair.Host, hostPortPair.Port)
-				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "oauth2ClusterName", oauth2ClusterName, "path", path, "method", method)
+				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
