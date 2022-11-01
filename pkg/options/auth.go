@@ -30,23 +30,10 @@ import (
 )
 
 const (
-	SchemeBasic       = "basic"
-	SchemeOAuth2      = "oauth2"
 	SchemeCloudEntity = "cloudentity"
 )
 
-// AuthOptions example:
-//
-// x-kusk:
-//
-//	...
-//	auth:
-//	  scheme: basic
-//	  auth-upstream:
-//	    path_prefix: /login # optional
-//	    host:
-//	      hostname: example.com
-//	      port: 80
+// +kubebuilder:object:generate=true
 type AuthOptions struct {
 	// OPTIONAL
 	OAuth2 *OAuth2 `json:"oauth2,omitempty" yaml:"oauth2,omitempty"`
@@ -70,7 +57,6 @@ func (o AuthOptions) Validate() error {
 	}
 
 	if o.OAuth2 != nil {
-		// SchemeOAuth2
 		return validation.ValidateStruct(&o, validation.Field(&o.OAuth2, validation.Required))
 	}
 	if o.Custom != nil {
@@ -84,6 +70,7 @@ func (o AuthOptions) Validate() error {
 	return nil
 }
 
+// +kubebuilder:object:generate=true
 type AuthUpstreamHost struct {
 	// REQUIRED.
 	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty"`
@@ -99,6 +86,7 @@ func (o AuthUpstreamHost) Validate() error {
 	)
 }
 
+// +kubebuilder:object:generate=true
 type OAuth2 struct {
 	// Endpoint on the authorization server to retrieve the access token from.
 	// REQUIRED.
@@ -129,6 +117,9 @@ type OAuth2 struct {
 	// Optional resource parameter for authorization request RFC: https://tools.ietf.org/html/rfc8707.
 	// OPTIONAL.
 	Resources []string `json:"resources,omitempty" yaml:"resources,omitempty"`
+	// Any request that matches any of the provided matchers will be passed through without OAuth validation.
+	// OPTIONAL.
+	PassThroughMatcher []string `json:"pass_through_matcher,omitempty" yaml:"pass_through_matcher,omitempty"`
 }
 
 func (o OAuth2) String() string {
@@ -147,6 +138,7 @@ func (o OAuth2) Validate() error {
 	)
 }
 
+// +kubebuilder:object:generate=true
 type Credentials struct {
 	// REQUIRED.
 	ClientID string `json:"client_id,omitempty" yaml:"client_id,omitempty"`
@@ -184,6 +176,7 @@ func (o Credentials) Validate() error {
 	)
 }
 
+// +kubebuilder:object:generate=true
 type ClientSecretRef struct {
 	// REQUIRED.
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
@@ -203,6 +196,7 @@ func (o ClientSecretRef) Validate() error {
 }
 
 // CookieNames - By default, OAuth2 filter sets some cookies with the following names: BearerToken, OauthHMAC, and OauthExpires. These cookie names can be customized by setting cookie_names.
+// +kubebuilder:object:generate=true
 type CookieNames struct {
 	// Defaults to BearerToken.
 	BearerToken string `json:"bearer_token,omitempty" yaml:"bearer_token,omitempty"`
@@ -216,6 +210,7 @@ func (o CookieNames) Validate() error {
 	return nil
 }
 
+// +kubebuilder:object:generate=true
 type Custom struct {
 	// REQUIRED.
 	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`
@@ -233,6 +228,7 @@ func (o Custom) Validate() error {
 	)
 }
 
+// +kubebuilder:object:generate=true
 type Cloudentity struct {
 	// REQUIRED.
 	Host AuthUpstreamHost `json:"host,omitempty" yaml:"host,omitempty"`

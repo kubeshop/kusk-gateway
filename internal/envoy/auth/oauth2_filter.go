@@ -45,7 +45,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsArguments) (*anypb.Any, error) {
+func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *ParseAuthArguments) (*anypb.Any, error) {
 	logger := args.Logger
 
 	// Example Input: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token"
@@ -150,14 +150,18 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	authScopes := oauth2Options.AuthScopes
 	resources := oauth2Options.Resources
 
-	// Disable OAuth2 on the root path - "/" - see: <https://github.com/kubeshop/kusk-gateway/issues/680>.
-	passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{
-		{
-			Name: ":path",
-			HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_ExactMatch{
-				ExactMatch: "/",
-			},
-		},
+	passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{}
+	if len(oauth2Options.PassThroughMatcher) > 0 {
+		for _, exactMatch := range oauth2Options.PassThroughMatcher {
+			headerMatcher := headerMatcherExactMatch(exactMatch)
+			passThroughMatcher = append(passThroughMatcher, headerMatcher)
+		}
+	} else {
+		// Disable OAuth2 on the root path - "/" - if `pass_through_matcher` has not been specified.
+		// See: <https://github.com/kubeshop/kusk-gateway/issues/680>.
+		passThroughMatcher = []*envoy_config_route_v3.HeaderMatcher{
+			headerMatcherExactMatch("/"),
+		}
 	}
 
 	config := &envoy_extensions_filter_http_oauth2_v3.OAuth2Config{
@@ -203,7 +207,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: cannot marshal filter oAuth2=%+#v, %w", oAuth2, err)
 	}
 
-	return anyOAuth2, nil
+	return anyOAuth2, err
 }
 
 func GenerateHMAC() (string, error) {

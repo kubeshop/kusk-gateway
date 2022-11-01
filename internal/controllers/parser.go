@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
@@ -82,7 +83,7 @@ func UpdateConfigFromAPIOpts(
 	opts *options.Options,
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
-	clBuilder *cloudentity.Builder,
+	cloudEntityBuilder *cloudentity.Builder,
 	name string,
 	kubernetesClient client.Client,
 ) error {
@@ -153,19 +154,22 @@ func UpdateConfigFromAPIOpts(
 
 			if finalOpts.Auth != nil {
 				logger.Info("parsing `auth` options", "finalOpts.Auth", fmt.Sprintf("%+#v", finalOpts.Auth))
-				arguments := auth.NewParseAuthOptionsArguments(
-					ctrl.Log,
-					envoyConfiguration,
-					httpConnectionManagerBuilder,
-					name,
-					routePath,
-					method,
-					clBuilder,
-					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-					kubernetesClient,
-				)
+				cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+					Name:      name,
+					RoutePath: routePath,
+					Method:    method,
+				}
+				arguments := &auth.ParseAuthArguments{
+					Logger:                       ctrl.Log,
+					EnvoyConfiguration:           envoyConfiguration,
+					HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+					CloudEntityBuilder:           cloudEntityBuilder,
+					CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+					GenerateClusterName:          generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+					KubernetesClient:             kubernetesClient,
+				}
 
-				err := auth.ParseAuthOptions(finalOpts, arguments)
+				err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
 				if err != nil {
 					return err
 				}
@@ -495,8 +499,41 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 }
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
-func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
+func UpdateConfigFromOpts(
+	envoyConfiguration *config.EnvoyConfiguration,
+	opts *options.StaticOptions,
+	httpConnectionManagerBuilder *config.HCMBuilder,
+	cloudEntityBuilder *cloudentity.Builder,
+	kubernetesClient client.Client,
+) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
+
+	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
+		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
+
+		// Ignore CloudEntity for now ...
+		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+			Name:      "",
+			RoutePath: "",
+			Method:    "",
+		}
+		parseAuthArguments := &auth.ParseAuthArguments{
+			Logger:                       logger,
+			EnvoyConfiguration:           envoyConfiguration,
+			HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+			CloudEntityBuilder:           cloudEntityBuilder,
+			CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+			GenerateClusterName:          generateClusterName,
+			KubernetesClient:             kubernetesClient,
+		}
+
+		err := auth.ParseAuthOptions(opts.Auth, parseAuthArguments)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Info("nil `auth.oauth2` options", "opts", spew.Sprint(opts))
+	}
 
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
@@ -539,12 +576,16 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRedirect
 			} else {
+				var clusterName string
+
+				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "path", path, "method", method)
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
 				}
 
-				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				clusterName = generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}

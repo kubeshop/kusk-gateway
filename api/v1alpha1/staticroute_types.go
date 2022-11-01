@@ -35,6 +35,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// +kubebuilder:object:generate=true
 // StaticRouteSpec defines the desired state of StaticRoute
 type StaticRouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -50,6 +51,9 @@ type StaticRouteSpec struct {
 	// +optional
 	Hosts []options.Host `json:"hosts,omitempty"`
 
+	// +optional
+	Auth *options.AuthOptions `json:"auth,omitempty"`
+
 	// Paths is a multidimensional map of path / method to the routing rules
 	Paths map[Path]Methods `json:"paths"`
 }
@@ -60,11 +64,13 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 	paths := make(map[string]options.StaticOperationSubOptions)
 	opts := &options.StaticOptions{
 		Paths: paths,
+		Auth:  spec.Auth,
 		Hosts: spec.Hosts,
 	}
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
 	}
+
 	for specPath, specMethods := range spec.Paths {
 		path := string(specPath)
 		opts.Paths[path] = make(options.StaticOperationSubOptions)

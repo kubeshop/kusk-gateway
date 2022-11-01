@@ -31,7 +31,7 @@ RUN mkdir -m 00755 /opt/manager
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM --platform=$BUILDPLATFORM gcr.io/distroless/static:nonroot
 
-ENV GOTRACEBACK=all
+ENV GOTRACEBACK=single
 
 WORKDIR /
 

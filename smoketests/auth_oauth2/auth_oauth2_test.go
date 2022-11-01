@@ -133,6 +133,10 @@ func (t *AuthOAuth2TestSuite) TestOAuth2IsDisabledOnRootPath() {
 	}()
 }
 
+func (t *AuthOAuth2TestSuite) Test_OAuth2_StaticRoute() {
+	t.T().Skipf("%s skipping - TODO(MBana): Implement test", t.T().Name())
+}
+
 func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 	t.T().Helper()
 
