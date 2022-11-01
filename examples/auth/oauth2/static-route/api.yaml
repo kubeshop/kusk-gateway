@@ -31,6 +31,17 @@ spec:
               name: frontend-app-svc
               namespace: default
               port: 3000
+    /go-httpbin/:
+      get:
+        route:
+          upstream:
+            service:
+              name: auth-oauth2-oauth0-static-route-go-httpbin
+              namespace: default
+              port: 80
+            rewrite:
+              pattern: "^/go-httpbin"
+              substitution: ""
     /version:
       get:
         route:
