@@ -249,7 +249,7 @@ func main() {
 	}()
 
 	// Validation proxy
-	proxy := validation.NewServer()
+	proxy := validation.NewServer(logger)
 	go func() {
 		if err := proxy.Start(":17000"); err != nil {
 			setupLog.Error(err, "Unable to start validation proxy")
