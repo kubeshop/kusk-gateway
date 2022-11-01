@@ -67,7 +67,7 @@ docs-preview: ## Preview the documentation
 
 .PHONY: tail-logs
 tail-logs: install-deps ## Tail logs of all containers across all namespaces
-	go install github.com/stern/stern@latest
+	@type stern >/dev/null 2>&1 || go install github.com/stern/stern@latest
 	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
 	stern --all-namespaces --selector app.kubernetes.io/name
 
@@ -86,15 +86,21 @@ enable-logging: ## Set some particular logger's level
 	curl -s -X POST "http://localhost:19000/logging?backtrace=trace"
 	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace"
 	curl -s -X POST "http://localhost:19000/logging?assert=trace"
-	curl -s -X POST "http://localhost:19000/logging?secret=trace"
-	curl -s -X POST "http://localhost:19000/logging?grpc=trace"
-	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace"
-	curl -s -X POST "http://localhost:19000/logging?filter=trace"
 	curl -s -X POST "http://localhost:19000/logging?misc=trace"
-	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
+	curl -s -X POST "http://localhost:19000/logging?secret=trace"
+	curl -s -X POST "http://localhost:19000/logging?filter=trace"
+	curl -s -X POST "http://localhost:19000/logging?cache_filter=trace"
+	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace"
+	curl -s -X POST "http://localhost:19000/logging?jwt=trace"
+	curl -s -X POST "http://localhost:19000/logging?oauth2=trace"
 	curl -s -X POST "http://localhost:19000/logging?connection=trace"
-	curl -s -X POST "http://localhost:19000/logging?http=trace"
-	curl -s -X POST "http://localhost:19000/logging?http2=trace"
+	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
+	curl -s -X POST "http://localhost:19000/logging?matcher=trace"
+	curl -s -X POST "http://localhost:19000/logging?router=trace"
+	@# curl -s -X POST "http://localhost:19000/logging?grpc=trace"
+	@# curl -s -X POST "http://localhost:19000/logging?http=trace"
+	@# curl -s -X POST "http://localhost:19000/logging?http2=trace"
+	@# curl -s -X POST "http://localhost:19000/logging?upstream=trace"
 	@# curl -s -X POST "http://localhost:19000/logging?admin=trace"
 	@# bash -c "trap 'pkill -F /tmp/kube-port-forward-logging.pid' SIGINT SIGTERM ERR EXIT"
 	@echo
@@ -219,13 +225,11 @@ check-all: install-deps $(smoketests)
 
 .PHONY: install-deps
 install-deps:
-	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
-	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
-	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
-	@echo "[INFO]: Installing protobuf go generation plugin."
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@type controller-gen >/dev/null 2>&1 || go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
+	@type protoc-gen-go-grpc >/dev/null 2>&1 || echo "[INFO]: Installing protobuf GRPC go generation plugin." && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	@type protoc-gen-go >/dev/null 2>&1 || echo "[INFO]: Installing protobuf go generation plugin." && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
 
 # `build-goreleaser` is just for local testing.
 .PHONY: build-goreleaser

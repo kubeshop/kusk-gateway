@@ -102,6 +102,27 @@ func UpdateConfigFromAPIOpts(
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
 
+	if opts.Auth != nil && opts.Auth.JWT != nil {
+		paths := []string{}
+		for path := range spec.Paths {
+			paths = append(paths, path)
+		}
+
+		args := &auth.ParseAuthArguments{
+			Logger:                       ctrl.Log,
+			EnvoyConfiguration:           envoyConfiguration,
+			HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+			CloudEntityBuilder:           nil,
+			CloudEntityBuilderArguments:  nil,
+			GenerateClusterName:          generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+			KubernetesClient:             kubernetesClient,
+		}
+		err := auth.ParseJWTOptions(opts.Auth.JWT, args, paths)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts

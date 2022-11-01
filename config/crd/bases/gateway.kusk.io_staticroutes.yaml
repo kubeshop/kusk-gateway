@@ -79,6 +79,113 @@ spec:
                         description: OPTIONAL.
                         type: string
                     type: object
+                  jwt:
+                    description: OPTIONAL
+                    properties:
+                      jwtProviders:
+                        description: Providers to use for verifying JSON Web Tokens
+                          (JWTs) on the virtual host.
+                        items:
+                          description: JWTProvider defines how to verify JWTs on requests.
+                          properties:
+                            audiences:
+                              description: Audiences that JWTs are allowed to have
+                                in the "aud" field. If not provided, JWT audiences
+                                are not checked.
+                              items:
+                                type: string
+                              type: array
+                            default:
+                              description: Whether the provider should apply to all
+                                routes in the HTTPProxy/its includes by default. At
+                                most one provider can be marked as the default. If
+                                no provider is marked as the default, individual routes
+                                must explicitly identify the provider they require.
+                              type: boolean
+                            forwardJWT:
+                              description: Whether the JWT should be forwarded to
+                                the backend service after successful verification.
+                                By default, the JWT is not forwarded.
+                              type: boolean
+                            issuer:
+                              description: Issuer that JWTs are required to have in
+                                the "iss" field. If not provided, JWT issuers are
+                                not checked.
+                              type: string
+                            name:
+                              description: Unique name for the provider.
+                              minLength: 1
+                              type: string
+                            remoteJWKS:
+                              description: Remote JWKS to use for verifying JWT signatures.
+                              properties:
+                                cacheDuration:
+                                  description: How long to cache the JWKS locally.
+                                    If not specified, Envoy's default of 5m applies.
+                                    // +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+                                    CacheDuration string `json:"cacheDuration,omitempty"`
+                                  format: int64
+                                  type: integer
+                                dnsLookupFamily:
+                                  description: "The DNS IP address resolution policy
+                                    for the JWKS URI. When configured as \"v4\", the
+                                    DNS resolver will only perform a lookup for addresses
+                                    in the IPv4 family. If \"v6\" is configured, the
+                                    DNS resolver will only perform a lookup for addresses
+                                    in the IPv6 family. If \"auto\" is configured,
+                                    the DNS resolver will first perform a lookup for
+                                    addresses in the IPv6 family and fallback to a
+                                    lookup for addresses in the IPv4 family. If not
+                                    specified, the Contour-wide setting defined in
+                                    the config file or ContourConfiguration applies
+                                    (defaults to \"auto\"). \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
+                                    for more information."
+                                  enum:
+                                  - auto
+                                  - v4
+                                  - v6
+                                  type: string
+                                timeout:
+                                  description: How long to wait for a response from
+                                    the URI. If not specified, a default of 1s applies.
+                                    // +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+                                    Timeout string `json:"timeout,omitempty"`
+                                  format: int64
+                                  type: integer
+                                uri:
+                                  description: The URI for the JWKS.
+                                  minLength: 1
+                                  type: string
+                                validation:
+                                  description: UpstreamValidation defines how to verify
+                                    the JWKS's TLS certificate.
+                                  properties:
+                                    caSecret:
+                                      description: Name or namespaced name of the
+                                        Kubernetes secret used to validate the certificate
+                                        presented by the backend. The secret must
+                                        contain key named ca.crt.
+                                      type: string
+                                    subjectName:
+                                      description: Key which is expected to be present
+                                        in the 'subjectAltName' of the presented certificate.
+                                      type: string
+                                  required:
+                                  - caSecret
+                                  - subjectName
+                                  type: object
+                              required:
+                              - uri
+                              type: object
+                          required:
+                          - name
+                          - remoteJWKS
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - jwtProviders
+                    type: object
                   oauth2:
                     description: OPTIONAL
                     properties:

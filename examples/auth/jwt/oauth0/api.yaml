@@ -1,0 +1,46 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: auth-jwt-oauth0
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.1.0
+    info:
+      title: "auth-jwt-oauth0"
+      description: "auth-jwt-oauth0"
+      version: "0.1.0"
+    schemes:
+    - http
+    - https
+    x-kusk:
+      upstream:
+        service:
+          name: auth-jwt-oauth0-go-httpbin
+          namespace: default
+          port: 80
+      auth:
+        jwt:
+          jwtProviders:
+            - name: "kusk-gateway-jwt"
+              default: true
+              issuer: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/"
+              audiences:
+                - "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/api/v2/"
+              remoteJWKS:
+                uri: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/jwks.json"
+              forwardJWT: true
+    paths:
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}

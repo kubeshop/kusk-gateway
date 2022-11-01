@@ -24,6 +24,8 @@ SOFTWARE.
 package options
 
 import (
+	"fmt"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
@@ -73,11 +75,20 @@ func (o *StaticOptions) fillDefaults() {
 }
 
 func (o StaticOptions) Validate() error {
+	if o.Auth != nil && o.Auth.Custom != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `custom` has been specified")
+	}
+	if o.Auth != nil && o.Auth.Cloudentity != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `cloudentity` has been specified")
+	}
+	if o.Auth != nil && o.Auth.JWT != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `jwt` has been specified")
+	}
+
 	return validation.ValidateStruct(&o,
-		validation.Field(&o.Auth),
 		validation.Field(&o.Hosts, validation.Each()),
 		validation.Field(&o.Upstream, validation.Required),
-	)
+		validation.Field(&o.Auth))
 }
 
 func (o *StaticOptions) FillDefaultsAndValidate() error {
