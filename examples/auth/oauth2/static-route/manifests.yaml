@@ -57,7 +57,7 @@ spec:
             - name: HTTP_HEADERS
               value: 'Content-Type: "application/json"'
             - name: HTTP_BODY
-              value: '{ "kusk-gateway-manager": "v1.3.18" }'
+              value: '{ "kusk-gateway-manager": "v1.3.21" }'
 ---
 apiVersion: v1
 kind: Service

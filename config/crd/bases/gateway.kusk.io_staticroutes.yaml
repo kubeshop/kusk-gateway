@@ -46,6 +46,9 @@ spec:
                           hostname:
                             description: REQUIRED.
                             type: string
+                          path:
+                            description: OPTIONAL.
+                            type: string
                           port:
                             description: REQUIRED.
                             format: int32
@@ -63,6 +66,9 @@ spec:
                         properties:
                           hostname:
                             description: REQUIRED.
+                            type: string
+                          path:
+                            description: OPTIONAL.
                             type: string
                           port:
                             description: REQUIRED.

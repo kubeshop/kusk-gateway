@@ -76,6 +76,8 @@ type AuthUpstreamHost struct {
 	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty"`
 	// REQUIRED.
 	Port uint32 `json:"port,omitempty" yaml:"port,omitempty"`
+	// OPTIONAL.
+	Path *string `json:"path,omitempty" yaml:"path,omitempty"`
 }
 
 func (o AuthUpstreamHost) Validate() error {
@@ -223,6 +225,11 @@ func (o Custom) String() string {
 }
 
 func (o Custom) Validate() error {
+	// If both are specified, the error.
+	if o.PathPrefix != nil && o.Host.Path != nil {
+		return fmt.Errorf("`custom` cannot have both `path_prefix` and `host.path` specified")
+	}
+
 	return validation.ValidateStruct(&o,
 		validation.Field(&o.Host, validation.Required),
 	)

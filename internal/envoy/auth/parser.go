@@ -75,7 +75,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		if custom.PathPrefix != nil {
 			pathPrefix = *custom.PathPrefix
 		}
-		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme)
+		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme, custom.Host.Path)
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		if cloudentity.PathPrefix != nil {
 			pathPrefix = *custom.PathPrefix
 		}
-		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme)
+		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme, custom.Host.Path)
 		if err != nil {
 			return err
 		}

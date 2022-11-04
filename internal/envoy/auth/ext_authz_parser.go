@@ -33,7 +33,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, args *ParseAuthArguments, scheme string) error {
+func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, args *ParseAuthArguments, scheme string, path *string) error {
 	upstreamServiceHost := host.Hostname
 	upstreamServicePort := host.Port
 
@@ -77,6 +77,7 @@ func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, 
 		clusterName,
 		pathPrefix,
 		authHeaders,
+		path,
 	)
 	if err != nil {
 		return err

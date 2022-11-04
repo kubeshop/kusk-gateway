@@ -15,6 +15,6 @@ metadata:
     app.kubernetes.io/component: kusk-gateway-manager
     app.kubernetes.io/instance: kusk-gateway
     app.kubernetes.io/name: kusk-gateway
-    app.kubernetes.io/version: "v1.3.4"
+    app.kubernetes.io/version: "v1.3.21"
   name: kusk-gateway-manager
   namespace: kusk-system
