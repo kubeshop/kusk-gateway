@@ -46,6 +46,9 @@ spec:
                           hostname:
                             description: REQUIRED.
                             type: string
+                          path:
+                            description: OPTIONAL.
+                            type: string
                           port:
                             description: REQUIRED.
                             format: int32
@@ -64,14 +67,14 @@ spec:
                           hostname:
                             description: REQUIRED.
                             type: string
+                          path:
+                            description: OPTIONAL.
+                            type: string
                           port:
                             description: REQUIRED.
                             format: int32
                             type: integer
                         type: object
-                      path:
-                        description: OPTIONAL.
-                        type: string
                       path_prefix:
                         description: OPTIONAL.
                         type: string
