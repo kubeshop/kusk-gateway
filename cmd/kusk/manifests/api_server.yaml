@@ -78,7 +78,7 @@ rules:
       - services
       - namespaces
       - pods
-      - pods/logs
+      - pods/log
     verbs:
       - get
       - list
@@ -122,7 +122,24 @@ spec:
         - image: kubeshop/kusk-gateway-api:v1.1.10
           imagePullPolicy: Always
           name: kusk-gateway-api
-      serviceAccountName: kusk-gateway-manager
+        - name: kusk-gateway-api-websocket
+          image: kubeshop/kusk-gateway-api-websocket:v.1.1.10
+          imagePullPolicy: Always
+          args:
+            - --port=8081
+          ports:
+            - name: ws
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: ws
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: ws
+      serviceAccountName: kusk-gateway-api
 ---
 apiVersion: v1
 kind: Service
@@ -135,6 +152,10 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 8080
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: ws
   selector:
     app.kubernetes.io/instance: kusk-gateway-api
     app.kubernetes.io/name: kusk-gateway-api
