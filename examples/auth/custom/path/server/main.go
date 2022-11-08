@@ -34,10 +34,11 @@ import (
 )
 
 var (
-	Username = "kusk"
-	Password = "kusk"
-	Port     = 8080
-	Path     = "/custom-path"
+	Username     = "kusk"
+	Password     = "kusk"
+	Port         = 8080
+	PatternLogin = "/custom-path"
+	PatternRoot  = "/"
 )
 
 type logWriter struct {
@@ -52,14 +53,27 @@ func main() {
 	log.SetFlags(0)
 	log.SetOutput(&logWriter{})
 
-	http.Handle(Path, http.HandlerFunc(handler))
+	http.Handle(PatternLogin, http.HandlerFunc(handler))
+	http.Handle(PatternRoot, http.HandlerFunc(handler))
+	// http.Handle(PatternRoot, http.HandlerFunc(handlerRoot))
 
 	address := fmt.Sprintf(":%d", Port)
-	log.Printf("listening on %v at %v\n", address, Path)
+	log.Printf("listening on %v at %v\n", address, PatternLogin)
 
 	if err := http.ListenAndServe(address, nil); err != nil {
 		log.Printf("http.ListenAndServe returned err=%v\n", err)
 		os.Exit(1)
+	}
+}
+
+func handlerRoot(w http.ResponseWriter, r *http.Request) {
+	requestDumpBytes, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		log.Printf("%v - handling request - failed to dump - err: %v\n", PatternRoot, err)
+		log.Printf("%v - handling request - %+#v\n", PatternRoot, spew.Sprint(r))
+	} else {
+		log.Printf("%v - handling request - %+#v\n", PatternRoot, spew.Sprint(r))
+		log.Printf("%v - handling request - \n%v\n", PatternRoot, string(requestDumpBytes))
 	}
 }
 
@@ -69,7 +83,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("handling request - failed to dump - err: %v\n", err)
 		log.Printf("handling request - %+#v\n", spew.Sprint(r))
 	} else {
-		log.Printf("handling request - %v\n", string(requestDumpBytes))
+		log.Printf("handling request - %+#v\n", spew.Sprint(r))
+		log.Printf("handling request - \n%v\n", string(requestDumpBytes))
 	}
 
 	u, p, ok := r.BasicAuth()

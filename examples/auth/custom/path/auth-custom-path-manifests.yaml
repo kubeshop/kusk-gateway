@@ -17,6 +17,7 @@ spec:
       containers:
         - image: docker.io/banaioltd/kubeshop-io-auth-custom-path:v0.1.0
           name: auth-custom-path
+          # imagePullPolicy: Always
           ports:
             - containerPort: 8080
 ---

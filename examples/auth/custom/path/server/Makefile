@@ -60,4 +60,4 @@ image-push: image-build
 	@# $(CONTAINER_ENGINE) push docker.io/${IMAGE_NAME}:v0.1.0
 	@# $(CONTAINER_ENGINE) push ttl.sh/${IMAGE_NAME}:24h
 	$(CONTAINER_ENGINE) push docker.io/${IMAGE_NAME}:v0.1.0
-	$(CONTAINER_ENGINE) push docker.io/${IMAGE_NAME}:v0.1.0
+	$(CONTAINER_ENGINE) push docker.io/${IMAGE_NAME}:latest

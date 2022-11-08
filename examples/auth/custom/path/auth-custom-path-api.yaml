@@ -27,11 +27,6 @@ spec:
           namespace: default
           port: 80
     paths:
-      "/":
-        get:
-          description: Returns GET data.
-          operationId: "/get"
-          responses: {}
       "/uuid":
         get:
           description: Returns UUID4.
