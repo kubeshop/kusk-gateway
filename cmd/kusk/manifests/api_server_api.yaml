@@ -4,7 +4,9 @@ apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
   name: kusk-gateway-api
-  namespace: default
+  namespace: kusk-system
+  labels:
+    kusk-managed: "true"
 spec:
   fleet:
     name: kusk-gateway-private-envoy-fleet
