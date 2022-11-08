@@ -24,6 +24,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
@@ -41,7 +42,11 @@ func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort ui
 	uri := fmt.Sprintf("%s:%d", upstreamHostname, upstreamPort)
 	// Append `path` to `uri`
 	if path != nil {
-		uri += "/" + *path
+		if strings.HasSuffix(uri, "/") {
+			uri += *path
+		} else {
+			uri += "/" + *path
+		}
 	}
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{

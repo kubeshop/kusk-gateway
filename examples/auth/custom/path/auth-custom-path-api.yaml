@@ -1,0 +1,39 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: auth-custom-path
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: auth-custom-path
+      description: auth-custom-path
+      version: 0.1.0
+    x-kusk:
+      auth:
+        custom:
+          host:
+            port: 80
+            hostname: auth-custom-path
+            #NB: It is not "/custom-path"
+            path: "custom-path"
+      upstream:
+        service:
+          name: auth-custom-path-httpbin
+          namespace: default
+          port: 80
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}
