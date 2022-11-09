@@ -55,7 +55,11 @@ type StaticRouteSpec struct {
 	Auth *options.AuthOptions `json:"auth,omitempty"`
 
 	// Paths is a multidimensional map of path / method to the routing rules
-	Paths map[Path]Methods `json:"paths"`
+	// +optional
+	Paths map[Path]Methods `json:"paths,omitempty"`
+
+	// Upstream is a set of options of a target service to receive traffic.
+	Upstream *options.UpstreamOptions `json:"upstream,omitempty"`
 }
 
 // GetOptionsFromSpec is a converter to generate Options object from StaticRoutes spec

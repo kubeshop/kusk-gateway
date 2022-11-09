@@ -355,8 +355,59 @@ spec:
                 description: Paths is a multidimensional map of path / method to the
                   routing rules
                 type: object
-            required:
-            - paths
+              upstream:
+                description: Upstream is a set of options of a target service to receive
+                  traffic.
+                properties:
+                  host:
+                    description: UpstreamHost defines any DNS hostname with port that
+                      we can proxy to, even outside of the cluster
+                    properties:
+                      hostname:
+                        description: Hostname is the upstream hostname, without port.
+                        type: string
+                      port:
+                        description: Port is the upstream port.
+                        format: int32
+                        type: integer
+                    required:
+                    - hostname
+                    - port
+                    type: object
+                  rewrite:
+                    description: Rewrite is the pattern (regex) and a substitution
+                      string that will change URL when request is being forwarded
+                      to the upstream service. e.g. given that Prefix is set to "/petstore/api/v3",
+                      and with Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution
+                      is set to "" path that would be generated is "/petstore/api/v3/pets",
+                      URL that the upstream service would receive is "/api/v3/pets".
+                    properties:
+                      pattern:
+                        type: string
+                      substitution:
+                        type: string
+                    required:
+                    - pattern
+                    - substitution
+                    type: object
+                  service:
+                    description: UpstreamService defines K8s Service in the cluster
+                    properties:
+                      name:
+                        description: Name is the upstream K8s Service's name.
+                        type: string
+                      namespace:
+                        description: Namespace where service is located
+                        type: string
+                      port:
+                        description: Port is the upstream K8s Service's port.
+                        format: int32
+                        type: integer
+                    required:
+                    - namespace
+                    - port
+                    type: object
+                type: object
             type: object
           status:
             description: StaticRouteStatus defines the observed state of StaticRoute

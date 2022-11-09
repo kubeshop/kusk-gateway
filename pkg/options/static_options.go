@@ -52,7 +52,6 @@ type StaticOptions struct {
 	Hosts []Host
 
 	Auth *AuthOptions `json:"auth,omitempty" yaml:"auth,omitempty"`
-
 	// Paths allow to specify a specific set of option for a given path and a method.
 	// This is a 2-dimensional map[path][method].
 	// The map key is the path and the next map key is a HTTP method (operation).
@@ -60,6 +59,8 @@ type StaticOptions struct {
 	// different methods in one YAML document.
 	// E.g. if GET / goes to frontend, and POST / goes to API, you cannot specify path as a key with the different methods twice in one YAML file.
 	Paths map[string]StaticOperationSubOptions `yaml:"-" json:"-"`
+	// Upstream is a set of options of a target service to receive traffic.
+	Upstream *UpstreamOptions `json:"upstream,omitempty" yaml:"upstream,omitempty"`
 }
 
 func (o *StaticOptions) fillDefaults() {
@@ -73,6 +74,7 @@ func (o StaticOptions) Validate() error {
 		v.Field(&o.Auth),
 		v.Field(&o.Hosts, v.Each()),
 		v.Field(&o.Paths, v.Each()),
+		v.Field(&o.Upstream),
 	)
 }
 

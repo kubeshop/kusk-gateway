@@ -102,14 +102,23 @@ func UpdateConfigFromAPIOpts(
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
 
+	logger.Info("processing `spec.Paths`", "spec.Paths", spew.Sprint(spec.Paths))
+
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts
 	// 2. For each method we get SubOptions for that method from the opts map and merge in path SubOpts
 	for path, pathItem := range spec.Paths {
+		isRoot := false
+		// `path` cannot be root path of a service.
+		// See: https://github.com/kubeshop/kusk-gateway/issues/954.
+		if path == "/" {
+			isRoot = true
+		}
+		logger.Info("processing `path`", "path", spew.Sprint(path), "pathItem", spew.Sprint(pathItem), "isRoot", spew.Sprint(isRoot))
+
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
-
 			finalOpts := opts.OperationFinalSubOptions[method+path]
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
