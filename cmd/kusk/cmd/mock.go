@@ -203,7 +203,7 @@ $ kusk mock -i https://url.to.api.com
 		go mockServer.StreamLogs(ctx, mockServerId)
 
 		kuskui.PrintSuccess("🎉 server successfully initialized")
-		kuskui.PrintInfo("URL: ", "http://localhost:", fmt.Sprint(mockServerPort))
+		kuskui.PrintInfo("URL: http://localhost:" + fmt.Sprint(mockServerPort))
 
 		// set up signal channel listening for ctrl+c
 		sigs := make(chan os.Signal, 1)
@@ -212,7 +212,7 @@ $ kusk mock -i https://url.to.api.com
 		// if watcher is nil, then the api comes from a URL and we shouldn't watch it
 		// otherwise it's on the file system and we can watch for changes
 		if watcher != nil {
-			kuskui.PrintInfo("⏳ watching for file changes in ", apiSpecPath)
+			kuskui.PrintInfo("⏳ watching for file changes in " + apiSpecPath)
 			go watcher.Watch(func() {
 				kuskui.PrintInfo("✍️ change detected in ", apiSpecPath)
 				err := apiFileUpdateHandler(ctx, mockServer, apiSpecLocation, tempApiFileName, mockServerId)
