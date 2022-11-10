@@ -53,7 +53,9 @@ func staticRouteCheckPaths(logger logr.Logger, opts *options.StaticOptions) erro
 // Call `staticRouteCheckPaths` first.
 // See: https://github.com/kubeshop/kusk-gateway/issues/954.
 func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) {
-	logger.Info("staticRouteAppendRootPath `opts.Paths`", "opts", spew.Sprint(opts))
+	// TODO(MBana): Cleanup code.
+
+	logger.Info("staticRouteAppendRootPath before appending root `opts.Paths`", "opts", spew.Sprint(opts))
 
 	if opts.Paths == nil || len(opts.Paths) == 0 {
 		opts.Paths = make(map[string]options.StaticOperationSubOptions)
@@ -87,7 +89,7 @@ func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) 
 		)
 	}
 
-	logger.Info("staticRouteAppendRootPath `opts`", "opts", spew.Sprint(opts))
+	logger.Info("staticRouteAppendRootPath after appending root `opts.Paths`", "opts", spew.Sprint(opts))
 }
 
 func methods() []options.HTTPMethod {

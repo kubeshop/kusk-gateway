@@ -21,6 +21,3 @@ spec:
               name: static-route-example-1-top-level-upstream
               namespace: default
               port: 80
-            # rewrite:
-            #   pattern: "^/override/"
-            #   substitution: "/"

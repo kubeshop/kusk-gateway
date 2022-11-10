@@ -12,12 +12,3 @@ spec:
   fleet:
     name: default
     namespace: default
-#  paths:
-#    /:
-#      get:
-#        route:
-#          upstream:
-#            service:
-#              name: static-route-example-1-top-level-upstream
-#              namespace: default
-#              port: 80

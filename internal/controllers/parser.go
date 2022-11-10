@@ -589,8 +589,6 @@ func UpdateConfigFromOpts(
 
 				rt.Action = routeRedirect
 			} else {
-				var clusterName string
-
 				logger.Info(
 					"`StaticRoute` determining `clusterName`",
 					"opts", spew.Sprint(opts),
@@ -603,7 +601,7 @@ func UpdateConfigFromOpts(
 					return err
 				}
 
-				clusterName = generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
 				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
