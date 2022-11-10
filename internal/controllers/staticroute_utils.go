@@ -24,6 +24,7 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-logr/logr"
@@ -34,7 +35,6 @@ import (
 // `path` cannot be root path of a service.
 // See: https://github.com/kubeshop/kusk-gateway/issues/954.
 func staticRouteCheckPaths(logger logr.Logger, opts *options.StaticOptions) error {
-
 	for path := range opts.Paths {
 		if path == "/" {
 			err := fmt.Errorf("`path` cannot be root path of a service - path=%v", path)
@@ -46,28 +46,58 @@ func staticRouteCheckPaths(logger logr.Logger, opts *options.StaticOptions) erro
 	return nil
 }
 
-//
+// Call `staticRouteCheckPaths` first.
 // See: https://github.com/kubeshop/kusk-gateway/issues/954.
 func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) {
-	if len(opts.Paths) == 0 {
-		logger.Info("empty `opts.Paths`", "opts.Paths", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
+	const RoutePath = "/"
 
-		// path := opts.Paths["/"]
-		// methods := []string{"GET"}
-		// for _, method := range methods {
-		// 	method := options.HTTPMethod(method)
+	if len(opts.Paths) != 0 {
+		logger.Info("staticRouteAppendRootPath non-empty `opts.Paths`", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
+		return
+	}
 
-		// 	subOptions := &options.SubOptions{}
-		// 	path[method] = subOptions
+	logger.Info("staticRouteAppendRootPath empty `opts.Paths`", "opts.Paths", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
 
-		// 	logger.Info(
-		// 		"added new operation to `opts.Paths`",
-		// 		"method", method,
-		// 		"path", path,
-		// 		"subOptions", spew.Sprint(subOptions),
-		// 	)
-		// }
-	} else {
-		logger.Info("non-empty `opts.Paths`", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
+	opts.Paths = make(map[string]options.StaticOperationSubOptions)
+
+	var path options.StaticOperationSubOptions
+	var ok bool
+	if path, ok = opts.Paths[RoutePath]; !ok {
+		opts.Paths[RoutePath] = options.StaticOperationSubOptions{}
+	}
+
+	for _, method := range methods() {
+		path = make(map[options.HTTPMethod]*options.SubOptions)
+		opts.Paths[RoutePath] = make(map[options.HTTPMethod]*options.SubOptions)
+
+		// `upstream` should be defined at the `spec` level.
+		subOptions := &options.SubOptions{
+			Upstream: opts.Upstream,
+		}
+		opts.Paths[RoutePath][method] = subOptions
+
+		logger.Info(
+			"staticRouteAppendRootPath added new operation to `opts.Paths`",
+			"method", method,
+			"path", path,
+			"opts.Upstream", spew.Sprint(opts.Upstream),
+			`opts.Paths["/"][method]`, opts.Paths[RoutePath][method],
+		)
+	}
+
+	logger.Info("staticRouteAppendRootPath `opts`", "opts", spew.Sprint(opts))
+}
+
+func methods() []options.HTTPMethod {
+	return []options.HTTPMethod{
+		options.HTTPMethod(http.MethodGet),
+		// options.HTTPMethod(http.MethodHead),
+		// options.HTTPMethod(http.MethodPost),
+		// options.HTTPMethod(http.MethodPut),
+		// options.HTTPMethod(http.MethodPatch),
+		// options.HTTPMethod(http.MethodDelete),
+		// options.HTTPMethod(http.MethodConnect),
+		// options.HTTPMethod(http.MethodOptions),
+		// options.HTTPMethod(http.MethodTrace),
 	}
 }

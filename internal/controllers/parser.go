@@ -109,7 +109,6 @@ func UpdateConfigFromAPIOpts(
 	for path, pathItem := range spec.Paths {
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
-
 			finalOpts := opts.OperationFinalSubOptions[method+path]
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
@@ -557,6 +556,7 @@ func UpdateConfigFromOpts(
 				"processing path",
 				"path", spew.Sprint(path),
 				"method", spew.Sprint(method),
+				"methodOpts", spew.Sprint(methodOpts),
 			)
 
 			strMethod := string(method)

@@ -67,9 +67,10 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 	// 2 dimensional map["path"]["method"]SubOptions
 	paths := make(map[string]options.StaticOperationSubOptions)
 	opts := &options.StaticOptions{
-		Paths: paths,
-		Auth:  spec.Auth,
-		Hosts: spec.Hosts,
+		Paths:    paths,
+		Auth:     spec.Auth,
+		Hosts:    spec.Hosts,
+		Upstream: spec.Upstream,
 	}
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
