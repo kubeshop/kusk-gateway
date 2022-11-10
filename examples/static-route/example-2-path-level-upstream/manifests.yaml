@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-route-example-2-path-level-upstream
+  namespace: default
+  labels:
+    app: static-route-example-2-path-level-upstream
+spec:
+  selector:
+    matchLabels:
+      app: static-route-example-2-path-level-upstream
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: static-route-example-2-path-level-upstream
+    spec:
+      containers:
+        - name: go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: static-route-example-2-path-level-upstream
+  namespace: default
+  labels:
+    app: static-route-example-2-path-level-upstream
+spec:
+  selector:
+    app: static-route-example-2-path-level-upstream
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: static-route-example-1-top-level-upstream
+  namespace: default
+  labels:
+    app: static-route-example-1-top-level-upstream
+spec:
+  selector:
+    matchLabels:
+      app: static-route-example-1-top-level-upstream
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: static-route-example-1-top-level-upstream
+    spec:
+      containers:
+        - name: go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: static-route-example-1-top-level-upstream
+  namespace: default
+  labels:
+    app: static-route-example-1-top-level-upstream
+spec:
+  selector:
+    app: static-route-example-1-top-level-upstream
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

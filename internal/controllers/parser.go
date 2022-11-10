@@ -507,10 +507,12 @@ func UpdateConfigFromOpts(
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
+	logger.Info("processing paths before appending root", "opts.Path", spew.Sprint(opts.Paths))
 	if err := staticRouteCheckPaths(logger, opts); err != nil {
 		return err
 	}
 	staticRouteAppendRootPath(logger, opts)
+	logger.Info("processing paths after appending root", "opts.Path", spew.Sprint(opts.Paths))
 
 	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
 		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
@@ -556,7 +558,7 @@ func UpdateConfigFromOpts(
 				"processing path",
 				"path", spew.Sprint(path),
 				"method", spew.Sprint(method),
-				"methodOpts", spew.Sprint(methodOpts),
+				"methodOpts.Upstream", fmt.Sprintf("%#+v", methodOpts.Upstream),
 			)
 
 			strMethod := string(method)
@@ -589,7 +591,13 @@ func UpdateConfigFromOpts(
 			} else {
 				var clusterName string
 
-				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "path", path, "method", method)
+				logger.Info(
+					"`StaticRoute` determining `clusterName`",
+					"opts", spew.Sprint(opts),
+					"path", path,
+					"method", method,
+					"methodOpts.Upstream", fmt.Sprintf("%#+v", methodOpts.Upstream),
+				)
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err

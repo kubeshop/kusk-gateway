@@ -1,0 +1,26 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: example-2-path-level-upstream
+  namespace: default
+spec:
+  upstream:
+    service:
+      name: static-route-example-2-path-level-upstream
+      namespace: default
+      port: 80
+  fleet:
+    name: default
+    namespace: default
+  paths:
+    /override:
+      get:
+        route:
+          upstream:
+            service:
+              name: static-route-example-1-top-level-upstream
+              namespace: default
+              port: 80
+            # rewrite:
+            #   pattern: "^/override/"
+            #   substitution: "/"

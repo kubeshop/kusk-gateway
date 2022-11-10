@@ -32,11 +32,15 @@ import (
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
+const (
+	RoutePath = "/"
+)
+
 // `path` cannot be root path of a service.
 // See: https://github.com/kubeshop/kusk-gateway/issues/954.
 func staticRouteCheckPaths(logger logr.Logger, opts *options.StaticOptions) error {
 	for path := range opts.Paths {
-		if path == "/" {
+		if path == RoutePath {
 			err := fmt.Errorf("`path` cannot be root path of a service - path=%v", path)
 			logger.Error(err, "invalid configuration detected in `paths`")
 			return err
@@ -49,16 +53,11 @@ func staticRouteCheckPaths(logger logr.Logger, opts *options.StaticOptions) erro
 // Call `staticRouteCheckPaths` first.
 // See: https://github.com/kubeshop/kusk-gateway/issues/954.
 func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) {
-	const RoutePath = "/"
+	logger.Info("staticRouteAppendRootPath `opts.Paths`", "opts", spew.Sprint(opts))
 
-	if len(opts.Paths) != 0 {
-		logger.Info("staticRouteAppendRootPath non-empty `opts.Paths`", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
-		return
+	if opts.Paths == nil || len(opts.Paths) == 0 {
+		opts.Paths = make(map[string]options.StaticOperationSubOptions)
 	}
-
-	logger.Info("staticRouteAppendRootPath empty `opts.Paths`", "opts.Paths", spew.Sprint(opts.Paths), "opts", spew.Sprint(opts))
-
-	opts.Paths = make(map[string]options.StaticOperationSubOptions)
 
 	var path options.StaticOperationSubOptions
 	var ok bool
@@ -66,9 +65,12 @@ func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) 
 		opts.Paths[RoutePath] = options.StaticOperationSubOptions{}
 	}
 
+	// Append `/` path with all available `methods` pointing to `spec.upstream`.
 	for _, method := range methods() {
 		path = make(map[options.HTTPMethod]*options.SubOptions)
-		opts.Paths[RoutePath] = make(map[options.HTTPMethod]*options.SubOptions)
+		if opts.Paths[RoutePath] == nil || len(opts.Paths[RoutePath]) == 0 {
+			opts.Paths[RoutePath] = make(map[options.HTTPMethod]*options.SubOptions)
+		}
 
 		// `upstream` should be defined at the `spec` level.
 		subOptions := &options.SubOptions{
@@ -89,6 +91,7 @@ func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) 
 }
 
 func methods() []options.HTTPMethod {
+	// TODO: Remove commented out methods, below.
 	return []options.HTTPMethod{
 		options.HTTPMethod(http.MethodGet),
 		// options.HTTPMethod(http.MethodHead),
