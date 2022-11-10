@@ -86,6 +86,7 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
+		
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
 			reportError(err)
@@ -226,7 +227,6 @@ func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	if err := opts.Validate(); err != nil {
 		return "", err
 	}

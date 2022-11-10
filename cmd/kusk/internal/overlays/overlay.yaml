@@ -1,0 +1,12 @@
+overlays: 1.0.0
+extends: https://petstore3.swagger.io/api/v3/openapi.json
+actions:
+  - target: "$.paths.*"
+    where:
+      target: '$.*.tags[?(@ != "user")]'
+    remove: true
+  - target: "$.info"
+    update:
+      title: Overlayed!
+      description: |
+        This API has been overlayed 😎
