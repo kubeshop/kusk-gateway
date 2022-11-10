@@ -102,23 +102,14 @@ func UpdateConfigFromAPIOpts(
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
 
-	logger.Info("processing `spec.Paths`", "spec.Paths", spew.Sprint(spec.Paths))
-
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts
 	// 2. For each method we get SubOptions for that method from the opts map and merge in path SubOpts
 	for path, pathItem := range spec.Paths {
-		isRoot := false
-		// `path` cannot be root path of a service.
-		// See: https://github.com/kubeshop/kusk-gateway/issues/954.
-		if path == "/" {
-			isRoot = true
-		}
-		logger.Info("processing `path`", "path", spew.Sprint(path), "pathItem", spew.Sprint(pathItem), "isRoot", spew.Sprint(isRoot))
-
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
+
 			finalOpts := opts.OperationFinalSubOptions[method+path]
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
@@ -517,6 +508,11 @@ func UpdateConfigFromOpts(
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
+	if err := staticRouteCheckPaths(logger, opts); err != nil {
+		return err
+	}
+	staticRouteAppendRootPath(logger, opts)
+
 	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
 		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
 
@@ -557,6 +553,12 @@ func UpdateConfigFromOpts(
 	// Iterate on all paths and build routes
 	for path, methods := range opts.Paths {
 		for method, methodOpts := range methods {
+			logger.Info(
+				"processing path",
+				"path", spew.Sprint(path),
+				"method", spew.Sprint(method),
+			)
+
 			strMethod := string(method)
 
 			routePath := generateRoutePath("", path)
