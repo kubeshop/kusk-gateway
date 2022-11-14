@@ -59,6 +59,3 @@ spec:
       mocking:
         enabled: true
       public_api_path: "simple/spec.json"
-      security: 
-        42crunch:
-          token: secret-ref

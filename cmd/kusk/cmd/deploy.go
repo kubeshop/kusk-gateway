@@ -45,6 +45,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/overlays"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
@@ -86,7 +87,6 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		
 		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
 		if err != nil {
 			reportError(err)
@@ -207,9 +207,24 @@ var deployCmd = &cobra.Command{
 func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
 	const KuskExtensionKey = "x-kusk"
 
-	parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
-	if err != nil {
-		return "", err
+	parsedApiSpec := &openapi3.T{}
+
+	overlay, err := overlays.NewOverlay(apiSpecPath)
+	if err == nil {
+		overlayPath, err := overlay.Apply()
+		if err != nil {
+			return "", err
+		}
+
+		parsedApiSpec, err = spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(overlayPath)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		parsedApiSpec, err = spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if _, ok := parsedApiSpec.ExtensionProps.Extensions[KuskExtensionKey]; !ok {

@@ -1,12 +1,11 @@
 overlays: 1.0.0
-extends: https://petstore3.swagger.io/api/v3/openapi.json
+extends: ./test.yaml
 actions:
-  - target: "$.paths.*"
-    where:
-      target: '$.*.tags[?(@ != "user")]'
-    remove: true
-  - target: "$.info"
+  - target: "$"
     update:
-      title: Overlayed!
-      description: |
-        This API has been overlayed 😎
+      x-kusk:
+        upstream:
+          service:
+            name: httpbin
+            namespace: default
+            port: 8080
