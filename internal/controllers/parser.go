@@ -459,6 +459,56 @@ func UpdateConfigFromAPIOpts(
 		}
 	}
 
+	if opts.DevPortal != nil {
+		for _, vh := range opts.Hosts {
+			//add devportal cluster
+			hostPortPair, err := getUpstreamHost(&options.UpstreamOptions{
+				Service: &options.UpstreamService{
+					Name:      "kusk-gateway-devportal",
+					Namespace: "kusk-system",
+					Port:      80,
+				},
+			})
+			if err != nil {
+				return err
+			}
+			clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+			logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
+			if !envoyConfiguration.ClusterExist(clusterName) {
+				envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+			}
+
+			devportalPath := generateRoutePath("", opts.DevPortal.Path)
+			if err != nil {
+				return err
+			}
+
+			devportalRt := &route.Route{
+				Name:  types.GenerateRouteName(devportalPath, "GET"),
+				Match: generateRouteMatch(devportalPath, "GET", nil, nil),
+			}
+
+			if opts.Auth != nil {
+				if devportalRt.TypedPerFilterConfig == nil {
+					devportalRt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+
+				perRouteAuth, err := auth.RouteAuthzDisabled()
+				if err != nil {
+					return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.PublicAPIPath, err)
+				}
+
+				devportalRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+
+				logger.Info("disabled `auth` for route", "public_api_path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
+			}
+
+			if err := envoyConfiguration.AddRouteToVHost(string(vh), devportalRt); err != nil {
+				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
+			}
+		}
+	}
+
 	// update the validation proxy in the end
 	if len(proxiedServices) > 0 {
 		proxiedServicesArray := make([]*validation.Service, 0, len(proxiedServices))
