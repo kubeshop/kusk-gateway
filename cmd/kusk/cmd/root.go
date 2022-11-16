@@ -35,12 +35,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/mattn/go-isatty"
+
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
-	"github.com/mattn/go-isatty"
 )
 
 var cfgFile string
@@ -52,6 +53,7 @@ const (
 	kuskgatewayapi       = "kusk-gateway-api"
 	kuskgatewaydashboard = "kusk-gateway-dashboard"
 	kuskgatewaymanager   = "kusk-gateway-manager"
+	kuskDevportal        = "kusk-devportal"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -157,7 +159,7 @@ func helpMessageByGroups(cmd *cobra.Command) string {
 	delete(groups, cmdGroupCobra)
 
 	groupNames := []string{}
-	for k, _ := range groups {
+	for k := range groups {
 		groupNames = append(groupNames, k)
 	}
 	sort.Strings(groupNames)
