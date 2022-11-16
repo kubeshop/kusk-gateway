@@ -47,4 +47,5 @@ spec:
       protocol: TCP
       targetPort: 80
   selector:
-    app: kusk-devportal
+    app.kubernetes.io/instance: kusk-devportal
+    app.kubernetes.io/name: kusk-devportal
