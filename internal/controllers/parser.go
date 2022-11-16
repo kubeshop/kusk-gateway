@@ -24,6 +24,7 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -460,49 +461,68 @@ func UpdateConfigFromAPIOpts(
 	}
 
 	if opts.DevPortal != nil {
+		devPortalRoute := &route.Route{
+			Name: types.GenerateRouteName(opts.DevPortal.Path, http.MethodGet),
+			Match: generateRouteMatch(
+				opts.DevPortal.Path,
+				http.MethodGet,
+				nil,
+				nil,
+			),
+		}
+
+		if opts.Auth != nil {
+			if devPortalRoute.TypedPerFilterConfig == nil {
+				devPortalRoute.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+
+			perRouteAuth, err := auth.RouteAuthzDisabled()
+			if err != nil {
+				return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.DevPortal.Path, err)
+			}
+
+			devPortalRoute.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
+		}
+
+		//add devportal cluster
+		hostPortPair, err := getUpstreamHost(&options.UpstreamOptions{
+			Service: &options.UpstreamService{
+				Name:      "kusk-devportal",
+				Namespace: "kusk-system",
+				Port:      80,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+		if !envoyConfiguration.ClusterExist(clusterName) {
+			envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+		}
+
+		falseValue := false
+		devPortalRouteRoute, err := generateRoute(
+			clusterName,
+			nil,
+			nil,
+			nil,
+			&falseValue,
+		)
+		if err != nil {
+			return err
+		}
+
+		// https://github.com/kubeshop/kusk-gateway/issues/404
+		// to help with issues around direct IP access e.g. CloudFlare
+		devPortalRouteRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+			HostRewriteLiteral: hostPortPair.Host,
+		}
+
+		devPortalRoute.Action = devPortalRouteRoute
+
 		for _, vh := range opts.Hosts {
-			//add devportal cluster
-			hostPortPair, err := getUpstreamHost(&options.UpstreamOptions{
-				Service: &options.UpstreamService{
-					Name:      "kusk-gateway-devportal",
-					Namespace: "kusk-system",
-					Port:      80,
-				},
-			})
-			if err != nil {
-				return err
-			}
-			clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
-			if !envoyConfiguration.ClusterExist(clusterName) {
-				envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
-			}
-
-			devportalPath := generateRoutePath("", opts.DevPortal.Path)
-			if err != nil {
-				return err
-			}
-
-			devportalRt := &route.Route{
-				Name:  types.GenerateRouteName(devportalPath, "GET"),
-				Match: generateRouteMatch(devportalPath, "GET", nil, nil),
-			}
-
-			if opts.Auth != nil {
-				if devportalRt.TypedPerFilterConfig == nil {
-					devportalRt.TypedPerFilterConfig = map[string]*any.Any{}
-				}
-
-				perRouteAuth, err := auth.RouteAuthzDisabled()
-				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.PublicAPIPath, err)
-				}
-
-				devportalRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
-
-				logger.Info("disabled `auth` for route", "public_api_path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
-			}
-
-			if err := envoyConfiguration.AddRouteToVHost(string(vh), devportalRt); err != nil {
+			if err := envoyConfiguration.AddRouteToVHost(string(vh), devPortalRoute); err != nil {
 				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 			}
 		}
