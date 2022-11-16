@@ -124,7 +124,7 @@ var ipCmd = &cobra.Command{
 			return
 		}
 		if ip == "" {
-			kuskui.PrintWarning("EnvoyFleet doesn't have an External IP address assigned yet. Try port-forwarding by running: \n\n %s", fmt.Sprintf("kubectl port-forward svc/%s -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
+			kuskui.PrintWarning(fmt.Sprintf("EnvoyFleet doesn't have an External IP address assigned yet. Try port-forwarding by running: \n\n kubectl port-forward svc/%s -n %s 8080:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port))
 			return
 		}
 		fmt.Println(ip)
