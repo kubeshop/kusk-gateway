@@ -32,11 +32,6 @@ type Action struct {
 	Where  interface{} `json:"where,omitempty" yaml:"where,omitempty"`
 }
 
-// type Update struct {
-// 	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
-// 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
-// }
-
 func NewOverlay(path string) (o *Overlay, err error) {
 	o = &Overlay{}
 	if !IsUrl(path) {
@@ -59,13 +54,8 @@ func NewOverlay(path string) (o *Overlay, err error) {
 		o.path = overlay.Name()
 
 		return o, nil
-	} else {
-		o, err = getFile(path)
-		if err != nil {
-			return nil, err
-		}
-		return o, nil
 	}
+	return getFile(path)
 }
 
 func (o *Overlay) Apply() (string, error) {
@@ -82,15 +72,14 @@ func (o *Overlay) Apply() (string, error) {
 			return "", err
 		}
 	}
-	f, err := os.CreateTemp("", "overlay")
-	if err != nil {
+	if f, err := os.CreateTemp("", "overlay"); err != nil {
 		return "", err
 	} else {
 		if _, err := f.Write([]byte(overlayed)); err != nil {
 			return "", err
 		}
+		return f.Name(), err
 	}
-	return f.Name(), err
 }
 
 func getFile(url string) (overlay *Overlay, err error) {
@@ -118,19 +107,18 @@ func getFile(url string) (overlay *Overlay, err error) {
 		return nil, err
 	}
 
-	ov, err := os.CreateTemp("", "overlay")
-	if err != nil {
+	if ov, err := os.CreateTemp("", "overlay"); err != nil {
 		return nil, err
 	} else {
 		if _, err := ov.Write(o); err != nil {
 			return nil, err
 		}
+
+		overlay.url = url
+		overlay.path = ov.Name()
+
+		return overlay, nil
 	}
-
-	overlay.url = url
-	overlay.path = ov.Name()
-
-	return overlay, nil
 }
 
 func applyOverlay(path string, extends string) (string, error) {
