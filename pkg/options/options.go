@@ -134,7 +134,6 @@ type SubOptions struct {
 	Cache         *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
 	PublicAPIPath string             `json:"public_api_path,omitempty" yaml:"public-api-path,omitempty"`
 	Auth          *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
-	DevPortal     *DevPortalOptions  `json:"dev_portal,omitempty" yaml:"dev_portal,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
