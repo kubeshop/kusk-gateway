@@ -63,7 +63,7 @@ type StaticOptions struct {
 	// It should just contain the route path, "/".
 	Paths map[string]StaticOperationSubOptions `yaml:"paths,omitempty" json:"paths,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
-	Upstream *UpstreamOptions `json:"upstream,omitempty" yaml:"upstream,omitempty"`
+	Upstream UpstreamOptions `json:"upstream" yaml:"upstream"`
 }
 
 func (o *StaticOptions) fillDefaults() {

@@ -64,7 +64,7 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 		Paths:    paths,
 		Auth:     spec.Auth,
 		Hosts:    spec.Hosts,
-		Upstream: spec.Upstream,
+		Upstream: *spec.Upstream,
 	}
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
