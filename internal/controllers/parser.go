@@ -109,7 +109,6 @@ func UpdateConfigFromAPIOpts(
 	for path, pathItem := range spec.Paths {
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
-
 			finalOpts := opts.OperationFinalSubOptions[method+path]
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
@@ -508,8 +507,15 @@ func UpdateConfigFromOpts(
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
+	logger.Info("`StaticRoute` processing paths before appending root", "opts.Path", spew.Sprint(opts.Paths))
+	if err := staticRouteCheckPaths(logger, opts); err != nil {
+		return err
+	}
+	staticRouteAppendRootPath(logger, opts)
+	logger.Info("`StaticRoute` processing paths after appending root", "opts.Path", spew.Sprint(opts.Paths))
+
 	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
-		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
+		logger.Info("`StaticRoute` parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
 
 		// Ignore CloudEntity for now ...
 		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
@@ -532,7 +538,7 @@ func UpdateConfigFromOpts(
 			return err
 		}
 	} else {
-		logger.Info("nil `auth.oauth2` options", "opts", spew.Sprint(opts))
+		logger.Info("`StaticRoute` nil `auth.oauth2` options", "opts", spew.Sprint(opts))
 	}
 
 	// Add new vhost if already not present.
@@ -548,6 +554,13 @@ func UpdateConfigFromOpts(
 	// Iterate on all paths and build routes
 	for path, methods := range opts.Paths {
 		for method, methodOpts := range methods {
+			logger.Info(
+				"`StaticRoute` processing path",
+				"path", spew.Sprint(path),
+				"method", spew.Sprint(method),
+				"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
+			)
+
 			strMethod := string(method)
 
 			routePath := generateRoutePath("", path)
@@ -576,15 +589,19 @@ func UpdateConfigFromOpts(
 
 				rt.Action = routeRedirect
 			} else {
-				var clusterName string
-
-				logger.Info("`StaticRoute` determining `clusterName`", "opts", spew.Sprint(opts), "path", path, "method", method)
+				logger.Info(
+					"`StaticRoute` determining `clusterName`",
+					"opts", spew.Sprint(opts),
+					"path", path,
+					"method", method,
+					"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
+				)
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
 				}
 
-				clusterName = generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
 				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
