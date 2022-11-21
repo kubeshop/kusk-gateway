@@ -507,15 +507,15 @@ func UpdateConfigFromOpts(
 ) error {
 	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
 
-	logger.Info("processing paths before appending root", "opts.Path", spew.Sprint(opts.Paths))
+	logger.Info("`StaticRoute` processing paths before appending root", "opts.Path", spew.Sprint(opts.Paths))
 	if err := staticRouteCheckPaths(logger, opts); err != nil {
 		return err
 	}
 	staticRouteAppendRootPath(logger, opts)
-	logger.Info("processing paths after appending root", "opts.Path", spew.Sprint(opts.Paths))
+	logger.Info("`StaticRoute` processing paths after appending root", "opts.Path", spew.Sprint(opts.Paths))
 
 	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
-		logger.Info("parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
+		logger.Info("`StaticRoute` parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
 
 		// Ignore CloudEntity for now ...
 		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
@@ -538,7 +538,7 @@ func UpdateConfigFromOpts(
 			return err
 		}
 	} else {
-		logger.Info("nil `auth.oauth2` options", "opts", spew.Sprint(opts))
+		logger.Info("`StaticRoute` nil `auth.oauth2` options", "opts", spew.Sprint(opts))
 	}
 
 	// Add new vhost if already not present.
@@ -555,10 +555,10 @@ func UpdateConfigFromOpts(
 	for path, methods := range opts.Paths {
 		for method, methodOpts := range methods {
 			logger.Info(
-				"processing path",
+				"`StaticRoute` processing path",
 				"path", spew.Sprint(path),
 				"method", spew.Sprint(method),
-				"methodOpts.Upstream", fmt.Sprintf("%#+v", methodOpts.Upstream),
+				"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
 			)
 
 			strMethod := string(method)
@@ -594,7 +594,7 @@ func UpdateConfigFromOpts(
 					"opts", spew.Sprint(opts),
 					"path", path,
 					"method", method,
-					"methodOpts.Upstream", fmt.Sprintf("%#+v", methodOpts.Upstream),
+					"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
 				)
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
