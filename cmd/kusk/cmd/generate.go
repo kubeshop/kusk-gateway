@@ -76,6 +76,7 @@ var generateCmd = &cobra.Command{
 			}
 		}
 		parsedApiSpec := &openapi3.T{}
+		parser := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true})
 		var err error
 
 		if overlaySpecPath != "" {
@@ -88,13 +89,13 @@ var generateCmd = &cobra.Command{
 				return err
 			}
 
-			parsedApiSpec, err = spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(overlayPath)
+			parsedApiSpec, err = parser.Parse(overlayPath)
 			if err != nil {
 				reportError(err)
 				return err
 			}
 		} else if apiSpecPath != "" {
-			parsedApiSpec, err = spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
+			parsedApiSpec, err = parser.Parse(apiSpecPath)
 			if err != nil {
 				reportError(err)
 				return err
