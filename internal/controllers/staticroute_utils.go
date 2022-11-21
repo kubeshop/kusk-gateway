@@ -63,7 +63,7 @@ func staticRouteAppendRootPath(logger logr.Logger, opts *options.StaticOptions) 
 
 		// `upstream` should be defined at the `spec` level.
 		opts.Paths[pathRoute][method] = &options.SubOptions{
-			Upstream: opts.Upstream,
+			Upstream: &opts.Upstream,
 		}
 
 		logger.Info(
