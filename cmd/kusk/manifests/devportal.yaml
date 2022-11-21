@@ -49,3 +49,40 @@ spec:
   selector:
     app.kubernetes.io/instance: kusk-devportal
     app.kubernetes.io/name: kusk-devportal
+---
+apiVersion: gateway.kusk.io/v1alpha1
+kind: EnvoyFleet
+metadata:
+  name: kusk-devportal-envoy-fleet
+  namespace: kusk-system
+spec:
+  accesslog:
+    format: text
+  service:
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+        targetPort: http
+      - name: https
+        port: 443
+        protocol: TCP
+        targetPort: http
+    type: LoadBalancer
+---
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: kusk-devportal
+  namespace: kusk-system
+  labels:
+    kusk-managed: "true"
+spec:
+  upstream:
+    service:
+      name: kusk-devportal
+      namespace: kusk-system
+      port: 80
+  fleet:
+    name: kusk-devportal-envoy-fleet
+    namespace: kusk-system
