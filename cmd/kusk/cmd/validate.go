@@ -44,7 +44,7 @@ var validateCmd = &cobra.Command{
 			}
 		}
 
-		_, err := getParsedAndValidatedOpenAPISpec(file)
+		_, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
 		if err != nil {
 			reportError(err)
 			return err

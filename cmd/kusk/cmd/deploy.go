@@ -62,14 +62,14 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
-	deployCmd.MarkFlagRequired("in")
 
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
 	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
 	deployCmd.Flags().StringVar(&namespace, "namespace", "default", "name of the API")
 	deployCmd.Flags().StringVarP(&envoyFleetName, "envoyfleet.name", "", "kusk-gateway-envoy-fleet", "name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet")
-
 	deployCmd.Flags().StringVarP(&envoyFleetNamespace, "envoyfleet.namespace", "", kusknamespace, "namespace of envoyfleet to use for this API. Default: kusk-system")
+
+	deployCmd.Flags().StringVarP(&overlaySpecPath, "overlay", "", "", "file path or URL to Overlay spec file to generate mappings from. e.g. --overlay overlay.yaml")
 
 }
 
@@ -80,6 +80,12 @@ var deployCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	Long:          ``,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if file != "" && overlaySpecPath != "" {
+			return fmt.Errorf(`'-i, --in and --overlay are mutually exclusive`)
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -87,7 +93,7 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		originalManifest, err := getParsedAndValidatedOpenAPISpec(file)
+		originalManifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
 		if err != nil {
 			reportError(err)
 			return err
@@ -159,7 +165,7 @@ var deployCmd = &cobra.Command{
 						kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
 						kuskui.PrintStart(fmt.Sprintf("initiallizing deployment to fleet %s", envoyFleetName))
 
-						manifest, err := getParsedAndValidatedOpenAPISpec(file)
+						manifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
 						if err != nil {
 							reportError(err)
 							kuskui.PrintError(err.Error())
@@ -204,13 +210,18 @@ var deployCmd = &cobra.Command{
 	},
 }
 
-func getParsedAndValidatedOpenAPISpec(apiSpecPath string) (string, error) {
+func getParsedAndValidatedOpenAPISpec(overlaySpecPath, apiSpecPath string) (string, error) {
 	const KuskExtensionKey = "x-kusk"
 
 	parsedApiSpec := &openapi3.T{}
+	var err error
 
-	overlay, err := overlays.NewOverlay(apiSpecPath)
-	if err == nil {
+	if overlaySpecPath != "" {
+		overlay, err := overlays.NewOverlay(overlaySpecPath)
+		if err != nil {
+			return "", err
+		}
+
 		overlayPath, err := overlay.Apply()
 		if err != nil {
 			return "", err

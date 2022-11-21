@@ -115,9 +115,6 @@ func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
 		errors.NewErrorReporter(rootCmd, err).Report()
-	}
-
-	if err != nil {
 		kuskui.PrintError(err.Error())
 		os.Exit(1)
 	}
