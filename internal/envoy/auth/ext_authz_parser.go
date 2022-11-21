@@ -44,7 +44,7 @@ func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, 
 		var (
 			// fetch auth service host and port once
 			// TODO: fetch kusk gateway auth service dynamically
-			cloudEntityHostname string = "kusk-gateway-auth-service.kusk-system.svc.cluster.local."
+			cloudEntityHostname string = "kusk-gateway-manager-service.kusk-system.svc.cluster.local."
 			cloudEntityPort     uint32 = 19000
 		)
 

@@ -867,7 +867,7 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 
 // fetch validation service host and port once
 // TODO: fetch kusk gateway validator service dynamically
-const validatorURL string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000"
+const validatorURL string = "kusk-gateway-manager-service.kusk-system.svc.cluster.local:17000"
 
 func mapExternalProcessorConfig(headers []*envoy_config_core_v3.HeaderValue) *extproc.ExtProcPerRoute {
 	proc := &extproc.ExtProcPerRoute{

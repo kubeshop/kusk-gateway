@@ -95,7 +95,7 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 		GrpcService: &envoy_core_v3.GrpcService{
 			TargetSpecifier: &envoy_core_v3.GrpcService_GoogleGrpc_{
 				GoogleGrpc: &envoy_core_v3.GrpcService_GoogleGrpc{
-					TargetUri:  "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000",
+					TargetUri:  "kusk-gateway-manager-service.kusk-system.svc.cluster.local:17000",
 					StatPrefix: "external_proc",
 				},
 			},
