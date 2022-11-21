@@ -255,6 +255,8 @@ spec:
                     - port
                     type: object
                 type: object
+            required:
+            - upstream
             type: object
           status:
             description: StaticRouteStatus defines the observed state of StaticRoute

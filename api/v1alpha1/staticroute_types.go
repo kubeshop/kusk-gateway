@@ -53,7 +53,7 @@ type StaticRouteSpec struct {
 	Auth *options.AuthOptions `json:"auth,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
 	// +required
-	Upstream *options.UpstreamOptions `json:"upstream,omitempty"`
+	Upstream *options.UpstreamOptions `json:"upstream"`
 }
 
 // GetOptionsFromSpec is a converter to generate Options object from StaticRoutes spec
