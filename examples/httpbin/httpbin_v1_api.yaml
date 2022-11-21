@@ -18,8 +18,6 @@ spec:
     - http
     - https
     x-kusk:
-      dev_portal:
-        path: /devportal
       upstream:
         service:
           name: httpbin
