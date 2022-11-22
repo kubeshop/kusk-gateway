@@ -176,7 +176,6 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/mattn/go-isatty v0.0.16
-	github.com/moby/moby v20.10.21+incompatible
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/cli-runtime v0.25.0
