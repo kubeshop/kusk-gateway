@@ -266,13 +266,12 @@ func versionCheck(cmd *cobra.Command) {
 			if currentVersion != nil && currentVersion.LessThan(latestVersion) {
 				kuskui.PrintWarning(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s", currentVersion, latestVersion))
 
-				if runtime.GOOS == "windows" {
+				switch runtime.GOOS {
+				case "windows":
 					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest	\n kusk cluster upgrade\n")
-				}
-				if runtime.GOOS == "linux" {
+				case "linux":
 					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash \n kusk cluster upgrade\n")
-				}
-				if runtime.GOOS == "darwin" {
+				case  "darwin" 
 					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n brew install kubeshop/kusk/kusk \n kusk cluster upgrade\n")
 				}
 
