@@ -24,7 +24,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"text/template"
@@ -63,12 +62,6 @@ var generateCmd = &cobra.Command{
 	Short:         "Generate a Kusk Gateway API resource from your OpenAPI spec file",
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if apiSpecPath != "" && overlaySpecPath != "" {
-			return fmt.Errorf(`'-i, --in and --overlay are mutually exclusive`)
-		}
-		return nil
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {

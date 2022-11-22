@@ -53,7 +53,6 @@ import (
 )
 
 var (
-	file  string
 	watch bool
 )
 
@@ -61,11 +60,10 @@ func init() {
 	//add to root command
 	rootCmd.AddCommand(deployCmd)
 
-	deployCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
-
+	deployCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
 	deployCmd.Flags().BoolVarP(&watch, "watch", "w", false, "watch file changes and deploy on change")
-	deployCmd.Flags().StringVar(&name, "name", "", "name of the API")
-	deployCmd.Flags().StringVar(&namespace, "namespace", "default", "name of the API")
+	deployCmd.Flags().StringVar(&name, "name", "", "the name of the API resource")
+	deployCmd.Flags().StringVar(&namespace, "namespace", "default", "the namespace of the API resource")
 	deployCmd.Flags().StringVarP(&envoyFleetName, "envoyfleet.name", "", "kusk-gateway-envoy-fleet", "name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet")
 	deployCmd.Flags().StringVarP(&envoyFleetNamespace, "envoyfleet.namespace", "", kusknamespace, "namespace of envoyfleet to use for this API. Default: kusk-system")
 
@@ -80,12 +78,6 @@ var deployCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	Long:          ``,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if file != "" && overlaySpecPath != "" {
-			return fmt.Errorf(`'-i, --in and --overlay are mutually exclusive`)
-		}
-		return nil
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reportError := func(err error) {
 			if err != nil {
@@ -93,13 +85,13 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		originalManifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
+		originalManifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, apiSpecPath)
 		if err != nil {
 			reportError(err)
 			return err
 		}
 
-		kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
+		kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", apiSpecPath))
 		kuskui.PrintStart(fmt.Sprintf("initiallizing deployment to fleet %s", envoyFleetName))
 
 		k8sclient, err := utils.GetK8sClient()
@@ -144,11 +136,11 @@ var deployCmd = &cobra.Command{
 			kuskui.PrintInfo(fmt.Sprintf("api.gateway.kusk.io/%s created\n", api.Name))
 		}
 
-		if _, e := url.ParseRequestURI(file); e != nil {
+		if _, e := url.ParseRequestURI(apiSpecPath); e != nil {
 			if watch {
 				var watcher *filewatcher.FileWatcher
 
-				watcher, err = filewatcher.New(file)
+				watcher, err = filewatcher.New(apiSpecPath)
 				if err != nil {
 					reportError(err)
 					return err
@@ -159,13 +151,13 @@ var deployCmd = &cobra.Command{
 				signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 				if watcher != nil {
-					kuskui.PrintInfo(fmt.Sprintf("⏳ watching for API changes in %s", file))
+					kuskui.PrintInfo(fmt.Sprintf("⏳ watching for API changes in %s", apiSpecPath))
 					go watcher.Watch(func() {
-						kuskui.PrintStart(fmt.Sprintf("✍️ change detected in %s", file))
-						kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
+						kuskui.PrintStart(fmt.Sprintf("✍️ change detected in %s", apiSpecPath))
+						kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", apiSpecPath))
 						kuskui.PrintStart(fmt.Sprintf("initiallizing deployment to fleet %s", envoyFleetName))
 
-						manifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
+						manifest, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, apiSpecPath)
 						if err != nil {
 							reportError(err)
 							kuskui.PrintError(err.Error())

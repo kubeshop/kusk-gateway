@@ -44,13 +44,13 @@ var validateCmd = &cobra.Command{
 			}
 		}
 
-		_, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, file)
+		_, err := getParsedAndValidatedOpenAPISpec(overlaySpecPath, apiSpecPath)
 		if err != nil {
 			reportError(err)
 			return err
 		}
 
-		kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", file))
+		kuskui.PrintSuccess(fmt.Sprintf("successfully parsed %s", apiSpecPath))
 
 		return nil
 	},
@@ -59,6 +59,6 @@ var validateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(validateCmd)
 
-	validateCmd.Flags().StringVarP(&file, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
+	validateCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
 	validateCmd.MarkFlagRequired("file")
 }
