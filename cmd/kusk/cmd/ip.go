@@ -128,6 +128,5 @@ var ipCmd = &cobra.Command{
 			return
 		}
 		fmt.Println(ip)
-		return
 	},
 }

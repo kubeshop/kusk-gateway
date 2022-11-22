@@ -33,14 +33,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/overlays"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/templates"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	"github.com/kubeshop/kusk-gateway/pkg/spec"
 )
 
 var (
-	apiTemplate *template.Template
-	apiSpecPath string
+	apiTemplate     *template.Template
+	apiSpecPath     string
+	overlaySpecPath string
 
 	name      string
 	namespace string
@@ -66,11 +68,31 @@ var generateCmd = &cobra.Command{
 				errors.NewErrorReporter(cmd, err).Report()
 			}
 		}
+		parsedApiSpec := &openapi3.T{}
+		parser := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true})
+		var err error
 
-		parsedApiSpec, err := spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}).Parse(apiSpecPath)
-		if err != nil {
-			reportError(err)
-			return err
+		if overlaySpecPath != "" {
+			overlay, err := overlays.NewOverlay(overlaySpecPath)
+			if err != nil {
+				return err
+			}
+			overlayPath, err := overlay.Apply()
+			if err != nil {
+				return err
+			}
+
+			parsedApiSpec, err = parser.Parse(overlayPath)
+			if err != nil {
+				reportError(err)
+				return err
+			}
+		} else if apiSpecPath != "" {
+			parsedApiSpec, err = parser.Parse(apiSpecPath)
+			if err != nil {
+				reportError(err)
+				return err
+			}
 		}
 
 		if _, ok := parsedApiSpec.ExtensionProps.Extensions["x-kusk"]; !ok {
@@ -170,74 +192,18 @@ func getAPISpecString(apiSpec *openapi3.T) (string, error) {
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
-	// This should be deprecated soon.
-	// See `apiCmd.Deprecated`.
 	apiCmd.AddCommand(generateCmd)
 
-	generateCmd.Flags().StringVarP(
-		&name,
-		"name",
-		"",
-		"",
-		"the name to give the API resource e.g. --name my-api",
-	)
+	generateCmd.Flags().StringVarP(&name, "name", "", "", "the name to give the API resource e.g. --name my-api")
+	generateCmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "the namespace of the API resource e.g. --namespace my-namespace, -n my-namespace")
+	generateCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
 
-	generateCmd.Flags().StringVarP(
-		&namespace,
-		"namespace",
-		"n",
-		"default",
-		"the namespace of the API resource e.g. --namespace my-namespace, -n my-namespace",
-	)
-
-	generateCmd.Flags().StringVarP(
-		&apiSpecPath,
-		"in",
-		"i",
-		"",
-		"file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml",
-	)
-	generateCmd.MarkFlagRequired("in")
-
-	generateCmd.Flags().StringVarP(
-		&serviceName,
-		"upstream.service",
-		"",
-		"",
-		"name of upstream service",
-	)
-
-	generateCmd.Flags().StringVarP(
-		&serviceNamespace,
-		"upstream.namespace",
-		"",
-		"default",
-		"namespace of upstream service",
-	)
-
-	generateCmd.Flags().Uint32VarP(
-		&servicePort,
-		"upstream.port",
-		"",
-		80,
-		"port of upstream service",
-	)
-
-	generateCmd.Flags().StringVarP(
-		&envoyFleetName,
-		"envoyfleet.name",
-		"",
-		"kusk-gateway-envoy-fleet",
-		"name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet",
-	)
-
-	generateCmd.Flags().StringVarP(
-		&envoyFleetNamespace,
-		"envoyfleet.namespace",
-		"",
-		kusknamespace,
-		"namespace of envoyfleet to use for this API. Default: kusk-system",
-	)
+	generateCmd.Flags().StringVarP(&serviceName, "upstream.service", "", "", "name of upstream service")
+	generateCmd.Flags().StringVarP(&serviceNamespace, "upstream.namespace", "", "default", "namespace of upstream service")
+	generateCmd.Flags().Uint32VarP(&servicePort, "upstream.port", "", 80, "port of upstream service")
+	generateCmd.Flags().StringVarP(&envoyFleetName, "envoyfleet.name", "", "kusk-gateway-envoy-fleet", "name of envoyfleet to use for this API. Default: kusk-gateway-envoy-fleet")
+	generateCmd.Flags().StringVarP(&envoyFleetNamespace, "envoyfleet.namespace", "", kusknamespace, "namespace of envoyfleet to use for this API. Default: kusk-system")
+	generateCmd.Flags().StringVarP(&overlaySpecPath, "overlay", "", "", "file path or URL to Overlay spec file to generate mappings from. e.g. --overlay overlay.yaml")
 
 	apiTemplate = template.Must(template.New("api").Parse(templates.APITemplate))
 }

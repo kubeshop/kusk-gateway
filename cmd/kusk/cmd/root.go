@@ -61,53 +61,21 @@ var rootCmd = &cobra.Command{
 	Use:   "kusk",
 	Short: "",
 	Long:  ``,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		analytics.SendAnonymousCMDInfo(nil)
 
-		if isatty.IsTerminal(os.Stdout.Fd()) == true && build.Version != "latest" {
+		versionCheck(cmd)
 
-			if len(build.Version) != 0 {
-				ghclient, err := utils.NewGithubClient("", nil)
-				if err != nil {
-					errors.NewErrorReporter(cmd, err).Report()
-					return
-				}
+		if cmd.Use == "generate" || cmd.Use == "deploy" {
+			if apiSpecPath != "" && overlaySpecPath != "" {
+				return fmt.Errorf(`'-i, --in and --overlay are mutually exclusive`)
+			}
 
-				ref, err := ghclient.GetLatest(kuskgateway)
-				if err != nil {
-					errors.NewErrorReporter(cmd, err).Report()
-					return
-				}
-
-				latestVersion, err := version.NewVersion(ref)
-				if err != nil {
-					errors.NewErrorReporter(cmd, err).Report()
-					return
-				}
-
-				currentVersion, err := version.NewVersion(build.Version)
-				if err != nil {
-					errors.NewErrorReporter(cmd, err).Report()
-					return
-				}
-
-				if currentVersion != nil && currentVersion.LessThan(latestVersion) {
-					kuskui.PrintWarning(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s", currentVersion, latestVersion))
-
-					if runtime.GOOS == "windows" {
-						kuskui.PrintWarning(fmt.Sprintf("Run the following command to update Kusk CLI. \n\n go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest	\n kusk cluster upgrade\n"))
-					}
-					if runtime.GOOS == "linux" {
-						kuskui.PrintWarning(fmt.Sprintf("Run the following command to update Kusk CLI. \n\n curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash \n kusk cluster upgrade\n"))
-					}
-					if runtime.GOOS == "darwin" {
-						kuskui.PrintWarning(fmt.Sprintf("Run the following command to update Kusk CLI. \n\n brew install kubeshop/kusk/kusk \n kusk cluster upgrade\n"))
-					}
-
-					return
-				}
+			if apiSpecPath == "" && overlaySpecPath == "" {
+				return fmt.Errorf(`either '-i, --in or --overlay need to be provided`)
 			}
 		}
+		return nil
 	},
 }
 
@@ -117,9 +85,6 @@ func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
 		errors.NewErrorReporter(rootCmd, err).Report()
-	}
-
-	if err != nil {
 		kuskui.PrintError(err.Error())
 		os.Exit(1)
 	}
@@ -271,4 +236,49 @@ func help(c *cobra.Command, s []string) {
 	kuskui.PrintInfo(fmt.Sprintf("%s   %s", kuskui.Gray("Docs & Support:"), "https://docs.kusk.io/"))
 	fmt.Println("")
 
+}
+
+func versionCheck(cmd *cobra.Command) {
+	if isatty.IsTerminal(os.Stdout.Fd()) && build.Version != "latest" {
+		if len(build.Version) != 0 {
+			ghclient, err := utils.NewGithubClient("", nil)
+			if err != nil {
+				errors.NewErrorReporter(cmd, err).Report()
+				return
+			}
+
+			ref, err := ghclient.GetLatest(kuskgateway)
+			if err != nil {
+				errors.NewErrorReporter(cmd, err).Report()
+				return
+			}
+
+			latestVersion, err := version.NewVersion(ref)
+			if err != nil {
+				errors.NewErrorReporter(cmd, err).Report()
+				return
+			}
+
+			currentVersion, err := version.NewVersion(build.Version)
+			if err != nil {
+				errors.NewErrorReporter(cmd, err).Report()
+				return
+			}
+
+			if currentVersion != nil && currentVersion.LessThan(latestVersion) {
+				kuskui.PrintWarning(fmt.Sprintf("This version %s of Kusk cli is outdated. The latest version available is %s", currentVersion, latestVersion))
+
+				switch runtime.GOOS {
+				case "windows":
+					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n go install -x github.com/kubeshop/kusk-gateway/cmd/kusk@latest	\n kusk cluster upgrade\n")
+				case "linux":
+					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n curl -sSLf https://raw.githubusercontent.com/kubeshop/kusk-gateway/main/cmd/kusk/scripts/install.sh | bash \n kusk cluster upgrade\n")
+				case "darwin":
+					kuskui.PrintWarning("Run the following command to update Kusk CLI. \n\n brew install kubeshop/kusk/kusk \n kusk cluster upgrade\n")
+				}
+
+				return
+			}
+		}
+	}
 }
