@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const imageName = "jasmingacic/overlay-cli"
+const imageName = "kubeshop/overlay-cli"
 
 type Overlay struct {
 	Overlays string   `json:"overlays,omitempty" yaml:"overlays,omitempty"`
