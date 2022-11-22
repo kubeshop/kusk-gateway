@@ -50,6 +50,19 @@ func isSwagger(spec []byte) bool {
 	return header.Swagger != ""
 }
 
+func isOpenAPI(spec []byte) bool {
+	// internal agent struct to help us differentiate
+	// between openapi spec 2.0 (swagger) and openapi 3+
+	var header struct {
+		Swagger string `json:"swagger"`
+		OpenAPI string `json:"openapi"` // we might need that later to distinguish 3.1.x vs 3.0.x
+	}
+
+	_ = yaml.Unmarshal(spec, &header)
+
+	return header.OpenAPI != ""
+}
+
 type Loader interface {
 	LoadFromURI(location *url.URL) (*openapi3.T, error)
 	LoadFromFile(location string) (*openapi3.T, error)
@@ -107,8 +120,10 @@ func (p Parser) ParseFromReader(contents io.Reader) (*openapi3.T, error) {
 	if isSwagger(spec) {
 		return parseSwagger(spec)
 	}
-
-	return parseOpenAPI3(spec)
+	if isOpenAPI(spec) {
+		return parseOpenAPI3(spec)
+	}
+	return nil, fmt.Errorf("provided specs are not OpenAPI/Swagger specs")
 }
 
 func parseSwagger(spec []byte) (*openapi3.T, error) {
