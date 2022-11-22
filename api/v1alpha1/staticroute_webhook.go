@@ -67,7 +67,7 @@ func (s *StaticRouteMutator) Handle(ctx context.Context, req admission.Request) 
 		srObj.Spec.Hosts = append(srObj.Spec.Hosts, "*")
 	}
 	// If the spec.fleet is not set, find the deployed Envoy Fleet in the cluster and update with it.
-	// If there are multiple fleets in the cluster, make user update the the resource spec.fleet with the desired fleet.
+	// If there are multiple fleets in the cluster, make user update the resource spec.fleet with the desired fleet.
 	if srObj.Spec.Fleet == nil {
 		srlog.Info("spec.fleet is not defined in the StaticRoute resource, defaulting it to the present in the cluster Envoy Fleet")
 
@@ -116,7 +116,7 @@ type StaticRouteValidator struct {
 	decoder *admission.Decoder
 }
 
-func (s *StaticRouteValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (s *StaticRouteValidator) Handle(_ context.Context, req admission.Request) admission.Response {
 	srObj := &StaticRoute{}
 
 	err := s.decoder.Decode(req, srObj)
