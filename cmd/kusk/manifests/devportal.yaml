@@ -23,6 +23,9 @@ spec:
       containers:
         - image: kubeshop/kusk-devportal:v0.1.0
           name: kusk-devportal
+          env:
+            - name: KUSK_GATEWAY_API_URL
+              value: "http://kusk-gateway-private-envoy-fleet.kusk-system.svc.cluster.local/api"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
