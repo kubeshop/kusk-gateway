@@ -50,7 +50,7 @@ func (o AuthOptions) String() string {
 
 func (o AuthOptions) Validate() error {
 	if o.OAuth2 == nil && o.Custom == nil && o.Cloudentity == nil && o.JWT == nil {
-		return fmt.Errorf("`auth` must have one of the following defined `oauth2`, `custom`, `cloudentity`, Cloudentity or `jwt`")
+		return fmt.Errorf("`auth` must have one of the following defined `oauth2`, `custom`, `cloudentity`, or `jwt`")
 	}
 
 	if o.OAuth2 != nil && o.Custom != nil {

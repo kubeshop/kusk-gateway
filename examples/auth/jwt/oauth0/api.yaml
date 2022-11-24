@@ -19,7 +19,7 @@ spec:
     x-kusk:
       auth:
         jwt:
-          jwtProviders:
+          providers:
             - name: "kusk-gateway-jwt"
               issuer: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/"
               audiences:

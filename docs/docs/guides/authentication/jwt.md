@@ -4,21 +4,19 @@
 
 ## JWT Reference
 
-| Name            | Description                                                         | Type   | 
-| :-------------- | ------------------------------------------------------------------- |----
-| `auth.jwt.providers`      |Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.                                                                     | list
-
+| Name                 | Description                                                               | Type    | Required |
+| :------------------- | ------------------------------------------------------------------------- |---------|----------|
+| `auth.jwt.providers` |Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host. | list    | true     |
 
 Provider properties:
-| Name            | Description                                                         | Type   | Required 
-| :-------------- | ------------------------------------------------------------------- |----|-
-| `provider.name`      |Unique name for the provider.                                                           | string | true
-| `provider.issuer`      | Issuer that JWTs are required to have in the "iss" field. If not provided, JWT issuers are not checked.                                                                    | string | true
-| `provider.jwks` | Remote JWKS to use for verifying JWT signatures. The URI for the JWKS. | URI | true
-| `provider.default`      |      Whether the provider should apply to all	routes in the HTTPProxy/its includes by	default. At most one provider can be marked 	as the default. If no provider is marked as the default, individual routes must explicitly	identify the provider they require.                                                               | boolean | false
-| `provider.audiences`| Audiences that JWTs are allowed to have in the "aud" field.If not provided, JWT audiences are not checked. | list | false
-| `provider.forward` | Whether the JWT should be forwarded to the backend service after successful verification. By default, the JWT is not forwarded. | boolean | false
-
+| Name                 | Description                                                                                                                                                                                                                                                    | Type    | Required |
+| :------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |---------|----------|
+| `provider.name`      | Unique name for the provider.                                                                                                                                                                                                                                  | string  | true     |
+| `provider.issuer`    | Issuer that JWTs are required to have in the "iss" field. If not provided, JWT issuers are not checked.                                                                                                                                                        | string  | true     |
+| `provider.jwks`      | Remote JWKS to use for verifying JWT signatures. The URI for the JWKS.                                                                                                                                                                                         | URI     | true     |
+| `provider.default`   | Whether the provider should apply to all	routes in the HTTPProxy/its includes by	default. At most one provider can be marked 	as the default. If no provider is marked as the default, individual routes must explicitly	identify the provider they require. | boolean | false    |
+| `provider.audiences` | Audiences that JWTs are allowed to have in the "aud" field.If not provided, JWT audiences are not checked.                                                                                                                                                     | list    | false    |
+| `provider.forward`   | Whether the JWT should be forwarded to the backend service after successful verification. By default, the JWT is not forwarded.                                                                                                                                | boolean | false    |
 
 A minimal example of the configuration for this filter is:
 
@@ -44,7 +42,7 @@ spec:
     x-kusk:
       auth:
         jwt:
-          jwtProviders:
+          providers:
             - name: "kusk-gateway-jwt"
               issuer: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/"
               audiences:

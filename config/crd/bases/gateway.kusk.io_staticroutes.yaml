@@ -82,7 +82,7 @@ spec:
                   jwt:
                     description: OPTIONAL
                     properties:
-                      jwtProviders:
+                      providers:
                         description: Providers to use for verifying JSON Web Tokens
                           (JWTs) on the virtual host.
                         items:
@@ -128,7 +128,7 @@ spec:
                         minItems: 1
                         type: array
                     required:
-                    - jwtProviders
+                    - providers
                     type: object
                   oauth2:
                     description: OPTIONAL

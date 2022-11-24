@@ -303,8 +303,6 @@ For further details, for now please see the [JWT](./guides/authentication/jwt.md
 
 ###### Sample - OAuth
 
-**TODO(MBana):** Complete example.
-
 ```yaml title="api.yml"
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
