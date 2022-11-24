@@ -124,7 +124,11 @@ func (s *StaticRouteValidator) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	spec, _ := srObj.Spec.GetOptionsFromSpec()
+	spec, err := srObj.Spec.GetOptionsFromSpec()
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
 	if err := spec.Validate(); err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}

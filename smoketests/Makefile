@@ -4,6 +4,12 @@ $(smoketests):
 	go mod tidy
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 
+check-auth_jwt:
+	kubectl apply -f ../examples/auth/jwt/oauth0/manifests.yaml
+	kubectl wait deployment --namespace default auth-jwt-oauth0-go-httpbin --for condition=Available=True --timeout=3m
+	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
+	kubectl delete -f ../examples/auth/jwt/oauth0/manifests.yaml
+
 check-cache:
 	kubectl apply -f ./samples/cache/cache-upstream.yaml
 	@echo "sleeping for 2s ..."

@@ -23,44 +23,31 @@
 package auth
 
 import (
-	"fmt"
-
-	envoy_extensions_filters_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	"github.com/davecgh/go-spew/spew"
 	envoy_extensions_filters_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArguments) error {
-	typedConfig, err := NewFilterHTTPOAuth2(oauth2Options, arguments)
+func ParseJWTOptions(jwtOptions *options.JWT, args *ParseAuthArguments, paths []string) error {
+	logger := args.Logger.WithName("auth.ParseJWTOptions")
+
+	typedConfig, err := NewFilterHTTPJWT(jwtOptions, args, paths)
 	if err != nil {
 		return err
 	}
 
 	filter := &envoy_extensions_filters_network_http_connection_manager_v3.HttpFilter{
-		Name: FilterNameOAuth2,
+		Name: FilterNameJWT,
 		ConfigType: &envoy_extensions_filters_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: typedConfig,
 		},
 	}
 
-	if err := arguments.HTTPConnectionManagerBuilder.AddFilter(filter); err != nil {
-		arguments.Logger.WithName("auth.ParseOAuth2Options").Error(err, "failed to add filter", "filter", fmt.Sprintf("%+#v", filter))
+	if err := args.HTTPConnectionManagerBuilder.AddFilter(filter); err != nil {
+		logger.Error(err, "failed to add filter", "filter", spew.Sprint(filter))
 		return err
 	}
 
 	return nil
-}
-
-// RouteAuthzDisabled
-// returns a per-route config to disable authorization.
-func RouteAuthzDisabled() (*anypb.Any, error) {
-	return anypb.New(
-		&envoy_extensions_filters_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_extensions_filters_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
-				Disabled: true,
-			},
-		},
-	)
 }

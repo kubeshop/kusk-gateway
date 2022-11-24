@@ -57,6 +57,8 @@ type ParseAuthArguments struct {
 }
 
 func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error {
+	logger := args.Logger.WithName("auth.ParseAuthOptions")
+
 	if auth == nil {
 		return ErrorAuthIsNil
 	}
@@ -97,9 +99,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		}
 	}
 
-	args.Logger.
-		WithName("auth.ParseAuthOptions").
-		Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
+	logger.Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
 	return nil
 }

@@ -59,8 +59,8 @@ test:
 
 .PHONY: install-deps
 install-deps:
-	go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3
-	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+	@type go-bindata >/dev/null 2>&1 || go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3
+	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
 
 manifests: install-deps
 	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
