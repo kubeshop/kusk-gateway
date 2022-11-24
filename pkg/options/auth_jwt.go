@@ -35,7 +35,7 @@ type JWT struct {
 	// Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
-	JWTProviders []JWTProvider `json:"jwtProviders" yaml:"jwtProviders"`
+	JWTProviders []JWTProvider `json:"providers" yaml:"providers"`
 }
 
 func (o JWT) String() string {
