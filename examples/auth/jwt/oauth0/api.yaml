@@ -17,22 +17,19 @@ spec:
     - http
     - https
     x-kusk:
+      auth:
+        jwt:
+          jwtProviders:
+            - name: "kusk-gateway-jwt"
+              issuer: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/"
+              audiences:
+                - "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/api/v2/"
+              jwks: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/jwks.json"
       upstream:
         service:
           name: auth-jwt-oauth0-go-httpbin
           namespace: default
           port: 80
-      auth:
-        jwt:
-          jwtProviders:
-            - name: "kusk-gateway-jwt"
-              default: true
-              issuer: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/"
-              audiences:
-                - "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/api/v2/"
-              remoteJWKS:
-                uri: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/.well-known/jwks.json"
-              forwardJWT: true
     paths:
       "/uuid":
         get:

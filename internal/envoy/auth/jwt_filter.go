@@ -53,17 +53,11 @@ func NewFilterHTTPJWT(jwtOptions *options.JWT, args *ParseAuthArguments, paths [
 
 	for _, provider := range jwtOptions.JWTProviders {
 		// Default cache timeout.
-		var cacheDuration *durationpb.Duration = durationpb.New(time.Second * 300)
-		if provider.RemoteJWKS.CacheDuration != nil {
-			cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)
-		}
+		cacheDuration := durationpb.New(time.Second * 300)
 		// Default Remote JWKS timeout.
-		var timeout *durationpb.Duration = durationpb.New(time.Second * 1)
-		if provider.RemoteJWKS.Timeout != nil {
-			timeout = durationpb.New(*provider.RemoteJWKS.Timeout)
-		}
+		timeout := durationpb.New(time.Second * 1)
 
-		cluster := provider.RemoteJWKS.URI
+		cluster := provider.JWKS
 		if !args.EnvoyConfiguration.ClusterExist(cluster) {
 			url, err := url.Parse(cluster)
 			if err != nil {

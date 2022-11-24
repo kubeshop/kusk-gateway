@@ -56,6 +56,7 @@ type JWTProvider struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name" yaml:"name"`
+
 	// Whether the provider should apply to all
 	// routes in the HTTPProxy/its includes by
 	// default. At most one provider can be marked
@@ -64,17 +65,27 @@ type JWTProvider struct {
 	// identify the provider they require.
 	// +optional
 	Default bool `json:"default,omitempty" yaml:"default,omitempty"`
+
 	// Issuer that JWTs are required to have in the "iss" field.
 	// If not provided, JWT issuers are not checked.
 	// +optional
 	Issuer string `json:"issuer,omitempty" yaml:"issuer,omitempty"`
+
 	// Audiences that JWTs are allowed to have in the "aud" field.
 	// If not provided, JWT audiences are not checked.
 	// +optional
 	Audiences []string `json:"audiences,omitempty" yaml:"audiences,omitempty"`
+
 	// Remote JWKS to use for verifying JWT signatures.
+	// The URI for the JWKS.
 	// +kubebuilder:validation:Required
-	RemoteJWKS RemoteJWKS `json:"remoteJWKS" yaml:"remoteJWKS"`
+	// +kubebuilder:validation:MinLength=1
+	JWKS string `json:"jwks" yaml:"jwks"`
+
+	// Remote JWKS to use for verifying JWT signatures.
+	// // +kubebuilder:validation:Required
+	// RemoteJWKS RemoteJWKS `json:"jwks" yaml:"jwks"`
+
 	// Whether the JWT should be forwarded to the backend
 	// service after successful verification. By default,
 	// the JWT is not forwarded.
@@ -90,7 +101,7 @@ func (o JWTProvider) Validate() error {
 	return validation.ValidateStruct(&o,
 		validation.Field(&o.Name, validation.Required),
 		validation.Field(&o.Audiences, validation.Each()),
-		validation.Field(&o.RemoteJWKS, validation.Required),
+		validation.Field(&o.JWKS, validation.Required),
 	)
 }
 
@@ -101,21 +112,25 @@ type RemoteJWKS struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	URI string `json:"uri" yaml:"uri"`
+
 	// UpstreamValidation defines how to verify the JWKS's TLS certificate.
 	// +optional
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty" yaml:"validation,omitempty"`
+
 	// How long to wait for a response from the URI.
 	// If not specified, a default of 1s applies.
 	// +optional
 	//// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
 	// Timeout string `json:"timeout,omitempty"`
 	Timeout *time.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+
 	// How long to cache the JWKS locally. If not specified,
 	// Envoy's default of 5m applies.
 	// +optional
 	//// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
 	// CacheDuration string `json:"cacheDuration,omitempty"`
 	CacheDuration *time.Duration `json:"cacheDuration,omitempty" yaml:"cacheDuration,omitempty"`
+
 	// The DNS IP address resolution policy for the JWKS URI.
 	// When configured as "v4", the DNS resolver will only perform a lookup
 	// for addresses in the IPv4 family. If "v6" is configured, the DNS resolver
@@ -148,6 +163,7 @@ type UpstreamValidation struct {
 	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 	// The secret must contain key named ca.crt.
 	CACertificate string `json:"caSecret" yaml:"caSecret"`
+
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
 	SubjectName string `json:"subjectName" yaml:"subjectName"`
 }

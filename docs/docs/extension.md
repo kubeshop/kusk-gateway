@@ -299,15 +299,8 @@ The `auth` object allows 3 different auth mechanism:
 
 #### JWT
 
-For further details, please see the [JWT](./guides/authentication/jwt.md) guide.
+For further details, for now please see the [JWT](./guides/authentication/jwt.md) guide.
 
-##### Definition
-
-**TODO(MBana):** Complete section.
-
-| Name            | Description                                                         |
-| :-------------- | ------------------------------------------------------------------- |
-| `auth.jwt`      |                                                                     |
 
 ###### Sample - OAuth
 
