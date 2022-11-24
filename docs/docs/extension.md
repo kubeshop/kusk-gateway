@@ -301,7 +301,6 @@ The `auth` object allows 3 different auth mechanism:
 
 For further details, for now please see the [JWT](./guides/authentication/jwt.md) guide.
 
-
 ###### Sample - OAuth
 
 **TODO(MBana):** Complete example.

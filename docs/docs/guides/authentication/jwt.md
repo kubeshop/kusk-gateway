@@ -2,6 +2,19 @@
 
 ## Example Configuration
 
+## JWT Reference
+
+| Name            | Description                                                         | Type   |
+| :-------------- | ------------------------------------------------------------------- |----
+| `auth.jwt.providers`      |Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.                                                                     | list
+| `auth.jwt.providers.name`      |Unique name for the provider.                                                           | string
+| `auth.jwt.providers.default`      |      Whether the provider should apply to all	routes in the HTTPProxy/its includes by	default. At most one provider can be marked 	as the default. If no provider is marked as the default, individual routes must explicitly	identify the provider they require.                                                               | boolean
+| `auth.jwt.providers.issuer`      | Issuer that JWTs are required to have in the "iss" field. If not provided, JWT issuers are not checked.                                                                    | string
+| `auth.jwt.providers.audiences`| Audiences that JWTs are allowed to have in the "aud" field.If not provided, JWT audiences are not checked. | list
+| `auth.jwt.providers.jwks` | Remote JWKS to use for verifying JWT signatures. The URI for the JWKS. | URI |
+| `auth.jwt.providers.forward` | Whether the JWT should be forwarded to the backend service after successful verification. By default, the JWT is not forwarded. | boolean
+
+
 A minimal example of the configuration for this filter is:
 
 ```yaml title="api.yaml"
