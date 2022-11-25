@@ -277,7 +277,7 @@ func main() {
 		OpenApiParser:      spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}),
 	}
 
-	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
+	_ = analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
 	heartBeat(ctx, controllerConfigManager.Client, logger)
 
 	// The watcher for k8s secrets to trigger the refresh of configuration in case certificates secrets change.
@@ -356,7 +356,7 @@ func main() {
 
 	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", fmt.Sprintf("kusk-gateway manager bootstrapping failed with error %s", err.Error()))
+		_ = analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", fmt.Sprintf("kusk-gateway manager bootstrapping failed with error %s", err.Error()))
 		setupLog.Error(err, "Problem running manager")
 		os.Exit(1)
 	}
@@ -365,10 +365,10 @@ func main() {
 func heartBeat(ctx context.Context, client client.Client, logger logr.Logger) {
 	c := cron.New()
 	err := c.AddFunc("@daily", func() {
-		analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", "kusk-gateway daily heartbeat")
+		_ = analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", "kusk-gateway daily heartbeat")
 	})
 	if err != nil {
-		analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", fmt.Sprintf("kusk-gateway failed to add daily heartbeat: %s", err.Error()))
+		_ = analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", fmt.Sprintf("kusk-gateway failed to add daily heartbeat: %s", err.Error()))
 	}
 
 	c.Start()

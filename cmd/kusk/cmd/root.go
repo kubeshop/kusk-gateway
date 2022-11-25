@@ -61,7 +61,7 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		analytics.SendAnonymousCMDInfo(nil)
+		_ = analytics.SendAnonymousCMDInfo(nil)
 
 		versionCheck(cmd)
 

@@ -31,15 +31,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func test_NewVersionCommand(t *testing.T) {
+func Test_NewVersionCommand(t *testing.T) {
 	t.Parallel()
-	assert := assert.New(t)
+	assertions := assert.New(t)
 
 	writer := bytes.NewBufferString("")
 	version := "_some-version_"
 	command := NewVersionCommand(writer, version)
-	command.RunE(nil, []string{})
+	_ = command.RunE(nil, []string{})
 
 	actual := writer.String()
-	assert.Contains(actual, version)
+	assertions.Contains(actual, version)
 }

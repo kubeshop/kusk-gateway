@@ -459,14 +459,16 @@ func decorateLogEntry(entry mockingServer.AccessLogEntry) string {
 
 func init() {
 	rootCmd.AddCommand(mockCmd)
-	mockCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "path to openapi spec you wish to mock")
-	if err := mockCmd.MarkFlagRequired("in"); err != nil {
-		error_reporter.NewErrorReporter(mockCmd, err).Report()
-		kuskui.PrintError(err.Error())
-		os.Exit(1)
-	}
 
-	mockCmd.Flags().Uint32VarP(&mockServerPort, "port", "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
+	const (
+		inFlagName   = "in"
+		portFlagName = "port"
+	)
+
+	mockCmd.Flags().StringVarP(&apiSpecPath, inFlagName, "i", "", "path to openapi spec you wish to mock")
+	_ = mockCmd.MarkFlagRequired(inFlagName)
+
+	mockCmd.Flags().Uint32VarP(&mockServerPort, portFlagName, "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
 }
 
 var mockDescription = `Description:
