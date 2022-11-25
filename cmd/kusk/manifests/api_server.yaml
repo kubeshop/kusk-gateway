@@ -1,3 +1,10 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kusk-gateway-api
+  namespace: kusk-system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -70,6 +77,8 @@ rules:
     resources:
       - services
       - namespaces
+      - pods
+      - pods/log
     verbs:
       - get
       - list
@@ -110,10 +119,27 @@ spec:
         app.kubernetes.io/instance: kusk-gateway-api
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-api:v1.1.10
+        - image: kubeshop/kusk-gateway-api:v1.2.1
           imagePullPolicy: Always
           name: kusk-gateway-api
-      serviceAccountName: kusk-gateway-manager
+        - name: kusk-gateway-api-websocket
+          image: kubeshop/kusk-gateway-api-websocket:v1.2.1
+          imagePullPolicy: Always
+          args:
+            - --port=8081
+          ports:
+            - name: ws
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: ws
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: ws
+      serviceAccountName: kusk-gateway-api
 ---
 apiVersion: v1
 kind: Service
@@ -126,6 +152,10 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 8080
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: ws
   selector:
     app.kubernetes.io/instance: kusk-gateway-api
     app.kubernetes.io/name: kusk-gateway-api
