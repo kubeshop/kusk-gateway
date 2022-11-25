@@ -119,11 +119,11 @@ spec:
         app.kubernetes.io/instance: kusk-gateway-api
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-api:v1.1.10
+        - image: kubeshop/kusk-gateway-api:v1.2.1
           imagePullPolicy: Always
           name: kusk-gateway-api
         - name: kusk-gateway-api-websocket
-          image: kubeshop/kusk-gateway-api-websocket:v1.1.10
+          image: kubeshop/kusk-gateway-api-websocket:v1.2.1
           imagePullPolicy: Always
           args:
             - --port=8081
