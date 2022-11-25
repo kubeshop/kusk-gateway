@@ -39,7 +39,7 @@ func ParseOAuth2Options(oauth2Options *options.OAuth2, arguments *ParseAuthArgum
 	}
 
 	filter := &envoy_extensions_filters_network_http_connection_manager_v3.HttpFilter{
-		Name: "envoy.filters.http.oauth2",
+		Name: FilterNameOAuth2,
 		ConfigType: &envoy_extensions_filters_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: typedConfig,
 		},

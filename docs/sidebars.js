@@ -26,13 +26,19 @@ const sidebars = {
     },
     {
       type: "doc",
-      id: "getting-started",
-      label: "Getting Started",
-    },
-    {
-      type: "doc",
       id: "extension",
       label: "Kusk OpenAPI Extension",
+    },
+    {
+      type: "category",
+      label: "Getting Started",
+      items: [
+        "getting-started/install-kusk-cli",
+        "getting-started/launch-a-kubernetes-cluster",
+        "getting-started/install-kusk-gateway",
+        "getting-started/mock-an-api",
+        "getting-started/connecting-an-application",
+      ],
     },
     {
       type: "category",

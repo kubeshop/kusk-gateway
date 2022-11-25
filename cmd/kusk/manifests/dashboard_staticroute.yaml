@@ -6,21 +6,14 @@ metadata:
   labels:
     kusk-managed: "true"
 spec:
+  upstream:
+    service:
+      name: kusk-gateway-dashboard
+      namespace: kusk-system
+      port: 80
   fleet:
     name: kusk-gateway-private-envoy-fleet
     namespace: kusk-system
   hosts:
     - localhost
     - "*"
-  paths:
-    /:
-      get:
-        route:
-          upstream:
-            rewrite:
-              pattern: ""
-              substitution: ""
-            service:
-              name: kusk-gateway-dashboard
-              namespace: kusk-system
-              port: 80

@@ -210,23 +210,12 @@ jobs:
           curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST ${APTLY_URL}/api/repos/kusk/file/kusk?forceReplace=1
           ### Create snapshot
           curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -H 'Content-Type: application/json' --data '{"Name":"kusk-'${VERSION}'"}' ${APTLY_URL}/api/repos/kusk/snapshots
-          ### Publish repo
-          already_published=$(curl --silent -u ${APTLY_USERNAME}:${PASSWORD} ${APTLY_URL}/api/publish | jq ".[] | .Sources | .[] | .Name==\"kusk-${VERSION}\"")
-          if [[ -z $already_published || $already_published == *"false"* ]]; then
-            curl \
-              -u ${APTLY_USERNAME}:${PASSWORD} \
-              -X POST \
-              -H 'Content-Type: application/json' \
-              --data '{"Storage": "", "SourceKind": "snapshot", "Distribution": "linux", "Sources": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
-              "${APTLY_URL}/api/publish/:kusk"
-          else
-            curl \
-              -u ${APTLY_USERNAME}:${PASSWORD} \
-              -X PUT \
-              -H 'Content-Type: application/json' \
-              --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
-              "${APTLY_URL}/api/publish/:${REPO_NAME}/linux"
-          fi
+          curl \
+            -u ${APTLY_USERNAME}:${PASSWORD} \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+            "${APTLY_URL}/api/publish/:${REPO_NAME}/linux"
 
   build-and-publish-windows-installer:
     needs: release

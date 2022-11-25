@@ -1,6 +1,6 @@
 # `kusk generate`
 
-The `generate` command accepts your OpenAPI definition as input, either as a local file or a URL pointing to your file
+The `generate` command accepts your OpenAPI or Overlays definition as input, either as a local file or a URL pointing to your file
 and generates a Kusk Gateway compatible API resource that you can apply directly into your cluster. Use this command to automate 
 API deployment workflows from an existing OpenAPI definition. 
 
@@ -28,6 +28,7 @@ kusk api generate \
   --envoyfleet.name kusk-gateway-envoy-fleet \
   --envoyfleet.namespace kusk-system
 ```
+
 
 In the above example, Kusk will use the OpenAPI definition `info.title` property to generate a manifest name and 
 leave the existing `x-kusk` extension settings.
@@ -96,14 +97,15 @@ x-kusk:
 ```
 
 #### **Arguments**
-| Argument                  | Description                                                                                         | Required? |
-|:--------------------------|:----------------------------------------------------------------------------------------------------|:---------:|
-| `--name`                  | The name to give the API resource e.g. --name my-api. Otherwise, taken from OpenAPI info title field. |     ❌     |
-| `--namespace` / `-n`      | The namespace of the API resource e.g. --namespace my-namespace, -n my-namespace (default: default). |     ❌     |
-| `--in` / `-i`             | The file path or URL to OpenAPI definition to generate mappings from. e.g. --in apispec.yaml.       |     ✅     |
+| Argument                  | Description                                                                                              | Required? |
+|:--------------------------|:---------------------------------------------------------------------------------------------------------|:---------:|
+| `--name`                  | The name to give the API resource e.g. --name my-api. Otherwise, taken from OpenAPI info title field.    |     ❌     |
+| `--namespace` / `-n`      | The namespace of the API resource e.g. --namespace my-namespace, -n my-namespace (default: default).     |     ❌     |
+| `--in` / `-i`             | The file path or URL to OpenAPI definition to generate mappings from. e.g. --in apispec.yaml.            |     ✅     |
 | `--upstream.service`      | The name of upstream Kubernetes service.                                                                 |     ❌     |
 | `--upstream.namespace`    | The namespace of upstream service (default: default).                                                    |     ❌     |
 | `--upstream.port`         | The port that upstream service is exposed on (default: 80).                                              |     ❌     |
+| `--overlay`               | The file path or URL to OpenAPI definition to generate mappings from. e.g. --overlay overlay.yaml        |     ✅     |
 | `--envoyfleet.name`       | The name of envoyfleet to use for this API.                                                              |     ✅     |
 | `envoyfleet.namespace`    | The namespace of envoyfleet to use for this API. Default: kusk-system.                                   |     ❌     |
 

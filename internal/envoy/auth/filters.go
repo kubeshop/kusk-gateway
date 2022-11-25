@@ -23,6 +23,8 @@
 package auth
 
 import (
+	"time"
+
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -33,10 +35,8 @@ const (
 )
 
 func timeoutDefault() *durationpb.Duration {
-	return &durationpb.Duration{
-		Seconds: 16,
-	}
+	return durationpb.New(time.Second * 32)
 	// Intentionally kept the code below commented out to serve as future documentation.
-	// // Envoy will wait indefinitely for the first xDS config.
+	// // Envoy will wait indefinitely.
 	// return durationpb.New(time.Second * 0)
 }
