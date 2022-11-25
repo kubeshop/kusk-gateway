@@ -31,8 +31,8 @@ import (
 	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/stretchr/testify/assert"
@@ -96,10 +96,10 @@ func TestHTTPConnectionManagerIsRouterFilter(t *testing.T) {
 }
 
 func MustMarshalAny(t *testing.T, pb proto.Message) *any.Any {
-	assert := assert.New(t)
 	t.Helper()
+	assert := assert.New(t)
 
-	a, err := anypb.New(proto.MessageV2(pb))
+	a, err := anypb.New(proto.Message(pb))
 	if err != nil {
 		assert.Fail(err.Error())
 	}

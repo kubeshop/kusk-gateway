@@ -30,14 +30,15 @@ import (
 	"strconv"
 	"strings"
 
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
 var (
@@ -241,7 +242,9 @@ func validatePort(input string) error {
 		return err
 	}
 	services := corev1.ServiceList{}
-	c.List(context.Background(), &services, &client.ListOptions{})
+	if err := c.List(context.Background(), &services, &client.ListOptions{}); err != nil {
+		return err
+	}
 
 	for _, svc := range services.Items {
 		if svc.Spec.Type == "LoadBalancer" {

@@ -26,10 +26,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	error_reporter "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
-	"github.com/spf13/cobra"
 )
 
 var validateCmd = &cobra.Command{
@@ -60,5 +63,9 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 
 	validateCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "file path or URL to OpenAPI spec file to generate mappings from. e.g. --in apispec.yaml")
-	validateCmd.MarkFlagRequired("file")
+	if err := validateCmd.MarkFlagRequired("in"); err != nil {
+		error_reporter.NewErrorReporter(validateCmd, err).Report()
+		kuskui.PrintError(err.Error())
+		os.Exit(1)
+	}
 }

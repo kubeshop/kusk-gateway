@@ -326,7 +326,9 @@ func unzip(path string) (string, error) {
 				distroDir = filePath
 			}
 
-			os.MkdirAll(filePath, os.ModePerm)
+			if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+				return "", err
+			}
 			continue
 		}
 

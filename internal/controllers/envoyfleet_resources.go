@@ -38,9 +38,8 @@ import (
 )
 
 const (
-	envoyHTTPListenerPort       int32 = 8080
-	envoyAdminListenerPort      int32 = 19000
-	kuskGatewayManagerImageName       = "kusk-gateway"
+	envoyHTTPListenerPort  int32 = 8080
+	envoyAdminListenerPort int32 = 19000
 )
 
 var (

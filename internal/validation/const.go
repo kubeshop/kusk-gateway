@@ -27,7 +27,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"regexp"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
@@ -35,10 +34,6 @@ import (
 	"github.com/mitchellh/copystructure"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
-)
-
-var (
-	reAdjustSubstitutions = regexp.MustCompile(`\\(\d+)`)
 )
 
 const (

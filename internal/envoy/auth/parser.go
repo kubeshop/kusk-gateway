@@ -92,8 +92,7 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 			return err
 		}
 	} else if oauth2 != nil {
-		var err error
-		err = ParseOAuth2Options(oauth2, args)
+		err := ParseOAuth2Options(oauth2, args)
 		if err != nil {
 			return err
 		}
