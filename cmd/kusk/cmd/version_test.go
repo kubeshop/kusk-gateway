@@ -38,7 +38,7 @@ func Test_NewVersionCommand(t *testing.T) {
 	writer := bytes.NewBufferString("")
 	version := "_some-version_"
 	command := NewVersionCommand(writer, version)
-	_ = command.RunE(nil, []string{})
+	_ = command.RunE(command, []string{})
 
 	actual := writer.String()
 	assertions.Contains(actual, version)
