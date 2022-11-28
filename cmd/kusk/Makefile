@@ -19,7 +19,7 @@ LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${
 # LD_FLAGS += -w -s
 
 IMAGE_TAG ?= ${VERSION}
-MANAGER_IMG ?= kubeshop/kusk-gateway:${IMAGE_TAG}
+MANAGER_IMG ?= jasmingacic/kusk-gateway:${IMAGE_TAG}
 
 # Determine if we should use: docker or podman.
 CONTAINER_ENGINE ?= $(shell docker version >/dev/null 2>&1 && which docker)

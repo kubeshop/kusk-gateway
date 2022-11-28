@@ -123,7 +123,7 @@ spec:
           imagePullPolicy: Always
           name: kusk-gateway-api
         - name: kusk-gateway-api-websocket
-          image: kubeshop/kusk-gateway-api-websocket:v.1.1.10
+          image: jasmingacic/kusk-gateway-api-websocket:latest
           imagePullPolicy: Always
           args:
             - --port=8081
