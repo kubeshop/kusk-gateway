@@ -23,6 +23,9 @@
 package controllers
 
 import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -48,8 +51,10 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	crunch "github.com/kubeshop/kusk-gateway/pkg/crunch42"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
@@ -477,6 +482,42 @@ func UpdateConfigFromAPIOpts(
 				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 			}
 		}
+	}
+
+	if opts.Security != nil && opts.Security.Crunch42 != nil {
+		secret, err := k8sutils.GetSecret(context.Background(), kubernetesClient, opts.Security.Crunch42.Token.Name, opts.Security.Crunch42.Token.Namespace)
+		if err != nil {
+			return err
+		}
+		fmt.Println(secret)
+
+		clientSecret := string(secret.Data["client_secret"])
+
+		crunchClient, err := crunch.NewClient(clientSecret, nil)
+		if err != nil {
+			return err
+		}
+		coll, _, err := crunchClient.CreateCollection(&crunch.Collection{Name: name})
+		if err != nil {
+			return err
+		}
+
+		jsn, _ := json.Marshal(spec)
+
+		encoded := base64.StdEncoding.EncodeToString(jsn)
+
+		cApi := &crunch.API{
+			CollectionID: coll.Desc.ID,
+			Name:         name,
+			OAS:          encoded,
+			IsYaml:       true,
+		}
+
+		_, _, err = crunchClient.CreateAPI(cApi)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	// update the validation proxy in the end
