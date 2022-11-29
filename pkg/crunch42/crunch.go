@@ -12,15 +12,57 @@ import (
 	"moul.io/http2curl"
 )
 
-const baseURL = "https://platform.42crunch.com/api/v1/"
+const baseURL = "https://platform.42crunch.com/api/v1"
 
 const debug = "CRUNCH_DEBUG"
 
-type Collection struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	IsShared      bool   `json:"isShared"`
-	IsSharedWrite bool   `json:"isSharedWrite"`
+func (c *Client) GetCollection(id string) (*Item, *ErrorResponse, error) {
+
+	collection := &Item{}
+
+	path := fmt.Sprintf("%s/collections/%s", c.baseURL, id)
+	resp, err := c.DoRequest("GET", path, nil, collection)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return collection, resp, err
+}
+
+func (c *Client) ListCollections() (*Collections, *ErrorResponse, error) {
+	collections := &Collections{}
+
+	path := fmt.Sprintf("%s/collections", c.baseURL)
+	resp, err := c.DoRequest("GET", path, nil, collections)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return collections, resp, err
+}
+
+func (c *Client) CreateCollection(collection *Collection) (*Item, *ErrorResponse, error) {
+
+	toReturn := &Item{}
+	path := fmt.Sprintf("%s/collections", c.baseURL)
+	resp, err := c.DoRequest("POST", path, collection, toReturn)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return toReturn, resp, err
+}
+
+func (c *Client) CreateAPI(api *API) (*Item, *ErrorResponse, error) {
+	i := &Item{}
+	path := "https://platform.42crunch.com/api/v2/apis"
+
+	resp, err := c.DoRequest("POST", path, api, i)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return i, resp, err
 }
 
 type Client struct {
@@ -56,6 +98,12 @@ func (c *Client) DoRequest(method, path string, body, v interface{}) (*ErrorResp
 	return c.Do(req, v)
 }
 
+func (c *Client) DoFormRequestPOST(method, path string, api *API, v interface{}) (*ErrorResponse, error) {
+
+	return nil, nil
+
+}
+
 func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
 	// relative path to append to the endpoint url, no leading slash please
 	if path[0] == '/' {
@@ -81,7 +129,7 @@ func (c *Client) NewRequest(method, path string, body interface{}) (*http.Reques
 
 	req.Close = true
 
-	if _, ok := os.LookupEnv("CRUNCH_DEBUG"); ok {
+	if _, ok := os.LookupEnv(debug); ok {
 		command, _ := http2curl.GetCurlCommand(req)
 		fmt.Println(command)
 	}
@@ -110,7 +158,7 @@ func (c *Client) Do(req *http.Request, v interface{}) (*ErrorResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, ok := os.LookupEnv("CRUNCH_DEBUG"); ok {
+	if _, ok := os.LookupEnv(debug); ok {
 		fmt.Println("Response body:", string(o))
 	}
 	err = json.Unmarshal(o, v)
@@ -121,62 +169,18 @@ func (c *Client) Do(req *http.Request, v interface{}) (*ErrorResponse, error) {
 	return nil, err
 }
 
-type ErrorResponse struct {
-	StatusCode int
-	Errors     string
-}
-
-func (c *Client) GetCollection(id string) (*Item, *ErrorResponse, error) {
-
-	collection := &Item{}
-
-	path := fmt.Sprintf("%s/collections/%s", c.baseURL, id)
-	resp, err := c.DoRequest("GET", path, nil, collection)
-	if err != nil {
-		return nil, resp, err
-
-	}
-	return collection, resp, err
-}
-func (c *Client) ListCollections() (*Collections, *ErrorResponse, error) {
-	collections := &Collections{}
-
-	path := fmt.Sprintf("%s/collections", c.baseURL)
-	resp, err := c.DoRequest("GET", path, nil, collections)
-	if err != nil {
-		return nil, resp, err
-
-	}
-	return collections, resp, err
-}
-
-func (c *Client) CreateCollection(collection *Collection) (*Item, *ErrorResponse, error) {
-
-	toReturn := &Item{}
-	path := fmt.Sprintf("%s/collections", c.baseURL)
-	resp, err := c.DoRequest("POST", path, collection, toReturn)
-	if err != nil {
-		return nil, resp, err
-
-	}
-	return toReturn, resp, err
-}
-
-func (c *Client) CreateAPI(api *API) (*API, *ErrorResponse, error) {
-	path := fmt.Sprintf("%s/apis", c.baseURL)
-	resp, err := c.DoRequest("POST", path, api, api)
-	if err != nil {
-		return nil, resp, err
-
-	}
-	return api, resp, err
+type Collection struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	IsShared      bool   `json:"isShared"`
+	IsSharedWrite bool   `json:"isSharedWrite"`
 }
 
 type API struct {
-	CollectionID string    `json:"cid"`
-	Name         string    `json:"name"`
-	OAS          **os.File `json:"specfile"`
-	IsYaml       bool      `json:"yaml"`
+	CollectionID string `json:"cid"`
+	Name         string `json:"name"`
+	OAS          string `json:"specfile"`
+	IsYaml       bool   `json:"yaml"`
 }
 
 type Collections struct {
@@ -193,4 +197,9 @@ type CollectionDescription struct {
 	Source        string `json:"source"`
 	IsShared      bool   `json:"isShared"`
 	IsSharedWrite bool   `json:"isSharedWrite"`
+}
+
+type ErrorResponse struct {
+	StatusCode int
+	Errors     string
 }
