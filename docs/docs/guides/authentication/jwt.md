@@ -9,6 +9,7 @@
 | `auth.jwt.providers` |Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host. | list    | true     |
 
 Provider properties:
+
 | Name                 | Description                                                                                                                                                                                                                                                    | Type    | Required |
 | :------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |---------|----------|
 | `provider.name`      | Unique name for the provider.                                                                                                                                                                                                                                  | string  | true     |
@@ -17,6 +18,7 @@ Provider properties:
 | `provider.default`   | Whether the provider should apply to all	routes in the HTTPProxy/its includes by	default. At most one provider can be marked 	as the default. If no provider is marked as the default, individual routes must explicitly	identify the provider they require. | boolean | false    |
 | `provider.audiences` | Audiences that JWTs are allowed to have in the "aud" field.If not provided, JWT audiences are not checked.                                                                                                                                                     | list    | false    |
 | `provider.forward`   | Whether the JWT should be forwarded to the backend service after successful verification. By default, the JWT is not forwarded.                                                                                                                                | boolean | false    |
+
 
 A minimal example of the configuration for this filter is:
 
@@ -28,8 +30,8 @@ metadata:
   namespace: default
 spec:
   fleet:
-    name: default
-    namespace: default
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   spec: |
     openapi: 3.1.0
     info:
@@ -61,46 +63,12 @@ spec:
           responses: {}
 ```
 
-```yaml title="manifests.yaml"
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auth-jwt-oauth0-go-httpbin
-  namespace: default
-  labels:
-    app: auth-jwt-oauth0-go-httpbin
-spec:
-  selector:
-    matchLabels:
-      app: auth-jwt-oauth0-go-httpbin
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: auth-jwt-oauth0-go-httpbin
-    spec:
-      containers:
-        - name: auth-jwt-oauth0-go-httpbin
-          image: docker.io/mccutchen/go-httpbin:v2.4.1
-          ports:
-            - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-jwt-oauth0-go-httpbin
-  namespace: default
-  labels:
-    app: auth-jwt-oauth0-go-httpbin
-spec:
-  selector:
-    app: auth-jwt-oauth0-go-httpbin
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 8080
+1. Create a deployment.
+2. Create a service for the `auth-jwt-oauth0-go-httpbin` deployment.
 
+```sh title="deployments.yaml"
+kubectl create deployment auth-jwt-oauth0-go-httpbin --image=docker.io/mccutchen/go-httpbin:v2.4.1 --port=8080
+kubectl expose deployment auth-jwt-oauth0-go-httpbin --name=auth-jwt-oauth0-go-httpbin --port=80 --target-port=8080
 ```
 
 ## Usage
