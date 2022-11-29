@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -196,7 +195,7 @@ func (s *Server) Process(srv pb.ExternalProcessor_ProcessServer) error {
 					URL:    u,
 					Method: string(header.Get(":method")),
 					Header: header,
-					Body:   ioutil.NopCloser(bytes.NewBuffer(b.RequestBody.Body)),
+					Body:   io.NopCloser(bytes.NewBuffer(b.RequestBody.Body)),
 				}
 
 				err = s.validate(req, service, operation)

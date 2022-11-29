@@ -46,8 +46,8 @@ var (
 )
 
 const (
-	EnvoyFleetMutatingWebhookPath   string = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
-	EnvoyFleetValidatingWebhookPath        = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetMutatingWebhookPath   = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetValidatingWebhookPath = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
 )
 
 //+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=menvoyfleet.kb.io,admissionReviewVersions=v1

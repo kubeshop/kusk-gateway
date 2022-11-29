@@ -136,11 +136,10 @@ func PostProcessedDef(apiSpec openapi3.T, opt options.Options) *openapi3.T {
 		pathOptions, _, _ := getPathOptions(pathItem)
 		for method := range pathItem.Operations() {
 			if pathOptions.Disabled != nil && *pathOptions.Disabled {
-				item := &openapi3.PathItem{}
 				fOpt := opt.OperationFinalSubOptions[method+path]
 				if fOpt.Disabled != nil && !*fOpt.Disabled {
 					if pathOptions.Disabled != nil && *pathOptions.Disabled {
-						if item = parsePathItem(pathItem); len(item.Operations()) > 0 {
+						if item := parsePathItem(pathItem); len(item.Operations()) > 0 {
 							postProcessed.Paths[path] = item
 						}
 					}

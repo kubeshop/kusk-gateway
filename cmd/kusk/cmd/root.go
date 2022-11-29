@@ -35,12 +35,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/mattn/go-isatty"
+
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
 	"github.com/kubeshop/kusk-gateway/pkg/build"
-	"github.com/mattn/go-isatty"
 )
 
 var cfgFile string
@@ -60,7 +61,7 @@ var rootCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		analytics.SendAnonymousCMDInfo(nil)
+		_ = analytics.SendAnonymousCMDInfo(nil)
 
 		versionCheck(cmd)
 
@@ -80,8 +81,7 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		errors.NewErrorReporter(rootCmd, err).Report()
 		kuskui.PrintError(err.Error())
 		os.Exit(1)
@@ -91,14 +91,12 @@ func Execute() {
 const (
 	cmdGroupAnnotation = "GroupAnnotation"
 	cmdMngmCmdGroup    = "1-Management commands"
-	cmdGroupCommands   = "2-Commands"
 	cmdGroupCobra      = "other"
 
 	cmdGroupDelimiter = "-"
 )
 
 func helpMessageByGroups(cmd *cobra.Command) string {
-
 	groups := map[string][]string{}
 	for _, c := range cmd.Commands() {
 		var groupName string
@@ -122,7 +120,7 @@ func helpMessageByGroups(cmd *cobra.Command) string {
 	delete(groups, cmdGroupCobra)
 
 	groupNames := []string{}
-	for k, _ := range groups {
+	for k := range groups {
 		groupNames = append(groupNames, k)
 	}
 	sort.Strings(groupNames)

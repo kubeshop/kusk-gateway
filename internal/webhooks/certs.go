@@ -241,13 +241,13 @@ func UpdateWebhookConfiguration(ctx context.Context, clientSet *kubernetes.Clien
 
 // generateWebhooksJsonPatch returns JSON patch to update CABundle in Admission configuration webhooks
 func generateWebhooksJsonPatch(caBundle []byte, count int) []byte {
-	operations := make([]string, count, count)
+	operations := make([]string, count)
 	b64caBundle := base64.StdEncoding.EncodeToString(caBundle)
-	webhookpatch := func(number int) string {
+	webhookPatch := func(number int) string {
 		return fmt.Sprintf(`{"op": "replace", "path": "/webhooks/%d/clientConfig/caBundle", "value":"%s"}`, number, b64caBundle)
 	}
 	for i := 0; i < count; i++ {
-		operations[i] = webhookpatch(i)
+		operations[i] = webhookPatch(i)
 	}
 	patchString := fmt.Sprintf("[%s]", strings.Join(operations, ","))
 	return []byte(patchString)

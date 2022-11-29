@@ -27,7 +27,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 
 	"github.com/getkin/kin-openapi/openapi2"
@@ -112,7 +111,7 @@ func (p Parser) Parse(path string) (*openapi3.T, error) {
 // ParseFromReader allows for providing your own Reader implementation
 // to parse the API spec from
 func (p Parser) ParseFromReader(contents io.Reader) (*openapi3.T, error) {
-	spec, err := ioutil.ReadAll(contents)
+	spec, err := io.ReadAll(contents)
 	if err != nil {
 		return nil, fmt.Errorf("could not read contents of api spec: %w", err)
 	}

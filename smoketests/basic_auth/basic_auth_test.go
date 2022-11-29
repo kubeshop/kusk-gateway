@@ -44,7 +44,6 @@ const (
 	defaultNamespace = "default"
 	defaultName      = "default"
 	testName         = "auth-test"
-	testPort         = 82
 )
 
 type BasicAuthCheckSuite struct {
