@@ -69,7 +69,7 @@ func NewVersionCommand(writer io.Writer, version string) *cobra.Command {
 				}
 			}
 
-			fmt.Fprintf(writer, "%s\n\n", formattedVersion)
+			_, _ = fmt.Fprintf(writer, "%s\n\n", formattedVersion)
 
 			c, err := utils.GetK8sClient()
 			if err != nil {

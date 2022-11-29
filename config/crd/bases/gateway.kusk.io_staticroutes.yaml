@@ -79,6 +79,57 @@ spec:
                         description: OPTIONAL.
                         type: string
                     type: object
+                  jwt:
+                    description: OPTIONAL
+                    properties:
+                      providers:
+                        description: Providers to use for verifying JSON Web Tokens
+                          (JWTs) on the virtual host.
+                        items:
+                          description: JWTProvider defines how to verify JWTs on requests.
+                          properties:
+                            audiences:
+                              description: Audiences that JWTs are allowed to have
+                                in the "aud" field. If not provided, JWT audiences
+                                are not checked.
+                              items:
+                                type: string
+                              type: array
+                            default:
+                              description: Whether the provider should apply to all
+                                routes in the HTTPProxy/its includes by default. At
+                                most one provider can be marked as the default. If
+                                no provider is marked as the default, individual routes
+                                must explicitly identify the provider they require.
+                              type: boolean
+                            forwardJWT:
+                              description: Whether the JWT should be forwarded to
+                                the backend service after successful verification.
+                                By default, the JWT is not forwarded.
+                              type: boolean
+                            issuer:
+                              description: Issuer that JWTs are required to have in
+                                the "iss" field. If not provided, JWT issuers are
+                                not checked.
+                              type: string
+                            jwks:
+                              description: Remote JWKS to use for verifying JWT signatures.
+                                The URI for the JWKS.
+                              minLength: 1
+                              type: string
+                            name:
+                              description: Unique name for the provider.
+                              minLength: 1
+                              type: string
+                          required:
+                          - jwks
+                          - name
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - providers
+                    type: object
                   oauth2:
                     description: OPTIONAL
                     properties:

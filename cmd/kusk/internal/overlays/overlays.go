@@ -135,7 +135,9 @@ func applyOverlay(path string, extends string) (string, error) {
 	}
 
 	defer reader.Close()
-	io.Copy(io.Discard, reader)
+	if _, err := io.Copy(io.Discard, reader); err != nil {
+		return "", fmt.Errorf("download of %v image did not complete: %w", imageName, err)
+	}
 
 	volumes := fmt.Sprintf("-v=%s:/overlay.yaml", abs)
 	var extendVolume string

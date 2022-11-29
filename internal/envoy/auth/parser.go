@@ -57,49 +57,41 @@ type ParseAuthArguments struct {
 }
 
 func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error {
+	logger := args.Logger.WithName("auth.ParseAuthOptions")
+
 	if auth == nil {
 		return ErrorAuthIsNil
 	}
 
-	custom := auth.Custom
-	oauth2 := auth.OAuth2
-	cloudentity := auth.Cloudentity
-
-	if custom != nil && oauth2 != nil {
+	if auth.Custom != nil && auth.OAuth2 != nil {
 		return ErrorMutuallyExclusiveOptions
 	}
 
-	if custom != nil {
+	if auth.Custom != nil {
 		scheme := "custom"
 		var pathPrefix string
-		if custom.PathPrefix != nil {
-			pathPrefix = *custom.PathPrefix
+		if auth.Custom.PathPrefix != nil {
+			pathPrefix = *auth.Custom.PathPrefix
 		}
-		err := ParseAuthUpstreamOptions(pathPrefix, custom.Host, args, scheme, custom.Host.Path)
-		if err != nil {
+		if err := ParseAuthUpstreamOptions(pathPrefix, auth.Custom.Host, args, scheme, auth.Custom.Host.Path); err != nil {
 			return err
 		}
-	} else if cloudentity != nil {
+	} else if cloudEntity := auth.Cloudentity; cloudEntity != nil {
 		scheme := "cloudentity"
 		var pathPrefix string
-		if cloudentity.PathPrefix != nil {
-			pathPrefix = *custom.PathPrefix
+		if cloudEntity.PathPrefix != nil {
+			pathPrefix = *auth.Custom.PathPrefix
 		}
-		err := ParseAuthUpstreamOptions(pathPrefix, cloudentity.Host, args, scheme, custom.Host.Path)
-		if err != nil {
+		if err := ParseAuthUpstreamOptions(pathPrefix, cloudEntity.Host, args, scheme, auth.Custom.Host.Path); err != nil {
 			return err
 		}
-	} else if oauth2 != nil {
-		var err error
-		err = ParseOAuth2Options(oauth2, args)
-		if err != nil {
+	} else if auth.OAuth2 != nil {
+		if err := ParseOAuth2Options(auth.OAuth2, args); err != nil {
 			return err
 		}
 	}
 
-	args.Logger.
-		WithName("auth.ParseAuthOptions").
-		Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
+	logger.Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
 	return nil
 }

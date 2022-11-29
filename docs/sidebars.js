@@ -56,6 +56,7 @@ const sidebars = {
             "guides/authentication/custom-auth-upstream",
             "guides/authentication/oauth2",
             "guides/authentication/cloudentity",
+            "guides/authentication/jwt",
           ],
         },
         {
@@ -69,6 +70,7 @@ const sidebars = {
         "guides/timeouts",
         "guides/routing",
         "guides/rate-limit",
+        "guides/overlays",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",

@@ -295,6 +295,96 @@ The `auth` object allows 3 different auth mechanism:
 - `oauth`
 - `custom`
 - `cloudentity`
+- `jwt`
+
+#### JWT
+
+For further details, for now please see the [JWT](./guides/authentication/jwt.md) guide.
+
+###### Sample - OAuth
+
+```yaml title="api.yml"
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: auth-jwt-oauth0
+  namespace: default
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.1.0
+    info:
+      title: "auth-jwt-oauth0"
+      description: "auth-jwt-oauth0"
+      version: "0.1.0"
+    schemes:
+    - http
+    - https
+    x-kusk:
+      upstream:
+        service:
+          name: auth-jwt-oauth0-go-httpbin
+          namespace: default
+          port: 80
+      auth:
+        jwt:
+          # change to JWT auth configuration
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}
+```
+
+```yaml title="manifests.yml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-jwt-oauth0-go-httpbin
+  namespace: default
+  labels:
+    app: auth-jwt-oauth0-go-httpbin
+spec:
+  selector:
+    matchLabels:
+      app: auth-jwt-oauth0-go-httpbin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: auth-jwt-oauth0-go-httpbin
+    spec:
+      containers:
+        - name: auth-jwt-oauth0-go-httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-jwt-oauth0-go-httpbin
+  namespace: default
+  labels:
+    app: auth-jwt-oauth0-go-httpbin
+spec:
+  selector:
+    app: auth-jwt-oauth0-go-httpbin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+
+```
 
 #### Cloudentity
 
@@ -387,23 +477,23 @@ x-kusk:
   <tr>
     <td><code>auth.oauth2.redirect_uri</code></td>
     <td><b>Required.</b>The redirect URI passed to the authorization endpoint.</td>
-  </tr> 
+  </tr>
   <tr>
     <td><code>auth.oauth2.signout_path</code></td>
     <td><b>Required.</b>The path to sign a user out, clearing their credential cookies.</td>
-  </tr> 
+  </tr>
   <tr>
     <td><code>auth.oauth2.redirect_path_matcher</code></td>
     <td><b>Required.</b>After a redirecting the user back to the redirect_uri, using this new grant and the token_secret, the kusk-gateway then attempts to retrieve an access token from the token_endpoint. The kusk-gateway knows it has to do this instead of reinitiating another login because the incoming request has a path that matches the redirect_path_matcher criteria.</td>
-  </tr> 
+  </tr>
   <tr>
     <td><code>auth.oauth2.forward_bearer_token</code></td>
     <td><b>Required.</b>If the Bearer Token should be forwarded, you generally want this to be true. When the authn server validates the client and returns an authorization token back to kusk-gateway, no matter what format that token is, if forward_bearer_token is set to true kusk-gateway will send over a cookie named BearerToken to the upstream. Additionally, the Authorization header will be populated with the same value, i.e., Forward the OAuth token as a Bearer to upstream web service.</td>
-  </tr> 
+  </tr>
   <tr>
     <td><code>auth.oauth2.auth_scopes	</code></td>
     <td><b>Optional.</b>Optional list of OAuth scopes to be claimed in the authorization request. If not specified, defaults to user scope. OAuth RFC https://tools.ietf.org/html/rfc6749#section-3.3.</td>
-  </tr> 
+  </tr>
   <tr>
     <td><code>auth.oauth2.resources</code></td>
     <td><b>Optional.</b>Optional list of resource parameters for authorization request RFC: https://tools.ietf.org/html/rfc8707.</td>
@@ -429,6 +519,7 @@ x-kusk:
       auth_scopes:
         - openid
 ```
+
 ### **Exposing OpenAPI defintion**
 
 The `public_api_path` field takes a path name and will expose your OpenAPI definition at the defined path.
