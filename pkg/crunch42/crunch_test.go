@@ -11,7 +11,7 @@ var c *Client
 var collID = ""
 
 func shouldSkip() bool {
-	val, ok := os.LookupEnv("CRUNCH42")
+	val, ok := os.LookupEnv("CRUNCH42_TOKEN")
 	apiKey = val
 
 	var err error
