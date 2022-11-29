@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: kusk-devportal
     app.kubernetes.io/name: kusk-devportal
-    app.kubernetes.io/version: v0.1.0
+    app.kubernetes.io/version: v0.1.2
   name: kusk-devportal
   namespace: kusk-system
 spec:
@@ -21,14 +21,14 @@ spec:
         app.kubernetes.io/name: kusk-devportal
     spec:
       containers:
-        - image: kubeshop/kusk-devportal:v0.1.1
+        - image: kubeshop/kusk-devportal:v0.1.2
           name: kusk-devportal
           env:
             - name: KUSK_GATEWAY_API_URL
               value: "http://kusk-gateway-private-envoy-fleet.kusk-system.svc.cluster.local/api"
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: 3000
               name: http
               protocol: TCP
           resources:
@@ -47,8 +47,9 @@ metadata:
 spec:
   ports:
     - port: 80
+      name: http
       protocol: TCP
-      targetPort: 80
+      targetPort: 3000
   selector:
     app.kubernetes.io/instance: kusk-devportal
     app.kubernetes.io/name: kusk-devportal
