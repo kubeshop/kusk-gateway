@@ -27,12 +27,17 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
+	"github.com/go-logr/logr"
+	"github.com/samber/lo"
 )
 
 // isSwagger tries to decode the spec header
@@ -147,21 +152,55 @@ func parseOpenAPI3(spec []byte) (*openapi3.T, error) {
 
 // GetExampleResponse returns a single example response from the given operation
 // if one exists.
-func GetExampleResponse(mediaType *openapi3.MediaType) interface{} {
+func GetExampleResponse(mediaType *openapi3.MediaType, logger logr.Logger) interface{} {
+	logger = logger.WithName("GetExampleResponse")
+
 	if mediaType == nil {
+		logger.Info("mediaType is nill ignoring example response")
 		return nil
 	}
 
-	if mediaType.Example != nil {
-		return mediaType.Example
-	}
+	logger.Info("using `Examples`, if present", "mediaType.Examples", spew.Sprint(mediaType.Examples))
 
 	if mediaType.Examples != nil {
-		for _, example := range mediaType.Examples {
+		totalExamples := len(mediaType.Examples)
+		examplesTried := map[int]bool{}
+		rand := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+
+		// Creates an array of the map values.
+		// See: https://github.com/samber/lo#values
+		values := lo.Values[string, *openapi3.ExampleRef](mediaType.Examples)
+
+		for {
+			exampleIndex := rand.Intn(totalExamples)
+
+			triedAllExamples := true
+			// Generate range from [0, totalExamples)
+			// See: https://github.com/samber/lo#range--rangefrom--rangewithsteps
+			for index := range lo.Range(totalExamples) {
+				if _, ok := examplesTried[index]; !ok {
+					triedAllExamples = false
+				}
+			}
+
+			if triedAllExamples {
+				break
+			}
+
+			example := values[exampleIndex]
+			logger.Info("`mediaType.Examples`", "exampleIndex", exampleIndex, "example.Value", spew.Sprint(example.Value))
 			if example.Value != nil && example.Value.Value != nil {
 				return example.Value.Value
+			} else {
+				examplesTried[exampleIndex] = true
 			}
 		}
+	}
+
+	logger.Info("using if `Example`, if present", "mediaType.Example", spew.Sprint(mediaType.Example))
+
+	if mediaType.Example != nil {
+		return mediaType.Example
 	}
 
 	return nil

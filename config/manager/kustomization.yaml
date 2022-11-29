@@ -4,6 +4,7 @@ resources:
   - manager.yaml
   - service.yaml
   - configmap.yaml
+  - openapi-mock.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

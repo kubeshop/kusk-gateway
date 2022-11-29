@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kusk-openapi-mock
+  namespace: kusk-system
+  labels:
+    app.kubernetes.io/instance: kusk-openapi-mock
+    app.kubernetes.io/name: kusk-openapi-mock
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kusk-openapi-mock
+      app.kubernetes.io/name: kusk-openapi-mock
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: kusk-openapi-mock
+        app.kubernetes.io/name: kusk-openapi-mock
+    spec:
+      containers:
+        - name: kusk-openapi-mock
+          image: docker.io/muonsoft/openapi-mock:v0.3.3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kusk-openapi-mock
+  namespace: kusk-system
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: kusk-openapi-mock
+    app.kubernetes.io/name: kusk-openapi-mock

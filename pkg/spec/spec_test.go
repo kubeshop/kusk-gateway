@@ -24,12 +24,18 @@ SOFTWARE.
 package spec
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/go-logr/logr"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+
+	"github.com/go-logr/zapr"
 )
 
 const (
@@ -165,5 +171,41 @@ paths:
 			r.NotNil(testCase.result.Paths.Find("/users"))
 		})
 
+	}
+}
+
+func TestGetExampleResponse(t *testing.T) {
+	t.Parallel()
+
+	zapLog, err := zap.NewDevelopment()
+	if err != nil {
+		panic(fmt.Errorf("zap.NewDevelopment(): failed, %w", err))
+	}
+
+	type args struct {
+		mediaType *openapi3.MediaType
+		logger    logr.Logger
+	}
+	tests := []struct {
+		name string
+		args args
+		want interface{}
+	}{
+		{
+			name: "nil",
+			args: args{
+				mediaType: nil,
+				logger:    zapr.NewLogger(zapLog),
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		testCase := tt
+		t.Run(testCase.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			assert.Equal(testCase.want, GetExampleResponse(testCase.args.mediaType, testCase.args.logger))
+		})
 	}
 }

@@ -29,6 +29,8 @@ type MockServer struct {
 	ErrCh chan error
 }
 
+// AccessLogEntry ...
+// Possibly use HTTPAccessLogEntry? See: https://github.com/envoyproxy/go-control-plane/blob/main/envoy/data/accesslog/v3/accesslog.pb.go#L246.
 type AccessLogEntry struct {
 	TimeStamp  string
 	Method     string

@@ -195,12 +195,13 @@ func UpdateConfigFromAPIOpts(
 				}
 			}
 
-			// // Validate and Proxy to the upstream
+			// Validate and Proxy to the upstream
 			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
 				var (
 					upstreamHostname string
 					upstreamPort     uint32
 				)
+
 				if finalOpts.Mocking != nil && *finalOpts.Mocking.Enabled {
 					upstreamHostname = types.GenerateRouteName(routePath, method)
 					upstreamPort = 0
@@ -212,6 +213,7 @@ func UpdateConfigFromAPIOpts(
 					upstreamHostname = hostPortPair.Host
 					upstreamPort = hostPortPair.Port
 				}
+
 				// create proxied service if needed
 				serviceID := validation.GenerateServiceID(upstreamHostname, upstreamPort)
 				if _, ok := proxiedServices[serviceID]; !ok {
@@ -286,7 +288,7 @@ func UpdateConfigFromAPIOpts(
 					requireAcceptHeader := len(respRef.Value.Content) > 1
 
 					for mediaType, mediaTypeValue := range respRef.Value.Content {
-						exampleContent := parseSpec.GetExampleResponse(mediaTypeValue)
+						exampleContent := parseSpec.GetExampleResponse(mediaTypeValue, logger)
 						if exampleContent == nil {
 							continue
 						}
@@ -329,7 +331,7 @@ func UpdateConfigFromAPIOpts(
 							}
 						}
 
-						exampleContent := parseSpec.GetExampleResponse(singleResponse)
+						exampleContent := parseSpec.GetExampleResponse(singleResponse, logger)
 						if exampleContent == nil {
 							break
 						}

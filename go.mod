@@ -51,6 +51,8 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
+	github.com/samber/lo v1.36.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	k8s.io/component-helpers v0.25.0 // indirect
 	k8s.io/metrics v0.25.0 // indirect
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7 // indirect
