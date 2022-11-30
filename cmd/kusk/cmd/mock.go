@@ -115,6 +115,10 @@ $ kusk mock -i https://url.to.api.com
 			}
 
 			popFunc, err := pushDirectory(filepath.Dir(absoluteApiSpecPath))
+			if err != nil {
+				reportError(err)
+				kuskui.PrintError(err.Error())
+			}
 			defer func() {
 				if err := popFunc(); err != nil {
 					reportError(err)
@@ -455,10 +459,16 @@ func decorateLogEntry(entry mockingServer.AccessLogEntry) string {
 
 func init() {
 	rootCmd.AddCommand(mockCmd)
-	mockCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "path to openapi spec you wish to mock")
-	mockCmd.MarkFlagRequired("in")
 
-	mockCmd.Flags().Uint32VarP(&mockServerPort, "port", "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
+	const (
+		inFlagName   = "in"
+		portFlagName = "port"
+	)
+
+	mockCmd.Flags().StringVarP(&apiSpecPath, inFlagName, "i", "", "path to openapi spec you wish to mock")
+	_ = mockCmd.MarkFlagRequired(inFlagName)
+
+	mockCmd.Flags().Uint32VarP(&mockServerPort, portFlagName, "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
 }
 
 var mockDescription = `Description:
@@ -472,7 +482,7 @@ Mock Command:
 kusk mock -i path-to-openapi-file.yaml
 kusk mock -i https://url.to.api.com
 
-Schema example: 
+Schema example:
 openapi: 3.0.0
 info:
   title: todo-backend-api
@@ -516,23 +526,23 @@ paths:
                 completed: true
                 order: 13
                 url: "http://mockedURL.com"
- 
-Generated JSON Response: 
+
+Generated JSON Response:
 {
   "completed": false,
   "order": 1957493166,
   "title": "Inventore ut.",
   "url": "http://langosh.name/andreanne.parker"
 }
- 
-Generated XML Response: 
+
+Generated XML Response:
  application/xml:
   example:
    title: "Mocked XML title"
    completed: true
    order: 13
    url: "http://mockedURL.com"
- 
+
 XML Respose from Defined Examples:
  <doc>
   <completed>true</completed>
@@ -547,6 +557,6 @@ completed: true
 order: 13
 url: "http://mockedURL.com"
 
-Stop Mock Server: 
+Stop Mock Server:
 ctrt+c
 `

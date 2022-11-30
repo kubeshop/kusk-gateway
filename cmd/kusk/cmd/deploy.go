@@ -205,7 +205,7 @@ var deployCmd = &cobra.Command{
 func getParsedAndValidatedOpenAPISpec(overlaySpecPath, apiSpecPath string) (string, error) {
 	const KuskExtensionKey = "x-kusk"
 
-	parsedApiSpec := &openapi3.T{}
+	var parsedApiSpec *openapi3.T
 	var err error
 
 	if overlaySpecPath != "" {

@@ -41,6 +41,11 @@ import (
 var (
 	installOnUpgrade              bool
 	releaseName, releaseNamespace string
+	componentNameToRepo           = map[string]string{
+		kuskgatewaymanager: "kusk-gateway",
+		kuskgatewayapi:     "kuskgateway-api-server",
+		kuskDevportal:      "kusk-gateway-developer-portal",
+	}
 )
 
 var upgradeCmd = &cobra.Command{
@@ -99,7 +104,7 @@ var upgradeCmd = &cobra.Command{
 						}
 					}
 
-					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, time.Duration(5*time.Minute), "component"); err != nil {
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, 5*time.Minute, "component"); err != nil {
 						kuskui.PrintError("Failed upgrading EnvoyFleet", err.Error())
 						reportError(err)
 						return err
@@ -116,7 +121,7 @@ var upgradeCmd = &cobra.Command{
 					return err
 				}
 
-				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", 5*time.Minute, "component"); err != nil {
 					envoyFleetSpinner.Fail("Failed upgrading EnvoyFleet", err.Error())
 					reportError(err)
 					return err
@@ -131,7 +136,7 @@ var upgradeCmd = &cobra.Command{
 						reportError(err)
 						return err
 					}
-					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, time.Duration(5*time.Minute), "instance"); err != nil {
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, 5*time.Minute, "instance"); err != nil {
 						kuskApiSpinner.Fail("Failed upgrading Kusk API", err.Error())
 						reportError(err)
 						return err
@@ -152,7 +157,7 @@ var upgradeCmd = &cobra.Command{
 						reportError(err)
 						return err
 					}
-					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, time.Duration(5*time.Minute), "instance"); err != nil {
+					if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, 5*time.Minute, "instance"); err != nil {
 						kuskDashboardSpinner.Fail("Failed upgrading Kusk Dashboard", err.Error())
 						reportError(err)
 						return err
@@ -171,6 +176,28 @@ var upgradeCmd = &cobra.Command{
 					}
 					kuskDashboardSpinner.Success("Upgraded Kusk Dashboard")
 				}
+			case kuskDevportal:
+				if utils.IsUptodate(getVersions(kuskDevportal, kuskDevportal, deployment)) {
+					continue
+				}
+
+				kuskDevportalSpinner := utils.NewSpinner("Upgrading Kusk Devportal...")
+				if err := applyf(filepath.Join(dir, manifests_dir, "devportal.yaml")); err != nil {
+					kuskDevportalSpinner.Fail("Failed upgrading Kusk Devportal", err.Error())
+					reportError(err)
+					return err
+				}
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskDevportal, 5*time.Minute, "instance"); err != nil {
+					kuskDevportalSpinner.Fail("Failed upgrading Kusk Devportal", err.Error())
+					reportError(err)
+					return err
+				}
+				if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskDevportal+"-envoy-fleet", 5*time.Minute, "instance"); err != nil {
+					kuskDevportalSpinner.Fail("Failed upgrading Kusk Devportal", err.Error())
+					reportError(err)
+					return err
+				}
+				kuskDevportalSpinner.Success("Upgraded Kusk Devportal")
 			}
 		}
 
@@ -194,13 +221,8 @@ func getVersions(component, container string, deployment appsv1.Deployment) (lat
 		return "", ""
 	}
 
-	var repoName string
-	switch component {
-	case kuskgatewaymanager:
-		repoName = "kusk-gateway"
-	case kuskgatewayapi:
-		repoName = "kuskgateway-api-server"
-	default:
+	repoName, ok := componentNameToRepo[component]
+	if !ok {
 		repoName = component
 	}
 

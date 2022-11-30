@@ -53,6 +53,7 @@ var (
 	noApi            bool
 	noDashboard      bool
 	noEnvoyFleet     bool
+	noDevPortal      bool
 	analyticsEnabled = "true"
 	latest           bool
 )
@@ -63,6 +64,7 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+	installCmd.Flags().BoolVar(&noDevPortal, "no-dev-portal", false, "don't install the dev portal")
 	installCmd.Flags().BoolVar(&latest, "latest", false, "get latest Kusk version from Github")
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
@@ -86,9 +88,9 @@ var installCmd = &cobra.Command{
 
 	Will pull the latest version of kusk available
 
-	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
+	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet --no-dev-portal
 
-	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
+	Will install kusk-gateway, but not the dashboard, api, envoy-fleet, or dev portal.
 	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -241,6 +243,21 @@ var installCmd = &cobra.Command{
 			dashboardSpinner.Success("Installing Dashboard")
 		}
 
+		if !noDevPortal {
+			devPortalSpinner := utils.NewSpinner("Installing Kusk Developer Portal...")
+			if err := applyf(filepath.Join(dir, manifests_dir, "devportal.yaml")); err != nil {
+				devPortalSpinner.Fail("Failed installing Kusk Developer Portal")
+				reportError(err)
+				return err
+			}
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskDevportal, 5*time.Minute, "instance"); err != nil {
+				devPortalSpinner.Fail("Failed installing Kusk Developer Portal")
+				reportError(err)
+				return err
+			}
+			devPortalSpinner.Success("Installing Kusk Developer Portal")
+		}
+
 		fmt.Println("")
 		kuskui.PrintSuccess("Installation complete\n")
 		printPortForwardInstructions(noDashboard)
@@ -326,7 +343,9 @@ func unzip(path string) (string, error) {
 				distroDir = filePath
 			}
 
-			os.MkdirAll(filePath, os.ModePerm)
+			if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+				return "", err
+			}
 			continue
 		}
 

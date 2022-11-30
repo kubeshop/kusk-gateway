@@ -1,0 +1,22 @@
+openapi: 3.0.0
+servers:
+  - url: http://api.mydomain.com
+info:
+  title: simple-api
+  version: 0.1.0
+paths:
+  /hello:
+    get:
+      summary: Returns a Hello world to the user
+      responses:
+        '200':
+          description: A simple hello world!
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message

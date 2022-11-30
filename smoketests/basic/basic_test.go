@@ -4,20 +4,21 @@ import (
 	"context"
 	"testing"
 
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kubeshop/kusk-gateway/smoketests/common"
 )
 
 const (
 	defaultNamespace = "default"
-	defaultName      = "default"
 	testName         = "test"
 	testPort         = 82
 )

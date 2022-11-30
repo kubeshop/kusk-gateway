@@ -156,7 +156,11 @@ The flags --envoyfleet.namespace and --envoyfleet.name can be used to change the
 		<-readyCh
 
 		browserOpenCMD, browserOpenArgs := getBrowserOpenCmdAndArgs("http://localhost:8080")
-		process.Execute(browserOpenCMD, browserOpenArgs...)
+		if _, err := process.Execute(browserOpenCMD, browserOpenArgs...); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			reportError(err)
+		}
+
 		wg.Wait()
 	},
 }

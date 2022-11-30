@@ -30,20 +30,20 @@ import (
 	"strconv"
 	"strings"
 
-	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
-	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
 var (
 	gatewayName      string
 	svcType          string
-	port             string
 	defaultGateway   bool
 	gatewayNamespace string
 )
@@ -60,16 +60,6 @@ var addGatewayCMD = &cobra.Command{
 		if len(svcType) > 0 {
 			if svcType != "ClusterIP" && svcType != "LoadBalancer" {
 				return fmt.Errorf("svcType values can only be ClusterIP or LoadBalancer")
-			}
-		}
-		if len(port) > 0 {
-			pport, err := strconv.Atoi(port)
-			if err != nil {
-				return fmt.Errorf("port value must be an integer")
-			}
-
-			if pport > 65535 {
-				return fmt.Errorf("port number cannot be higher than 65535")
 			}
 		}
 
@@ -107,7 +97,6 @@ func init() {
 
 	addGatewayCMD.Flags().StringVarP(&gatewayNamespace, "namespace", "n", "", "namespace where the new gateway will be created")
 	addGatewayCMD.Flags().StringVarP(&svcType, "serviceType", "s", "", "Service type of the gateway. Supported options LoadBalancer, ClusterIP")
-	addGatewayCMD.Flags().StringVarP(&port, "port", "p", "", "port for the gateway. Supported values are from 0 to 65536")
 	addGatewayCMD.Flags().StringVarP(&gatewayName, "name", "", "", "name of the gateway")
 	addGatewayCMD.Flags().BoolVarP(&defaultGateway, "default", "", false, "Indicates if the geteway is the default gateway in the cluster")
 }
@@ -187,17 +176,9 @@ func addRun(cmd *cobra.Command, args []string) error {
 		Type: corev1.ServiceType(svcType),
 	}
 
-	if len(port) == 0 {
-		port, err = portPrompt.Run()
-		if err != nil {
-			return err
-		}
-	}
-
-	svcPort, _ := strconv.Atoi(port)
 	fleet.Spec.Service.Ports = []corev1.ServicePort{
 		{
-			Port: int32(svcPort),
+			Port: 80,
 		},
 	}
 
@@ -221,36 +202,4 @@ var serviceTypePrompt = promptui.Select{
 
 var namePrompt = promptui.Prompt{
 	Label: "Please input name for the new gateway instance",
-}
-
-var portPrompt = promptui.Prompt{
-	Label:    "Input desired service port",
-	Validate: validatePort,
-}
-
-func validatePort(input string) error {
-	pport, err := strconv.Atoi(input)
-	if err != nil {
-		return err
-	}
-	if pport > 65535 {
-		return fmt.Errorf("port number cannot be higher than 65535")
-	}
-	c, err := utils.GetK8sClient()
-	if err != nil {
-		return err
-	}
-	services := corev1.ServiceList{}
-	c.List(context.Background(), &services, &client.ListOptions{})
-
-	for _, svc := range services.Items {
-		if svc.Spec.Type == "LoadBalancer" {
-			for _, p := range svc.Spec.Ports {
-				if p.Port == int32(pport) {
-					return fmt.Errorf("port %d already taken, please choose different one", pport)
-				}
-			}
-		}
-	}
-	return nil
 }
