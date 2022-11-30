@@ -489,7 +489,6 @@ func UpdateConfigFromAPIOpts(
 		if err != nil {
 			return err
 		}
-		fmt.Println(secret)
 
 		clientSecret := string(secret.Data["client_secret"])
 
@@ -502,7 +501,10 @@ func UpdateConfigFromAPIOpts(
 			return err
 		}
 
-		jsn, _ := json.Marshal(spec)
+		jsn, err := json.Marshal(spec)
+		if err != nil {
+			return err
+		}
 
 		encoded := base64.StdEncoding.EncodeToString(jsn)
 

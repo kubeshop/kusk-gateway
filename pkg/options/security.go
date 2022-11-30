@@ -21,7 +21,7 @@
 // SOFTWARE.
 package options
 
-// RewriteRegex is used during the redirects and paths mangling
+// Security is used for running security checks on OpenAPI specs
 type Security struct {
 	Crunch42 *Crunch42 `yaml:"42crunch,omitempty" json:"42crunch,omitempty"`
 }

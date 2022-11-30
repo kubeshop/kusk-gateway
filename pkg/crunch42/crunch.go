@@ -119,12 +119,6 @@ func (c *Client) DoRequest(method, path string, body, v interface{}) (*ErrorResp
 	return c.Do(req, v)
 }
 
-func (c *Client) DoFormRequestPOST(method, path string, api *API, v interface{}) (*ErrorResponse, error) {
-
-	return nil, nil
-
-}
-
 func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
 	// relative path to append to the endpoint url, no leading slash please
 	if path[0] == '/' {
@@ -138,12 +132,22 @@ func (c *Client) NewRequest(method, path string, body interface{}) (*http.Reques
 	u := c.baseURL.ResolveReference(rel)
 	var req *http.Request
 	if body != nil {
-		bodyBytes, _ := json.Marshal(body)
-		req, _ = http.NewRequest(method, u.String(), bytes.NewBuffer(bodyBytes))
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		req, err = http.NewRequest(method, u.String(), bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			return nil, err
+		}
 		req.Header.Set("Content-Type", "application/json")
 	} else {
-		req, _ = http.NewRequest(method, u.String(), nil)
+		req, err = http.NewRequest(method, u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if err != nil {
 		return nil, err
 	}
