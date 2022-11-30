@@ -23,9 +23,8 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        - command:
-            - /manager
-          image: kusk-gateway:latest
+        - # image: kusk-gateway:latest
+          image: ko://github.com/kubeshop/kusk-gateway/cmd/manager
           imagePullPolicy: IfNotPresent
           name: manager
           envFrom:

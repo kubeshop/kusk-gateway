@@ -4,14 +4,17 @@ build:
   local:
     useBuildkit: true
     push: false
-  tagPolicy:
-    sha256: {}
-  artifacts:
-    - image: kubeshop/kusk-gateway
-      platforms: ["linux/amd64", "linux/arm64"]
-      docker:
-        dockerfile: build/manager/Dockerfile
-      context: .
+  # tagPolicy:
+  #   sha256: {}
+  # artifacts:
+  #   - image: kubeshop/kusk-gateway
+  #     # platforms: ["linux/amd64", "linux/arm64"]
+  #     # docker:
+  #     #   dockerfile: build/manager/Dockerfile
+  #     # context: .
+  #     ko:
+  #       fromImage: gcr.io/distroless/base:debug-nonroot
+  #       main: ./cmd/manager
 deploy:
   kubeContext: kgw
   kubectl:
@@ -25,8 +28,7 @@ deploy:
             command:
               - /bin/sh
               - -c
-              - echo 'sleeping for 2 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`'
-              - sleep 2
+              - echo 'sleeping for 2 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`' && sleep 2
 ---
 apiVersion: skaffold/v2beta29
 kind: Config
@@ -35,3 +37,16 @@ deploy:
   kubectl:
     manifests:
       - config/samples/gateway_v1_envoyfleet.yaml
+    hooks:
+      after:
+        - host:
+            command:
+              - /bin/sh
+              - -c
+              - echo 'sleeping for 4 seconds before applying port forward to Envoy admin port 19000' && sleep 4
+portForward:
+  - resourceType: deployment
+    resourceName: default
+    namespace: default
+    port: 19000
+    localPort: 19000

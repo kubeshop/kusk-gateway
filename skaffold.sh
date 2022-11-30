@@ -3,6 +3,8 @@ set -o errexit  # Used to exit upon error, avoiding cascading errors
 set -o pipefail # Unveils hidden failures
 set -o nounset  # Exposes unset variables
 
+export KO_DOCKER_REPO=ko.local
+
 PROFILE="${PROFILE:-kgw}"
 
 check_cluster_is_running() {
@@ -18,9 +20,13 @@ install_and_configure_skaffold() {
     sudo curl -L --output /usr/local/bin/skaffold "https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-${ARCH}"
     sudo chmod +x /usr/local/bin/skaffold
     echo
-    skaffold version
+    echo "skaffold version: $(skaffold version)"
   }
-  skaffold version || install_skaffold
+  if ! command -v skaffold >/dev/null 2>&1; then
+    install_skaffold
+  else
+    echo "skaffold version: $(skaffold version)"
+  fi
   echo
   skaffold config set --global local-cluster true
   echo
@@ -28,10 +34,14 @@ install_and_configure_skaffold() {
 }
 
 run_kustomize() {
+  eval $(minikube docker-env --profile kgw)
+  # kustomize build config/default | ko resolve -f -
+
   kustomize build config/crd >/tmp/skaffold/config-crd.yaml
   # For debugging support changing this value, otherwise we get this error:
   # `message: 'container has runAsNonRoot and image will run as root (pod: "kusk-gateway-manager-67cdb6b9d6-6scdk_kusk-system(dfd51e59-eac6-483d-8b58-52be68f824dc)",`
-  kustomize build config/default | sed -E 's/runAsNonRoot: true/runAsNonRoot: false/g' >/tmp/skaffold/config-default.yaml
+  kustomize build config/default | ko resolve -f - | sed -E 's/runAsNonRoot: true/runAsNonRoot: false/g' >/tmp/skaffold/config-default.yaml
+
 }
 
 configure_load_balancer_minikube() {
