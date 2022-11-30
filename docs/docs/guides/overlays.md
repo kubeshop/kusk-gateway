@@ -105,3 +105,12 @@ spec:
               description: A simple hello world!
           summary: Returns a Hello world to the user
 ```
+
+Overlay reference:
+
+* **target** - property is a JSONPath selector (currently proposed by OpenAPI initiative is JMESPath).
+* **extends** - defines which API spec to “extend” or which API spec should be overlayed. The value must be in form of full path either as relative or absolute path. For example `extends: overlay.yaml` won't work but `extends: ./overlay.yaml` will
+* **update** - property should be a valid YAML that will be placed in the target object
+* **remove** - property is a boolean - indicates that the selected target should be removed
+
+

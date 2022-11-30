@@ -7,6 +7,6 @@ actions:
     remove: true
   - target: "$.info"
     update:
-      title: Overlayed!
+      title: Overlayed
       description: |
         This API has been overlayed 😎
