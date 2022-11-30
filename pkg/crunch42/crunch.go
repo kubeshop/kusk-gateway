@@ -39,6 +39,7 @@ import (
 const baseURL = "https://platform.42crunch.com/api/v1"
 
 const debug = "CRUNCH_DEBUG"
+const Crunch42Token = "CRUNCH42_TOKEN"
 
 func (c *Client) GetCollection(id string) (*Item, *ErrorResponse, error) {
 

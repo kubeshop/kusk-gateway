@@ -488,7 +488,7 @@ func UpdateConfigFromAPIOpts(
 			return err
 		}
 
-		crunchClient, err := crunch.NewClient(string(secret.Data["client_secret"]), nil)
+		crunchClient, err := crunch.NewClient(string(secret.Data[crunch.Crunch42Token]), nil)
 		if err != nil {
 			return err
 		}
