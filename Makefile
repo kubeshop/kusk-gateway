@@ -162,7 +162,6 @@ docker-build: ## Build docker image with the manager.
 		--tag kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
 		--file ./build/manager/Dockerfile \
 		.
-	minikube image --profile kgw load kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1))
 
 ##@ Deployment
 

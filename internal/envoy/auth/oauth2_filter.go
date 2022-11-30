@@ -119,7 +119,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *ParseAuthArguments
 		clientSecret = string(secret.Data["client_secret"])
 	}
 
-	logger.Info("auth.NewFilterHTTPOAuth2: set client_secret", "client_secret", clientSecret)
+	_ = clientSecret
 
 	tokenSecret := &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
 		Name: "token",

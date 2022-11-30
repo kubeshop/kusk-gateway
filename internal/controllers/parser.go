@@ -24,8 +24,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -490,33 +488,12 @@ func UpdateConfigFromAPIOpts(
 			return err
 		}
 
-		clientSecret := string(secret.Data["client_secret"])
-
-		crunchClient, err := crunch.NewClient(clientSecret, nil)
-		if err != nil {
-			return err
-		}
-		coll, _, err := crunchClient.CreateCollection(&crunch.Collection{Name: name})
+		crunchClient, err := crunch.NewClient(string(secret.Data["client_secret"]), nil)
 		if err != nil {
 			return err
 		}
 
-		jsn, err := json.Marshal(spec)
-		if err != nil {
-			return err
-		}
-
-		encoded := base64.StdEncoding.EncodeToString(jsn)
-
-		cApi := &crunch.API{
-			CollectionID: coll.Desc.ID,
-			Name:         name,
-			OAS:          encoded,
-			IsYaml:       true,
-		}
-
-		_, _, err = crunchClient.CreateAPI(cApi)
-		if err != nil {
+		if err := crunchClient.ProcessKusk(name, spec); err != nil {
 			return err
 		}
 

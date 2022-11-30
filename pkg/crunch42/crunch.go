@@ -23,13 +23,16 @@ package crunch
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"moul.io/http2curl"
 )
 
@@ -62,8 +65,19 @@ func (c *Client) ListCollections() (*Collections, *ErrorResponse, error) {
 	return collections, resp, err
 }
 
-func (c *Client) CreateCollection(collection *Collection) (*Item, *ErrorResponse, error) {
+func (c *Client) ListAPIs(cid string) (*APIItems, *ErrorResponse, error) {
+	apis := &APIItems{}
 
+	path := fmt.Sprintf("https://platform.42crunch.com/api/v2/collections/%s/apis", cid)
+	resp, err := c.DoRequest("GET", path, nil, apis)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return apis, resp, err
+}
+
+func (c *Client) CreateCollection(collection *Collection) (*Item, *ErrorResponse, error) {
 	toReturn := &Item{}
 	path := fmt.Sprintf("%s/collections", c.baseURL)
 	resp, err := c.DoRequest("POST", path, collection, toReturn)
@@ -76,6 +90,7 @@ func (c *Client) CreateCollection(collection *Collection) (*Item, *ErrorResponse
 
 func (c *Client) CreateAPI(api *API) (*Item, *ErrorResponse, error) {
 	i := &Item{}
+
 	path := "https://platform.42crunch.com/api/v2/apis"
 
 	resp, err := c.DoRequest("POST", path, api, i)
@@ -84,6 +99,82 @@ func (c *Client) CreateAPI(api *API) (*Item, *ErrorResponse, error) {
 
 	}
 	return i, resp, err
+}
+
+func (c *Client) UpdateAPI(apiID string, api *API) (*Item, *ErrorResponse, error) {
+	i := &Item{}
+
+	path := fmt.Sprintf("https://platform.42crunch.com/api/v2/apis/%s", apiID)
+
+	resp, err := c.DoRequest("PUT", path, api, i)
+	if err != nil {
+		return nil, resp, err
+
+	}
+	return i, resp, err
+}
+
+func (c *Client) ProcessKusk(name string, spec *openapi3.T) error {
+	crunchCollections, _, err := c.ListCollections()
+	if err != nil {
+		return err
+	}
+
+	var cid string
+	for _, col := range crunchCollections.List {
+		if col.Desc.Name == name {
+			cid = col.Desc.ID
+			break
+		}
+	}
+
+	if len(cid) == 0 {
+		coll, _, err := c.CreateCollection(&Collection{Name: name})
+		if err != nil {
+			return err
+		}
+		cid = coll.Desc.ID
+	}
+
+	jsn, err := json.Marshal(spec)
+	if err != nil {
+		return err
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(jsn)
+
+	cApi := &API{
+		CollectionID: cid,
+		Name:         name,
+		OAS:          encoded,
+		IsYaml:       true,
+	}
+
+	apis, _, err := c.ListAPIs(cid)
+	if err != nil {
+		return err
+	}
+
+	var apiID string
+	for _, api := range apis.List {
+		if api.Name == name {
+			apiID = api.ID
+			break
+		}
+	}
+
+	if len(apiID) == 0 {
+		if _, _, err := c.CreateAPI(cApi); err != nil {
+			return err
+		}
+	} else {
+		if _, _, err = c.UpdateAPI(apiID, cApi); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
 }
 
 type Client struct {
@@ -154,15 +245,18 @@ func (c *Client) NewRequest(method, path string, body interface{}) (*http.Reques
 
 	req.Close = true
 
-	if _, ok := os.LookupEnv(debug); ok {
-		command, _ := http2curl.GetCurlCommand(req)
-		fmt.Println(command)
-	}
-	req.Header.Add("X-API-KEY", c.apiKey)
+	req.Header.Set("User-Agent", "kusk-gateway")
+	req.Header.Set("X-API-KEY", strings.TrimSpace(c.apiKey))
+
 	return req, nil
 }
 
 func (c *Client) Do(req *http.Request, v interface{}) (*ErrorResponse, error) {
+	if _, ok := os.LookupEnv(debug); ok {
+		command, _ := http2curl.GetCurlCommand(req)
+		fmt.Println("[DEBUG]", command)
+	}
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -183,9 +277,11 @@ func (c *Client) Do(req *http.Request, v interface{}) (*ErrorResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if _, ok := os.LookupEnv(debug); ok {
-		fmt.Println("Response body:", string(o))
+		fmt.Println("[DEBUG] Response body:", string(o))
 	}
+
 	err = json.Unmarshal(o, v)
 	if err != nil {
 		return nil, err
@@ -227,4 +323,23 @@ type CollectionDescription struct {
 type ErrorResponse struct {
 	StatusCode int
 	Errors     string
+}
+
+type APIItems struct {
+	Num  int `json:"num"`
+	List []struct {
+		APIItem `json:"desc"`
+	} `json:"list"`
+}
+
+type APIItem struct {
+	ID                 string `json:"id"`
+	Cid                string `json:"cid"`
+	Name               string `json:"name"`
+	TechnicalName      string `json:"technicalName"`
+	Specfile           string `json:"specfile"`
+	Yaml               bool   `json:"yaml"`
+	RevisionOasCounter int    `json:"revisionOasCounter"`
+	Lock               bool   `json:"lock"`
+	LockReason         string `json:"lockReason"`
 }
