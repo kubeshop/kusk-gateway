@@ -73,7 +73,7 @@ tail-logs: install-deps ## Tail logs of all containers across all namespaces
 
 .PHONY: tail-xds
 tail-xds: ## Tail logs of kusk-manager
-	kubectl logs --follow --namespace kusk-system services/kusk-gateway-xds-service
+	kubectl logs --follow --namespace kusk-system services/kusk-gateway-manager
 
 .PHONY: tail-envoyfleet
 tail-envoyfleet: ## Tail logs of envoy
@@ -157,6 +157,8 @@ build: generate fmt vet ## Build manager binary.
 docker-build: ## Build docker image with the manager.
 	docker build \
 		--tag ${MANAGER_IMG} \
+		--tag ttl.sh/kubeshop/kusk-gateway:latest \
+		--tag ttl.sh/kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
 		--tag kusk-gateway:latest \
 		--tag kubeshop/kusk-gateway:latest \
 		--tag kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \

@@ -73,7 +73,11 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		if auth.Custom.PathPrefix != nil {
 			pathPrefix = *auth.Custom.PathPrefix
 		}
-		if err := ParseAuthUpstreamOptions(pathPrefix, auth.Custom.Host, args, scheme, auth.Custom.Host.Path); err != nil {
+		var customHostPath *string
+		if auth.Custom != nil && auth.Custom.Host.Path != nil {
+			customHostPath = auth.Custom.Host.Path
+		}
+		if err := ParseAuthUpstreamOptions(pathPrefix, auth.Custom.Host, args, scheme, customHostPath); err != nil {
 			return err
 		}
 	} else if cloudEntity := auth.Cloudentity; cloudEntity != nil {
@@ -82,7 +86,11 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		if cloudEntity.PathPrefix != nil {
 			pathPrefix = *auth.Custom.PathPrefix
 		}
-		if err := ParseAuthUpstreamOptions(pathPrefix, cloudEntity.Host, args, scheme, auth.Custom.Host.Path); err != nil {
+		var customHostPath *string
+		if auth.Custom != nil && auth.Custom.Host.Path != nil {
+			customHostPath = auth.Custom.Host.Path
+		}
+		if err := ParseAuthUpstreamOptions(pathPrefix, cloudEntity.Host, args, scheme, customHostPath); err != nil {
 			return err
 		}
 	} else if auth.OAuth2 != nil {

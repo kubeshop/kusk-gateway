@@ -30,6 +30,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
+	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
@@ -40,12 +41,14 @@ func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, 
 	clusterName := args.GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
 	var authHeaders []*envoy_config_core_v3.HeaderValue
+
 	if scheme == options.SchemeCloudEntity {
+		authServiceHost, authServicePort := services.AuthServiceHostPort()
+
 		var (
 			// fetch auth service host and port once
-			// TODO: fetch kusk gateway auth service dynamically
-			cloudEntityHostname string = "kusk-gateway-manager-service.kusk-system.svc.cluster.local."
-			cloudEntityPort     uint32 = 19000
+			cloudEntityHostname = authServiceHost
+			cloudEntityPort     = uint32(authServicePort)
 		)
 
 		args.CloudEntityBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.RoutePath, args.CloudEntityBuilderArguments.Method)
