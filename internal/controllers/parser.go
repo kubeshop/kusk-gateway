@@ -49,6 +49,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
@@ -865,11 +866,10 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 	return rl
 }
 
-// fetch validation service host and port once
-// TODO: fetch kusk gateway validator service dynamically
-const validatorURL string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000"
-
 func mapExternalProcessorConfig(headers []*envoy_config_core_v3.HeaderValue) *extproc.ExtProcPerRoute {
+	validatorHost, validatorPort := services.ValidatorHostPort()
+	validatorURL := fmt.Sprintf("%s:%d", validatorHost, validatorPort)
+
 	proc := &extproc.ExtProcPerRoute{
 		Override: &extproc.ExtProcPerRoute_Overrides{
 			Overrides: &extproc.ExtProcOverrides{
