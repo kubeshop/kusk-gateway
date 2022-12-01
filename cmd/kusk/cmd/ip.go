@@ -72,7 +72,7 @@ var ipCmd = &cobra.Command{
 			return
 		}
 
-		envoyFleet := &kuskv1.EnvoyFleet{}
+		var envoyFleet *kuskv1.EnvoyFleet
 		if ipEnvoyFleetName != "" {
 			envoyFleet, err = getNamedEnvoyFleet(cmd.Context(), ipEnvoyFleetName, ipEnvoyFleetNamespace, k8sclient)
 		} else {
