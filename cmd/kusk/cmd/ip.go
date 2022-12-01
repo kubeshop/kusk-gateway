@@ -40,8 +40,16 @@ import (
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/utils"
 )
 
+var (
+	ipEnvoyFleetName      string
+	ipEnvoyFleetNamespace string
+)
+
 func init() {
 	rootCmd.AddCommand(ipCmd)
+
+	ipCmd.Flags().StringVarP(&ipEnvoyFleetName, "envoyfleet.name", "", "", "Envoy Fleet name")
+	ipCmd.Flags().StringVarP(&ipEnvoyFleetNamespace, "envoyfleet.namespace", "", "kusk-system", "Envoy Fleet namespace")
 }
 
 var ipCmd = &cobra.Command{
@@ -64,29 +72,14 @@ var ipCmd = &cobra.Command{
 			return
 		}
 
-		envoyFleets := &kuskv1.EnvoyFleetList{}
-
-		if err := k8sclient.List(context.TODO(), envoyFleets, &client.ListOptions{}); err != nil {
-			reportError(err)
-			kuskui.PrintError(err.Error())
-			return
-		}
-		if len(envoyFleets.Items) == 0 {
-			err := fmt.Errorf("there are no envoyfleets in your cluster")
-			reportError(err)
-			kuskui.PrintError(err.Error())
-			return
-		}
-		defaultFleet := kuskv1.EnvoyFleet{}
-		for _, f := range envoyFleets.Items {
-			if f.Spec.Default {
-				defaultFleet = f
-				break
-			}
+		envoyFleet := &kuskv1.EnvoyFleet{}
+		if ipEnvoyFleetName != "" {
+			envoyFleet, err = getNamedEnvoyFleet(cmd.Context(), ipEnvoyFleetName, ipEnvoyFleetNamespace, k8sclient)
+		} else {
+			envoyFleet, err = getDefaultEnvoyFleet(cmd.Context(), k8sclient)
 		}
 
-		if len(defaultFleet.Name) == 0 {
-			err := fmt.Errorf("there is no default envoyfleet in your cluster")
+		if err != nil {
 			reportError(err)
 			kuskui.PrintError(err.Error())
 			return
@@ -94,7 +87,7 @@ var ipCmd = &cobra.Command{
 
 		list := &corev1.ServiceList{}
 
-		labelSelector, err := labels.Parse("app.kubernetes.io/managed-by=kusk-gateway-manager,fleet=" + defaultFleet.Name + "." + defaultFleet.Namespace)
+		labelSelector, err := labels.Parse("app.kubernetes.io/managed-by=kusk-gateway-manager,fleet=" + envoyFleet.Name + "." + envoyFleet.Namespace)
 		if err != nil {
 			reportError(err)
 			kuskui.PrintError(err.Error())
@@ -129,4 +122,38 @@ var ipCmd = &cobra.Command{
 		}
 		fmt.Println(ip)
 	},
+}
+
+func getNamedEnvoyFleet(ctx context.Context, name, namespace string, k8sclient client.Client) (*kuskv1.EnvoyFleet, error) {
+	envoyFleet := &kuskv1.EnvoyFleet{}
+	if err := k8sclient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, envoyFleet); err != nil {
+		return nil, fmt.Errorf("unable to get named envoy fleet %s in the %s namespace: %w", name, namespace, err)
+	}
+	return envoyFleet, nil
+}
+
+func getDefaultEnvoyFleet(ctx context.Context, k8sclient client.Client) (*kuskv1.EnvoyFleet, error) {
+	envoyFleets := &kuskv1.EnvoyFleetList{}
+
+	if err := k8sclient.List(ctx, envoyFleets, &client.ListOptions{}); err != nil {
+		return nil, fmt.Errorf("unable to list fleets while trying to find default fleet: %w", err)
+	}
+
+	if len(envoyFleets.Items) == 0 {
+		return nil, fmt.Errorf("there are no envoyfleets in your cluster")
+	}
+
+	defaultFleet := kuskv1.EnvoyFleet{}
+	for _, f := range envoyFleets.Items {
+		if f.Spec.Default {
+			defaultFleet = f
+			break
+		}
+	}
+
+	if len(defaultFleet.Name) == 0 {
+		return nil, fmt.Errorf("there is no default envoyfleet in your cluster")
+	}
+
+	return &defaultFleet, nil
 }
