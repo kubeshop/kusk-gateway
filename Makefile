@@ -197,10 +197,6 @@ generate-deployment:
 deploy: manifests install-deps ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	kustomize build config/default | kubectl apply -f -
 
-.PHONY: deploy-debug
-deploy-debug: manifests install-deps ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
-	kustomize build config/debug | kubectl apply -f -
-
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	kustomize build config/default | kubectl delete -f -
