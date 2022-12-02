@@ -1,5 +1,8 @@
 # `42Crunch`
 
+Automatically run security and vulnerabilities scan on your OpenAPI definition. 
+
+
 
 ## 42Crunch Reference
 
