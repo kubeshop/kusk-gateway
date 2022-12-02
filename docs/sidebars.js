@@ -74,67 +74,75 @@ const sidebars = {
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",
+        "guides/security",
       ],
-    },
-    {
+      {
       type: "category",
-      label: "Reference",
+      label: "Security",
       items: [
-        {
-          type: "category",
-          label: "Kusk CLI",
-          items: [
+        "guides/security/42crunch",
+      ],
+    },
+    },
+  {
+    type: "category",
+    label: "Reference",
+    items: [
+      {
+        type: "category",
+        label: "Kusk CLI",
+        items: [
             "reference/cli/overview",
-            "reference/cli/install-cmd",
-            "reference/cli/deploy-cmd",
-            "reference/cli/mock-cmd",
-            "reference/cli/generate-cmd",
-            "reference/cli/dashboard-cmd",
+        "reference/cli/install-cmd",
+        "reference/cli/deploy-cmd",
+        "reference/cli/mock-cmd",
+        "reference/cli/generate-cmd",
+        "reference/cli/dashboard-cmd",
           ],
-        },
-        {
-          type: "category",
-          label: "Kusk Dashboard",
-          items: [
+  },
+  {
+    type: "category",
+    label: "Kusk Dashboard",
+    items: [
             "reference/dashboard/overview",
-            "reference/dashboard/deploying-apis",
-            "reference/dashboard/inspecting-apis",
+    "reference/dashboard/deploying-apis",
+    "reference/dashboard/inspecting-apis",
           ],
         },
-        {
-          type: "link",
-          label: "Kusk API playground",
-          href: "/docs/reference/kusk-api-server",
+{
+  type: "link",
+    label: "Kusk API playground",
+      href: "/docs/reference/kusk-api-server",
         },
-        {
-          type: "category",
-          label: "Kusk Kubernetes Resources",
-          items: [
-            "reference/customresources/overview",
-            "reference/customresources/api",
-            "reference/customresources/envoyfleet",
-            "reference/customresources/staticroute",
-          ],
+{
+  type: "category",
+    label: "Kusk Kubernetes Resources",
+      items: [
+        "reference/customresources/overview",
+        "reference/customresources/api",
+        "reference/customresources/envoyfleet",
+        "reference/customresources/staticroute",
+      ],
         },
       ],
     },
-    {
-      type: "category",
-      label: "Quick Links",
+{
+  type: "category",
+    label: "Quick Links",
       items: [
         "quick-links/install",
         "quick-links/upgrade",
         "quick-links/helm-install",
       ],
     },
-    {
-      type: "doc",
-      label: "Contributing",
+{
+  type: "doc",
+    label: "Contributing",
       id: "contributing",
     },
-    {
-      type: "doc",
-      id: "privacy",
+{
+  type: "doc",
+    id: "privacy",
       label: "Privacy",
     },
   ],
