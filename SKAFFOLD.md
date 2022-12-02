@@ -432,5 +432,4 @@ As can seen from above, that's controller's stackframe.
 TODO
 ----
 
-* Currently I've hardcoded a value `runAsNonRoot: false` in `config/manager/manager.yaml` to enable debugging. This isn't ideal or correct. There are better ways of doing this.
 * Multiple Platform Images: Investigate <https://github.com/GoogleContainerTools/skaffold/tree/main/examples/custom-buildx>.

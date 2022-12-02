@@ -63,6 +63,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/authz"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
+	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
@@ -251,7 +252,8 @@ func main() {
 	// Validation proxy
 	proxy := validation.NewServer(logger)
 	go func() {
-		if err := proxy.Start(":17000"); err != nil {
+		_, port := services.ValidatorHostPort()
+		if err := proxy.Start(fmt.Sprintf(":%d", port)); err != nil {
 			setupLog.Error(err, "Unable to start validation proxy")
 			os.Exit(1)
 		}
@@ -260,8 +262,9 @@ func main() {
 	// ext authz server
 	authServer := authz.NewServer(logger)
 	go func() {
-		if err := authServer.ListenAndServe(":19000"); err != nil {
-			setupLog.Error(err, "Unable to start validation proxy")
+		_, port := services.AuthServiceHostPort()
+		if err := authServer.ListenAndServe(fmt.Sprintf(":%d", port)); err != nil {
+			setupLog.Error(err, "Unable to start auth service proxy")
 			os.Exit(1)
 		}
 	}()
