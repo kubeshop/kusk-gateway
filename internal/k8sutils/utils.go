@@ -29,6 +29,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -86,4 +87,13 @@ func GetDeploymentsByLabels(ctx context.Context, client clientPkg.Client, labels
 	}
 
 	return deployList.Items, nil
+}
+
+func GetSecret(ctx context.Context, client clientPkg.Client, name, namespace string) (*v1.Secret, error) {
+	sec := &v1.Secret{}
+	if err := client.Get(ctx, clientPkg.ObjectKey{Name: name, Namespace: namespace}, sec); err != nil {
+		return nil, err
+	}
+
+	return sec, nil
 }

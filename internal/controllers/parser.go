@@ -23,6 +23,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -48,9 +49,11 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	crunch "github.com/kubeshop/kusk-gateway/pkg/crunch42"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
@@ -478,6 +481,23 @@ func UpdateConfigFromAPIOpts(
 				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 			}
 		}
+	}
+
+	if opts.Security != nil && opts.Security.Crunch42 != nil {
+		secret, err := k8sutils.GetSecret(context.Background(), kubernetesClient, opts.Security.Crunch42.Token.Name, opts.Security.Crunch42.Token.Namespace)
+		if err != nil {
+			return err
+		}
+
+		crunchClient, err := crunch.NewClient(string(secret.Data[crunch.Crunch42Token]), nil)
+		if err != nil {
+			return err
+		}
+
+		if err := crunchClient.ProcessKusk(name, spec); err != nil {
+			return err
+		}
+
 	}
 
 	// update the validation proxy in the end

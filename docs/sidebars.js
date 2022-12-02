@@ -74,7 +74,15 @@ const sidebars = {
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",
+        {
+          type: "category",
+          label: "Security",
+          items: [
+            "guides/security/42crunch",
+          ],
+        },
       ],
+
     },
     {
       type: "category",
