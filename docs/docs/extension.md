@@ -290,7 +290,7 @@ x-kusk:
 
 ### **Authentication**
 
-The `auth` object allows 3 different auth mechanism:
+The `auth` object allows 4 different auth mechanism:
 
 - `oauth`
 - `custom`
@@ -301,89 +301,35 @@ The `auth` object allows 3 different auth mechanism:
 
 For further details, for now please see the [JWT](./guides/authentication/jwt.md) guide.
 
-###### Sample - OAuth
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>auth.jwt.issuer</code></td>
+    <td><b>Required.</b> Defines the issuer of your JWT token.  </td>
+  </tr>
+  <tr>
+    <td><code>auth.jwt.audiences</code></td>
+    <td><b>Optional.</b> Defines the audiences/identifier of your JWT token. </td>
+  </tr>
+  <tr>
+    <td><code>auth.jwt.jwks</code></td>
+    <td><b>Required.</b> Defines the JWKS of your JWT provider.  </td>
+  </tr>
+</table>
 
-```yaml title="api.yml"
-apiVersion: gateway.kusk.io/v1alpha1
-kind: API
-metadata:
-  name: auth-jwt-oauth0
-  namespace: default
-spec:
-  fleet:
-    name: default
-    namespace: default
-  spec: |
-    openapi: 3.1.0
-    info:
-      title: "auth-jwt-oauth0"
-      description: "auth-jwt-oauth0"
-      version: "0.1.0"
-    schemes:
-    - http
-    - https
-    x-kusk:
-      upstream:
-        service:
-          name: auth-jwt-oauth0-go-httpbin
-          namespace: default
-          port: 80
-      auth:
-        jwt:
-          # change to JWT auth configuration
-    paths:
-      "/":
-        get:
-          description: Returns GET data.
-          operationId: "/get"
-          responses: {}
-      "/uuid":
-        get:
-          description: Returns UUID4.
-          operationId: "/uuid"
-          responses: {}
-```
+**Sample:**
 
-```yaml title="manifests.yml"
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auth-jwt-oauth0-go-httpbin
-  namespace: default
-  labels:
-    app: auth-jwt-oauth0-go-httpbin
-spec:
-  selector:
-    matchLabels:
-      app: auth-jwt-oauth0-go-httpbin
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: auth-jwt-oauth0-go-httpbin
-    spec:
-      containers:
-        - name: auth-jwt-oauth0-go-httpbin
-          image: docker.io/mccutchen/go-httpbin:v2.4.1
-          ports:
-            - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: auth-jwt-oauth0-go-httpbin
-  namespace: default
-  labels:
-    app: auth-jwt-oauth0-go-httpbin
-spec:
-  selector:
-    app: auth-jwt-oauth0-go-httpbin
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 8080
-
+```yaml title="openapi.yaml"
+x-kusk:
+  auth:
+    jwt:
+      issuer: https://jwtissuer.com
+      audiences:
+       - http://example-audience 
+      jwks: https://jwtdomain.com/.well-known/jwks.json
 ```
 
 #### Cloudentity
