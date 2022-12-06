@@ -199,7 +199,7 @@ func UpdateConfigFromAPIOpts(
 				}
 			}
 
-			// // Validate and Proxy to the upstream
+			// Validate and Proxy to the upstream
 			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
 				var (
 					upstreamHostname string
