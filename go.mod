@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v3 v3.1.1
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/envoyproxy/go-control-plane v0.10.3
-	github.com/getkin/kin-openapi v0.106.0
+	github.com/getkin/kin-openapi v0.110.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/segmentio/analytics-go v3.1.0+incompatible
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.8.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 	k8s.io/api v0.25.2

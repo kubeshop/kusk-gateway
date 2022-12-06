@@ -41,7 +41,7 @@ type AccessLogEntry struct {
 func New(client *client.Client, configFile, apiToMock string, port uint32) *MockServer {
 	return &MockServer{
 		client:     client,
-		image:      "muonsoft/openapi-mock:v0.3.3",
+		image:      "docker.io/muonsoft/openapi-mock:0.3.8",
 		configFile: configFile,
 		apiToMock:  apiToMock,
 		port:       port,
