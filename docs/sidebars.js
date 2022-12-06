@@ -71,6 +71,7 @@ const sidebars = {
         "guides/routing",
         "guides/rate-limit",
         "guides/overlays",
+        "guides/web-applications",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",
