@@ -156,6 +156,35 @@ func GetExampleResponse(mediaType *openapi3.MediaType) interface{} {
 		return mediaType.Example
 	}
 
+	// https://github.com/kubeshop/kusk-gateway/issues/298 and https://github.com/kubeshop/kusk-gateway/issues/324
+	//
+	// Certain examples, like the one below, parses this structure
+	//
+	// application/json:
+	// 	schema:
+	// 		type: object
+	// 		properties:
+	// 			order:
+	// 				type: integer
+	// 				format: int32
+	// 			completed:
+	// 				type: boolean
+	// 		required:
+	// 			- order
+	// 			- completed
+	// 		example:
+	// 			order: 13
+	// 			completed: true
+	//
+	// With the `example` in the `mediaType.Schema.Value.Example` field.
+	if mediaType.Schema != nil {
+		if mediaType.Schema.Value != nil {
+			if mediaType.Schema.Value.Example != nil {
+				return mediaType.Schema.Value.Example
+			}
+		}
+	}
+
 	if mediaType.Examples != nil {
 		for _, example := range mediaType.Examples {
 			if example.Value != nil && example.Value.Value != nil {

@@ -82,26 +82,26 @@ tail-envoyfleet: ## Tail logs of envoy
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
 	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
-	sleep 4
-	curl -s -X POST "http://localhost:19000/logging?backtrace=trace"
-	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace"
-	curl -s -X POST "http://localhost:19000/logging?assert=trace"
-	curl -s -X POST "http://localhost:19000/logging?misc=trace"
-	curl -s -X POST "http://localhost:19000/logging?secret=trace"
-	curl -s -X POST "http://localhost:19000/logging?filter=trace"
-	curl -s -X POST "http://localhost:19000/logging?cache_filter=trace"
-	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace"
-	curl -s -X POST "http://localhost:19000/logging?jwt=trace"
-	curl -s -X POST "http://localhost:19000/logging?oauth2=trace"
-	curl -s -X POST "http://localhost:19000/logging?connection=trace"
-	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
-	curl -s -X POST "http://localhost:19000/logging?matcher=trace"
-	curl -s -X POST "http://localhost:19000/logging?router=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?grpc=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http2=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?upstream=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?admin=trace"
+	sleep 2
+	curl -s -X POST "http://localhost:19000/logging?backtrace=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?assert=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?misc=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?secret=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?filter=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?cache_filter=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?jwt=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?oauth2=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?connection=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?matcher=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?router=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?grpc=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?http=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?http2=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?upstream=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?admin=trace" >/dev/null 2>&1
 	@# bash -c "trap 'pkill -F /tmp/kube-port-forward-logging.pid' SIGINT SIGTERM ERR EXIT"
 	@echo
 	@echo "How to stop port forward to the admin port (19000):"
@@ -165,7 +165,7 @@ docker-build: ## Build docker image with the manager.
 		--file ./build/manager/Dockerfile \
 		.
 	minikube image --profile kgw load kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1))
-	
+
 ##@ Deployment
 
 ifndef ignore-not-found
