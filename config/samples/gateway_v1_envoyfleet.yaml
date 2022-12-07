@@ -1,7 +1,8 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: EnvoyFleet
 metadata:
-  name: default
+  name: kusk-gateway-envoy-fleet
+  namespace: kusk-system
 spec:
   image: "docker.io/envoyproxy/envoy:v1.23.1"
   default: true
