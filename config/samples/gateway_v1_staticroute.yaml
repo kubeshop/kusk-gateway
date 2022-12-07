@@ -4,15 +4,11 @@ metadata:
   name: staticroute-sample
 spec:
   hosts: [ "*" ]
-  paths:
-    /: 
-       get:
-        route:
-          upstream:
-            host:
-              hostname: httpbin
-              port: 8080
-    /static: 
-       get:
-         redirect:
-           port_redirect: 81
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
+  upstream:
+    service:
+      name: httpbin
+      namespace: default
+      port: 8080
