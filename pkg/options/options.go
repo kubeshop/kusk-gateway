@@ -97,6 +97,7 @@ func (o Options) Validate() error {
 		if totalWeight < 100 || totalWeight > 100 {
 			return fmt.Errorf("sum of upstream weights must be equal to 100. Current total weight of clusters is %d ", totalWeight)
 		}
+		return nil
 	}
 
 	if o.Redirect != nil {
