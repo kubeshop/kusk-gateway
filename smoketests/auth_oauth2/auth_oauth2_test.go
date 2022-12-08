@@ -45,8 +45,8 @@ import (
 
 const (
 	testName         = "test-auth-oauth2-oauth0-authorization-code-grant"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	defaultName      = "kusk-gateway-envoy-fleet"
+	defaultNamespace = "kusk-system"
 )
 
 type AuthOAuth2TestSuite struct {
@@ -69,7 +69,7 @@ func (t *AuthOAuth2TestSuite) SetupTest() {
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = "default"
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 

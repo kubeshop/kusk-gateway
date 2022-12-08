@@ -20,57 +20,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package auth_jwt
+package weighted_cluster
 
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
+	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	corev1 "k8s.io/api/core/v1"
+
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
+
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
 )
 
 const (
-	testName         = "test-auth-jwt-oauth0"
+	testName         = "test-traffic-splitting-api-1"
 	defaultName      = "kusk-gateway-envoy-fleet"
 	defaultNamespace = "kusk-system"
 )
 
-const (
-	HeaderAuthorization = "Authorization"
-)
-
-type AuthJWTTestSuite struct {
+type WeightedClusterTestSuite struct {
 	common.KuskTestSuite
 	api *kuskv1.API
 }
 
-func TestAuthJWTTestSuite(t *testing.T) {
-	testSuite := AuthJWTTestSuite{}
+func TestWeightedClusterTestSuite(t *testing.T) {
+	testSuite := WeightedClusterTestSuite{}
 	suite.Run(t, &testSuite)
 }
 
-func (t *AuthJWTTestSuite) TearDownSuite() {
+func (t *WeightedClusterTestSuite) TearDownSuite() {
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
-func (t *AuthJWTTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../../examples/auth/jwt/oauth0/api.yaml")
+func (t *WeightedClusterTestSuite) SetupTest() {
+	rawApi := common.ReadFile("../samples/weighted/weighted-api.yaml")
+
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = "default"
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 
@@ -84,38 +82,54 @@ func (t *AuthJWTTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 5 * time.Second
+	duration := 4 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
 	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
 
-func (t *AuthJWTTestSuite) Test_Auth_JWT_Invalid() {
-	// Calling a protected route without a valid bearer token should result in an error.
-	const (
-		expected = "Jwt is not in the form of Header.Payload.Signature with two dots and 3 sections"
-	)
-
+func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
 	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
 	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
 
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	request.Header.Add(HeaderAuthorization, "Bearer <invalid_token>")
-	t.NoError(err)
+	// Once the servicesHitCounts becomes 1 for all the services below, we break from the for loop and terminate the test.
+	servicesHitCounts := map[string]int{
+		"traffic-splitting-httpbin-2.default.svc.cluster.local.-80": 0,
+		"traffic-splitting-httpbin-1.default.svc.cluster.local.-80": 0,
+	}
 
-	client := makeHTTPClient()
-	response, err := client.Do(request)
-	t.NoError(err)
-	t.Equal(http.StatusUnauthorized, response.StatusCode)
+	for {
+		request, err := http.NewRequest(http.MethodGet, url, nil)
+		t.NoError(err)
 
-	responseBody, err := io.ReadAll(response.Body)
-	t.NoError(err)
-	actual := string(responseBody)
+		client := &http.Client{}
+		response, err := client.Do(request)
+		t.NoError(err)
+		t.Equal(http.StatusOK, response.StatusCode)
 
-	defer func() {
-		t.NoError(response.Body.Close())
-	}()
+		defer func() {
+			t.NoError(response.Body.Close())
+		}()
 
-	t.Equal(expected, actual)
+		actual := response.Header.Get("x-kusk-weighted-cluster")
+		t.T().Logf("`x-kusk-weighted-cluster`=%v", actual)
+
+		t.NotEqual("", actual)
+
+		// increment the count
+		servicesHitCounts[actual]++
+
+		allServicesHit := true
+		for _, count := range servicesHitCounts {
+			if count <= 0 {
+				allServicesHit = false
+			}
+		}
+		if allServicesHit {
+			break
+		}
+
+		time.Sleep(time.Second * 2)
+	}
 }
 
 func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
@@ -131,9 +145,4 @@ func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 	)
 
 	return envoyFleetSvc
-}
-
-func makeHTTPClient() *http.Client {
-	client := &http.Client{}
-	return client
 }

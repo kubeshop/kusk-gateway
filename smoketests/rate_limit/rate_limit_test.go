@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
-	defaultName      = "default"
-	testName         = "auth-test"
+	defaultName      = "kusk-gateway-envoy-fleet"
+	defaultNamespace = "kusk-system"
+	testName         = "test-rate-limit"
 )
 
 type RateLimitTestSuite struct {

@@ -21,11 +21,11 @@ spec:
       auth:
         custom:
           host:
-            hostname: ext-authz-http-basic-auth
+            hostname: ext-authz-http-basic-auth.default.svc.cluster.local.
             port: 80
       upstream:
         service:
-          name: ext-authz-httpbin
+          name: ext-authz-http-basic-auth-httpbin
           namespace: default
           port: 80
     paths:

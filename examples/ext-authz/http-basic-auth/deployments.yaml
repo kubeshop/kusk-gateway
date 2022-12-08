@@ -54,10 +54,10 @@ spec:
         app: ext-authz-httpbin
     spec:
       containers:
-        - image: docker.io/kennethreitz/httpbin
+        - image: docker.io/mccutchen/go-httpbin:v2.4.1
           name: httpbin
           ports:
-            - containerPort: 80
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -69,7 +69,6 @@ metadata:
 spec:
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080
   selector:
     app: ext-authz-httpbin
----

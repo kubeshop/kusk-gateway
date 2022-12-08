@@ -42,8 +42,8 @@ import (
 
 const (
 	testName         = "test-openapi-path-with-auth"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	defaultName      = "kusk-gateway-envoy-fleet"
+	defaultNamespace = "kusk-system"
 )
 
 type OpenAPIPathTestSuite struct {
@@ -57,7 +57,7 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = "default"
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 
