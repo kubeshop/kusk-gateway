@@ -33,7 +33,6 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -378,7 +377,7 @@ func UpdateConfigFromAPIOpts(
 						rewriteOpts = &finalOpts.Upstream.Rewrite
 					}
 
-					routeRoute, err := generateRoute(
+					routeRoute, err := routes.NewRoute(
 						clusterName,
 						corsPolicy,
 						rewriteOpts,
@@ -702,7 +701,7 @@ func UpdateConfigFromOpts(
 				if methodOpts.Upstream.Rewrite.Pattern != "" {
 					rewriteOpts = &methodOpts.Upstream.Rewrite
 				}
-				routeRoute, err := generateRoute(
+				routeRoute, err := routes.NewRoute(
 					clusterName,
 					corsPolicy,
 					rewriteOpts,
@@ -815,61 +814,6 @@ func generateRoutePath(prefix, path string) string {
 
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
-}
-
-func generateRoute(clusterName string, corsPolicy *route.CorsPolicy, rewriteRegex *options.RewriteRegex, QoS *options.QoSOptions, websocket *bool) (*route.Route_Route, error) {
-
-	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-	if rewriteRegex != nil {
-		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
-	}
-
-	var (
-		requestTimeout, requestIdleTimeout int64  = 0, 0
-		retries                            uint32 = 0
-	)
-	if QoS != nil {
-		retries = QoS.Retries
-		requestTimeout = int64(QoS.RequestTimeout)
-		requestIdleTimeout = int64(QoS.IdleTimeout)
-	}
-
-	routeRoute := &route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: clusterName,
-			},
-		},
-	}
-
-	if corsPolicy != nil {
-		routeRoute.Route.Cors = corsPolicy
-	}
-	if rewritePathRegex != nil {
-		routeRoute.Route.RegexRewrite = rewritePathRegex
-	}
-
-	if requestTimeout != 0 {
-		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: requestTimeout}
-	}
-	if requestIdleTimeout != 0 {
-		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: requestIdleTimeout}
-	}
-
-	if retries != 0 {
-		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
-			RetryOn:    "5xx",
-			NumRetries: &wrapperspb.UInt32Value{Value: retries},
-		}
-	}
-	if websocket != nil && *websocket {
-		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
-	}
-	if err := routeRoute.Route.ValidateAll(); err != nil {
-		return nil, fmt.Errorf("incorrect Route Action: %w", err)
-	}
-
-	return routeRoute, nil
 }
 
 func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratelimit.LocalRateLimit {
