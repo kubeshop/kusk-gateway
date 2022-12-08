@@ -51,6 +51,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/routes"
 	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/internal/traffic"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
@@ -402,7 +403,7 @@ func UpdateConfigFromAPIOpts(
 						rewriteOpts = &finalOpts.Upstream.Rewrite
 					}
 
-					routeRoute, err := generateRouteWithoutCluster(corsPolicy, rewriteOpts, finalOpts.QoS, finalOpts.Websocket)
+					routeRoute, err := routes.NewRouteWithoutCluster(corsPolicy, rewriteOpts, finalOpts.QoS, finalOpts.Websocket)
 					if err != nil {
 						return err
 					}
@@ -867,56 +868,6 @@ func generateRoute(clusterName string, corsPolicy *route.CorsPolicy, rewriteRege
 	if err := routeRoute.Route.ValidateAll(); err != nil {
 		return nil, fmt.Errorf("incorrect Route Action: %w", err)
 	}
-
-	return routeRoute, nil
-}
-
-func generateRouteWithoutCluster(corsPolicy *route.CorsPolicy, rewriteRegex *options.RewriteRegex, QoS *options.QoSOptions, websocket *bool) (*route.Route_Route, error) {
-	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-	if rewriteRegex != nil {
-		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
-	}
-
-	var (
-		requestTimeout, requestIdleTimeout int64  = 0, 0
-		retries                            uint32 = 0
-	)
-	if QoS != nil {
-		retries = QoS.Retries
-		requestTimeout = int64(QoS.RequestTimeout)
-		requestIdleTimeout = int64(QoS.IdleTimeout)
-	}
-
-	routeRoute := &route.Route_Route{
-		Route: &route.RouteAction{},
-	}
-
-	if corsPolicy != nil {
-		routeRoute.Route.Cors = corsPolicy
-	}
-	if rewritePathRegex != nil {
-		routeRoute.Route.RegexRewrite = rewritePathRegex
-	}
-
-	if requestTimeout != 0 {
-		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: requestTimeout}
-	}
-	if requestIdleTimeout != 0 {
-		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: requestIdleTimeout}
-	}
-
-	if retries != 0 {
-		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
-			RetryOn:    "5xx",
-			NumRetries: &wrapperspb.UInt32Value{Value: retries},
-		}
-	}
-	if websocket != nil && *websocket {
-		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
-	}
-	// if err := routeRoute.Route.ValidateAll(); err != nil {
-	// 	return nil, fmt.Errorf("incorrect Route Action: %w", err)
-	// }
 
 	return routeRoute, nil
 }

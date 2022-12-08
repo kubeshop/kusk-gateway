@@ -30,6 +30,10 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+const (
+	HeaderXKuskWeightedCluster = "x-kusk-weighted-cluster"
+)
+
 func AddWeightedClusterToRoute(logger logr.Logger, routeRoute *envoy_config_route_v3.Route_Route, clusterName string, weight int) *envoy_config_route_v3.WeightedCluster {
 	weightedClusters := routeRoute.Route.GetWeightedClusters()
 	if weightedClusters == nil {
@@ -55,7 +59,7 @@ func NewWeightedCluster(clusterName string, weight uint32) *envoy_config_route_v
 		ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
 			{
 				Header: &envoy_config_core_v3.HeaderValue{
-					Key:   "x-kusk-weighted-cluster",
+					Key:   HeaderXKuskWeightedCluster,
 					Value: clusterName,
 				},
 			},
