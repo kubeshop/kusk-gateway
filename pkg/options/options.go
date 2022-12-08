@@ -80,9 +80,22 @@ func (o Options) Validate() error {
 	}
 
 	if o.Upstreams != nil {
+		totalWeight := 0
 		for _, upstream := range o.Upstreams {
 			err := upstream.Validate()
-			return err
+			if err != nil {
+				return err
+
+			}
+
+			if upstream.Service != nil {
+				totalWeight = totalWeight + upstream.Service.Weight
+			} else if upstream.Host != nil {
+				totalWeight = totalWeight + upstream.Host.Weight
+			}
+		}
+		if totalWeight < 100 || totalWeight > 100 {
+			return fmt.Errorf("sum of upstream weights must be equal to 100. Current total weight of clusters is %d ", totalWeight)
 		}
 	}
 
