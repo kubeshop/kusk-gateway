@@ -53,6 +53,11 @@ func (o *Options) FillDefaults() {
 	if o.Upstream != nil {
 		o.Upstream.FillDefaults()
 	}
+	if o.Upstreams != nil {
+		for _, upstream := range o.Upstreams {
+			upstream.FillDefaults()
+		}
+	}
 }
 
 func (o Options) Validate() error {
@@ -72,6 +77,13 @@ func (o Options) Validate() error {
 	if o.Upstream != nil {
 		err := o.Upstream.Validate()
 		return err
+	}
+
+	if o.Upstreams != nil {
+		for _, upstream := range o.Upstreams {
+			err := upstream.Validate()
+			return err
+		}
 	}
 
 	if o.Redirect != nil {
@@ -108,6 +120,14 @@ func (o Options) Validate() error {
 			continue
 		}
 
+		if op.Upstreams != nil {
+			for _, upstream := range op.Upstreams {
+				if err := upstream.Validate(); err != nil {
+					return err
+				}
+				continue
+			}
+		}
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
 		// global upstream service or mocking config, so return an error
 		return fmt.Errorf("no upstream or mocking configuration found for path %s", pathAndMethod)
@@ -121,6 +141,8 @@ type SubOptions struct {
 	Disabled *bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
 	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+	// Upstreams is collection of upstream options with additional properties for traffic splitting
+	Upstreams []UpstreamOptions `yaml:"upstreams,omitempty" json:"upstreams,omitempty"`
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
@@ -148,8 +170,13 @@ func (o SubOptions) Validate() error {
 		}
 	}
 
+	if o.Upstream != nil && o.Upstreams != nil {
+		return fmt.Errorf("either Upstream or Upstreams can be specified")
+	}
+
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),
+		v.Field(&o.Upstreams),
 		v.Field(&o.Redirect),
 		v.Field(&o.Path),
 		v.Field(&o.QoS),
@@ -167,6 +194,9 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.Upstream == nil && o.Redirect == nil {
 		if in.Upstream != nil {
 			o.Upstream = in.Upstream
+		}
+		if in.Upstreams != nil {
+			o.Upstreams = in.Upstreams
 		}
 		if in.Redirect != nil {
 			o.Redirect = in.Redirect
