@@ -1,10 +1,16 @@
 # OAuth2 via OIDC
 
-OAuth2 ensures that your application (upstream) doesn't get requests which are not authenticated and authorized. It effectively helps to protect your API.
+OAuth2 ensures that your web application (upstream) doesn't get requests which are not authenticated and authorized. It effectively helps to protect your web application.
+
+:::note
+
+This is for web applications authentication. If you want to secure your APIs you can use [JWT authentication](./jwt.md)
+
+:::
 
 Kusk implements the OpenID Connect (OIDC) layer which ensures you can choose any OAuth2 provider and Kusk will support it as long as the OAuth2 provider also supports OIDC.
 
-Kusk makes it easy to configure OAuth2, using the `auth` option in the `x-kusk` extension.
+Kusk makes it easy to configure OAuth2, using the `auth` option in you `StaticRoute`.
 
 :::caution
 
@@ -32,19 +38,38 @@ We'll go through step-by-step of configuring OAuth2. In this example we'll be us
 }
 ```
 
-### 2. Deploy a protected API to Kusk
+### 2. Deploy your web application to Kusk
 
-The example below ensures the whole API is protected via OAuth2, and that the upstream `auth-oauth2-oauth0-authorization-code-grant-go-httpbin` can be only accessed when authenticated and authorized.
+Deploy your web application to Kubernetes or use our example application:
 
-```yaml title="api.yaml"
-openapi: 3.0.0
-info:
-  title: oauth2-example
-  description: oauth2-example
-  version: '0.1.0'
-x-kusk:
-  mocking:
-    enabled: true
+```sh 
+kubectl create deployment oauth-app --image=kubeshop/kusk-oauth-app-example:v1.0.0
+kubectl expose deployment oauth-app --name oauth-app-svc --port=3000
+```
+
+```sh title="Expected output"
+deployment.apps/oauth-app created
+service/oauth-app-svc exposed
+```
+
+### 3. Expose the web-application with OAuth using Kusk  
+
+The example below ensures the whole API is protected via OAuth2, and that the upstream `oauth-app-svc` can be only accessed when authenticated and authorized.
+
+```yaml title="static-route.yaml"
+apiVersion: gateway.kusk.io/v1alpha1
+kind: StaticRoute
+metadata:
+  name: oauth-app-sample
+spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
+  upstream:
+    service:
+      name: oauth-app-svc
+      namespace: default
+      port: 3000
   auth:
     oauth2:
       token_endpoint: https://**YOUR_DOMAIN**.eu.auth0.com/oauth/token
@@ -58,15 +83,6 @@ x-kusk:
       forward_bearer_token: true
       auth_scopes:
         - openid
-paths:
-  "/":
-    get:
-      description: Returns GET data.
-      responses:
-        200:
-          content: 
-            text/plain:
-              example: Hello from a mocked response
 ```
 
 You are required to change:
@@ -77,10 +93,10 @@ You are required to change:
 4. `credentials.client_secret`.
 5. `auth_scopes`: Strictly speaking this is not required but we strongly suggest entering `openid` for testing purposes
 
-After that, deploy the API by running: 
+After that, expose the web-application with Kusk by running: 
 
 ```
-kusk deploy -i api.yaml
+kubectl apply -f static-route.yaml
 ```
 
 ### 4. Update EnvoyFleet ConfigMap
@@ -141,6 +157,9 @@ kusk ip
 100.12.34.56
 ```
 
+Now visit the address in the browser and you'll see that you web application is now using Auth0's OAuth page:
+
+![auth0 oauth](./img/CleanShot%202022-12-06%20at%2020.50.24.png)
 --- 
 
 ## Upstream Issues
@@ -150,4 +169,4 @@ Certain OAuth2 features are blocked/constrained by upstream issues. Please see:
 * [Segmentation Fault after `assert failure: false. Details: attempted to add shared target SdsApi <NAME_OF_SECRET> to initialized init manager Server](https://github.com/envoyproxy/envoy/issues/22678).
 * [`SecretDiscoveryServiceServer`: `StreamSecrets` issues](https://github.com/envoyproxy/go-control-plane/issues/581).
 
-So the implementation is constrained by these issues.
+So the implementation is constrained by these issues, which should be fixed by January 2023.

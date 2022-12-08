@@ -20,14 +20,15 @@ const sidebars = {
 
   tutorialSidebar: [
     {
-      type: "doc",
-      id: "index",
-      label: "Introduction",
-    },
-    {
-      type: "doc",
-      id: "extension",
-      label: "Kusk OpenAPI Extension",
+      type: "category",
+      label: "Overview",
+      link: {
+        type: "doc",
+        id: "index",
+      },
+      items: [
+        "overview/when-can-you-use-kusk",
+      ],
     },
     {
       type: "category",
@@ -39,6 +40,11 @@ const sidebars = {
         "getting-started/mock-an-api",
         "getting-started/connecting-an-application",
       ],
+    },
+    {
+      type: "doc",
+      id: "extension",
+      label: "Kusk OpenAPI Extension",
     },
     {
       type: "category",
@@ -71,6 +77,7 @@ const sidebars = {
         "guides/routing",
         "guides/rate-limit",
         "guides/overlays",
+        "guides/web-applications",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",

@@ -84,11 +84,11 @@ func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error
 		scheme := "cloudentity"
 		var pathPrefix string
 		if cloudEntity.PathPrefix != nil {
-			pathPrefix = *auth.Custom.PathPrefix
+			pathPrefix = *auth.Cloudentity.PathPrefix
 		}
 		var customHostPath *string
-		if auth.Custom != nil && auth.Custom.Host.Path != nil {
-			customHostPath = auth.Custom.Host.Path
+		if auth.Cloudentity != nil && auth.Cloudentity.Host.Path != nil {
+			customHostPath = auth.Cloudentity.Host.Path
 		}
 		if err := ParseAuthUpstreamOptions(pathPrefix, cloudEntity.Host, args, scheme, customHostPath); err != nil {
 			return err

@@ -18,9 +18,13 @@ install_and_configure_skaffold() {
     sudo curl -L --output /usr/local/bin/skaffold "https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-${ARCH}"
     sudo chmod +x /usr/local/bin/skaffold
     echo
-    skaffold version
+    echo "skaffold version: $(skaffold version)"
   }
-  skaffold version || install_skaffold
+  if ! command -v skaffold >/dev/null 2>&1; then
+    install_skaffold
+  else
+    echo "skaffold version: $(skaffold version)"
+  fi
   echo
   skaffold config set --global local-cluster true
   echo
@@ -55,6 +59,7 @@ data:
       - ${INGRESS_RANGE}"
 
   # configure metallb ingress address range
+  mkdir -pv /tmp/skaffold
   echo "${CONFIG_MAP_METALLB}" >/tmp/skaffold/config-map-metallb.yaml
 }
 
