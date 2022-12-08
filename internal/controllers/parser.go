@@ -37,7 +37,6 @@ import (
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-logr/logr"
 	"github.com/golang/protobuf/ptypes/any"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -53,6 +52,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/internal/services"
+	"github.com/kubeshop/kusk-gateway/internal/traffic"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	crunch "github.com/kubeshop/kusk-gateway/pkg/crunch42"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
@@ -421,15 +421,15 @@ func UpdateConfigFromAPIOpts(
 							envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 						}
 
-						weightedClusters := addWeightedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
+						weightedClusters := traffic.AddWeightedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
 						if err != nil {
 							logger.Error(err, "failed adding weighted cluster to route", "clusterName", clusterName)
 							return err
 						}
 
-						logger.Info("!!!!`addWeightedClusterToRoute` show weighted clusters", "here they are", routeRoute.Route.GetWeightedClusters())
+						logger.Info("`AddWeightedClusterToRoute` show weighted clusters", "routeRoute.Route.GetWeightedClusters()", routeRoute.Route.GetWeightedClusters())
 
-						logger.Info("......routeAction......", "values", spew.Sdump(rt))
+						logger.Info("routeAction", "route.Route", spew.Sdump(rt))
 						routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
 							HostRewriteLiteral: hostPortPair.Host,
 						}
@@ -872,7 +872,6 @@ func generateRoute(clusterName string, corsPolicy *route.CorsPolicy, rewriteRege
 }
 
 func generateRouteWithoutCluster(corsPolicy *route.CorsPolicy, rewriteRegex *options.RewriteRegex, QoS *options.QoSOptions, websocket *bool) (*route.Route_Route, error) {
-
 	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
 	if rewriteRegex != nil {
 		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
@@ -920,40 +919,6 @@ func generateRouteWithoutCluster(corsPolicy *route.CorsPolicy, rewriteRegex *opt
 	// }
 
 	return routeRoute, nil
-}
-
-func addWeightedClusterToRoute(logger logr.Logger, routeRoute *route.Route_Route, clusterName string, weight int) *route.WeightedCluster {
-
-	weightedClusters := routeRoute.Route.GetWeightedClusters()
-	if weightedClusters != nil {
-		if weightedClusters.Clusters == nil {
-			weightedClusters.Clusters = []*route.WeightedCluster_ClusterWeight{}
-		}
-		weightedClusters.Clusters = append(weightedClusters.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   clusterName,
-			Weight: &wrapperspb.UInt32Value{Value: uint32(weight)},
-		})
-	} else {
-		weightedClusters = &route.WeightedCluster{
-			Clusters: []*route.WeightedCluster_ClusterWeight{
-				{
-					Name:   clusterName,
-					Weight: &wrapperspb.UInt32Value{Value: uint32(weight)},
-					ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
-						{
-							Header: &envoy_config_core_v3.HeaderValue{
-								Key:   "x-kusk-weigthed-cluster",
-								Value: clusterName,
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-	logger.Info("adding weighted clusters", "here they are", weightedClusters.Clusters)
-
-	return weightedClusters
 }
 
 func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratelimit.LocalRateLimit {

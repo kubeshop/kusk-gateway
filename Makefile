@@ -77,11 +77,11 @@ tail-xds: ## Tail logs of kusk-manager
 
 .PHONY: tail-envoyfleet
 tail-envoyfleet: ## Tail logs of envoy
-	kubectl logs --follow --namespace default service/default
+	kubectl logs --follow --namespace kusk-system service/kusk-gateway-envoy-fleet
 
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
-	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
+	kubectl port-forward --namespace kusk-system deployments/kusk-gateway-envoy-fleet 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
 	sleep 2
 	curl -s -X POST "http://localhost:19000/logging?backtrace=trace" >/dev/null 2>&1
 	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace" >/dev/null 2>&1
