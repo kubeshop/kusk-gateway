@@ -395,7 +395,7 @@ func UpdateConfigFromAPIOpts(
 					}
 					rt.Action = routeRoute
 				} else if finalOpts.Upstreams != nil {
-					logger.Info("parsing `upstreams` options", "finalOpts.Upstreans", len(finalOpts.Upstreams))
+					logger.Info("parsing `upstreams` options", "finalOpts.Upstreams", len(finalOpts.Upstreams))
 
 					var rewriteOpts *options.RewriteRegex
 					if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
@@ -421,13 +421,13 @@ func UpdateConfigFromAPIOpts(
 							envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 						}
 
-						weightedClusters := addWeighedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
+						weightedClusters := addWeightedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
 						if err != nil {
 							logger.Error(err, "failed adding weighted cluster to route", "clusterName", clusterName)
 							return err
 						}
 
-						logger.Info("!!!!`addWeighedClusterToRoute` show weighted clusters", "here they are", routeRoute.Route.GetWeightedClusters())
+						logger.Info("!!!!`addWeightedClusterToRoute` show weighted clusters", "here they are", routeRoute.Route.GetWeightedClusters())
 
 						logger.Info("......routeAction......", "values", spew.Sdump(rt))
 						routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
@@ -922,7 +922,7 @@ func generateRouteWithoutCluster(corsPolicy *route.CorsPolicy, rewriteRegex *opt
 	return routeRoute, nil
 }
 
-func addWeighedClusterToRoute(logger logr.Logger, routeRoute *route.Route_Route, clusterName string, weight int) *route.WeightedCluster {
+func addWeightedClusterToRoute(logger logr.Logger, routeRoute *route.Route_Route, clusterName string, weight int) *route.WeightedCluster {
 
 	weightedClusters := routeRoute.Route.GetWeightedClusters()
 	if weightedClusters != nil {
@@ -939,6 +939,14 @@ func addWeighedClusterToRoute(logger logr.Logger, routeRoute *route.Route_Route,
 				{
 					Name:   clusterName,
 					Weight: &wrapperspb.UInt32Value{Value: uint32(weight)},
+					ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
+						{
+							Header: &envoy_config_core_v3.HeaderValue{
+								Key:   "x-kusk-weigthed-cluster",
+								Value: clusterName,
+							},
+						},
+					},
 				},
 			},
 		}
