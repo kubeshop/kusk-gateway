@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   fleet:
-    name: kusk-gateway-envoy-fleet
-    namespace: kusk-system
+    name: test
+    namespace: default
   spec: |
     components: {}
     info:

@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
@@ -43,8 +44,9 @@ import (
 
 const (
 	testName         = "test-traffic-splitting-api-1"
-	defaultName      = "kusk-gateway-envoy-fleet"
-	defaultNamespace = "kusk-system"
+	defaultName      = "test-traffic-splitting"
+	defaultNamespace = "default"
+	port             = 89
 )
 
 type WeightedClusterTestSuite struct {
@@ -64,11 +66,36 @@ func (t *WeightedClusterTestSuite) TearDownSuite() {
 func (t *WeightedClusterTestSuite) SetupTest() {
 	rawApi := common.ReadFile("../samples/weighted/weighted-api.yaml")
 
+	rawFleet := common.ReadFile("../basic/envoyfleet.yaml")
+	fleet := &kuskv1.EnvoyFleet{}
+	t.NoError(yaml.Unmarshal([]byte(rawFleet), fleet))
+
+	fleet.ObjectMeta.Name = defaultName
+	fleet.ObjectMeta.Namespace = defaultNamespace
+	fleet.Spec.Service = &kuskv1.ServiceConfig{
+		Type: corev1.ServiceTypeLoadBalancer,
+		Ports: []corev1.ServicePort{
+			{
+				Port:       port,
+				TargetPort: intstr.FromString("http"),
+				Name:       "http",
+			},
+			{
+				Port:       444,
+				TargetPort: intstr.FromString("http"),
+				Name:       "https",
+			},
+		},
+	}
+	t.T().Log(fleet.Spec.Service.Ports)
+
+	t.NoError(t.Cli.Create(context.TODO(), fleet, &client.CreateOptions{}))
+
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
-	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = "default"
+	api.ObjectMeta.Name = defaultName
+	api.ObjectMeta.Namespace = defaultNamespace
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 
@@ -82,14 +109,15 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 4 * time.Second
+	duration := 20 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	common.WaitForServiceReady(context.TODO(), t.Cli, defaultNamespace, defaultName, duration)
+	// time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
 	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
-	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
+	url := fmt.Sprintf("http://%s:%d/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP, port)
 
 	// Once the servicesHitCounts becomes 1 for all the services below, we break from the for loop and terminate the test.
 	servicesHitCounts := map[string]int{
@@ -128,7 +156,7 @@ func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
 			break
 		}
 
-		time.Sleep(time.Second * 2)
+		// time.Sleep(time.Second * 2)
 	}
 }
 
