@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	KuskNamespace = "kusk-system"
-	KuskManager   = "kusk-gateway-manager"
+	defaultName      = "default"
+	defaultNamespace = "default"
 )
 
 type KuskTestSuite struct {

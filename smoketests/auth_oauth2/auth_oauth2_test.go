@@ -45,8 +45,8 @@ import (
 
 const (
 	testName         = "test-auth-oauth2-oauth0-authorization-code-grant"
-	defaultName      = "kusk-gateway-envoy-fleet"
-	defaultNamespace = "kusk-system"
+	defaultName      = "default"
+	defaultNamespace = "default"
 )
 
 type AuthOAuth2TestSuite struct {

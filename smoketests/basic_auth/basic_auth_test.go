@@ -41,8 +41,8 @@ import (
 )
 
 const (
-	defaultName      = "kusk-gateway-envoy-fleet"
-	defaultNamespace = "kusk-system"
+	defaultName      = "default"
+	defaultNamespace = "default"
 	testName         = "test-basic-auth"
 )
 

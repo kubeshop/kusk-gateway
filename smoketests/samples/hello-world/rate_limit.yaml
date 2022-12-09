@@ -4,8 +4,8 @@ metadata:
   name: test-rate-limit
 spec:
   fleet:
-    name: kusk-gateway-envoy-fleet
-    namespace: kusk-system
+    name: default
+    namespace: default
   # service name and port should be specified inside x-kusk annotation
   spec: |
     components: {}

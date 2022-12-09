@@ -20,7 +20,7 @@ import (
 const (
 	defaultNamespace = "default"
 	testName         = "test"
-	testPort         = 82
+	testPort         = 8222
 )
 
 type BasicCheckSuite struct {

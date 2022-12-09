@@ -42,8 +42,8 @@ import (
 
 const (
 	testName         = "test-auth-jwt-oauth0"
-	defaultName      = "kusk-gateway-envoy-fleet"
-	defaultNamespace = "kusk-system"
+	defaultName      = "default"
+	defaultNamespace = "default"
 )
 
 const (

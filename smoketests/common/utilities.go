@@ -59,13 +59,13 @@ func WaitForServiceReady(ctx context.Context, k8sClient client.Client, namespace
 		return err
 	}
 
-	if err := wait.PollImmediate(1*time.Second, timeout, IsPodReady(ctx, k8sClient, s)); err != nil {
+	if err := wait.PollImmediate(1*time.Second, timeout, IsServiceReady(ctx, k8sClient, s)); err != nil {
 		return err
 	}
 	return nil
 }
 
-func IsPodReady(ctx context.Context, c client.Client, service *corev1.Service) wait.ConditionFunc {
+func IsServiceReady(ctx context.Context, c client.Client, service *corev1.Service) wait.ConditionFunc {
 	return func() (bool, error) {
 		if err := c.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, service); err != nil {
 			return false, err
