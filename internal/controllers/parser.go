@@ -33,7 +33,6 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -51,7 +50,9 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
 	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/routes"
 	"github.com/kubeshop/kusk-gateway/internal/services"
+	"github.com/kubeshop/kusk-gateway/internal/traffic"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	crunch "github.com/kubeshop/kusk-gateway/pkg/crunch42"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
@@ -200,7 +201,7 @@ func UpdateConfigFromAPIOpts(
 			}
 
 			// Validate and Proxy to the upstream
-			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
+			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled && finalOpts.Upstreams == nil {
 				var (
 					upstreamHostname string
 					upstreamPort     uint32
@@ -360,39 +361,85 @@ func UpdateConfigFromAPIOpts(
 				}
 			// Default - proxy to the upstream
 			default:
-				hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
-				if err != nil {
-					return err
-				}
+				if finalOpts.Upstream != nil {
+					hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
+					if err != nil {
+						return err
+					}
 
-				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
-				}
+					clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+					}
 
-				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
-					rewriteOpts = &finalOpts.Upstream.Rewrite
-				}
+					var rewriteOpts *options.RewriteRegex
+					if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+						rewriteOpts = &finalOpts.Upstream.Rewrite
+					}
 
-				routeRoute, err := generateRoute(
-					clusterName,
-					corsPolicy,
-					rewriteOpts,
-					finalOpts.QoS,
-					finalOpts.Websocket,
-				)
-				if err != nil {
-					return err
-				}
+					routeRoute, err := routes.NewRoute(
+						clusterName,
+						corsPolicy,
+						rewriteOpts,
+						finalOpts.QoS,
+						finalOpts.Websocket,
+					)
+					if err != nil {
+						return err
+					}
 
-				// https://github.com/kubeshop/kusk-gateway/issues/404
-				// to help with issues around direct IP access e.g. CloudFlare
-				routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
-					HostRewriteLiteral: hostPortPair.Host,
-				}
+					// https://github.com/kubeshop/kusk-gateway/issues/404
+					// to help with issues around direct IP access e.g. CloudFlare
+					routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+						HostRewriteLiteral: hostPortPair.Host,
+					}
+					rt.Action = routeRoute
+				} else if finalOpts.Upstreams != nil {
+					logger.Info("parsing `upstreams` options", "finalOpts.Upstreams", len(finalOpts.Upstreams))
 
-				rt.Action = routeRoute
+					var rewriteOpts *options.RewriteRegex
+					if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+						rewriteOpts = &finalOpts.Upstream.Rewrite
+					}
+
+					routeRoute, err := routes.NewRouteWithoutCluster(corsPolicy, rewriteOpts, finalOpts.QoS, finalOpts.Websocket)
+					if err != nil {
+						return err
+					}
+
+					for _, upstream := range finalOpts.Upstreams {
+						logger.Info("parsing `upstreams` options", "upstream", fmt.Sprintf("%s - %s - %d", upstream.Service.Name, upstream.Service.Namespace, upstream.Service.Weight))
+
+						hostPortPair, err := getUpstreamHost(&upstream)
+						if err != nil {
+							return err
+						}
+
+						clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+						if !envoyConfiguration.ClusterExist(clusterName) {
+							logger.Info("adding cluster", "cluster", fmt.Sprintf("%s - doesn't exist", clusterName))
+							envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+						}
+
+						weightedClusters := traffic.AddWeightedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
+						if err != nil {
+							logger.Error(err, "failed adding weighted cluster to route", "clusterName", clusterName)
+							return err
+						}
+
+						logger.Info("`AddWeightedClusterToRoute` show weighted clusters", "routeRoute.Route.GetWeightedClusters()", routeRoute.Route.GetWeightedClusters())
+
+						logger.Info("routeAction", "route.Route", spew.Sdump(rt))
+						routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+							HostRewriteLiteral: hostPortPair.Host,
+						}
+						routeRoute.Route.ClusterSpecifier = &route.RouteAction_WeightedClusters{
+							WeightedClusters: weightedClusters,
+						}
+
+						rt.Action = routeRoute
+					}
+				}
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			}
@@ -638,6 +685,7 @@ func UpdateConfigFromOpts(
 					"method", method,
 					"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
 				)
+
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
@@ -653,7 +701,7 @@ func UpdateConfigFromOpts(
 				if methodOpts.Upstream.Rewrite.Pattern != "" {
 					rewriteOpts = &methodOpts.Upstream.Rewrite
 				}
-				routeRoute, err := generateRoute(
+				routeRoute, err := routes.NewRoute(
 					clusterName,
 					corsPolicy,
 					rewriteOpts,
@@ -729,8 +777,9 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 }
 
 type HostPortPair struct {
-	Host string
-	Port uint32
+	Host   string
+	Port   uint32
+	Weight int
 }
 
 func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, error) {
@@ -739,17 +788,11 @@ func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, erro
 	}
 
 	if upstreamOpts.Service != nil {
-		return &HostPortPair{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace),
-			Port: upstreamOpts.Service.Port,
-		}, nil
+		return &HostPortPair{Host: fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace), Port: upstreamOpts.Service.Port, Weight: upstreamOpts.Service.Weight}, nil
 	}
 
 	if upstreamOpts.Host != nil {
-		return &HostPortPair{
-			Host: upstreamOpts.Host.Hostname,
-			Port: upstreamOpts.Host.Port,
-		}, nil
+		return &HostPortPair{Host: upstreamOpts.Host.Hostname, Port: upstreamOpts.Host.Port, Weight: upstreamOpts.Service.Weight}, nil
 	}
 
 	return nil, fmt.Errorf("cannot get upstream host and port from upstream options")
@@ -771,67 +814,6 @@ func generateRoutePath(prefix, path string) string {
 
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
-}
-
-func generateRoute(
-	clusterName string,
-	corsPolicy *route.CorsPolicy,
-	rewriteRegex *options.RewriteRegex,
-	QoS *options.QoSOptions,
-	websocket *bool,
-) (*route.Route_Route, error) {
-
-	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-	if rewriteRegex != nil {
-		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
-	}
-
-	var (
-		requestTimeout, requestIdleTimeout int64  = 0, 0
-		retries                            uint32 = 0
-	)
-	if QoS != nil {
-		retries = QoS.Retries
-		requestTimeout = int64(QoS.RequestTimeout)
-		requestIdleTimeout = int64(QoS.IdleTimeout)
-	}
-
-	routeRoute := &route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: clusterName,
-			},
-		},
-	}
-
-	if corsPolicy != nil {
-		routeRoute.Route.Cors = corsPolicy
-	}
-	if rewritePathRegex != nil {
-		routeRoute.Route.RegexRewrite = rewritePathRegex
-	}
-
-	if requestTimeout != 0 {
-		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: requestTimeout}
-	}
-	if requestIdleTimeout != 0 {
-		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: requestIdleTimeout}
-	}
-
-	if retries != 0 {
-		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
-			RetryOn:    "5xx",
-			NumRetries: &wrapperspb.UInt32Value{Value: retries},
-		}
-	}
-	if websocket != nil && *websocket {
-		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
-	}
-	if err := routeRoute.Route.ValidateAll(); err != nil {
-		return nil, fmt.Errorf("incorrect Route Action: %w", err)
-	}
-
-	return routeRoute, nil
 }
 
 func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratelimit.LocalRateLimit {

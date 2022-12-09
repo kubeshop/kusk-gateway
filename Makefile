@@ -77,11 +77,11 @@ tail-xds: ## Tail logs of kusk-manager
 
 .PHONY: tail-envoyfleet
 tail-envoyfleet: ## Tail logs of envoy
-	kubectl logs --follow --namespace default service/default
+	kubectl logs --follow --namespace kusk-system service/kusk-gateway-envoy-fleet
 
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
-	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
+	kubectl port-forward --namespace kusk-system deployments/kusk-gateway-envoy-fleet 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
 	sleep 2
 	curl -s -X POST "http://localhost:19000/logging?backtrace=trace" >/dev/null 2>&1
 	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace" >/dev/null 2>&1
@@ -224,7 +224,7 @@ check-all: install-deps $(smoketests)
 .PHONY: install-deps
 install-deps:
 	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
-	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20221206203637-3da2de04734a
 	@type controller-gen >/dev/null 2>&1 || go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
 	@type protoc-gen-go-grpc >/dev/null 2>&1 || echo "[INFO]: Installing protobuf GRPC go generation plugin." && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@type protoc-gen-go >/dev/null 2>&1 || echo "[INFO]: Installing protobuf go generation plugin." && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1

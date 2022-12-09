@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
 	defaultName      = "default"
-	testName         = "auth-test"
+	defaultNamespace = "default"
+	testName         = "test-rate-limit"
 )
 
 type RateLimitTestSuite struct {

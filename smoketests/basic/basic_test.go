@@ -19,8 +19,8 @@ import (
 
 const (
 	defaultNamespace = "default"
-	testName         = "test"
-	testPort         = 82
+	testName         = "basic"
+	testPort         = 8880
 )
 
 type BasicCheckSuite struct {

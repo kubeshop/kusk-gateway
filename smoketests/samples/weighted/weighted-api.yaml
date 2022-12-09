@@ -1,0 +1,33 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: traffic-splitting-api-1
+  namespace: default
+spec:
+  fleet:
+    name: test
+    namespace: default
+  spec: |
+    components: {}
+    info:
+      title: traffic-splitting-api-1
+      version: 0.1.0
+    openapi: 3.0.0
+    paths:
+      "/uuid":
+        get:
+          description: Returns UUID4.
+          operationId: "/uuid"
+          responses: {}
+    x-kusk:
+      upstreams:
+      - service:
+          name: traffic-splitting-httpbin-1
+          namespace: default
+          port: 80
+          weight: 50
+      - service:
+          name: traffic-splitting-httpbin-2
+          namespace: default
+          port: 80
+          weight: 50
