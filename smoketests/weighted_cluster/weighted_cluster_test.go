@@ -51,7 +51,8 @@ const (
 
 type WeightedClusterTestSuite struct {
 	common.KuskTestSuite
-	api *kuskv1.API
+	api   *kuskv1.API
+	fleet *kuskv1.EnvoyFleet
 }
 
 func TestWeightedClusterTestSuite(t *testing.T) {
@@ -61,6 +62,7 @@ func TestWeightedClusterTestSuite(t *testing.T) {
 
 func (t *WeightedClusterTestSuite) TearDownSuite() {
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
+	t.NoError(t.Cli.Delete(context.Background(), t.fleet, &client.DeleteOptions{}))
 }
 
 func (t *WeightedClusterTestSuite) SetupTest() {
@@ -90,6 +92,8 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 	t.T().Log(fleet.Spec.Service.Ports)
 
 	t.NoError(t.Cli.Create(context.TODO(), fleet, &client.CreateOptions{}))
+
+	t.fleet = fleet
 
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
