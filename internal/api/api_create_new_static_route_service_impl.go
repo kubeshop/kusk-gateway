@@ -31,7 +31,7 @@ func NewCreateNewStaticRouteApiService(kuskClient kusk.Client) CreateNewStaticRo
 
 // CreateStaticRoute - create new static route
 func (s *CreateNewStaticRouteApiService) CreateStaticRoute(ctx context.Context, staticRouteItem InlineObject1) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "CreateStaticRoute")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "CreateStaticRoute")
 	staticRoute, err := s.kuskClient.CreateStaticRoute(staticRouteItem.Namespace, staticRouteItem.Name, staticRouteItem.EnvoyFleetName, staticRouteItem.EnvoyFleetNamespace, staticRouteItem.Openapi)
 	if err != nil {
 		return GetResponseFromK8sError(err), err

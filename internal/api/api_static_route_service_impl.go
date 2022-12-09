@@ -34,7 +34,7 @@ func NewStaticRouteApiService(kuskClient kusk.Client) StaticRouteApiServicer {
 
 // DeleteStaticRoute - Delete a StaticRoute by namespace and name
 func (s *StaticRouteApiService) DeleteStaticRoute(ctx context.Context, namespace string, name string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeleteStaticRoute")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeleteStaticRoute")
 	if err := s.kuskClient.DeleteStaticRoute(v1alpha1.StaticRoute{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,

@@ -31,7 +31,7 @@ func NewNamespacesApiService(kuskClient kusk.Client) NamespacesApiServicer {
 
 // GetNamespaces - Get a list of namespaces
 func (s *NamespacesApiService) GetNamespaces(ctx context.Context) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetNamespaces")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetNamespaces")
 	namespaces, err := s.kuskClient.ListNamespaces()
 	if err != nil {
 		return GetResponseFromK8sError(err), err

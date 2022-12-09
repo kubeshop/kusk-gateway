@@ -78,8 +78,7 @@ func (c *ServicesApiController) GetService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetServices - Get a list of services handled by kusk-gateway
@@ -93,6 +92,5 @@ func (c *ServicesApiController) GetServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }

@@ -90,8 +90,7 @@ func (c *FleetsApiController) DeleteFleet(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetEnvoyFleet - Get details for a single envoy fleet
@@ -108,8 +107,7 @@ func (c *FleetsApiController) GetEnvoyFleet(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetEnvoyFleetCRD - Get envoy fleet CRD
@@ -126,8 +124,7 @@ func (c *FleetsApiController) GetEnvoyFleetCRD(w http.ResponseWriter, r *http.Re
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetEnvoyFleets - Get a list of envoy fleets
@@ -141,6 +138,5 @@ func (c *FleetsApiController) GetEnvoyFleets(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }

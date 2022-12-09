@@ -37,7 +37,7 @@ func NewApisApiService(kuskClient kusk.Client) ApisApiServicer {
 
 // GetApis - Get a list of APIs
 func (s *ApisApiService) GetApis(ctx context.Context, namespace string, fleetname string, fleetnamespace string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApis")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApis")
 
 	var apis *kuskv1.APIList
 	var err error
@@ -59,7 +59,7 @@ func (s *ApisApiService) GetApis(ctx context.Context, namespace string, fleetnam
 
 // GetApi - Get an API instance by namespace and name
 func (s *ApisApiService) GetApi(ctx context.Context, namespace string, name string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApi")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApi")
 	api, err := s.kuskClient.GetApi(namespace, name)
 	if err != nil {
 		return GetResponseFromK8sError(err), err
@@ -70,7 +70,7 @@ func (s *ApisApiService) GetApi(ctx context.Context, namespace string, name stri
 
 // GetApiCRD - Get API CRD from cluster
 func (s *ApisApiService) GetApiCRD(ctx context.Context, namespace string, name string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApiCRD")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApiCRD")
 	api, err := s.kuskClient.GetApi(namespace, name)
 	if err != nil {
 		return GetResponseFromK8sError(err), err
@@ -81,7 +81,7 @@ func (s *ApisApiService) GetApiCRD(ctx context.Context, namespace string, name s
 
 // GetPostProcessedOpenApiSpec - Get the post-processed OpenAPI spec by API id
 func (s *ApisApiService) GetApiDefinition(ctx context.Context, namespace string, name string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApiDefinition")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "GetApiDefinition")
 	api, err := s.kuskClient.GetApi(namespace, name)
 	if err != nil {
 		return GetResponseFromK8sError(err), err
@@ -134,7 +134,7 @@ func (s *ApisApiService) convertAPICRDtoAPIModel(api *kuskv1.API) ApiItem {
 
 // DeployApi - Deploy new API
 func (s *ApisApiService) DeployApi(ctx context.Context, payload InlineObject) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeployApi")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeployApi")
 	api, err := s.kuskClient.CreateApi(payload.Namespace, payload.Name, payload.Openapi, payload.EnvoyFleetName, payload.EnvoyFleetNamespace)
 	if err != nil {
 		return GetResponseFromK8sError(err), err
@@ -160,7 +160,7 @@ func getApiVersion(apiSpec string) string {
 
 // DeleteApi - Delete an API instance by namespace and name
 func (s *ApisApiService) DeleteApi(ctx context.Context, namespace string, name string) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeleteApi")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "DeleteApi")
 	if err := s.kuskClient.DeleteAPI(namespace, name); err != nil {
 		return GetResponseFromK8sError(err), err
 
@@ -170,7 +170,7 @@ func (s *ApisApiService) DeleteApi(ctx context.Context, namespace string, name s
 
 // DeleteApi - Delete an API instance by namespace and name
 func (s *ApisApiService) UpdateApi(ctx context.Context, payload InlineObject) (ImplResponse, error) {
-	analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "UpdateApi")
+	_ = analytics.SendAnonymousInfo(ctx, s.kuskClient.K8sClient(), "kusk-api-server", "UpdateApi")
 
 	api, err := s.kuskClient.UpdateApi(payload.Namespace, payload.Name, payload.Openapi, payload.EnvoyFleetName, payload.EnvoyFleetNamespace)
 	if err != nil {

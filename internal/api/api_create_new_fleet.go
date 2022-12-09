@@ -77,6 +77,5 @@ func (c *CreateNewFleetApiController) CreateFleet(w http.ResponseWriter, r *http
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }

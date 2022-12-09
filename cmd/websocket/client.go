@@ -22,12 +22,12 @@ type client struct {
 
 func (c *client) readPump(ctx context.Context, stopCh chan struct{}) {
 	defer func() {
-		c.conn.Close()
+		_ = c.conn.Close()
 		stopCh <- struct{}{}
 	}()
 	c.conn.SetReadLimit(c.maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(c.pongWait)); return nil })
+	_ = c.conn.SetReadDeadline(time.Now().Add(c.pongWait))
+	c.conn.SetPongHandler(func(string) error { _ = c.conn.SetReadDeadline(time.Now().Add(c.pongWait)); return nil })
 	for {
 		select {
 		case <-ctx.Done():
@@ -48,7 +48,7 @@ func (c *client) writePump(ctx context.Context, stopCh chan struct{}) {
 	ticker := time.NewTicker(c.pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		_ = c.conn.Close()
 		stopCh <- struct{}{}
 	}()
 
@@ -59,12 +59,12 @@ func (c *client) writePump(ctx context.Context, stopCh chan struct{}) {
 		case <-stopCh:
 			return
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(c.writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(c.writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		default:
-			c.conn.SetWriteDeadline(time.Now().Add(c.writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(c.writeWait))
 			line, err := readLongLine(reader)
 			if err != nil {
 				log.Println("writePump: cannot read line", err)

@@ -20,5 +20,5 @@ func (c *ProbeController) Routes() Routes {
 }
 
 func (c *ProbeController) Healthz(w http.ResponseWriter, r *http.Request) {
-	EncodeJSONResponse("200 OK", nil, w)
+	_ = EncodeJSONResponse("200 OK", nil, w)
 }

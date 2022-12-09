@@ -90,8 +90,7 @@ func (c *StaticRoutesApiController) GetStaticRoute(w http.ResponseWriter, r *htt
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetStaticRouteCRD - Get static route CRD
@@ -108,8 +107,7 @@ func (c *StaticRoutesApiController) GetStaticRouteCRD(w http.ResponseWriter, r *
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetStaticRoutes - Get a list of static routes
@@ -123,7 +121,7 @@ func (c *StaticRoutesApiController) GetStaticRoutes(w http.ResponseWriter, r *ht
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 func (c *StaticRoutesApiController) UpdateStaticRoute(w http.ResponseWriter, r *http.Request) {
@@ -153,6 +151,5 @@ func (c *StaticRoutesApiController) UpdateStaticRoute(w http.ResponseWriter, r *
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }

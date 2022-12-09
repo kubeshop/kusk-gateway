@@ -54,7 +54,7 @@ func (h websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tailLineCountInt, err := strconv.Atoi(tailLineCount)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Errorf("invalid tailLineCount: %w", err).Error()))
+		_, _ = w.Write([]byte(fmt.Errorf("invalid tailLineCount: %w", err).Error()))
 		return
 	}
 
@@ -71,7 +71,7 @@ func (h websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error getting log stream: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -80,7 +80,7 @@ func (h websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 

@@ -188,8 +188,7 @@ func (c *ApisApiController) GetApi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetApiCRD - Get API CRD from cluster
@@ -206,8 +205,7 @@ func (c *ApisApiController) GetApiCRD(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetApiDefinition - Get API definition ( Post-Processed version )
@@ -224,8 +222,7 @@ func (c *ApisApiController) GetApiDefinition(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 // GetApis - Get a list of APIs
@@ -241,8 +238,7 @@ func (c *ApisApiController) GetApis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
 func decodeBodyToInlineObject(body io.Reader) (InlineObject, error) {
