@@ -138,7 +138,7 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   deploy:
-    needs: build-docker
+    needs: build-manager-docker
     name: Deploy
     runs-on: ubuntu-latest
 
