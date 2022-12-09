@@ -224,7 +224,7 @@ check-all: install-deps $(smoketests)
 .PHONY: install-deps
 install-deps:
 	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
-	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20221206203637-3da2de04734a
 	@type controller-gen >/dev/null 2>&1 || go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
 	@type protoc-gen-go-grpc >/dev/null 2>&1 || echo "[INFO]: Installing protobuf GRPC go generation plugin." && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@type protoc-gen-go >/dev/null 2>&1 || echo "[INFO]: Installing protobuf go generation plugin." && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
