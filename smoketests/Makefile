@@ -11,7 +11,6 @@ check-weighted_cluster:
 	kubectl wait deployment --namespace default traffic-splitting-httpbin --for condition=Available=True --timeout=3m
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 	kubectl delete -f ./samples/weighted/deployments.yaml
-	kubectl delete envoyfleet test-traffic-splitting
 
 check-auth_jwt:
 	kubectl apply -f ../examples/auth/jwt/oauth0/manifests.yaml

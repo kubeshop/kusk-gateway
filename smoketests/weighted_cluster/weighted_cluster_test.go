@@ -89,7 +89,6 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 			},
 		},
 	}
-	t.T().Log(fleet.Spec.Service.Ports)
 
 	t.NoError(t.Cli.Create(context.TODO(), fleet, &client.CreateOptions{}))
 
@@ -114,7 +113,7 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 	t.api = api // store `api` for deletion later
 
 	duration := 60 * time.Second
-	t.T().Logf("Sleeping for %s", duration)
+	t.T().Logf("Waiting for %s", duration)
 	t.NoError(common.WaitForServiceReady(context.TODO(), t.Cli, defaultNamespace, defaultName, duration))
 }
 

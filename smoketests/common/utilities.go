@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -71,8 +70,7 @@ func IsPodReady(ctx context.Context, c client.Client, service *corev1.Service) w
 		if err := c.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, service); err != nil {
 			return false, err
 		}
-		fmt.Println(service.ObjectMeta.Name)
-		fmt.Println(service.Status.LoadBalancer.Ingress)
+
 		if service.Status.LoadBalancer.Ingress != nil && len(service.Status.LoadBalancer.Ingress) > 0 {
 			return true, nil
 		}
