@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
 	defaultName      = "default"
+	defaultNamespace = "default"
 	testName         = "mock-test"
 )
 

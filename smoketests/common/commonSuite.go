@@ -13,11 +13,6 @@ import (
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
-const (
-	KuskNamespace = "kusk-system"
-	KuskManager   = "kusk-gateway-manager"
-)
-
 type KuskTestSuite struct {
 	Cli client.Client
 	suite.Suite

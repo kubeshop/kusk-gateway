@@ -41,9 +41,9 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
 	defaultName      = "default"
-	testName         = "auth-test"
+	defaultNamespace = "default"
+	testName         = "test-basic-auth"
 )
 
 type BasicAuthCheckSuite struct {
@@ -56,13 +56,13 @@ func (m *BasicAuthCheckSuite) SetupTest() {
 	m.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = "default"
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 
 	if err := m.Cli.Create(context.TODO(), api, &client.CreateOptions{}); err != nil {
 		message := fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)
-		m.T().Log(message)
+		m.T().Logf("err=%v, message=%v", err, message)
 
 		if strings.Contains(err.Error(), message) {
 			return

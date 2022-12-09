@@ -1,8 +1,9 @@
 smoketests := \
-    check-auth_jwt \
-    check-mocking \
-    check-basic \
+    check-weighted_cluster \
     check-rate_limit \
-    check-basic_auth \
+    check-mocking \
+    check-openapi-path \
+    check-auth_jwt \
     check-auth_oauth2 \
-    check-openapi-path
+    check-basic_auth
+

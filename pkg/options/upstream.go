@@ -58,6 +58,9 @@ type UpstreamHost struct {
 
 	// Port is the upstream port.
 	Port uint32 `yaml:"port" json:"port"`
+
+	// Weight indicates the percentage of traffic to be sent to the given upstream.
+	Weight int `yaml:"weight,omitempty" json:"weight,omitempty"`
 }
 
 // UpstreamService defines K8s Service in the cluster
@@ -70,10 +73,14 @@ type UpstreamService struct {
 
 	// Port is the upstream K8s Service's port.
 	Port uint32 `yaml:"port" json:"port"`
+
+	// Weight indicates the percentage of traffic to be sent to the given upstream.
+	Weight int `yaml:"weight,omitempty" json:"weight,omitempty"`
 }
 
 func (o UpstreamHost) Validate() error {
 	return v.ValidateStruct(&o,
+		v.Field(&o.Weight, v.Min(int(1)), v.Max(int(100))),
 		v.Field(&o.Hostname, is.DNSName, v.Required),
 		v.Field(&o.Port, v.Min(uint32(1)), v.Max(uint32(65356)), v.Required),
 	)
@@ -91,6 +98,7 @@ func (o *UpstreamService) FillDefaults() {
 
 func (o UpstreamService) Validate() error {
 	return v.ValidateStruct(&o,
+		v.Field(&o.Weight, v.Min(int(1)), v.Max(int(100))),
 		v.Field(&o.Name, is.DNSName, v.Required),
 		v.Field(&o.Namespace, is.DNSName, v.Required),
 		v.Field(&o.Port, v.Min(uint32(1)), v.Max(uint32(65356)), v.Required),
