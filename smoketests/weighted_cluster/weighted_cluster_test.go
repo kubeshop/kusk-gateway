@@ -109,10 +109,9 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 20 * time.Second
+	duration := 60 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
-	common.WaitForServiceReady(context.TODO(), t.Cli, defaultNamespace, defaultName, duration)
-	// time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	t.NoError(common.WaitForServiceReady(context.TODO(), t.Cli, defaultNamespace, defaultName, duration))
 }
 
 func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
