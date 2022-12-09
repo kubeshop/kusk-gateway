@@ -16,10 +16,8 @@ import (
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
-var testClient = NewClient(getFakeClient())
-
 func TestCreateEnvoyFleet(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 	fleet := v1alpha1.EnvoyFleet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -32,12 +30,12 @@ func TestCreateEnvoyFleet(t *testing.T) {
 		},
 	}
 
-	_, err := testClient.CreateFleet(fleet)
-	require.NoError(err)
+	_, err := NewClient(getFakeClient()).CreateFleet(fleet)
+	assertions.NoError(err)
 }
 
 func TestDeleteFleet(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 
 	fleet := v1alpha1.EnvoyFleet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -45,21 +43,22 @@ func TestDeleteFleet(t *testing.T) {
 			Namespace: "default",
 		},
 	}
-
-	require.NoError(testClient.DeleteFleet(fleet))
+	testClient := NewClient(getFakeClient())
+	assertions.NoError(testClient.DeleteFleet(fleet))
 }
 func TestClientGetEnvoyFleets(t *testing.T) {
-	require := require.New(t)
-
+	assertions := require.New(t)
+	testClient := NewClient(getFakeClient())
 	fleets, err := testClient.GetEnvoyFleets()
-	require.NoError(err)
+	assertions.NoError(err)
 
-	require.NotEqual(len(fleets.Items), 0)
+	assertions.NotEqual(len(fleets.Items), 0)
 }
 
 func TestClientGetEnvoyFleet(t *testing.T) {
 	name := "default"
 	namespace := "default"
+	testClient := NewClient(getFakeClient())
 	fleet, err := testClient.GetEnvoyFleet(namespace, name)
 	if err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf(`envoyfleet.gateway.kusk.io "%s" not found`, name)) {
@@ -80,6 +79,7 @@ func TestClientGetEnvoyFleet(t *testing.T) {
 }
 
 func TestGetApis(t *testing.T) {
+	testClient := NewClient(getFakeClient())
 	apis, err := testClient.GetApis("default")
 	if err != nil {
 		t.Error(err)
@@ -90,6 +90,7 @@ func TestGetApis(t *testing.T) {
 }
 
 func TestGetApi(t *testing.T) {
+	testClient := NewClient(getFakeClient())
 	api, err := testClient.GetApi("default", "sample")
 	if err != nil {
 		t.Error(err)
@@ -100,6 +101,7 @@ func TestGetApi(t *testing.T) {
 	fmt.Println(api.Spec.Spec)
 }
 func TestGetNotFoundApi(t *testing.T) {
+	testClient := NewClient(getFakeClient())
 	_, err := testClient.GetApi("default", "not-found")
 	if err == ErrNotFound {
 		return
@@ -109,25 +111,26 @@ func TestGetNotFoundApi(t *testing.T) {
 }
 
 func TestDeleteAPI(t *testing.T) {
-	require := require.New(t)
-
+	assertions := require.New(t)
+	testClient := NewClient(getFakeClient())
 	err := testClient.DeleteAPI("default", "sample")
-	require.NoError(err)
+	assertions.NoError(err)
 }
 
 func TestUpdateAPI(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 
 	tc := NewClient(getFakeClient())
 
 	_, err := tc.UpdateApi("default", "non-existent", "", "test", "default")
-	require.Error(err)
+	assertions.Error(err)
 
 	_, err = tc.UpdateApi("default", "sample", "", "test", "default")
-	require.NoError(err)
+	assertions.NoError(err)
 }
 
 func TestGetSvc(t *testing.T) {
+	testClient := NewClient(getFakeClient())
 	_, err := testClient.GetSvc("default", "kubernetes")
 	if err != nil {
 		t.Error(err)
@@ -137,6 +140,7 @@ func TestGetSvc(t *testing.T) {
 }
 
 func TestListServices(t *testing.T) {
+	testClient := NewClient(getFakeClient())
 	_, err := testClient.ListServices("default")
 	if err != nil {
 		t.Error(err)
@@ -146,7 +150,7 @@ func TestListServices(t *testing.T) {
 }
 
 func TestCreateStaticRoute(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 
 	namespace := "default"
 	name := "static-route-example-1-top-level-upstream"
@@ -160,30 +164,33 @@ spec:
       namespace: default
       port: 80
 `
+	testClient := NewClient(getFakeClient())
 	staticRoute, err := testClient.CreateStaticRoute(namespace, name, fleetNamespace, fleetName, specs)
 
-	require.NoError(err)
-	require.NotNil(staticRoute)
+	assertions.NoError(err)
+	assertions.NotNil(staticRoute)
 
-	require.Equal(fleetNamespace+"."+fleetName, staticRoute.Spec.Fleet.String())
+	assertions.Equal(fleetNamespace+"."+fleetName, staticRoute.Spec.Fleet.String())
 }
 
 func TestGetStaticRoutes(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 
 	namespace := "default"
+	testClient := NewClient(getFakeClient())
 	staticRoutes, err := testClient.GetStaticRoutes(namespace)
 
-	require.NoError(err)
-	require.NotNil(staticRoutes)
-	require.Len(staticRoutes.Items, 1)
+	assertions.NoError(err)
+	assertions.NotNil(staticRoutes)
+	assertions.Len(staticRoutes.Items, 1)
 }
 
 func TestDeleteStaticRoute(t *testing.T) {
-	require := require.New(t)
+	assertions := require.New(t)
 
 	name := "static-route-1"
 	namespace := "default"
+	testClient := NewClient(getFakeClient())
 	err := testClient.DeleteStaticRoute(v1alpha1.StaticRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -191,7 +198,7 @@ func TestDeleteStaticRoute(t *testing.T) {
 		},
 	})
 
-	require.NoError(err)
+	assertions.NoError(err)
 }
 
 func getFakeClient() client.Client {
