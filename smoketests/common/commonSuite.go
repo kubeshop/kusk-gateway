@@ -13,11 +13,6 @@ import (
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
-const (
-	defaultName      = "default"
-	defaultNamespace = "default"
-)
-
 type KuskTestSuite struct {
 	Cli client.Client
 	suite.Suite
