@@ -119,7 +119,7 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 
 func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
 	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
-	url := fmt.Sprintf("http://%s:%d/uuids", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP, port)
+	url := fmt.Sprintf("http://%s:%d/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP, port)
 
 	// Once the servicesHitCounts becomes 1 for all the services below, we break from the for loop and terminate the test.
 	servicesHitCounts := map[string]int{

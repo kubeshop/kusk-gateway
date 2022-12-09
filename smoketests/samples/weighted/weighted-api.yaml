@@ -14,10 +14,10 @@ spec:
       version: 0.1.0
     openapi: 3.0.0
     paths:
-      "/uuids":
+      "/uuid":
         get:
           description: Returns UUID4.
-          operationId: "/uuids"
+          operationId: "/uuid"
           responses: {}
     x-kusk:
       upstreams:
