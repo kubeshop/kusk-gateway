@@ -153,6 +153,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       - name: Download Artifacts for Linux
         uses: actions/download-artifact@master
         with:
@@ -307,7 +308,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-#   This job runs when we there is no changed resources in the upstream job
+  #   This job runs when we there is no changed resources in the upstream job
   helm_chart_version_bump:
     name: "Trigger Helm chart appVersion update"
     needs: "release"

@@ -20,55 +20,70 @@ on:
 jobs:
   test-kusk-cli:
     name: Compile and Test Kusk CLI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      - name: Set up Go
+      - name: setup-go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
 
       - name: setup-environment-variables
         run: |
           go version
+          go env
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
 
       - name: build-cli
-        working-directory: cmd/kusk
         run: |
           go version
+          go env
+          cd cmd/kusk
           VERSION=${{ github.sha }} make build
 
       - name: test-cli
-        working-directory: cmd/kusk
         run: |
           go version
+          go env
+          cd cmd/kusk
           make test
 
       - name: prepare-cli-manifests # this step will ensure that kusk kustomize manifests are build with the latest image tag github.sha
-        working-directory: cmd/kusk
         run: |
           go version
+          cd cmd/kusk
           VERSION=${{ env.VERSION }} make manifests
 
   compilation-and-unit-test-manager:
     name: Compile and Test Manager
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Go
+        with:
+          fetch-depth: 0
+
+      - name: setup-go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
+
       - name: Compile and Test manager
-        run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+        run: |
+          go version
+          go env
+          make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+
   build-api-docker:
     name: Build API and websocket docker images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -95,7 +110,7 @@ jobs:
   build-manager-docker:
     needs: [compilation-and-unit-test-manager]
     name: "Build manager docker image"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -140,11 +155,13 @@ jobs:
   deploy:
     needs: build-manager-docker
     name: Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
         with:
@@ -174,15 +191,18 @@ jobs:
   e2e:
     needs: deploy
     name: Run e2e tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Go
+        with:
+          fetch-depth: 0
+
+      - name: setup-go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
 
       - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
         with:
@@ -200,7 +220,7 @@ jobs:
           make check-all
 
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: e2e
     if: always()
     steps:
