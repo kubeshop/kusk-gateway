@@ -11,10 +11,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
@@ -321,7 +321,7 @@ func (k *kuskClient) UpdateStaticRoute(namespace, name, fleetName, fleetNamespac
 	return staticRoute, retryErr
 }
 
-func (k *kuskClient) DeleteStaticRoute(sroute v1alpha1.StaticRoute) error {
+func (k *kuskClient) DeleteStaticRoute(sroute kuskv1.StaticRoute) error {
 	return k.client.Delete(context.TODO(), &sroute, &client.DeleteOptions{})
 }
 

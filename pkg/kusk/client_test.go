@@ -12,13 +12,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
 func TestCreateEnvoyFleet(t *testing.T) {
 	assertions := require.New(t)
-	fleet := v1alpha1.EnvoyFleet{
+	fleet := kuskv1.EnvoyFleet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "default",
@@ -37,7 +36,7 @@ func TestCreateEnvoyFleet(t *testing.T) {
 func TestDeleteFleet(t *testing.T) {
 	assertions := require.New(t)
 
-	fleet := v1alpha1.EnvoyFleet{
+	fleet := kuskv1.EnvoyFleet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "default",
 			Namespace: "default",
@@ -191,7 +190,7 @@ func TestDeleteStaticRoute(t *testing.T) {
 	name := "static-route-1"
 	namespace := "default"
 	testClient := NewClient(getFakeClient())
-	err := testClient.DeleteStaticRoute(v1alpha1.StaticRoute{
+	err := testClient.DeleteStaticRoute(kuskv1.StaticRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
