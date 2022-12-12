@@ -690,6 +690,8 @@ components:
           $ref: "#/components/schemas/ApiItem_Service"
         version:
           type: string
+        crunch42url:
+          type: string
     ServiceItem:
       type: object
       required:

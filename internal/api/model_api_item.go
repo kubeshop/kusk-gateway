@@ -19,6 +19,8 @@ type ApiItem struct {
 	Service ApiItemService `json:"service"`
 
 	Version string `json:"version"`
+
+	Crunch42URL string `json:"crunch42url"`
 }
 
 // AssertApiItemRequired checks if the required fields are not zero-ed
