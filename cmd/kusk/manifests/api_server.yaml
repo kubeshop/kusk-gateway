@@ -75,6 +75,7 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - secrets
       - services
       - namespaces
       - pods
