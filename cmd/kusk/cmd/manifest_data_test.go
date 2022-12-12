@@ -33,5 +33,6 @@ func Test_configManagerServiceYamlBytes(t *testing.T) {
 
 	yaml, err := configManagerServiceYamlBytes()
 	assert.NoError(err)
-	t.Logf("config/manager/service.yaml=%v", string(yaml))
+	_ = yaml
+	// t.Logf("config/manager/service.yaml=%v", string(yaml))
 }

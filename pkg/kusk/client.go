@@ -7,8 +7,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -42,6 +43,7 @@ type Client interface {
 	GetSvc(namespace, name string) (*corev1.Service, error)
 	ListServices(namespace string) (*corev1.ServiceList, error)
 	ListNamespaces() (*corev1.NamespaceList, error)
+	GetSecret(name, namespace string) (*v1.Secret, error)
 
 	K8sClient() client.Client
 }
@@ -150,7 +152,7 @@ func (k *kuskClient) GetApiByEnvoyFleet(namespace, fleetNamespace, fleetName str
 
 func (k *kuskClient) CreateApi(namespace, name, openapispec string, fleetName string, fleetnamespace string) (*kuskv1.API, error) {
 	api := &kuskv1.API{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -198,7 +200,7 @@ func (k *kuskClient) UpdateApi(namespace, name, openapispec string, fleetName st
 
 func (k *kuskClient) DeleteAPI(namespace, name string) error {
 	api := &kuskv1.API{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -261,7 +263,7 @@ func (k *kuskClient) GetStaticRoutes(namespace string) (*kuskv1.StaticRouteList,
 
 func (k *kuskClient) CreateStaticRoute(namespace, name, fleetName, fleetNamespace, specs string) (*kuskv1.StaticRoute, error) {
 	staticRoute := &kuskv1.StaticRoute{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -331,6 +333,15 @@ func (k *kuskClient) ListNamespaces() (*corev1.NamespaceList, error) {
 		return nil, err
 	}
 	return list, nil
+}
+
+func (k *kuskClient) GetSecret(name, namespace string) (*v1.Secret, error) {
+	sec := &v1.Secret{}
+	if err := k.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: namespace}, sec); err != nil {
+		return nil, err
+	}
+
+	return sec, nil
 }
 
 func (k *kuskClient) K8sClient() client.Client {
