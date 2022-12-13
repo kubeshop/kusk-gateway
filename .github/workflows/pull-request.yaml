@@ -1,4 +1,5 @@
-name: Pull Request
+name: pull-request
+
 on:
   pull_request:
     types:
@@ -17,18 +18,40 @@ on:
       - pkg/**
       - smoketests/**
 
+permissions:
+  contents: read
+  # allow read access to pull request. Use with `only-new-issues` option.
+  pull-requests: read
+
 jobs:
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=10m0s
+          only-new-issues: true
+
   test-kusk-cli:
     name: Compile and Test Kusk CLI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
 
       - name: setup-environment-variables
         run: |
@@ -53,22 +76,28 @@ jobs:
           go version
           VERSION=${{ env.VERSION }} make manifests
 
-  compilation-and-unit-test-manager:
+  compile-and-unit-test-manager:
     name: Compile and Test Manager
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
       - name: Compile and Test manager
         run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+
   build-api-docker:
     name: Build API and websocket docker images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -93,12 +122,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   build-manager-docker:
-    needs: [compilation-and-unit-test-manager]
+    needs: [compile-and-unit-test-manager]
     name: "Build manager docker image"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -140,11 +169,13 @@ jobs:
   deploy:
     needs: build-manager-docker
     name: Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
         with:
@@ -174,15 +205,18 @@ jobs:
   e2e:
     needs: deploy
     name: Run e2e tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.18
 
       - uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
         with:
@@ -200,7 +234,7 @@ jobs:
           make check-all
 
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: e2e
     if: always()
     steps:
