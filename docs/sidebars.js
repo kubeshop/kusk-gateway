@@ -70,6 +70,7 @@ const sidebars = {
           id: "guides/cors",
           label: "CORS",
         },
+        "guides/traffic_splitting",
         "guides/mocking",
         "guides/validation",
         "guides/cache",
