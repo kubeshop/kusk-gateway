@@ -68,4 +68,4 @@ manifests: install-deps
 
 .PHONY: build
 build: manifests
-	go build -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
+	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
