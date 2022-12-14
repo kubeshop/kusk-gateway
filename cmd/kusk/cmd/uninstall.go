@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
@@ -113,7 +114,9 @@ var uninstallCmd = &cobra.Command{
 				if len(apis.Items) == 0 {
 					break
 				}
+				time.Sleep(1 * time.Second)
 			}
+
 			fleets := &kuskv1.EnvoyFleetList{}
 			if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
 				if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
@@ -147,7 +150,9 @@ var uninstallCmd = &cobra.Command{
 				if len(fleets.Items) == 0 {
 					break
 				}
+				time.Sleep(1 * time.Second)
 			}
+
 			staticRoutes := &kuskv1.StaticRouteList{}
 			if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
 				if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
@@ -181,6 +186,7 @@ var uninstallCmd = &cobra.Command{
 				if len(staticRoutes.Items) == 0 {
 					break
 				}
+				time.Sleep(1 * time.Second)
 			}
 
 			kuskGatewaySpinner := utils.NewSpinner("Deleting Kusk Gateway...")
