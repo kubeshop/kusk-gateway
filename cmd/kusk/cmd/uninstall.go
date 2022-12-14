@@ -101,7 +101,19 @@ var uninstallCmd = &cobra.Command{
 				}
 				apiSpinner.Success("Deleted APIs")
 			}
-
+			for {
+				if err := c.List(cmd.Context(), apis, &client.ListOptions{}); err != nil {
+					if err.Error() == `no matches for kind "API" in version "gateway.kusk.io/v1alpha1"` {
+						kuskui.PrintInfo("Kusk Custom Resource Definition API is not installed.")
+					} else {
+						reportError(err)
+						return err
+					}
+				}
+				if len(apis.Items) == 0 {
+					break
+				}
+			}
 			fleets := &kuskv1.EnvoyFleetList{}
 			if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
 				if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
@@ -123,6 +135,19 @@ var uninstallCmd = &cobra.Command{
 				envoyFleetSpinner.Success("Deleted EnvoyFleets")
 			}
 
+			for {
+				if err := c.List(cmd.Context(), fleets, &client.ListOptions{}); err != nil {
+					if err.Error() == `no matches for kind "EnvoyFleet" in version "gateway.kusk.io/v1alpha1"` {
+						kuskui.PrintInfo("Kusk Custom Resource Definition EnvoyFleet is not installed.")
+					} else {
+						reportError(err)
+						return err
+					}
+				}
+				if len(fleets.Items) == 0 {
+					break
+				}
+			}
 			staticRoutes := &kuskv1.StaticRouteList{}
 			if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
 				if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
@@ -142,6 +167,20 @@ var uninstallCmd = &cobra.Command{
 					}
 				}
 				staticRoutesSpinner.Success("Deleted StaticRoutes")
+			}
+
+			for {
+				if err := c.List(cmd.Context(), staticRoutes, &client.ListOptions{}); err != nil {
+					if err.Error() == `no matches for kind "StaticRoute" in version "gateway.kusk.io/v1alpha1"` {
+						kuskui.PrintInfo("Kusk Custom Resource Definition StaticRouote is not installed")
+					} else {
+						reportError(err)
+						return err
+					}
+				}
+				if len(staticRoutes.Items) == 0 {
+					break
+				}
 			}
 
 			kuskGatewaySpinner := utils.NewSpinner("Deleting Kusk Gateway...")
