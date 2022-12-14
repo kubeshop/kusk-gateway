@@ -28,7 +28,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: kusk-gateway-dashboard
     app.kubernetes.io/name: kusk-gateway-dashboard
-    app.kubernetes.io/version: v1.1.0-stable
+    app.kubernetes.io/version: v1.2.6
 spec:
   selector:
     matchLabels:
@@ -46,7 +46,7 @@ spec:
         app.kubernetes.io/name: kusk-gateway-dashboard
     spec:
       containers:
-        - image: kubeshop/kusk-gateway-dashboard:v1.2.5
+        - image: kubeshop/kusk-gateway-dashboard:v1.2.6
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
