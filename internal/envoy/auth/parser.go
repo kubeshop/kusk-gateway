@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
@@ -34,72 +35,71 @@ import (
 
 var (
 	ErrorAuthIsNil                = fmt.Errorf("auth.ParseAuthOptions: `auth` is nil")
-	ErrorMutuallyExclusiveOptions = fmt.Errorf("auth.ParseAuthOptions: `auth.auth-upstream` and `auth.oauth2` are enabled but are mutually exclusive")
+	ErrorMutuallyExclusiveOptions = fmt.Errorf("auth.ParseAuthOptions: `auth.custom` and `auth.oauth2` are enabled but are mutually exclusive")
 )
 
 type generateClusterNameFunc func( /*name*/ string /*port*/, uint32) string
 
-type parseAuthOptionsArguments struct {
+type CloudEntityBuilderArguments struct {
+	Name      string
+	RoutePath string
+	Method    string
+}
+
+type ParseAuthArguments struct {
 	Logger                       logr.Logger
 	EnvoyConfiguration           *config.EnvoyConfiguration
 	HTTPConnectionManagerBuilder *config.HCMBuilder
-	Name                         string
-	RoutePath                    string
-	Method                       string
+	CloudEntityBuilderArguments  *CloudEntityBuilderArguments
 	CloudEntityBuilder           *cloudentity.Builder
 	GenerateClusterName          generateClusterNameFunc
+	KubernetesClient             client.Client
 }
 
-func NewParseAuthOptionsArguments(
-	logger logr.Logger,
-	envoyConfiguration *config.EnvoyConfiguration,
-	httpConnectionManagerBuilder *config.HCMBuilder,
-	name string, routePathstring,
-	method string,
-	cloudEntityBuilder *cloudentity.Builder,
-	generateClusterName generateClusterNameFunc) *parseAuthOptionsArguments {
-	return &parseAuthOptionsArguments{
-		Logger:                       logger,
-		EnvoyConfiguration:           envoyConfiguration,
-		HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
-		Name:                         name,
-		RoutePath:                    routePathstring,
-		Method:                       method,
-		CloudEntityBuilder:           cloudEntityBuilder,
-		GenerateClusterName:          generateClusterName,
-	}
-}
+func ParseAuthOptions(auth *options.AuthOptions, args *ParseAuthArguments) error {
+	logger := args.Logger.WithName("auth.ParseAuthOptions")
 
-func ParseAuthOptions(finalOpts options.SubOptions, args *parseAuthOptionsArguments) error {
-	if finalOpts.Auth == nil {
+	if auth == nil {
 		return ErrorAuthIsNil
 	}
 
-	authUpstream := finalOpts.Auth.AuthUpstream
-	oauth2 := finalOpts.Auth.OAuth2
-
-	if authUpstream != nil && oauth2 != nil {
+	if auth.Custom != nil && auth.OAuth2 != nil {
 		return ErrorMutuallyExclusiveOptions
 	}
 
-	if authUpstream != nil {
-		scheme := finalOpts.Auth.Scheme
-		err := ParseAuthUpstreamOptions(authUpstream, args, scheme)
-		if err != nil {
+	if auth.Custom != nil {
+		scheme := "custom"
+		var pathPrefix string
+		if auth.Custom.PathPrefix != nil {
+			pathPrefix = *auth.Custom.PathPrefix
+		}
+		var customHostPath *string
+		if auth.Custom != nil && auth.Custom.Host.Path != nil {
+			customHostPath = auth.Custom.Host.Path
+		}
+		if err := ParseAuthUpstreamOptions(pathPrefix, auth.Custom.Host, args, scheme, customHostPath); err != nil {
+			return err
+		}
+	} else if cloudEntity := auth.Cloudentity; cloudEntity != nil {
+		scheme := "cloudentity"
+		var pathPrefix string
+		if cloudEntity.PathPrefix != nil {
+			pathPrefix = *auth.Cloudentity.PathPrefix
+		}
+		var customHostPath *string
+		if auth.Cloudentity != nil && auth.Cloudentity.Host.Path != nil {
+			customHostPath = auth.Cloudentity.Host.Path
+		}
+		if err := ParseAuthUpstreamOptions(pathPrefix, cloudEntity.Host, args, scheme, customHostPath); err != nil {
+			return err
+		}
+	} else if auth.OAuth2 != nil {
+		if err := ParseOAuth2Options(auth.OAuth2, args); err != nil {
 			return err
 		}
 	}
 
-	if oauth2 != nil {
-		err := ParseOAuth2Options(oauth2, args)
-		if err != nil {
-			return err
-		}
-	}
-
-	args.Logger.
-		WithName("auth.ParseAuthOptions").
-		Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
+	logger.Info("added filter", "HTTPConnectionManager.HttpFilters", len(args.HTTPConnectionManagerBuilder.HTTPConnectionManager.HttpFilters))
 
 	return nil
 }

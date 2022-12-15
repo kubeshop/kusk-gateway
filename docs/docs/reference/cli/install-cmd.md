@@ -46,10 +46,10 @@ $ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
 
 | Flag                    | Description                                                                                                         | Required? |
 |:------------------------|:--------------------------------------------------------------------------------------------------------------------|:---------:|
-| `--name`                | The prefix of the name to give to the helm releases for each of the kusk gateway components (default: kusk-gateway). |     ❌     |
-| `--namespace`/`-n`      | The namespace to install kusk gateway into. Will create the namespace if it doesn't exist (default: kusk-system).    |     ❌     |
-| `--no-dashboard`        | When set, will not install the kusk gateway dashboard.                                                              |     ❌     |
-| `--no-api`              | When set, will not install the kusk gateway api. implies --no-dashboard.                                            |     ❌     |
+| `--name`                | The prefix of the name to give to the helm releases for each of the Kusk Gateway components (default: kusk-gateway). |     ❌     |
+| `--namespace`/`-n`      | The namespace to install Kusk Gateway into. Will create the namespace if it doesn't exist (default: kusk-system).    |     ❌     |
+| `--no-dashboard`        | When set, will not install the Kusk Dashboard.                                                              |     ❌     |
+| `--no-api`              | When set, will not install the Kusk Gateway api. implies --no-dashboard.                                            |     ❌     |
 | `--no-envoy-fleet`      | When set, will not install any envoy fleets.                                                                        |     ❌     |
 
 #### **Environment Variables**

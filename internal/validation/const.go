@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"regexp"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
@@ -35,10 +34,6 @@ import (
 	"github.com/mitchellh/copystructure"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
-)
-
-var (
-	reAdjustSubstitutions = regexp.MustCompile(`\\(\d+)`)
 )
 
 const (

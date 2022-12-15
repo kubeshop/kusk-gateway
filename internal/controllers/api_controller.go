@@ -60,7 +60,7 @@ type APIReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := ctrl.LoggerFrom(ctx).WithName("api-controller")
-	analytics.SendAnonymousInfo(ctx, r.Client, "kusk", "reconciling API")
+	_ = analytics.SendAnonymousInfo(ctx, r.Client, "kusk", "reconciling API")
 
 	l.Info("Reconciling changed API resource", "changed", req.NamespacedName)
 	defer l.Info("Finished reconciling changed API resource", "changed", req.NamespacedName)
@@ -113,6 +113,7 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// Finally call ConfigManager to update the configuration with this fleet ID
 	if err := r.ConfigManager.UpdateConfiguration(ctx, *apiObj.Spec.Fleet); err != nil {
 		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, with error %s", req.NamespacedName, err.Error()))
 		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
 

@@ -30,25 +30,28 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
+	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *parseAuthOptionsArguments, scheme string) error {
-	upstreamServiceHost := authUpstreamOptions.Host.Hostname
-	upstreamServicePort := authUpstreamOptions.Host.Port
+func ParseAuthUpstreamOptions(pathPrefix string, host options.AuthUpstreamHost, args *ParseAuthArguments, scheme string, path *string) error {
+	upstreamServiceHost := host.Hostname
+	upstreamServicePort := host.Port
 
 	clusterName := args.GenerateClusterName(upstreamServiceHost, upstreamServicePort)
 
 	var authHeaders []*envoy_config_core_v3.HeaderValue
+
 	if scheme == options.SchemeCloudEntity {
+		authServiceHost, authServicePort := services.AuthServiceHostPort()
+
 		var (
 			// fetch auth service host and port once
-			// TODO: fetch kusk gateway auth service dynamically
-			cloudEntityHostname string = "kusk-gateway-auth-service.kusk-system.svc.cluster.local."
-			cloudEntityPort     uint32 = 19000
+			cloudEntityHostname = authServiceHost
+			cloudEntityPort     = uint32(authServicePort)
 		)
 
-		args.CloudEntityBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, args.Name, args.Name, args.RoutePath, args.Method)
+		args.CloudEntityBuilder.AddAPI(upstreamServiceHost, upstreamServicePort, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.Name, args.CloudEntityBuilderArguments.RoutePath, args.CloudEntityBuilderArguments.Method)
 		authHeaders = []*envoy_config_core_v3.HeaderValue{
 			{
 				Key:   cloudentity.HeaderAuthorizerURL,
@@ -56,7 +59,7 @@ func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *p
 			},
 			{
 				Key:   cloudentity.HeaderAPIGroup,
-				Value: args.Name,
+				Value: args.CloudEntityBuilderArguments.Name,
 			},
 		}
 		upstreamServiceHost = cloudEntityHostname
@@ -71,17 +74,13 @@ func ParseAuthUpstreamOptions(authUpstreamOptions *options.AuthUpstream, args *p
 		)
 	}
 
-	pathPrefix := ""
-	if authUpstreamOptions.PathPrefix != nil {
-		pathPrefix = *authUpstreamOptions.PathPrefix
-	}
-
 	typedConfig, err := NewFilterHTTPExternalAuthorization(
 		upstreamServiceHost,
 		upstreamServicePort,
 		clusterName,
 		pathPrefix,
 		authHeaders,
+		path,
 	)
 	if err != nil {
 		return err

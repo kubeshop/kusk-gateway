@@ -46,14 +46,14 @@ var (
 )
 
 const (
-	EnvoyFleetMutatingWebhookPath   string = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
-	EnvoyFleetValidatingWebhookPath        = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetMutatingWebhookPath   = "/mutate-gateway-kusk-io-v1alpha1-envoyfleet"
+	EnvoyFleetValidatingWebhookPath = "/validate-gateway-kusk-io-v1alpha1-envoyfleet"
 )
 
 //+kubebuilder:webhook:path=/mutate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=true,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=menvoyfleet.kb.io,admissionReviewVersions=v1
 
 // EnvoyFleetMutator handles EnvoyFleet objects defaulting and any additional mutation
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type EnvoyFleetMutator struct {
 	decoder *admission.Decoder
 }
@@ -90,7 +90,7 @@ func (e *EnvoyFleetMutator) InjectDecoder(d *admission.Decoder) error {
 //+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-envoyfleet,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=envoyfleet,verbs=create;update,versions=v1alpha1,name=venvoyfleet.kb.io,admissionReviewVersions=v1
 
 // EnvoyFleetValidator handles EnvoyFleet objects validation
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type EnvoyFleetValidator struct {
 	Client  client.Client
 	decoder *admission.Decoder

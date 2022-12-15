@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,9 @@ SOFTWARE.
 package options
 
 import (
-	v "github.com/go-ozzo/ozzo-validation/v4"
+	"fmt"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
 // StaticOperationSubOptions maps method (get, post) to related static subopts
@@ -51,13 +53,19 @@ type StaticOptions struct {
 	*/
 	Hosts []Host
 
+	Auth *AuthOptions `json:"auth,omitempty" yaml:"auth,omitempty"`
 	// Paths allow to specify a specific set of option for a given path and a method.
 	// This is a 2-dimensional map[path][method].
 	// The map key is the path and the next map key is a HTTP method (operation).
 	// This closely follows OpenAPI structure, but was chosen only due to the only way to specify different routing action for
 	// different methods in one YAML document.
 	// E.g. if GET / goes to frontend, and POST / goes to API, you cannot specify path as a key with the different methods twice in one YAML file.
-	Paths map[string]StaticOperationSubOptions `yaml:"-" json:"-"`
+	//
+	// Paths is a multidimensional map of path / method to the routing rules.
+	// It should just contain the route path, "/".
+	Paths map[string]StaticOperationSubOptions `yaml:"paths,omitempty" json:"paths,omitempty"`
+	// Upstream is a set of options of a target service to receive traffic.
+	Upstream UpstreamOptions `json:"upstream" yaml:"upstream"`
 }
 
 func (o *StaticOptions) fillDefaults() {
@@ -67,10 +75,20 @@ func (o *StaticOptions) fillDefaults() {
 }
 
 func (o StaticOptions) Validate() error {
-	return v.ValidateStruct(&o,
-		v.Field(&o.Hosts, v.Each()),
-		v.Field(&o.Paths, v.Each()),
-	)
+	if o.Auth != nil && o.Auth.Custom != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `custom` has been specified")
+	}
+	if o.Auth != nil && o.Auth.Cloudentity != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `cloudentity` has been specified")
+	}
+	if o.Auth != nil && o.Auth.JWT != nil {
+		return fmt.Errorf("`auth` in `StaticRoute` can only be `oauth2`: `jwt` has been specified")
+	}
+
+	return validation.ValidateStruct(&o,
+		validation.Field(&o.Hosts, validation.Each()),
+		validation.Field(&o.Upstream, validation.Required),
+		validation.Field(&o.Auth))
 }
 
 func (o *StaticOptions) FillDefaultsAndValidate() error {

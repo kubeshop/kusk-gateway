@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,11 +56,12 @@ func getOperationOptions(operation *openapi3.Operation) (options.SubOptions, boo
 // For each found method in the document top and path level x-kusk options will be merged in
 // to form OperationFinalSubOptions map that has the complete configuration for each method.
 func GetOptions(spec *openapi3.T) (*options.Options, error) {
-	res := options.Options{
-		OperationFinalSubOptions: make(map[string]options.SubOptions),
+	globalOpts, err := getGlobalOptsFromSpec(spec)
+	if err != nil {
+		return nil, err
 	}
 
-	if _, err := parseExtension(&spec.ExtensionProps, &res); err != nil {
+	if _, err := parseExtension(&spec.ExtensionProps, &globalOpts); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +72,7 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 		}
 
 		// Merge in top level.
-		pathSubOptions.MergeInSubOptions(&res.SubOptions)
+		pathSubOptions.MergeInSubOptions(&globalOpts.SubOptions)
 		for method, operation := range pathItem.Operations() {
 			operationSubOptions, _, err := getOperationOptions(operation)
 			if err != nil {
@@ -80,11 +81,35 @@ func GetOptions(spec *openapi3.T) (*options.Options, error) {
 
 			// Merged in path
 			operationSubOptions.MergeInSubOptions(&pathSubOptions)
-			res.OperationFinalSubOptions[method+path] = operationSubOptions
+			globalOpts.OperationFinalSubOptions[method+path] = operationSubOptions
 		}
 	}
 
-	return &res, nil
+	return &globalOpts, nil
+}
+
+func getGlobalOptsFromSpec(spec *openapi3.T) (options.Options, error) {
+	opts := options.Options{
+		SubOptions:               options.SubOptions{},
+		OperationFinalSubOptions: map[string]options.SubOptions{},
+	}
+
+	allExtensions := spec.ExtensionProps.Extensions
+	if globalOptsNotAlreadySet := allExtensions == nil; globalOptsNotAlreadySet {
+		allExtensions = make(map[string]interface{})
+	}
+
+	// extract already set global options if they exist
+	// so, they can be merged later with path/operation level options
+	if so, ok := allExtensions[kuskExtensionKey]; ok {
+		if kuskExtension, ok := so.(json.RawMessage); ok {
+			if err := yaml.UnmarshalStrict(kuskExtension, &opts); err != nil {
+				return options.Options{}, fmt.Errorf("failed to parse allExtensions: %w. Check the extensions supported by Kusk at  https://docs.kusk.io/extension", err)
+			}
+		}
+	}
+
+	return opts, nil
 }
 
 func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{}) (bool, error) {
@@ -92,7 +117,7 @@ func parseExtension(extensionProps *openapi3.ExtensionProps, target interface{})
 		if kuskExtension, ok := extension.(json.RawMessage); ok {
 			err := yaml.UnmarshalStrict(kuskExtension, target)
 			if err != nil {
-				return false, fmt.Errorf("failed to parse extension: %w", err)
+				return false, fmt.Errorf("failed to parse extension: %w. Check the extensions supported by Kusk at  https://docs.kusk.io/extension", err)
 			}
 
 			return true, nil
@@ -111,11 +136,10 @@ func PostProcessedDef(apiSpec openapi3.T, opt options.Options) *openapi3.T {
 		pathOptions, _, _ := getPathOptions(pathItem)
 		for method := range pathItem.Operations() {
 			if pathOptions.Disabled != nil && *pathOptions.Disabled {
-				item := &openapi3.PathItem{}
 				fOpt := opt.OperationFinalSubOptions[method+path]
 				if fOpt.Disabled != nil && !*fOpt.Disabled {
 					if pathOptions.Disabled != nil && *pathOptions.Disabled {
-						if item = parsePathItem(pathItem); len(item.Operations()) > 0 {
+						if item := parsePathItem(pathItem); len(item.Operations()) > 0 {
 							postProcessed.Paths[path] = item
 						}
 					}

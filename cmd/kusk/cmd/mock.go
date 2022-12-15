@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
 */
 package cmd
 
@@ -42,11 +41,12 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/kubeshop/testkube/pkg/ui"
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/config"
 	error_reporter "github.com/kubeshop/kusk-gateway/cmd/kusk/internal/errors"
+	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/kuskui"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking"
 	"github.com/kubeshop/kusk-gateway/cmd/kusk/internal/mocking/filewatcher"
 
@@ -60,56 +60,6 @@ var mockServerPort uint32
 var mockCmd = &cobra.Command{
 	Use:   "mock",
 	Short: "Spin up a local mocking server serving your API",
-	Long: `Spin up a local mocking server that generates responses from your content schema or returns your defined examples.
-Schema example:
-
-content:
- application/json:
-  schema:
-   type: object
-   properties:
-    title:
-     type: string
-     description: Description of what to do
-    completed:
-     type: boolean
-    order:
-     type: integer
-     format: int32
-    url:
-     type: string
-     format: uri
-   required:
-    - title
-    - completed
-    - order
-    - url
-
-The mock server will return a response like the following that matches the schema above:
-{
- "completed": false,
- "order": 1957493166,
- "title": "Inventore ut.",
- "url": "http://langosh.name/andreanne.parker"
-}
-
-Example with example responses:
-
-application/xml:
- example:
-  title: "Mocked XML title"
-  completed: true
-  order: 13
-  url: "http://mockedURL.com"
-
-The mock server will return this exact response as its specified in an example:
-<doc>
- <completed>true</completed>
- <order>13</order>
- <title>Mocked XML title</title>
- <url>http://mockedURL.com</url>
-</doc>
-`,
 	Example: `
 To mock an api on the local file system
 $ kusk mock -i path-to-openapi-file.yaml
@@ -128,12 +78,12 @@ $ kusk mock -i https://url.to.api.com
 		if err != nil {
 			err := fmt.Errorf("unable to fetch user's home directory: %w", err)
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
 		if err := config.CreateDirectoryIfNotExists(homeDir); err != nil {
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
 		kuskConfigDir := path.Join(homeDir, ".kusk")
@@ -141,7 +91,7 @@ $ kusk mock -i https://url.to.api.com
 		u, err := url.Parse(apiSpecPath)
 		if err != nil {
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
 		apiOnFileSystem := u.Host == ""
@@ -161,21 +111,25 @@ $ kusk mock -i https://url.to.api.com
 			absoluteApiSpecPath, err := filepath.Abs(apiSpecPath)
 			if err != nil {
 				reportError(err)
-				ui.Fail(err)
+				kuskui.PrintError(err.Error())
 			}
 
 			popFunc, err := pushDirectory(filepath.Dir(absoluteApiSpecPath))
+			if err != nil {
+				reportError(err)
+				kuskui.PrintError(err.Error())
+			}
 			defer func() {
 				if err := popFunc(); err != nil {
 					reportError(err)
-					ui.Fail(err)
+					kuskui.PrintError(err.Error())
 				}
 			}()
 
 			watcher, err = filewatcher.New(absoluteApiSpecPath)
 			if err != nil {
 				reportError(err)
-				ui.Fail(err)
+				kuskui.PrintError(err.Error())
 			}
 			defer watcher.Close()
 
@@ -191,16 +145,16 @@ $ kusk mock -i https://url.to.api.com
 		if err != nil {
 			err := fmt.Errorf("error when parsing openapi spec: %w", err)
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
 		if err := apiSpec.Validate(context.Background()); err != nil {
 			err := fmt.Errorf("openapi spec failed validation: %w", err)
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
-		ui.Info(ui.Green("🎉 successfully parsed OpenAPI spec"))
+		kuskui.PrintSuccess("successfully parsed OpenAPI spec")
 
 		var tempApiFileName string
 		apiToMock := apiSpecLocation
@@ -209,7 +163,7 @@ $ kusk mock -i https://url.to.api.com
 			tempApiFile, err := os.CreateTemp(kuskConfigDir, "mocked-api-*.yaml")
 			if err != nil {
 				reportError(err)
-				ui.Fail(err)
+				kuskui.PrintError(err.Error())
 			}
 
 			tempApiFileName = tempApiFile.Name()
@@ -217,43 +171,43 @@ $ kusk mock -i https://url.to.api.com
 			defer func(fileName string) {
 				if err := tempApiFile.Close(); err != nil {
 					reportError(err)
-					ui.Fail(err)
+					kuskui.PrintError(err.Error())
 				}
 				if err := os.Remove(fileName); err != nil {
 					reportError(err)
-					ui.Fail(err)
+					kuskui.PrintError(err.Error())
 				}
 			}(tempApiFileName)
 
 			if err := writeInitialisedApiToTempFile(tempApiFileName, apiSpec); err != nil {
 				reportError(err)
-				ui.Fail(err)
+				kuskui.PrintError(err.Error())
 			}
 
 			apiToMock = tempApiFileName
 		}
 
-		ui.Info(ui.White("☀️ initializing mocking server"))
+		kuskui.PrintStart("☀️ initializing mocking server")
 		mockServer, err := setUpMockingServer(kuskConfigDir, apiToMock)
 		if err != nil {
 			msg := fmt.Errorf("error when setting up mocking server: %w", err)
 			reportError(msg)
-			ui.Fail(msg)
+			kuskui.PrintError(err.Error())
 		}
 
 		ctx := context.Background()
 		mockServerId, err := mockServer.Start(ctx)
 		if err != nil {
 			reportError(err)
-			ui.Fail(err)
+			kuskui.PrintError(err.Error())
 		}
 
 		statusCh, errCh := mockServer.ServerWait(ctx, mockServerId)
 
 		go mockServer.StreamLogs(ctx, mockServerId)
 
-		ui.Info(ui.Green("🎉 server successfully initialized"))
-		ui.Info(ui.DarkGray("URL: ") + ui.White("http://localhost:"+fmt.Sprint(mockServerPort)))
+		kuskui.PrintSuccess("🎉 server successfully initialized")
+		kuskui.PrintInfo("URL: http://localhost:" + fmt.Sprint(mockServerPort))
 
 		// set up signal channel listening for ctrl+c
 		sigs := make(chan os.Signal, 1)
@@ -262,13 +216,13 @@ $ kusk mock -i https://url.to.api.com
 		// if watcher is nil, then the api comes from a URL and we shouldn't watch it
 		// otherwise it's on the file system and we can watch for changes
 		if watcher != nil {
-			ui.Info(ui.White("⏳ watching for file changes in " + apiSpecPath))
+			kuskui.PrintInfo("⏳ watching for file changes in " + apiSpecPath)
 			go watcher.Watch(func() {
-				ui.Info("✍️ change detected in " + apiSpecPath)
+				kuskui.PrintInfo("✍️ change detected in ", apiSpecPath)
 				err := apiFileUpdateHandler(ctx, mockServer, apiSpecLocation, tempApiFileName, mockServerId)
 				if err != nil {
 					reportError(err)
-					ui.Fail(err)
+					kuskui.PrintError(err.Error())
 				}
 			}, sigs)
 		}
@@ -284,9 +238,9 @@ $ kusk mock -i https://url.to.api.com
 					if err != nil {
 						err := fmt.Errorf("unable to restart mocking server")
 						reportError(err)
-						ui.Fail(err)
+						kuskui.PrintError(err.Error())
 					}
-					ui.Info("☀️ mock server restarted")
+					kuskui.PrintInfo("☀️ mock server restarted")
 
 					// reassign status and err channels for new mock server
 					// as old ones will now be closed
@@ -301,23 +255,23 @@ $ kusk mock -i https://url.to.api.com
 				}
 				err = fmt.Errorf("an unexpected error occured: %w", err)
 				reportError(err)
-				ui.Fail(err)
+				kuskui.PrintError(err.Error())
 			case logEntry, ok := <-mockServer.LogCh:
 				if !ok {
 					return
 				}
-				ui.Info(decorateLogEntry(logEntry))
+				kuskui.PrintInfo(decorateLogEntry(logEntry))
 			case err, ok := <-mockServer.ErrCh:
 				if !ok {
 					return
 				}
-				ui.Warn(err.Error())
+				kuskui.PrintWarning(err.Error())
 			case <-sigs:
-				ui.Info("😴 shutting down mocking server")
+				kuskui.PrintInfo("😴 shutting down mocking server")
 				if err := mockServer.Stop(ctx, mockServerId); err != nil {
 					err := fmt.Errorf("unable to stop mocking server: %w", err)
 					reportError(err)
-					ui.Fail(err)
+					kuskui.PrintError(err.Error())
 				}
 				return
 			}
@@ -476,37 +430,133 @@ func writeMockingConfigIfNotExists(mockingConfigPath string) error {
 
 func decorateLogEntry(entry mockingServer.AccessLogEntry) string {
 	methodColors := map[string]func(...interface{}) string{
-		http.MethodGet:     ui.Blue,
-		http.MethodPost:    ui.Green,
-		http.MethodDelete:  ui.LightRed,
-		http.MethodHead:    ui.LightBlue,
-		http.MethodPut:     ui.Yellow,
-		http.MethodPatch:   ui.Red,
-		http.MethodConnect: ui.LightCyan,
-		http.MethodOptions: ui.LightYellow,
-		http.MethodTrace:   ui.White,
+		http.MethodGet:     color.FgBlue.Render,
+		http.MethodPost:    color.FgGreen.Render,
+		http.MethodDelete:  color.FgLightRed.Render,
+		http.MethodHead:    color.FgLightBlue.Render,
+		http.MethodPut:     color.FgYellow.Render,
+		http.MethodPatch:   color.FgRed.Render,
+		http.MethodConnect: color.FgLightCyan.Render,
+		http.MethodOptions: color.FgLightYellow.Render,
+		http.MethodTrace:   color.FgWhite.Render,
 	}
 
-	decoratedStatusCode := ui.Green(entry.StatusCode)
+	decoratedStatusCode := color.FgGreen.Render(entry.StatusCode)
 
 	if intStatusCode, err := strconv.Atoi(entry.StatusCode); err == nil && intStatusCode > 399 {
-		decoratedStatusCode = ui.Red(entry.StatusCode)
+		decoratedStatusCode = color.FgRed.Render(entry.StatusCode)
 	}
 
 	return fmt.Sprintf(
 		"%s %s %s %s",
-		ui.DarkGray(entry.TimeStamp),
+		color.FgDarkGray.Render(entry.TimeStamp),
 		methodColors[entry.Method]("[", entry.Method, "]"),
 		decoratedStatusCode,
-		ui.White(entry.Path),
+		entry.Path,
 	)
 
 }
 
 func init() {
 	rootCmd.AddCommand(mockCmd)
-	mockCmd.Flags().StringVarP(&apiSpecPath, "in", "i", "", "path to openapi spec you wish to mock")
-	mockCmd.MarkFlagRequired("in")
 
-	mockCmd.Flags().Uint32VarP(&mockServerPort, "port", "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
+	const (
+		inFlagName   = "in"
+		portFlagName = "port"
+	)
+
+	mockCmd.Flags().StringVarP(&apiSpecPath, inFlagName, "i", "", "path to openapi spec you wish to mock")
+	_ = mockCmd.MarkFlagRequired(inFlagName)
+
+	mockCmd.Flags().Uint32VarP(&mockServerPort, portFlagName, "p", 0, "port to expose mock server on. If none specified, will search for next available port starting from 8080")
 }
+
+var mockDescription = `Description:
+Spins up a local mock API server that imitates a real API server. It does this by generating responses like the
+real API would return from your content schema or defined examples.
+Note: Kusk mock prioritises examples over schema definitions.
+`
+
+var mockHelp = `
+Mock Command:
+kusk mock -i path-to-openapi-file.yaml
+kusk mock -i https://url.to.api.com
+
+Schema example:
+openapi: 3.0.0
+info:
+  title: todo-backend-api
+  version: 0.0.2
+paths:
+  /todos:
+    get:
+      responses:
+        '200':
+          description: 'ToDos'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Description of what to do
+                  completed:
+                    type: boolean
+                  order:
+                    type: integer
+                    format: int32
+                  url:
+                    type: string
+                    format: uri
+                required:
+                  - title
+                  - completed
+                  - order
+                  - url
+            application/xml:
+              example:
+                title: "Mocked XML title"
+                completed: true
+                order: 13
+                url: "http://mockedURL.com"
+            text/plain:
+              example: |
+                title: "Mocked Text title"
+                completed: true
+                order: 13
+                url: "http://mockedURL.com"
+
+Generated JSON Response:
+{
+  "completed": false,
+  "order": 1957493166,
+  "title": "Inventore ut.",
+  "url": "http://langosh.name/andreanne.parker"
+}
+
+Generated XML Response:
+ application/xml:
+  example:
+   title: "Mocked XML title"
+   completed: true
+   order: 13
+   url: "http://mockedURL.com"
+
+XML Respose from Defined Examples:
+ <doc>
+  <completed>true</completed>
+  <order>13</order>
+  <title>Mocked XML title</title>
+  <url>http://mockedURL.com</url>
+ </doc>
+
+Plain Text Response from Defined Examples:
+title: "Mocked Text title"
+completed: true
+order: 13
+url: "http://mockedURL.com"
+
+Stop Mock Server:
+ctrt+c
+`

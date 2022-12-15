@@ -23,29 +23,38 @@
 package auth
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_extensions_filter_http_oauth2_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/oauth2/v3"
 	envoy_extensions_transport_sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+
+	v1 "k8s.io/api/core/v1"
+	types "k8s.io/apimachinery/pkg/types"
 
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 )
 
-func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsArguments) (*anypb.Any, error) {
+func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *ParseAuthArguments) (*anypb.Any, error) {
+	logger := args.Logger
+
 	// Example Input: "https://kubeshop-kusk-gateway-oauth2.eu.auth0.com/oauth/token"
 	// Example Output from url.Hostname(): "kubeshop-kusk-gateway-oauth2.eu.auth0.com"
 	// Example Output from url.Port(): ""
 	url, err := url.Parse(oauth2Options.TokenEndpoint)
 	if err != nil {
 		err = fmt.Errorf("auth.NewFilterHTTPOAuth2: could not determine upstreamServiceHost from oauth2.token_endpoint=%q, %w", oauth2Options.TokenEndpoint, err)
-		args.Logger.Error(err, "oauth2.token_endpoint contains an invalid url, failed to parse url")
+		logger.Error(err, "oauth2.token_endpoint contains an invalid url, failed to parse url")
 		return nil, err
 	}
 
@@ -56,7 +65,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		port, err := strconv.ParseUint(url.Port(), 10, 32)
 		if err != nil {
 			err = fmt.Errorf("auth.NewFilterHTTPOAuth2: could not convert port=%q to int oauth2.token_endpoint=%q, %w", url.Port(), oauth2Options.TokenEndpoint, err)
-			args.Logger.Error(err, "oauth2.token_endpoint contains an invalid port, failed to parse url")
+			logger.Error(err, "oauth2.token_endpoint contains an invalid port, failed to parse url")
 			return nil, err
 		}
 		upstreamServicePort = uint32(port)
@@ -68,7 +77,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 			return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: failed on `arguments.EnvoyConfiguration.AddClusterWithTLS`, err=%w", err)
 		}
 	} else {
-		args.Logger.V(1).Info("auth.NewFilterHTTPOAuth2: already existing cluster", "cluster", cluster, "upstreamServiceHost", upstreamServiceHost, "upstreamServicePort", upstreamServicePort)
+		logger.V(1).Info("auth.NewFilterHTTPOAuth2: already existing cluster", "cluster", cluster, "upstreamServiceHost", upstreamServiceHost, "upstreamServicePort", upstreamServicePort)
 	}
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
@@ -80,6 +89,37 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		Timeout:          timeoutDefault(),
 	}
 	authorizationEndpoint := oauth2Options.AuthorizationEndpoint
+
+	if oauth2Options.Credentials.ClientSecret != nil && oauth2Options.Credentials.ClientSecretRef != nil {
+		err := errors.New("auth.NewFilterHTTPOAuth2: You cannot specify both `client_secret_ref` and `client_secret`, the options are mutually exclusive")
+		logger.Error(err, "oauth", oauth2Options)
+		return nil, err
+	}
+
+	clientSecret := ""
+	if oauth2Options.Credentials.ClientSecret != nil {
+		clientSecret = *oauth2Options.Credentials.ClientSecret
+	}
+	if oauth2Options.Credentials.ClientSecretRef != nil {
+		kubernetesClient := args.KubernetesClient
+		logger.Info("auth.NewFilterHTTPOAuth2: getting secret", "client_secret_ref", oauth2Options.Credentials.ClientSecretRef)
+
+		secret := &v1.Secret{}
+		key := types.NamespacedName{
+			Name:      oauth2Options.Credentials.ClientSecretRef.Name,
+			Namespace: oauth2Options.Credentials.ClientSecretRef.Namespace,
+		}
+		if err := kubernetesClient.Get(context.Background(), key, secret); err != nil {
+			err := fmt.Errorf("auth.NewFilterHTTPOAuth2: failed to get secret=%v from namespace=%v, %w", oauth2Options.Credentials.ClientSecretRef.Name, oauth2Options.Credentials.ClientSecretRef.Namespace, err)
+			logger.Error(err, "oauth", oauth2Options)
+			return nil, err
+		}
+
+		logger.Info("auth.NewFilterHTTPOAuth2: retrieved secret", "client_secret_ref", oauth2Options.Credentials.ClientSecretRef, "secret", spew.Sprint(secret))
+		clientSecret = string(secret.Data["client_secret"])
+	}
+
+	_ = clientSecret
 
 	tokenSecret := &envoy_extensions_transport_sockets_tls_v3.SdsSecretConfig{
 		Name: "token",
@@ -110,6 +150,20 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 	authScopes := oauth2Options.AuthScopes
 	resources := oauth2Options.Resources
 
+	passThroughMatcher := []*envoy_config_route_v3.HeaderMatcher{}
+	if len(oauth2Options.PassThroughMatcher) > 0 {
+		for _, exactMatch := range oauth2Options.PassThroughMatcher {
+			headerMatcher := headerMatcherExactMatch(exactMatch)
+			passThroughMatcher = append(passThroughMatcher, headerMatcher)
+		}
+	} else {
+		// Disable OAuth2 on the root path - "/" - if `pass_through_matcher` has not been specified.
+		// See: <https://github.com/kubeshop/kusk-gateway/issues/680>.
+		passThroughMatcher = []*envoy_config_route_v3.HeaderMatcher{
+			headerMatcherExactMatch("/"),
+		}
+	}
+
 	config := &envoy_extensions_filter_http_oauth2_v3.OAuth2Config{
 		// Endpoint on the authorization server to retrieve the access token from.
 		TokenEndpoint: tokenEndpoint,
@@ -129,8 +183,8 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		SignoutPath: signoutPath,
 		// Forward the OAuth token as a Bearer to upstream web service.
 		ForwardBearerToken: forwardBearerToken,
-		// // Any request that matches any of the provided matchers will be passed through without OAuth validation.
-		// PassThroughMatcher: nil,
+		// Any request that matches any of the provided matchers will be passed through without OAuth validation.
+		PassThroughMatcher: passThroughMatcher,
 		// Optional list of OAuth scopes to be claimed in the authorization request. If not specified,
 		// defaults to "user" scope.
 		// OAuth RFC https://tools.ietf.org/html/rfc6749#section-3.3
@@ -153,7 +207,7 @@ func NewFilterHTTPOAuth2(oauth2Options *options.OAuth2, args *parseAuthOptionsAr
 		return nil, fmt.Errorf("auth.NewFilterHTTPOAuth2: cannot marshal filter oAuth2=%+#v, %w", oAuth2, err)
 	}
 
-	return anyOAuth2, nil
+	return anyOAuth2, err
 }
 
 func GenerateHMAC() (string, error) {

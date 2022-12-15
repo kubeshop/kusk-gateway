@@ -494,30 +494,14 @@ func (in *StaticRouteSpec) DeepCopyInto(out *StaticRouteSpec) {
 		*out = make([]options.Host, len(*in))
 		copy(*out, *in)
 	}
-	if in.Paths != nil {
-		in, out := &in.Paths, &out.Paths
-		*out = make(map[Path]Methods, len(*in))
-		for key, val := range *in {
-			var outVal map[options.HTTPMethod]*Action
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = make(Methods, len(*in))
-				for key, val := range *in {
-					var outVal *Action
-					if val == nil {
-						(*out)[key] = nil
-					} else {
-						in, out := &val, &outVal
-						*out = new(Action)
-						(*in).DeepCopyInto(*out)
-					}
-					(*out)[key] = outVal
-				}
-			}
-			(*out)[key] = outVal
-		}
+	if in.Auth != nil {
+		in, out := &in.Auth, &out.Auth
+		*out = new(options.AuthOptions)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Upstream != nil {
+		in, out := &in.Upstream, &out.Upstream
+		*out = (*in).DeepCopy()
 	}
 }
 

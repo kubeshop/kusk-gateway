@@ -39,6 +39,7 @@ import (
 	"github.com/avast/retry-go/v3"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -52,6 +53,7 @@ var (
 	noApi            bool
 	noDashboard      bool
 	noEnvoyFleet     bool
+	noDevPortal      bool
 	analyticsEnabled = "true"
 	latest           bool
 )
@@ -62,6 +64,7 @@ func init() {
 	installCmd.Flags().BoolVar(&noDashboard, "no-dashboard", false, "don't the install dashboard")
 	installCmd.Flags().BoolVar(&noApi, "no-api", false, "don't install the api. Setting this flag implies --no-dashboard")
 	installCmd.Flags().BoolVar(&noEnvoyFleet, "no-envoy-fleet", false, "don't install any envoy fleets")
+	installCmd.Flags().BoolVar(&noDevPortal, "no-dev-portal", false, "don't install the dev portal")
 	installCmd.Flags().BoolVar(&latest, "latest", false, "get latest Kusk version from Github")
 	if enabled, ok := os.LookupEnv("ANALYTICS_ENABLED"); ok {
 		analyticsEnabled = enabled
@@ -78,16 +81,16 @@ var installCmd = &cobra.Command{
 
 	$ kusk cluster install
 
-	Will install kusk-gateway, a public (for your APIS) and private (for the kusk dashboard and api)
+	Will install Kusk Gateway, a public (for your APIs) and private (for the Kusk Dashboard and API)
 	envoy-fleet, api, and dashboard in the kusk-system namespace using helm.
 
 	$ kusk install --latest
 
 	Will pull the latest version of kusk available
 
-	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet
+	$ kusk cluster install --no-dashboard --no-api --no-envoy-fleet --no-dev-portal
 
-	Will install kusk-gateway, but not the dashboard, api, or envoy-fleet.
+	Will install kusk-gateway, but not the dashboard, api, envoy-fleet, or dev portal.
 	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -112,117 +115,151 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		kuskui.PrintStart("installing kusk...")
-
 		c, err := utils.GetK8sClient()
 		if err != nil {
 			reportError(err)
 			return err
 		}
 
-		if err := applyk(dir); err != nil {
-			kuskui.PrintError("❌ failed installing Kusk")
+		deployments := appsv1.DeploymentList{}
+		if err := c.List(cmd.Context(), &deployments, &client.ListOptions{Namespace: kusknamespace}); err != nil {
 			reportError(err)
 			return err
 		}
-		namespace := "kusk-system"
+
+		if len(deployments.Items) != 0 {
+			kuskui.PrintInfo("Kusk is already installed in the cluster.\n")
+			kuskui.PrintInfo("Reinstalling components.\n")
+		}
+
+		kuskui.PrintInfo("🚀 Installing Kusk in your cluster")
+		kuskGatewaySpinner := utils.NewSpinner("Installing Kusk Gateway...")
+
+		if err := applyk(dir); err != nil {
+			kuskui.PrintError("Failed installing Kusk Gateway")
+			reportError(err)
+			return err
+		}
+		namespace := kusknamespace
 		name := "kusk-gateway-manager"
 
 		if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, name, 10*time.Minute, "component"); err != nil {
-			kuskui.PrintError("failed installing Kusk")
+			kuskGatewaySpinner.Fail("Failed installing Kusk Gateway")
 			reportError(err)
 			return err
 		}
 
 		if err := utils.WaitForDeploymentReady(cmd.Context(), c, namespace, name, 10*time.Minute); err != nil {
-			kuskui.PrintError("failed installing Kusk")
+			kuskGatewaySpinner.Fail("Failed installing Kusk Gateway")
 			reportError(err)
 			return err
 		}
 
 		if err := utils.WaitAPIServiceReady(cmd.Context(), c); err != nil {
-			kuskui.PrintError("❌ failed installing Kusk")
+			kuskGatewaySpinner.Fail("Failed installing Kusk Gateway")
 			reportError(err)
 			return err
 		}
 
+		kuskGatewaySpinner.Success("Installing Kusk Gateway")
+
 		if !noEnvoyFleet {
-			kuskui.PrintStart("installing Envoyfleet...")
+			envoySpinner := utils.NewSpinner("Installing Envoyfleet...")
 			fleet := &kuskv1.EnvoyFleet{}
 
 			if err := provisionFromManifest(cmd.Context(), c, fleet, filepath.Join(dir, manifests_dir, "fleets.yaml")); err != nil {
-				kuskui.PrintError("failed installing Envoyfleets")
+				envoySpinner.Fail("failed installing Envoyfleets")
 				reportError(err)
 				return err
 			}
 
 			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "envoy", time.Duration(5*time.Minute), "component"); err != nil {
-				kuskui.PrintError("failed installing Envoyfleets")
+				envoySpinner.Fail("failed installing Envoyfleets")
 				reportError(err)
 				return err
 			}
+			envoySpinner.Success("Installing Envoyfleet")
 		} else {
-			kuskui.PrintSuccess("\ninstallation complete\n")
+			fmt.Println("")
+			kuskui.PrintSuccess("Installation complete\n")
 			printPortForwardInstructions(noEnvoyFleet)
 			return nil
 		}
 
 		if !noApi {
-			kuskui.PrintStart("installing API Server...")
+			apispinner := utils.NewSpinner("Installing API Server...")
 			api := &kuskv1.API{}
 
 			if err := provisionFromManifest(cmd.Context(), c, api, filepath.Join(dir, manifests_dir, "api_server_api.yaml")); err != nil {
-				kuskui.PrintError("failed installing API Server")
+				apispinner.Fail("Failed installing API Server")
 				reportError(err)
 				return err
 			}
 
 			if err := applyf(filepath.Join(dir, manifests_dir, "api_server.yaml")); err != nil {
-				kuskui.PrintError("failed installing API Server")
+				apispinner.Fail("Failed installing API Server")
 				reportError(err)
 				return err
 			}
-			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-api", time.Duration(5*time.Minute), "instance"); err != nil {
-				kuskui.PrintError("failed installing API Server")
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewayapi, time.Duration(5*time.Minute), "instance"); err != nil {
+				apispinner.Fail("Failed installing API Server")
 				reportError(err)
 				return err
 			}
+			apispinner.Success("Installing API Server")
 		} else {
-			kuskui.PrintSuccess("\ninstallation complete\n")
+			kuskui.PrintSuccess("\nIstallation complete\n")
 			printPortForwardInstructions(noApi)
 			return nil
 		}
 
 		if !noDashboard {
-			kuskui.PrintStart("installing Dashboard...")
+			dashboardSpinner := utils.NewSpinner("Installing Dashboard...")
 			sr := &kuskv1.StaticRoute{}
 			if err := provisionFromManifest(cmd.Context(), c, sr, filepath.Join(dir, manifests_dir, "dashboard_staticroute.yaml")); err != nil {
-				kuskui.PrintError("failed installing Dashboard")
+				dashboardSpinner.Fail("Failed installing Dashboard")
 				reportError(err)
 				return err
 			}
 
 			fleet := &kuskv1.EnvoyFleet{}
 			if err := provisionFromManifest(cmd.Context(), c, fleet, filepath.Join(dir, manifests_dir, "dashboard_envoyfleet.yaml")); err != nil {
-				kuskui.PrintError("failed installing Dashboard")
+				dashboardSpinner.Fail("Failed installing Dashboard")
 				reportError(err)
 				return err
 			}
 
 			if err := applyf(filepath.Join(dir, manifests_dir, "dashboard.yaml")); err != nil {
-				kuskui.PrintError("failed installing Dashboard")
+				dashboardSpinner.Fail("Failed installing Dashboard")
 				reportError(err)
 				return err
 			}
-			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, "kusk-gateway-dashboard", time.Duration(5*time.Minute), "instance"); err != nil {
-				kuskui.PrintError("failed installing kusk")
+
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskgatewaydashboard, time.Duration(5*time.Minute), "instance"); err != nil {
+				dashboardSpinner.Fail("Failed installing kusk")
 				reportError(err)
 				return err
 			}
+			dashboardSpinner.Success("Installing Dashboard")
+		}
+
+		if !noDevPortal {
+			devPortalSpinner := utils.NewSpinner("Installing Kusk Developer Portal...")
+			if err := applyf(filepath.Join(dir, manifests_dir, "devportal.yaml")); err != nil {
+				devPortalSpinner.Fail("Failed installing Kusk Developer Portal")
+				reportError(err)
+				return err
+			}
+			if err := utils.WaitForPodsReady(cmd.Context(), c, namespace, kuskDevportal, 5*time.Minute, "instance"); err != nil {
+				devPortalSpinner.Fail("Failed installing Kusk Developer Portal")
+				reportError(err)
+				return err
+			}
+			devPortalSpinner.Success("Installing Kusk Developer Portal")
 		}
 
 		fmt.Println("")
-		kuskui.PrintSuccess("installation complete\n")
+		kuskui.PrintSuccess("Installation complete\n")
 		printPortForwardInstructions(noDashboard)
 
 		return nil
@@ -264,7 +301,7 @@ func getManifestsFromUrl() (string, error) {
 		return "", err
 	}
 
-	latest, err := githubClient.GetLatest()
+	latest, err := githubClient.GetLatest(kuskgateway)
 	if err != nil {
 		return "", err
 
@@ -306,7 +343,9 @@ func unzip(path string) (string, error) {
 				distroDir = filePath
 			}
 
-			os.MkdirAll(filePath, os.ModePerm)
+			if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+				return "", err
+			}
 			continue
 		}
 

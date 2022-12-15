@@ -35,4 +35,10 @@ env
 
 # Ignore goreleaser output
 dist/
-
+cmd/kusk/cmd/manifest_data.go
+/artifacts
+movie.mp4
+/tmp
+/linux
+/windows
+/darwin

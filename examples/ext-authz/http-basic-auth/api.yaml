@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   fleet:
-    name: default
-    namespace: default
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   # service name and port should be specified inside x-kusk annotation
   spec: |
     openapi: 3.0.0
@@ -19,10 +19,9 @@ spec:
     - https
     x-kusk:
       auth:
-        scheme: basic
-        auth-upstream:
+        custom:
           host:
-            hostname: ext-authz-http-basic-auth
+            hostname: ext-authz-http-basic-auth.default.svc.cluster.local.
             port: 80
       upstream:
         service:

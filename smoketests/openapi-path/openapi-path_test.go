@@ -57,7 +57,7 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = "default"
 	api.Spec.Fleet.Name = defaultName
 	api.Spec.Fleet.Namespace = defaultNamespace
 

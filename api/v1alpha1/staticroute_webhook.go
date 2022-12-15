@@ -48,7 +48,7 @@ const (
 )
 
 // StaticRouteMutator handles StaticRoute objects defaulting and any additional mutation.
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type StaticRouteMutator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -67,7 +67,7 @@ func (s *StaticRouteMutator) Handle(ctx context.Context, req admission.Request) 
 		srObj.Spec.Hosts = append(srObj.Spec.Hosts, "*")
 	}
 	// If the spec.fleet is not set, find the deployed Envoy Fleet in the cluster and update with it.
-	// If there are multiple fleets in the cluster, make user update the the resource spec.fleet with the desired fleet.
+	// If there are multiple fleets in the cluster, make user update the resource spec.fleet with the desired fleet.
 	if srObj.Spec.Fleet == nil {
 		srlog.Info("spec.fleet is not defined in the StaticRoute resource, defaulting it to the present in the cluster Envoy Fleet")
 
@@ -111,12 +111,12 @@ func (s *StaticRouteMutator) InjectDecoder(d *admission.Decoder) error {
 //+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-staticroute,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=staticroutes,verbs=create;update,versions=v1alpha1,name=vstaticroute.kb.io,admissionReviewVersions=v1
 
 // StaticRouteValidator handles StaticRoute objects validation
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type StaticRouteValidator struct {
 	decoder *admission.Decoder
 }
 
-func (s *StaticRouteValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (s *StaticRouteValidator) Handle(_ context.Context, req admission.Request) admission.Response {
 	srObj := &StaticRoute{}
 
 	err := s.decoder.Decode(req, srObj)
@@ -124,7 +124,11 @@ func (s *StaticRouteValidator) Handle(ctx context.Context, req admission.Request
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	spec, _ := srObj.Spec.GetOptionsFromSpec()
+	spec, err := srObj.Spec.GetOptionsFromSpec()
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
 	if err := spec.Validate(); err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}

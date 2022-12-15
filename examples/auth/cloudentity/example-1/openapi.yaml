@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: auth-cloudentity
+  description: auth-cloudentity
+  version: "0.1.0"
+schemes:
+  - http
+  - https
+x-kusk:
+  upstream:
+    service:
+      name: auth-cloudentity-go-httpbin
+      namespace: kusk-system
+      port: 80
+  auth:
+    cloudentity:
+      host:
+        hostname: cloudentity-authorizer-standalone-authorizer.kusk-system
+        port: 9004
+paths:
+  "/":
+    get:
+      description: Returns GET data.
+      operationId: "/get"
+      responses: {}
+  "/uuid":
+    get:
+      description: Returns UUID4.
+      operationId: "/uuid"
+      responses: {}

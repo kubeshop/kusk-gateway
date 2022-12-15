@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 
 	"github.com/getkin/kin-openapi/openapi2"
@@ -48,6 +47,19 @@ func isSwagger(spec []byte) bool {
 	_ = yaml.Unmarshal(spec, &header)
 
 	return header.Swagger != ""
+}
+
+func isOpenAPI(spec []byte) bool {
+	// internal agent struct to help us differentiate
+	// between openapi spec 2.0 (swagger) and openapi 3+
+	var header struct {
+		Swagger string `json:"swagger"`
+		OpenAPI string `json:"openapi"` // we might need that later to distinguish 3.1.x vs 3.0.x
+	}
+
+	_ = yaml.Unmarshal(spec, &header)
+
+	return header.OpenAPI != ""
 }
 
 type Loader interface {
@@ -99,7 +111,7 @@ func (p Parser) Parse(path string) (*openapi3.T, error) {
 // ParseFromReader allows for providing your own Reader implementation
 // to parse the API spec from
 func (p Parser) ParseFromReader(contents io.Reader) (*openapi3.T, error) {
-	spec, err := ioutil.ReadAll(contents)
+	spec, err := io.ReadAll(contents)
 	if err != nil {
 		return nil, fmt.Errorf("could not read contents of api spec: %w", err)
 	}
@@ -107,8 +119,10 @@ func (p Parser) ParseFromReader(contents io.Reader) (*openapi3.T, error) {
 	if isSwagger(spec) {
 		return parseSwagger(spec)
 	}
-
-	return parseOpenAPI3(spec)
+	if isOpenAPI(spec) {
+		return parseOpenAPI3(spec)
+	}
+	return nil, fmt.Errorf("provided specs are not OpenAPI/Swagger specs")
 }
 
 func parseSwagger(spec []byte) (*openapi3.T, error) {
@@ -140,6 +154,35 @@ func GetExampleResponse(mediaType *openapi3.MediaType) interface{} {
 
 	if mediaType.Example != nil {
 		return mediaType.Example
+	}
+
+	// https://github.com/kubeshop/kusk-gateway/issues/298 and https://github.com/kubeshop/kusk-gateway/issues/324
+	//
+	// Certain examples, like the one below, parses this structure
+	//
+	// application/json:
+	// 	schema:
+	// 		type: object
+	// 		properties:
+	// 			order:
+	// 				type: integer
+	// 				format: int32
+	// 			completed:
+	// 				type: boolean
+	// 		required:
+	// 			- order
+	// 			- completed
+	// 		example:
+	// 			order: 13
+	// 			completed: true
+	//
+	// With the `example` in the `mediaType.Schema.Value.Example` field.
+	if mediaType.Schema != nil {
+		if mediaType.Schema.Value != nil {
+			if mediaType.Schema.Value.Example != nil {
+				return mediaType.Schema.Value.Example
+			}
+		}
 	}
 
 	if mediaType.Examples != nil {

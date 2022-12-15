@@ -24,9 +24,10 @@ SHELL 			= /usr/bin/env bash -o pipefail
 
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${TELEMETRY_TOKEN}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
-# strip DWARF, symbol table and debug info. Expect ~25% binary size decrease
-# https://github.com/kubeshop/kusk-gateway/issues/431
-LD_FLAGS += -s -w
+# MBana: Don't strip symbol table and debug info for now.
+# # strip DWARF, symbol table and debug info. Expect ~25% binary size decrease
+# # https://github.com/kubeshop/kusk-gateway/issues/431
+# LD_FLAGS += -s -w
 
 export DOCKER_BUILDKIT ?= 1
 
@@ -66,33 +67,41 @@ docs-preview: ## Preview the documentation
 
 .PHONY: tail-logs
 tail-logs: install-deps ## Tail logs of all containers across all namespaces
+	@type stern >/dev/null 2>&1 || go install github.com/stern/stern@latest
+	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
 	stern --all-namespaces --selector app.kubernetes.io/name
 
 .PHONY: tail-xds
 tail-xds: ## Tail logs of kusk-manager
-	kubectl logs --follow --namespace kusk-system services/kusk-gateway-xds-service
+	kubectl logs --follow --namespace kusk-system services/kusk-gateway-manager
 
 .PHONY: tail-envoyfleet
 tail-envoyfleet: ## Tail logs of envoy
-	kubectl logs --follow --namespace default service/default
+	kubectl logs --follow --namespace kusk-system service/kusk-gateway-envoy-fleet
 
 .PHONY: enable-logging
 enable-logging: ## Set some particular logger's level
-	kubectl port-forward --namespace default deployments/default 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
-	sleep 4
-	curl -s -X POST "http://localhost:19000/logging?backtrace=trace"
-	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace"
-	curl -s -X POST "http://localhost:19000/logging?assert=trace"
-	curl -s -X POST "http://localhost:19000/logging?secret=trace"
-	curl -s -X POST "http://localhost:19000/logging?grpc=trace"
-	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace"
-	curl -s -X POST "http://localhost:19000/logging?filter=trace"
-	curl -s -X POST "http://localhost:19000/logging?misc=trace"
-	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?connection=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?http2=trace"
-	@# curl -s -X POST "http://localhost:19000/logging?admin=trace"
+	kubectl port-forward --namespace kusk-system deployments/kusk-gateway-envoy-fleet 19000:19000 & echo $$! > /tmp/kube-port-forward-logging.pid
+	sleep 2
+	curl -s -X POST "http://localhost:19000/logging?backtrace=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?envoy_bug=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?assert=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?misc=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?secret=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?filter=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?cache_filter=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?ext_authz=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?jwt=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?oauth2=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?connection=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?conn_handler=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?matcher=trace" >/dev/null 2>&1
+	curl -s -X POST "http://localhost:19000/logging?router=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?grpc=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?http=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?http2=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?upstream=trace" >/dev/null 2>&1
+	@# curl -s -X POST "http://localhost:19000/logging?admin=trace" >/dev/null 2>&1
 	@# bash -c "trap 'pkill -F /tmp/kube-port-forward-logging.pid' SIGINT SIGTERM ERR EXIT"
 	@echo
 	@echo "How to stop port forward to the admin port (19000):"
@@ -144,18 +153,19 @@ testing: ## Run the integration tests from development/testing and then delete t
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager -ldflags="${LD_FLAGS}" cmd/manager/main.go
 
-.PHONY: run
-run: install-deps install-local generate fmt vet ## Run a controller from your host, proxying it inside the cluster.
-	go build -o bin/manager cmd/manager/main.go
-	ktunnel expose -n kusk-system kusk-xds-service 18000 & ENABLE_WEBHOOKS=false bin/manager ; fg
-
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	eval $$(minikube docker-env --profile kgw); docker build \
+	docker build \
 		--tag ${MANAGER_IMG} \
+		--tag ttl.sh/kubeshop/kusk-gateway:latest \
+		--tag ttl.sh/kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
 		--tag kusk-gateway:latest \
+		--tag kubeshop/kusk-gateway:latest \
+		--tag kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
 		--file ./build/manager/Dockerfile \
 		.
+	@echo
+	minikube image --profile kgw load kubeshop/kusk-gateway:$(shell git describe --tags $(shell git rev-list --tags --max-count=1))
 
 ##@ Deployment
 
@@ -188,10 +198,6 @@ generate-deployment:
 deploy: manifests install-deps ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	kustomize build config/default | kubectl apply -f -
 
-.PHONY: deploy-debug
-deploy-debug: manifests install-deps ## Deploy controller with debugger to the K8s cluster specified in ~/.kube/config.
-	kustomize build config/debug | kubectl apply -f -
-
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	kustomize build config/default | kubectl delete -f -
@@ -218,13 +224,13 @@ check-all: install-deps $(smoketests)
 
 .PHONY: install-deps
 install-deps:
-	go install github.com/omrikiei/ktunnel@v1.4.7
-	go install github.com/stern/stern@latest
-	@# Optionally `source <(stern --completion=zsh)` in your `~/.zshrc`.
-	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
-	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
-	@echo "[INFO]: Installing protobuf GRPC go generation plugin."
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
-	@echo "[INFO]: Installing protobuf go generation plugin."
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+	@type setup-envtest >/dev/null 2>&1 || go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20221206203637-3da2de04734a
+	@type controller-gen >/dev/null 2>&1 || go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
+	@type protoc-gen-go-grpc >/dev/null 2>&1 || echo "[INFO]: Installing protobuf GRPC go generation plugin." && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	@type protoc-gen-go >/dev/null 2>&1 || echo "[INFO]: Installing protobuf go generation plugin." && go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+
+# `build-goreleaser` is just for local testing.
+.PHONY: build-goreleaser
+build-goreleaser:
+	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" goreleaser release --rm-dist --skip-publish --skip-validate

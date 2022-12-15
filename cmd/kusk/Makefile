@@ -13,9 +13,10 @@ export PATH := $(shell go env GOPATH)/bin:${PATH}
 
 VERSION ?= $(shell git describe --tags)
 
-LD_FLAGS += -w -s
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version=${VERSION}'
 LD_FLAGS += -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken=${TELEMETRY_TOKEN}'
+# # MBana: Don't strip symbol table and debug info for now.
+# LD_FLAGS += -w -s
 
 IMAGE_TAG ?= ${VERSION}
 MANAGER_IMG ?= kubeshop/kusk-gateway:${IMAGE_TAG}
@@ -54,20 +55,17 @@ lint:
 
 .PHONY: test
 test:
-	go test -count=1 -v -race ./...
+	go test -count=1 ./...
 
 .PHONY: install-deps
 install-deps:
-	go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3
-	go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+	@type go-bindata >/dev/null 2>&1 || go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3
+	@type kustomize >/dev/null 2>&1 || go install sigs.k8s.io/kustomize/kustomize/v4@v4.5.2
+
+manifests: install-deps
+	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
+	go generate ./...
 
 .PHONY: build
-build: install-deps
-	cd ../../config/default && kustomize edit set image kusk-gateway=${MANAGER_IMG}
-	go generate
-	go build -v -o ./kusk -ldflags="${LD_FLAGS}" ./main.go
-
-# `build-goreleaser` is just for local testing.
-.PHONY: build-goreleaser
-build-goreleaser:
-	VERSION="${VERSION}" TELEMETRY_TOKEN="${TELEMETRY_TOKEN}" goreleaser release --rm-dist --skip-publish --skip-validate
+build: manifests
+	go build -o ./kusk -ldflags="${LD_FLAGS}" ./main.go

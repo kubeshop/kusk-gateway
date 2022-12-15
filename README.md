@@ -32,7 +32,7 @@ Kusk Gateway enables you to design and configure your APIs from single OpenAPI m
 
 - ⚡ **Rapidly prototype your APIs** by mocking your API responses, allowing your teams to instantly start building on top of your APIs without your services being implemented
 - 🔒 Protect your endpoints with **automatic request and response validations**
-- ⚠️ Configure critical policies like request timeouts and CORs with **no coding required**
+- ⚠️ Configure critical policies like request timeouts and CORS with **no coding required**
 - 🧐 Centrally control your APIs from an Open Source dashboard
 
 ## Get Started
@@ -46,3 +46,7 @@ Go to contribution document to read more how can you help us 🔥
 ## Feedback
 
 Whether it helps you or not - we'd LOVE to hear from you. Please let us know what you think and of course, how we can make it better. Please join our growing community on [Discord](https://discord.com/invite/6zupCZFQbe).
+
+## Development
+
+See [`SKAFFOLD.md`](./SKAFFOLD.md).

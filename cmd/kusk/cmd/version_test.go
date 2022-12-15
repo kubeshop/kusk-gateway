@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright © 2022 Kubeshop
+# Copyright © 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,13 +33,13 @@ import (
 
 func Test_NewVersionCommand(t *testing.T) {
 	t.Parallel()
-	assert := assert.New(t)
+	assertions := assert.New(t)
 
 	writer := bytes.NewBufferString("")
 	version := "_some-version_"
 	command := NewVersionCommand(writer, version)
-	command.Run(nil, []string{})
+	_ = command.RunE(command, []string{})
 
 	actual := writer.String()
-	assert.Contains(actual, version)
+	assertions.Contains(actual, version)
 }

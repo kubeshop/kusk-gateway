@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,11 @@ func (o *Options) FillDefaults() {
 	if o.Upstream != nil {
 		o.Upstream.FillDefaults()
 	}
+	if o.Upstreams != nil {
+		for _, upstream := range o.Upstreams {
+			upstream.FillDefaults()
+		}
+	}
 }
 
 func (o Options) Validate() error {
@@ -74,6 +79,27 @@ func (o Options) Validate() error {
 		return err
 	}
 
+	if o.Upstreams != nil {
+		totalWeight := 0
+		for _, upstream := range o.Upstreams {
+			err := upstream.Validate()
+			if err != nil {
+				return err
+
+			}
+
+			if upstream.Service != nil {
+				totalWeight = totalWeight + upstream.Service.Weight
+			} else if upstream.Host != nil {
+				totalWeight = totalWeight + upstream.Host.Weight
+			}
+		}
+		if totalWeight < 100 || totalWeight > 100 {
+			return fmt.Errorf("sum of upstream weights must be equal to 100. Current total weight of clusters is %d ", totalWeight)
+		}
+		return nil
+	}
+
 	if o.Redirect != nil {
 		err := o.Redirect.Validate()
 		return err
@@ -83,24 +109,39 @@ func (o Options) Validate() error {
 	// therefore we need to iterate over all operations and check if they have either mocking or an upstream service
 
 	for pathAndMethod, op := range o.OperationFinalSubOptions {
+		if op.Disabled != nil {
+			continue
+		}
+
 		if op.Mocking != nil {
 			if err := op.Mocking.Validate(); err != nil {
 				return err
 			}
-		}
-
-		if op.Upstream != nil {
-			if err := op.Upstream.Validate(); err != nil {
-				return err
-			}
+			continue
 		}
 
 		if op.Redirect != nil {
 			if err := op.Redirect.Validate(); err != nil {
 				return err
 			}
+			continue
 		}
 
+		if op.Upstream != nil {
+			if err := op.Upstream.Validate(); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if op.Upstreams != nil {
+			for _, upstream := range op.Upstreams {
+				if err := upstream.Validate(); err != nil {
+					return err
+				}
+				continue
+			}
+		}
 		// if we reach here then this path that doesn't have either mocking or an upstream service and is not covered by a
 		// global upstream service or mocking config, so return an error
 		return fmt.Errorf("no upstream or mocking configuration found for path %s", pathAndMethod)
@@ -114,34 +155,42 @@ type SubOptions struct {
 	Disabled *bool `yaml:"disabled,omitempty" json:"disabled,omitempty"`
 	// Upstream is a set of options of a target service to receive traffic.
 	Upstream *UpstreamOptions `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+	// Upstreams is collection of upstream options with additional properties for traffic splitting
+	Upstreams []UpstreamOptions `yaml:"upstreams,omitempty" json:"upstreams,omitempty"`
 	// Redirect specifies thre redirect optins, mutually exclusive with Upstream
 	Redirect *RedirectOptions `yaml:"redirect,omitempty" json:"redirect,omitempty"`
 	// Path is a set of options to configure service endpoints paths.
-	Path        *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
-	QoS         *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
-	CORS        *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
-	Websocket   *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
-	Validation  *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
-	Mocking     *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
-	RateLimit   *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
-	Cache       *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
-	OpenAPIPath string             `json:"openapi-path,omitempty" yaml:"openapi-path,omitempty"`
-	Auth        *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Path          *PathOptions       `yaml:"path,omitempty" json:"path,omitempty"`
+	QoS           *QoSOptions        `yaml:"qos,omitempty" json:"qos,omitempty"`
+	CORS          *CORSOptions       `yaml:"cors,omitempty" json:"cors,omitempty"`
+	Websocket     *bool              `json:"websocket,omitempty" yaml:"websocket,omitempty"`
+	Validation    *ValidationOptions `json:"validation,omitempty" yaml:"validation,omitempty"`
+	Mocking       *MockingOptions    `json:"mocking,omitempty" yaml:"mocking,omitempty"`
+	RateLimit     *RateLimitOptions  `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
+	Cache         *CacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty"`
+	PublicAPIPath string             `json:"public_api_path,omitempty" yaml:"public-api-path,omitempty"`
+	Auth          *AuthOptions       `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Security      *Security          `json:"security,omitempty" yaml:"security,omitempty"`
 }
 
 func (o SubOptions) Validate() error {
 	if o.Upstream != nil && o.Redirect != nil {
-		return fmt.Errorf("Upstream and Service are mutually exclusive")
+		return fmt.Errorf("upstream and redirect are mutually exclusive")
 	}
 	// fail if doesn't have upstream or redirect and is "enabled"
 	if o.Upstream == nil && o.Redirect == nil {
-		if o.Disabled != nil && *o.Disabled == false {
-			return fmt.Errorf("either Upstream or Service must be specified")
+		if o.Disabled != nil && !*o.Disabled {
+			return fmt.Errorf("either Upstream or Redirect must be specified")
 		}
+	}
+
+	if o.Upstream != nil && o.Upstreams != nil {
+		return fmt.Errorf("either Upstream or Upstreams can be specified")
 	}
 
 	return v.ValidateStruct(&o,
 		v.Field(&o.Upstream),
+		v.Field(&o.Upstreams),
 		v.Field(&o.Redirect),
 		v.Field(&o.Path),
 		v.Field(&o.QoS),
@@ -159,6 +208,9 @@ func (o *SubOptions) MergeInSubOptions(in *SubOptions) {
 	if o.Upstream == nil && o.Redirect == nil {
 		if in.Upstream != nil {
 			o.Upstream = in.Upstream
+		}
+		if in.Upstreams != nil {
+			o.Upstreams = in.Upstreams
 		}
 		if in.Redirect != nil {
 			o.Redirect = in.Redirect

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,8 @@ import (
 )
 
 const (
-	envoyHTTPListenerPort       int32 = 8080
-	envoyAdminListenerPort      int32 = 19000
-	kuskGatewayManagerImageName       = "kusk-gateway"
+	envoyHTTPListenerPort  int32 = 8080
+	envoyAdminListenerPort int32 = 19000
 )
 
 var (

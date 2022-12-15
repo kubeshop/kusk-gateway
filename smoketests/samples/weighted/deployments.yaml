@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: traffic-splitting-httpbin
+  name: traffic-splitting-httpbin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-splitting-httpbin
+  template:
+    metadata:
+      labels:
+        app: traffic-splitting-httpbin
+    spec:
+      containers:
+        - name: httpbin
+          image: docker.io/mccutchen/go-httpbin:v2.4.1
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: traffic-splitting-httpbin-1
+  name: traffic-splitting-httpbin-1
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: traffic-splitting-httpbin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: traffic-splitting-httpbin-2
+  name: traffic-splitting-httpbin-2
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: traffic-splitting-httpbin

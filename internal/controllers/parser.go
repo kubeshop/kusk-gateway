@@ -23,15 +23,16 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	extproc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	ratelimit "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	envoytypematcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -40,13 +41,20 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubeshop/kusk-gateway/internal/cloudentity"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/auth"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/config"
+	"github.com/kubeshop/kusk-gateway/internal/envoy/cors"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/types"
+	"github.com/kubeshop/kusk-gateway/internal/k8sutils"
 	"github.com/kubeshop/kusk-gateway/internal/mocking"
+	"github.com/kubeshop/kusk-gateway/internal/routes"
+	"github.com/kubeshop/kusk-gateway/internal/services"
+	"github.com/kubeshop/kusk-gateway/internal/traffic"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
+	crunch "github.com/kubeshop/kusk-gateway/pkg/crunch42"
 	"github.com/kubeshop/kusk-gateway/pkg/options"
 	parseSpec "github.com/kubeshop/kusk-gateway/pkg/spec"
 )
@@ -80,10 +88,11 @@ func UpdateConfigFromAPIOpts(
 	opts *options.Options,
 	spec *openapi3.T,
 	httpConnectionManagerBuilder *config.HCMBuilder,
-	clBuilder *cloudentity.Builder,
+	cloudEntityBuilder *cloudentity.Builder,
 	name string,
+	kubernetesClient client.Client,
 ) error {
-	logger := ctrl.Log.WithName("internal/controllers/parser.go")
+	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromAPIOpts")
 
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
@@ -98,6 +107,27 @@ func UpdateConfigFromAPIOpts(
 	// store proxied services in map to de-duplicate
 	proxiedServices := map[string]*validation.Service{}
 
+	if opts.Auth != nil && opts.Auth.JWT != nil {
+		paths := []string{}
+		for path := range spec.Paths {
+			paths = append(paths, path)
+		}
+
+		args := &auth.ParseAuthArguments{
+			Logger:                       ctrl.Log,
+			EnvoyConfiguration:           envoyConfiguration,
+			HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+			CloudEntityBuilder:           nil,
+			CloudEntityBuilderArguments:  nil,
+			GenerateClusterName:          generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+			KubernetesClient:             kubernetesClient,
+		}
+		err := auth.ParseJWTOptions(opts.Auth.JWT, args, paths)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Iterate on all paths and build routes
 	// The overriding works in the following way:
 	// 1. For each path we get SubOptions from the opts map and merge in top level SubOpts
@@ -105,7 +135,6 @@ func UpdateConfigFromAPIOpts(
 	for path, pathItem := range spec.Paths {
 		// x-kusk options per operation (http method)
 		for method, operation := range pathItem.Operations() {
-
 			finalOpts := opts.OperationFinalSubOptions[method+path]
 			if finalOpts.Disabled != nil && *finalOpts.Disabled {
 				continue
@@ -133,6 +162,10 @@ func UpdateConfigFromAPIOpts(
 				),
 			}
 
+			if opts.CORS != nil {
+				cors.ConfigureCORSOnRoute(logger, corsPolicy, rt, opts.CORS.Origins)
+			}
+
 			if finalOpts.Cache != nil && finalOpts.Cache.Enabled != nil && *finalOpts.Cache.Enabled {
 				rt.ResponseHeadersToAdd = append(rt.ResponseHeadersToAdd, &envoy_config_core_v3.HeaderValueOption{
 					Header: &envoy_config_core_v3.HeaderValue{
@@ -146,26 +179,29 @@ func UpdateConfigFromAPIOpts(
 
 			if finalOpts.Auth != nil {
 				logger.Info("parsing `auth` options", "finalOpts.Auth", fmt.Sprintf("%+#v", finalOpts.Auth))
-				arguments := auth.NewParseAuthOptionsArguments(
-					ctrl.Log,
-					envoyConfiguration,
-					httpConnectionManagerBuilder,
-					name,
-					routePath,
-					method,
-					clBuilder,
-					generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
-				)
+				cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+					Name:      name,
+					RoutePath: routePath,
+					Method:    method,
+				}
+				arguments := &auth.ParseAuthArguments{
+					Logger:                       ctrl.Log,
+					EnvoyConfiguration:           envoyConfiguration,
+					HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+					CloudEntityBuilder:           cloudEntityBuilder,
+					CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+					GenerateClusterName:          generateClusterName, // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
+					KubernetesClient:             kubernetesClient,
+				}
 
-				err := auth.ParseAuthOptions(finalOpts, arguments)
+				err := auth.ParseAuthOptions(finalOpts.Auth, arguments)
 				if err != nil {
 					return err
 				}
 			}
 
-			// // Validate and Proxy to the upstream
-			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled {
-
+			// Validate and Proxy to the upstream
+			if finalOpts.Validation != nil && finalOpts.Validation.Request != nil && finalOpts.Validation.Request.Enabled != nil && *finalOpts.Validation.Request.Enabled && finalOpts.Upstreams == nil {
 				var (
 					upstreamHostname string
 					upstreamPort     uint32
@@ -325,39 +361,85 @@ func UpdateConfigFromAPIOpts(
 				}
 			// Default - proxy to the upstream
 			default:
-				hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
-				if err != nil {
-					return err
-				}
+				if finalOpts.Upstream != nil {
+					hostPortPair, err := getUpstreamHost(finalOpts.Upstream)
+					if err != nil {
+						return err
+					}
 
-				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
-				if !envoyConfiguration.ClusterExist(clusterName) {
-					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
-				}
+					clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+					if !envoyConfiguration.ClusterExist(clusterName) {
+						envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+					}
 
-				var rewriteOpts *options.RewriteRegex
-				if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
-					rewriteOpts = &finalOpts.Upstream.Rewrite
-				}
+					var rewriteOpts *options.RewriteRegex
+					if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+						rewriteOpts = &finalOpts.Upstream.Rewrite
+					}
 
-				routeRoute, err := generateRoute(
-					clusterName,
-					corsPolicy,
-					rewriteOpts,
-					finalOpts.QoS,
-					finalOpts.Websocket,
-				)
-				if err != nil {
-					return err
-				}
+					routeRoute, err := routes.NewRoute(
+						clusterName,
+						corsPolicy,
+						rewriteOpts,
+						finalOpts.QoS,
+						finalOpts.Websocket,
+					)
+					if err != nil {
+						return err
+					}
 
-				// https://github.com/kubeshop/kusk-gateway/issues/404
-				// to help with issues around direct IP access e.g. CloudFlare
-				routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
-					HostRewriteLiteral: hostPortPair.Host,
-				}
+					// https://github.com/kubeshop/kusk-gateway/issues/404
+					// to help with issues around direct IP access e.g. CloudFlare
+					routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+						HostRewriteLiteral: hostPortPair.Host,
+					}
+					rt.Action = routeRoute
+				} else if finalOpts.Upstreams != nil {
+					logger.Info("parsing `upstreams` options", "finalOpts.Upstreams", len(finalOpts.Upstreams))
 
-				rt.Action = routeRoute
+					var rewriteOpts *options.RewriteRegex
+					if finalOpts.Upstream != nil && finalOpts.Upstream.Rewrite.Pattern != "" {
+						rewriteOpts = &finalOpts.Upstream.Rewrite
+					}
+
+					routeRoute, err := routes.NewRouteWithoutCluster(corsPolicy, rewriteOpts, finalOpts.QoS, finalOpts.Websocket)
+					if err != nil {
+						return err
+					}
+
+					for _, upstream := range finalOpts.Upstreams {
+						logger.Info("parsing `upstreams` options", "upstream", fmt.Sprintf("%s - %s - %d", upstream.Service.Name, upstream.Service.Namespace, upstream.Service.Weight))
+
+						hostPortPair, err := getUpstreamHost(&upstream)
+						if err != nil {
+							return err
+						}
+
+						clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+						if !envoyConfiguration.ClusterExist(clusterName) {
+							logger.Info("adding cluster", "cluster", fmt.Sprintf("%s - doesn't exist", clusterName))
+							envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
+						}
+
+						weightedClusters := traffic.AddWeightedClusterToRoute(logger, routeRoute, clusterName, hostPortPair.Weight)
+						if err != nil {
+							logger.Error(err, "failed adding weighted cluster to route", "clusterName", clusterName)
+							return err
+						}
+
+						logger.Info("`AddWeightedClusterToRoute` show weighted clusters", "routeRoute.Route.GetWeightedClusters()", routeRoute.Route.GetWeightedClusters())
+
+						logger.Info("routeAction", "route.Route", spew.Sdump(rt))
+						routeRoute.Route.HostRewriteSpecifier = &route.RouteAction_HostRewriteLiteral{
+							HostRewriteLiteral: hostPortPair.Host,
+						}
+						routeRoute.Route.ClusterSpecifier = &route.RouteAction_WeightedClusters{
+							WeightedClusters: weightedClusters,
+						}
+
+						rt.Action = routeRoute
+					}
+				}
 
 				routesToAddToVirtualHost = append(routesToAddToVirtualHost, rt)
 			}
@@ -390,7 +472,7 @@ func UpdateConfigFromAPIOpts(
 						logger.Info("disabled `auth` for route", "finalOpts.Auth", finalOpts.Auth, "vh", fmt.Sprintf("%q", string(vh)))
 					}
 
-					if finalOpts.Validation == nil || finalOpts.Validation.Request == nil || finalOpts.Validation.Request.Enabled == nil || *finalOpts.Validation.Request.Enabled == false {
+					if finalOpts.Validation == nil || finalOpts.Validation.Request == nil || finalOpts.Validation.Request.Enabled == nil || !*finalOpts.Validation.Request.Enabled {
 						extProc, err := externalProcessorConfigDisabled()
 						if err != nil {
 							return fmt.Errorf("cannot create per-route config to disable external processing: vh=%q, %w", string(vh), err)
@@ -407,18 +489,18 @@ func UpdateConfigFromAPIOpts(
 		}
 	}
 
-	if opts.OpenAPIPath != "" {
+	if opts.PublicAPIPath != "" {
 		for _, vh := range opts.Hosts {
 			mockedRouteBuilder, err := mocking.NewRouteBuilder("application/json", &route.Route{})
 			if err != nil {
 				return fmt.Errorf("cannot build mocked route: %w", err)
 			}
 
-			if !strings.HasPrefix(opts.OpenAPIPath, "/") {
-				opts.OpenAPIPath = fmt.Sprintf("/%s", opts.OpenAPIPath)
+			if !strings.HasPrefix(opts.PublicAPIPath, "/") {
+				opts.PublicAPIPath = fmt.Sprintf("/%s", opts.PublicAPIPath)
 			}
 			openapiRt, err := mockedRouteBuilder.BuildMockedRoute(&mocking.BuildMockedRouteArgs{
-				RoutePath:      opts.OpenAPIPath,
+				RoutePath:      opts.PublicAPIPath,
 				Method:         "GET",
 				StatusCode:     uint32(200),
 				ExampleContent: parseSpec.PostProcessedDef(*spec, *opts),
@@ -434,18 +516,35 @@ func UpdateConfigFromAPIOpts(
 
 				perRouteAuth, err := auth.RouteAuthzDisabled()
 				if err != nil {
-					return fmt.Errorf("cannot create per-route config to disable authorization: openapi-path=%q, %w", opts.OpenAPIPath, err)
+					return fmt.Errorf("cannot create per-route config to disable authorization: public_api_path=%q, %w", opts.PublicAPIPath, err)
 				}
 
 				openapiRt.TypedPerFilterConfig[wellknown.HTTPExternalAuthorization] = perRouteAuth
 
-				logger.Info("disabled `auth` for route", "openapi-path", opts.OpenAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
+				logger.Info("disabled `auth` for route", "public_api_path", opts.PublicAPIPath, "vh", fmt.Sprintf("%q", string(vh)))
 			}
 
 			if err := envoyConfiguration.AddRouteToVHost(string(vh), openapiRt); err != nil {
 				return fmt.Errorf("failure adding the route to vhost %s: %w ", string(vh), err)
 			}
 		}
+	}
+
+	if opts.Security != nil && opts.Security.Crunch42 != nil {
+		secret, err := k8sutils.GetSecret(context.Background(), kubernetesClient, opts.Security.Crunch42.Token.Name, opts.Security.Crunch42.Token.Namespace)
+		if err != nil {
+			return err
+		}
+
+		crunchClient, err := crunch.NewClient(string(secret.Data[crunch.Crunch42Token]), nil)
+		if err != nil {
+			return err
+		}
+
+		if err := crunchClient.ProcessKusk(name, spec); err != nil {
+			return err
+		}
+
 	}
 
 	// update the validation proxy in the end
@@ -488,7 +587,49 @@ func extractParams(parameters openapi3.Parameters) map[string]types.ParamSchema 
 }
 
 // UpdateConfigFromOpts updates Envoy configuration from Options only
-func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *options.StaticOptions) error {
+func UpdateConfigFromOpts(
+	envoyConfiguration *config.EnvoyConfiguration,
+	opts *options.StaticOptions,
+	httpConnectionManagerBuilder *config.HCMBuilder,
+	cloudEntityBuilder *cloudentity.Builder,
+	kubernetesClient client.Client,
+) error {
+	logger := ctrl.Log.WithName("internal/controllers/parser.go:UpdateConfigFromOpts")
+
+	logger.Info("`StaticRoute` processing paths before appending root", "opts.Path", spew.Sprint(opts.Paths))
+	if err := staticRouteCheckPaths(logger, opts); err != nil {
+		return err
+	}
+	staticRouteAppendRootPath(logger, opts)
+	logger.Info("`StaticRoute` processing paths after appending root", "opts.Path", spew.Sprint(opts.Paths))
+
+	if opts.Auth != nil && opts.Auth.OAuth2 != nil {
+		logger.Info("`StaticRoute` parsing `auth.oauth2` options", "opts.Auth", spew.Sprint(opts.Auth))
+
+		// Ignore CloudEntity for now ...
+		cloudEntityBuilderArguments := &auth.CloudEntityBuilderArguments{
+			Name:      "",
+			RoutePath: "",
+			Method:    "",
+		}
+		parseAuthArguments := &auth.ParseAuthArguments{
+			Logger:                       logger,
+			EnvoyConfiguration:           envoyConfiguration,
+			HTTPConnectionManagerBuilder: httpConnectionManagerBuilder,
+			CloudEntityBuilder:           cloudEntityBuilder,
+			CloudEntityBuilderArguments:  cloudEntityBuilderArguments,
+			GenerateClusterName:          generateClusterName,
+			KubernetesClient:             kubernetesClient,
+		}
+
+		err := auth.ParseAuthOptions(opts.Auth, parseAuthArguments)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Info("`StaticRoute` nil `auth.oauth2` options", "opts", spew.Sprint(opts))
+	}
+
 	// Add new vhost if already not present.
 	for _, vhost := range opts.Hosts {
 		if envoyConfiguration.GetVirtualHost(string(vhost)) == nil {
@@ -502,6 +643,13 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 	// Iterate on all paths and build routes
 	for path, methods := range opts.Paths {
 		for method, methodOpts := range methods {
+			logger.Info(
+				"`StaticRoute` processing path",
+				"path", spew.Sprint(path),
+				"method", spew.Sprint(method),
+				"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
+			)
+
 			strMethod := string(method)
 
 			routePath := generateRoutePath("", path)
@@ -517,6 +665,10 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 				Match: generateRouteMatch(routePath, string(method), nil, corsPolicy),
 			}
 
+			if methodOpts.CORS != nil {
+				cors.ConfigureCORSOnRoute(logger, corsPolicy, rt, methodOpts.CORS.Origins)
+			}
+
 			if methodOpts.Redirect != nil {
 				// Generating Redirect
 				routeRedirect, err := generateRedirect(methodOpts.Redirect)
@@ -526,12 +678,21 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 
 				rt.Action = routeRedirect
 			} else {
+				logger.Info(
+					"`StaticRoute` determining `clusterName`",
+					"opts", spew.Sprint(opts),
+					"path", path,
+					"method", method,
+					"methodOpts.Upstream", fmt.Sprintf("%+#v", methodOpts.Upstream),
+				)
+
 				hostPortPair, err := getUpstreamHost(methodOpts.Upstream)
 				if err != nil {
 					return err
 				}
 
 				clusterName := generateClusterName(hostPortPair.Host, hostPortPair.Port)
+				logger.Info("`StaticRoute` generated `clusterName`", "opts", spew.Sprint(opts), "clusterName", clusterName, "path", path, "method", method)
 				if !envoyConfiguration.ClusterExist(clusterName) {
 					envoyConfiguration.AddCluster(clusterName, hostPortPair.Host, hostPortPair.Port)
 				}
@@ -540,7 +701,7 @@ func UpdateConfigFromOpts(envoyConfiguration *config.EnvoyConfiguration, opts *o
 				if methodOpts.Upstream.Rewrite.Pattern != "" {
 					rewriteOpts = &methodOpts.Upstream.Rewrite
 				}
-				routeRoute, err := generateRoute(
+				routeRoute, err := routes.NewRoute(
 					clusterName,
 					corsPolicy,
 					rewriteOpts,
@@ -616,8 +777,9 @@ func generateCORSPolicy(corsOpts *options.CORSOptions) (*route.CorsPolicy, error
 }
 
 type HostPortPair struct {
-	Host string
-	Port uint32
+	Host   string
+	Port   uint32
+	Weight int
 }
 
 func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, error) {
@@ -626,17 +788,11 @@ func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, erro
 	}
 
 	if upstreamOpts.Service != nil {
-		return &HostPortPair{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace),
-			Port: upstreamOpts.Service.Port,
-		}, nil
+		return &HostPortPair{Host: fmt.Sprintf("%s.%s.svc.cluster.local.", upstreamOpts.Service.Name, upstreamOpts.Service.Namespace), Port: upstreamOpts.Service.Port, Weight: upstreamOpts.Service.Weight}, nil
 	}
 
 	if upstreamOpts.Host != nil {
-		return &HostPortPair{
-			Host: upstreamOpts.Host.Hostname,
-			Port: upstreamOpts.Host.Port,
-		}, nil
+		return &HostPortPair{Host: upstreamOpts.Host.Hostname, Port: upstreamOpts.Host.Port, Weight: upstreamOpts.Service.Weight}, nil
 	}
 
 	return nil, fmt.Errorf("cannot get upstream host and port from upstream options")
@@ -645,10 +801,6 @@ func getUpstreamHost(upstreamOpts *options.UpstreamOptions) (*HostPortPair, erro
 // each cluster can be uniquely identified by dns name + port (i.e. canonical Host, which is hostname:port)
 func generateClusterName(name string, port uint32) string {
 	return fmt.Sprintf("%s-%d", name, port)
-}
-
-func generateMockID(path string, method string, operationID string) string {
-	return fmt.Sprintf("%s-%s-%s", path, method, operationID)
 }
 
 func generateRateLimitStatPrefix(host, path, method, operationID string) string {
@@ -662,67 +814,6 @@ func generateRoutePath(prefix, path string) string {
 
 	// Avoids path joins (removes // in e.g. /path//subpath, or //subpath)
 	return fmt.Sprintf(`%s/%s`, strings.TrimSuffix(prefix, "/"), strings.TrimPrefix(path, "/"))
-}
-
-func generateRoute(
-	clusterName string,
-	corsPolicy *route.CorsPolicy,
-	rewriteRegex *options.RewriteRegex,
-	QoS *options.QoSOptions,
-	websocket *bool,
-) (*route.Route_Route, error) {
-
-	var rewritePathRegex *envoytypematcher.RegexMatchAndSubstitute
-	if rewriteRegex != nil {
-		rewritePathRegex = types.GenerateRewriteRegex(rewriteRegex.Pattern, rewriteRegex.Substitution)
-	}
-
-	var (
-		requestTimeout, requestIdleTimeout int64  = 0, 0
-		retries                            uint32 = 0
-	)
-	if QoS != nil {
-		retries = QoS.Retries
-		requestTimeout = int64(QoS.RequestTimeout)
-		requestIdleTimeout = int64(QoS.IdleTimeout)
-	}
-
-	routeRoute := &route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: clusterName,
-			},
-		},
-	}
-
-	if corsPolicy != nil {
-		routeRoute.Route.Cors = corsPolicy
-	}
-	if rewritePathRegex != nil {
-		routeRoute.Route.RegexRewrite = rewritePathRegex
-	}
-
-	if requestTimeout != 0 {
-		routeRoute.Route.Timeout = &durationpb.Duration{Seconds: requestTimeout}
-	}
-	if requestIdleTimeout != 0 {
-		routeRoute.Route.IdleTimeout = &durationpb.Duration{Seconds: requestIdleTimeout}
-	}
-
-	if retries != 0 {
-		routeRoute.Route.RetryPolicy = &route.RetryPolicy{
-			RetryOn:    "5xx",
-			NumRetries: &wrapperspb.UInt32Value{Value: retries},
-		}
-	}
-	if websocket != nil && *websocket {
-		routeRoute.Route.UpgradeConfigs = append(routeRoute.Route.UpgradeConfigs, &route.RouteAction_UpgradeConfig{UpgradeType: "websocket"})
-	}
-	if err := routeRoute.Route.ValidateAll(); err != nil {
-		return nil, fmt.Errorf("incorrect Route Action: %w", err)
-	}
-
-	return routeRoute, nil
 }
 
 func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratelimit.LocalRateLimit {
@@ -777,11 +868,10 @@ func mapRateLimitConf(rlOpt *options.RateLimitOptions, statPrefix string) *ratel
 	return rl
 }
 
-// fetch validation service host and port once
-// TODO: fetch kusk gateway validator service dynamically
-const validatorURL string = "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000"
-
 func mapExternalProcessorConfig(headers []*envoy_config_core_v3.HeaderValue) *extproc.ExtProcPerRoute {
+	validatorHost, validatorPort := services.ValidatorHostPort()
+	validatorURL := fmt.Sprintf("%s:%d", validatorHost, validatorPort)
+
 	proc := &extproc.ExtProcPerRoute{
 		Override: &extproc.ExtProcPerRoute_Overrides{
 			Overrides: &extproc.ExtProcOverrides{

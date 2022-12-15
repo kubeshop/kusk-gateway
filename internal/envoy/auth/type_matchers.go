@@ -23,6 +23,7 @@
 package auth
 
 import (
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 )
 
@@ -49,5 +50,14 @@ func StringMatcherExact(exact string, ignoreCase bool) *envoy_type_matcher_v3.St
 			Exact: exact,
 		},
 		IgnoreCase: ignoreCase,
+	}
+}
+
+func headerMatcherExactMatch(exactMatch string) *envoy_config_route_v3.HeaderMatcher {
+	return &envoy_config_route_v3.HeaderMatcher{
+		Name: ":path",
+		HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_ExactMatch{
+			ExactMatch: exactMatch,
+		},
 	}
 }

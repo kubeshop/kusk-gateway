@@ -42,9 +42,6 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
-        googleAnalytics: {
-          trackingID: "GTM-5S7QKN7",
-        },
       }),
     ],
     [
@@ -65,7 +62,26 @@ const config = {
       },
     ],
   ],
-
+  plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [
+          // /docs/oldDoc -> /docs/newDoc
+          {
+            from: "/getting-started",
+            to: "/getting-started/install-kusk-cli",
+          },
+        ],
+      },
+    ],
+    [
+      require.resolve("docusaurus-gtm-plugin"),
+      {
+        id: "GTM-5S7QKN7", // GTM Container ID
+      },
+    ],
+  ],
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
@@ -77,7 +93,7 @@ const config = {
         },
         items: [
           {
-            to: "/getting-started",
+            to: "/getting-started/install-kusk-cli",
             label: "Get Started",
             position: "left",
           },

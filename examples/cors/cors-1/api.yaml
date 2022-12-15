@@ -1,0 +1,46 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: examples-cors-1
+  namespace: default
+spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
+  spec: |
+    openapi: 3.1.0
+    info:
+      title: examples-cors-1
+      description: examples-cors-1
+      version: '0.1.0'
+    schemes:
+    - http
+    - https
+    x-kusk:
+      upstream:
+        service:
+          name: examples-cors-1-go-httpbin
+          namespace: default
+          port: 80
+      cors:
+        origins:
+          - "*"
+        methods:
+          - POST
+          - GET
+          - OPTIONS
+        headers:
+          - Content-Type
+        credentials: true
+        max_age: 86200
+    paths:
+      "/":
+        get:
+          description: Returns GET data.
+          operationId: "/get"
+          responses: {}
+      "/uuid":
+        get:
+          operationId: "/uuid"
+          description: Returns UUID4.
+          responses: {}

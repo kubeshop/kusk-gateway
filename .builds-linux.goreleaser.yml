@@ -1,0 +1,24 @@
+before:
+  hooks:
+    - go mod tidy
+    - go mod verify
+    - go generate
+dist: linux
+builds:
+  - main: ./cmd/kusk
+    id: kusk
+    binary: kusk
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - 386
+    ldflags:
+      - -w -s
+      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
+      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
+archives:
+  - format: binary

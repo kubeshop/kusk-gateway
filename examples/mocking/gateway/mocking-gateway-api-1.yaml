@@ -1,0 +1,77 @@
+apiVersion: gateway.kusk.io/v1alpha1
+kind: API
+metadata:
+  name: mocking-gateway-api-1
+spec:
+  fleet:
+    name: default
+    namespace: default
+  spec: |
+    openapi: 3.0.0
+    info:
+      title: mocking-gateway-api-1
+      version: 0.1.0
+    x-kusk:
+      cors:
+        origins:
+          - "*"
+        methods:
+          - POST
+          - GET
+        headers:
+          - Content-Type
+        credentials: true
+        max_age: 86200
+      upstream:
+        service:
+          namespace: default
+          name: todo-backend
+          port: 80
+      path:
+        prefix: /
+    paths:
+      /todos:
+        x-kusk:
+          mocking:
+            enabled: true
+        get:
+          responses:
+            "200":
+              description: "ToDos"
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        description: Description of what to do
+                      completed:
+                        type: boolean
+                      order:
+                        type: integer
+                        format: int32
+                      url:
+                        type: string
+                    required:
+                      - title
+                      - completed
+                      - order
+                      - url
+                    example:
+                      title: "Mocked JSON title"
+                      completed: true
+                      order: 13
+                      url: "http://mockedURL.com"
+                application/xml:
+                  example:
+                    title: "Mocked XML title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"
+                text/plain:
+                  example: |
+                    title: "Mocked Text title"
+                    completed: true
+                    order: 13
+                    url: "http://mockedURL.com"

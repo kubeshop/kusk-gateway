@@ -3,14 +3,17 @@ kind: StaticRoute
 metadata:
   name: todo-frontend
 spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   # should work with localhost, example.org
-  hosts: [ "localhost", "*"]
+  hosts: ["localhost", "*"]
   paths:
-  # Root goes to frontend service
-    /: 
-       get: &root_route
+    # Root goes to frontend service
+    /:
+      get: &root_route
         route:
-         upstream:
+          upstream:
             service:
               namespace: default
               name: todo-frontend

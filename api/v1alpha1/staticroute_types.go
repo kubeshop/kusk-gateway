@@ -35,6 +35,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// +kubebuilder:object:generate=true
 // StaticRouteSpec defines the desired state of StaticRoute
 type StaticRouteSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -44,14 +45,15 @@ type StaticRouteSpec struct {
 	// Fleet represents EnvoyFleet ID, which is deployed EnvoyFleet CustomResource name and namespace
 	// Optional, if missing will be automatically added by the Kusk Gateway with the discovery of the single fleet in the cluster (MutatingWebhookConfiguration for the API resource must be enabled).
 	Fleet *EnvoyFleetID `json:"fleet,omitempty"`
-
 	// Hosts is a collection of vhosts the rules apply to.
 	// Defaults to "*" - vhost that matches all domain names.
 	// +optional
 	Hosts []options.Host `json:"hosts,omitempty"`
-
-	// Paths is a multidimensional map of path / method to the routing rules
-	Paths map[Path]Methods `json:"paths"`
+	// +optional
+	Auth *options.AuthOptions `json:"auth,omitempty"`
+	// Upstream is a set of options of a target service to receive traffic.
+	// +required
+	Upstream *options.UpstreamOptions `json:"upstream"`
 }
 
 // GetOptionsFromSpec is a converter to generate Options object from StaticRoutes spec
@@ -59,37 +61,15 @@ func (spec *StaticRouteSpec) GetOptionsFromSpec() (*options.StaticOptions, error
 	// 2 dimensional map["path"]["method"]SubOptions
 	paths := make(map[string]options.StaticOperationSubOptions)
 	opts := &options.StaticOptions{
-		Paths: paths,
-		Hosts: spec.Hosts,
+		Paths:    paths,
+		Auth:     spec.Auth,
+		Hosts:    spec.Hosts,
+		Upstream: *spec.Upstream,
 	}
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate options: %w", err)
 	}
-	for specPath, specMethods := range spec.Paths {
-		path := string(specPath)
-		opts.Paths[path] = make(options.StaticOperationSubOptions)
-		pathMethods := opts.Paths[path]
-		for specMethod, specRouteAction := range specMethods {
-			methodOpts := &options.SubOptions{}
-			pathMethods[specMethod] = methodOpts
-			if specRouteAction.Redirect != nil {
-				methodOpts.Redirect = specRouteAction.Redirect
-				continue
-			}
-			if specRouteAction.Route != nil {
-				methodOpts.Upstream = *&specRouteAction.Route.Upstream
-				if specRouteAction.Route.CORS != nil {
-					methodOpts.CORS = specRouteAction.Route.CORS.DeepCopy()
-				}
-				if specRouteAction.Route.QoS != nil {
-					methodOpts.QoS = specRouteAction.Route.QoS
-				}
-				if specRouteAction.Route.Websocket != nil {
-					methodOpts.Websocket = specRouteAction.Route.Websocket
-				}
-			}
-		}
-	}
+
 	return opts, opts.Validate()
 }
 

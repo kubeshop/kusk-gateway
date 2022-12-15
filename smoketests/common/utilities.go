@@ -1,12 +1,17 @@
 package common
 
 import (
+	"context"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetKubeconfig() (*rest.Config, error) {
@@ -45,4 +50,30 @@ func ReadFile(path string) string {
 	dat, _ := os.ReadFile(path)
 
 	return string(dat)
+}
+
+func WaitForServiceReady(ctx context.Context, k8sClient client.Client, namespace string, name string, timeout time.Duration) error {
+	s := &corev1.Service{}
+	time.Sleep(1 * time.Second)
+	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, s); err != nil {
+		return err
+	}
+
+	if err := wait.PollImmediate(1*time.Second, timeout, IsServiceReady(ctx, k8sClient, s)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func IsServiceReady(ctx context.Context, c client.Client, service *corev1.Service) wait.ConditionFunc {
+	return func() (bool, error) {
+		if err := c.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, service); err != nil {
+			return false, err
+		}
+
+		if service.Status.LoadBalancer.Ingress != nil && len(service.Status.LoadBalancer.Ingress) > 0 {
+			return true, nil
+		}
+		return false, nil
+	}
 }

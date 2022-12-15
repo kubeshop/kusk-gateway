@@ -20,14 +20,26 @@ const sidebars = {
 
   tutorialSidebar: [
     {
-      type: "doc",
-      id: "index",
-      label: "Introduction",
+      type: "category",
+      label: "Overview",
+      link: {
+        type: "doc",
+        id: "index",
+      },
+      items: [
+        "overview/when-can-you-use-kusk",
+      ],
     },
     {
-      type: "doc",
-      id: "getting-started",
+      type: "category",
       label: "Getting Started",
+      items: [
+        "getting-started/install-kusk-cli",
+        "getting-started/launch-a-kubernetes-cluster",
+        "getting-started/install-kusk-gateway",
+        "getting-started/mock-an-api",
+        "getting-started/connecting-an-application",
+      ],
     },
     {
       type: "doc",
@@ -49,6 +61,8 @@ const sidebars = {
           items: [
             "guides/authentication/custom-auth-upstream",
             "guides/authentication/oauth2",
+            "guides/authentication/cloudentity",
+            "guides/authentication/jwt",
           ],
         },
         {
@@ -56,16 +70,27 @@ const sidebars = {
           id: "guides/cors",
           label: "CORS",
         },
+        "guides/traffic_splitting",
         "guides/mocking",
         "guides/validation",
         "guides/cache",
         "guides/timeouts",
         "guides/routing",
         "guides/rate-limit",
+        "guides/overlays",
+        "guides/web-applications",
         "guides/cert-manager",
         "guides/troubleshooting",
         "guides/observability",
+        {
+          type: "category",
+          label: "Security",
+          items: [
+            "guides/security/42crunch",
+          ],
+        },
       ],
+
     },
     {
       type: "category",
@@ -107,6 +132,15 @@ const sidebars = {
             "reference/customresources/staticroute",
           ],
         },
+      ],
+    },
+    {
+      type: "category",
+      label: "Quick Links",
+      items: [
+        "quick-links/install",
+        "quick-links/upgrade",
+        "quick-links/helm-install",
       ],
     },
     {

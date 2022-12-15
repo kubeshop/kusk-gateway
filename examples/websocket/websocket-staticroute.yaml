@@ -4,16 +4,19 @@ kind: StaticRoute
 metadata:
   name: websocket-backend
 spec:
+  fleet:
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   # should work with localhost, example.org
-  hosts: [ "localhost", "*"]
+  hosts: ["localhost", "*"]
   paths:
-  # Root goes to frontend service
-    /staticwebsocket: 
-       get:
+    # Root goes to frontend service
+    /staticwebsocket:
+      get:
         route:
           websocket: true
           upstream:
-              service:
-                namespace: default
-                name: ws-server
-                port: 80
+            service:
+              namespace: default
+              name: ws-server
+              port: 80

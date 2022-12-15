@@ -32,14 +32,17 @@ import (
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string, authHeaders []*envoy_config_core_v3.HeaderValue) (*anypb.Any, error) {
+func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort uint32, clusterName string, pathPrefix string, authHeaders []*envoy_config_core_v3.HeaderValue, path *string) (*anypb.Any, error) {
 	// https://github.com/envoyproxy/envoy/tree/main/examples/ext_authz
 	// https://github.com/envoyproxy/envoy/blob/main/docs/root/configuration/http/http_filters/ext_authz_filter.rst
 	// https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter#config-http-filters-ext-authz
 	uri := fmt.Sprintf("%s:%d", upstreamHostname, upstreamPort)
+	// Append `path` to `uri`
+	if path != nil {
+		uri += "/" + *path
+	}
 
 	httpUpstreamType := &envoy_config_core_v3.HttpUri_Cluster{
 		Cluster: clusterName,
@@ -48,9 +51,7 @@ func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort ui
 	serverUri := &envoy_config_core_v3.HttpUri{
 		Uri:              uri,
 		HttpUpstreamType: httpUpstreamType,
-		Timeout: &durationpb.Duration{
-			Seconds: 60,
-		},
+		Timeout:          timeoutDefault(),
 	}
 	authorizationResponse := &envoy_extensions_filter_http_ext_authz_v3.AuthorizationResponse{
 		AllowedUpstreamHeaders: &envoy_type_matcher_v3.ListStringMatcher{
@@ -106,7 +107,7 @@ func NewFilterHTTPExternalAuthorization(upstreamHostname string, upstreamPort ui
 	}
 	anyAuthorization, err := anypb.New(authorization)
 	if err != nil {
-		return nil, fmt.Errorf("auth.NewFilterHTTPExternalAuthorization: cannot marshal authorization=%+v configuration: %w", authorization, err)
+		return nil, fmt.Errorf("auth.NewFilterHTTPExternalAuthorization: cannot marshal configuration authorization=%+v: %w", authorization, err)
 	}
 
 	return anyAuthorization, nil

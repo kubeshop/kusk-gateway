@@ -54,15 +54,13 @@ const (
 // KubeEnvoyConfigManager manages all Envoy configurations parsing from CRDs
 type KubeEnvoyConfigManager struct {
 	client.Client
-	Scheme       *runtime.Scheme
-	EnvoyManager *manager.EnvoyConfigManager
-	Validator    validation.ValidationUpdater
-	m            sync.Mutex
-
+	Scheme             *runtime.Scheme
+	EnvoyManager       *manager.EnvoyConfigManager
+	Validator          validation.ValidationUpdater
+	m                  sync.Mutex
 	WatchedSecretsChan chan *v1.Secret
 	SecretToEnvoyFleet map[string]gateway.EnvoyFleetID
-
-	OpenApiParser spec.Parser
+	OpenApiParser      spec.Parser
 }
 
 var (
@@ -71,7 +69,6 @@ var (
 
 // UpdateConfiguration is the main method to gather all routing configs and to create and apply Envoy config
 func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetID gateway.EnvoyFleetID) error {
-
 	l := configManagerLogger
 	fleetIDstr := fleetID.String()
 	// acquiring this lock is required so that no potentially conflicting updates would happen at the same time
@@ -97,7 +94,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 		return fmt.Errorf("failed to get HTTP connection manager: %w", err)
 	}
 
-	clBuilder := cloudentity.NewBuilder()
+	cloudEntityBuilder := cloudentity.NewBuilder()
 	for _, api := range apis {
 		l.Info("Processing API configuration", "fleet", fleetIDstr, "api", api.Name)
 		apiSpec, err := c.OpenApiParser.ParseFromReader(strings.NewReader(api.Spec.Spec))
@@ -114,14 +111,14 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to validate options: %w", err)
 		}
 
-		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, clBuilder, api.Name); err != nil {
+		if err = UpdateConfigFromAPIOpts(envoyConfig, c.Validator, opts, apiSpec, httpConnectionManagerBuilder, cloudEntityBuilder, api.Name, c.Client); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
 		l.Info("API route configuration processed", "fleet", fleetIDstr, "api", api.Name)
 	}
-	if clBuilder.Len() != 0 {
+	if cloudEntityBuilder.Len() != 0 {
 		l.Info("Processing CloudEntity API configuration")
-		m := clBuilder.BuildRequest()
+		m := cloudEntityBuilder.BuildRequest()
 		for upstream, req := range m {
 			cl := cloudentity.New("https://" + upstream)
 			err := cl.PutAPIGroups(context.Background(), req)
@@ -133,6 +130,7 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 
 	l.Info("Successfully processed APIs", "fleet", fleetIDstr)
 	l.Info("Getting Static Routes", "fleet", fleetIDstr)
+
 	staticRoutes, err := c.getDeployedStaticRoutes(ctx, fleetIDstr)
 	if err != nil {
 		l.Error(err, "Failed getting StaticRoutes for the fleet", "fleet", fleetIDstr)
@@ -145,14 +143,15 @@ func (c *KubeEnvoyConfigManager) UpdateConfiguration(ctx context.Context, fleetI
 			return fmt.Errorf("failed to generate options from the static route config: %w", err)
 		}
 
-		if err := UpdateConfigFromOpts(envoyConfig, opts); err != nil {
-			return fmt.Errorf("failed to generate config: %w", err)
+		kubernetesClient := c.Client
+		if err := UpdateConfigFromOpts(envoyConfig, opts, httpConnectionManagerBuilder, cloudEntityBuilder, kubernetesClient); err != nil {
+			return fmt.Errorf("failed to generate config for `StaticRoute`=%v: %w", sr.Name, err)
 		}
 	}
 
 	l.Info("Successfully processed Static Routes", "fleet", fleetIDstr)
-
 	l.Info("Processing EnvoyFleet configuration", "fleet", fleetIDstr)
+
 	var fleet gateway.EnvoyFleet
 	if err := c.Client.Get(ctx, types.NamespacedName{Name: fleetID.Name, Namespace: fleetID.Namespace}, &fleet); err != nil {
 		l.Error(err, "Failed to get Envoy Fleet", "fleet", fleetIDstr)

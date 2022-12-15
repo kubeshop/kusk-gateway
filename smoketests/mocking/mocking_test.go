@@ -20,10 +20,9 @@ import (
 )
 
 const (
-	defaultNamespace = "default"
 	defaultName      = "default"
+	defaultNamespace = "default"
 	testName         = "mock-test"
-	testPort         = 82
 )
 
 type MockCheckSuite struct {

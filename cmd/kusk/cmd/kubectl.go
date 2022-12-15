@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/component-base/logs"
 	kubectl "k8s.io/kubectl/pkg/cmd"
 )
@@ -50,8 +51,8 @@ func NewKubectlCmd() *cobra.Command {
 			ErrOut: os.Stderr,
 		},
 		Arguments: os.Args,
-		// PluginHandler: &kubectlPluginHandler{},
 	}
+
 	cmd := kubectl.NewKubectlCommand(args)
 
 	cmd.Aliases = []string{"kc"}
@@ -75,7 +76,7 @@ func NewKubectlCmd() *cobra.Command {
 
 		return originalPreRunE(cmd, args)
 	}
-	// cmd.PersistentFlags().AddFlagSet(config.GetKubeCtlFlagSet())
+
 	originalRun := cmd.Run
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		originalRun(cmd, args)

@@ -1,3 +1,5 @@
+
+---
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
@@ -100,7 +102,6 @@ spec:
               type: string
           required:
           - name
-          - status
           - namespace
           - serviceType
           - ports
@@ -119,9 +120,7 @@ spec:
               type: string
           required:
           - name
-          - nodePort
           - port
-          - protocol
           - targetPort
           type: object
         StaticRouteItem:
@@ -498,6 +497,42 @@ spec:
           summary: Get envoy fleet CRD
           tags:
           - fleets
+      /logs:
+        get:
+          operationId: getEnvoyFleetLogs
+          parameters:
+          - in: query
+            name: namespace
+            schema:
+              default: kusk-system
+              type: string
+          - in: query
+            name: name
+            schema:
+              type: string
+              default: kusk-gateway-envoy-fleet
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+              description: Envoy fleet logs
+            "404":
+              description: Envoy fleet logs not found
+          summary: Get envoy fleet logs
+          tags:
+          - fleets
+        x-kusk:
+          upstream:
+            rewrite:
+              pattern: ^/api
+              substitution: ""
+            service:
+              name: kusk-gateway-api
+              namespace: kusk-system
+              port: 8081
+          websocket: true
       /namespaces:
         get:
           description: Returns a list of namespaces
@@ -673,6 +708,56 @@ spec:
             "404":
               description: Static Route not found by namespace-name combination
           summary: Get details for a single static route
+          tags:
+          - static routes
+        put:
+          operationId: updateStaticRoute
+          parameters:
+          - in: path
+            name: namespace
+            required: true
+            schema:
+              default: default
+              type: string
+          - in: path
+            name: name
+            required: true
+            schema:
+              type: string
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  properties:
+                    envoyFleetName:
+                      type: string
+                    envoyFleetNamespace:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    openapi:
+                      type: string
+                  type: object
+            description: static route content
+            required: true
+          responses:
+            "201":
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/StaticRouteItem'
+              description: static route updated
+            "400":
+              content:
+                application/json:
+                  schema:
+                    type: string
+              description: The content of the static route is malformed
+            "404":
+              description: static route not found
+          summary: Update a static route by namespace and name
           tags:
           - static routes
       /staticroutes/{namespace}/{name}/crd:

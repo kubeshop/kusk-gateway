@@ -53,7 +53,7 @@ const (
 )
 
 // APIMutator handles API objects defaulting and any additional mutation.
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type APIMutator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -120,7 +120,7 @@ func (a *APIMutator) InjectDecoder(d *admission.Decoder) error {
 //+kubebuilder:webhook:path=/validate-gateway-kusk-io-v1alpha1-api,mutating=false,failurePolicy=fail,sideEffects=None,groups=gateway.kusk.io,resources=apis,verbs=create;update,versions=v1alpha1,name=vapi.kb.io,admissionReviewVersions={v1,v1beta1}
 
 // APIValidator handles API objects validation
-//+kubebuilder:object:generate:=false
+// +kubebuilder:object:generate:=false
 type APIValidator struct {
 	Client  client.Client
 	decoder *admission.Decoder
@@ -136,7 +136,7 @@ func (a *APIValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if err := apiObj.validate(); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if err := a.PathAlreadyDeployed(ctx, apiObj.Spec.Fleet, *apiObj); err != nil {
+	if err := a.PathAlreadyDeployed(ctx, *apiObj); err != nil {
 		return admission.Errored(http.StatusConflict, err)
 	}
 	return admission.Allowed("")
@@ -151,8 +151,8 @@ func (a *APIValidator) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFleetID, newApi API) error {
-	var apiObjs APIList
+func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, newApi API) error {
+	apiObjs := &APIList{}
 	parser := spec.NewParser(nil)
 	newApiSpec, err := parser.ParseFromReader(strings.NewReader(newApi.Spec.Spec))
 	if err != nil {
@@ -160,32 +160,33 @@ func (a *APIValidator) PathAlreadyDeployed(ctx context.Context, fleet *EnvoyFlee
 	}
 
 	// Get all API objects with this fleet field set
-	if err := a.Client.List(ctx, &apiObjs, &client.ListOptions{}); err != nil {
+	if err := a.Client.List(ctx, apiObjs, &client.ListOptions{}); err != nil {
 		return fmt.Errorf("failure querying for the deployed APIs: %w", err)
 	}
-
 	duplicates := openapi3.Paths{}
 	// filter out apis are in the process of deletion
 	for _, api := range apiObjs.Items {
-		if (api.Name != newApi.Name && api.Namespace != newApi.Namespace) &&
-			api.Spec.Fleet.Name == fleet.Name &&
-			api.Spec.Fleet.Namespace == fleet.Namespace &&
-			api.ObjectMeta.DeletionTimestamp.IsZero() {
-			apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
-			if err != nil {
-				return err
-			}
+		if api.Name == newApi.Name && api.Namespace == newApi.Namespace {
+			continue
+		}
 
-			for path := range newApiSpec.Paths {
-				if p, ok := apiSpec.Paths[path]; ok {
-					duplicates[path] = p
-				}
+		if api.Spec.Fleet.Name != newApi.Spec.Fleet.Name && api.Spec.Fleet.Namespace != newApi.Spec.Fleet.Namespace {
+			continue
+		}
+		apiSpec, err := parser.ParseFromReader(strings.NewReader(api.Spec.Spec))
+		if err != nil {
+			return err
+		}
+
+		for path := range newApiSpec.Paths {
+			if p, ok := apiSpec.Paths[path]; ok {
+				duplicates[path] = p
 			}
 		}
 	}
 
 	if len(duplicates) > 0 {
-		return fmt.Errorf("paths %s already exist with envoyfleet %s", reflect.ValueOf(duplicates).MapKeys(), fleet)
+		return fmt.Errorf("paths %s already exist with envoyfleet %s/%s", reflect.ValueOf(duplicates).MapKeys(), newApi.Spec.Fleet.Name, newApi.Spec.Fleet.Namespace)
 
 	}
 	return nil

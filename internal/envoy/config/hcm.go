@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,12 +40,14 @@ import (
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
+	"github.com/kubeshop/kusk-gateway/internal/services"
+
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 const (
-	RouteName string = "local_route"
+	RouteName = "local_route"
 )
 
 type HCMBuilder struct {
@@ -53,6 +55,9 @@ type HCMBuilder struct {
 }
 
 func NewHCMBuilder() (*HCMBuilder, error) {
+	validatorHost, validatorPort := services.ValidatorHostPort()
+	validatorURL := fmt.Sprintf("%s:%d", validatorHost, validatorPort)
+
 	rl := &ratelimit.LocalRateLimit{
 		StatPrefix: "http_local_rate_limiter",
 	}
@@ -67,6 +72,7 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal SimpleHttpCache configuration: %w", err)
 	}
+
 	cc := &cachev3.CacheConfig{
 		TypedConfig:        simpleCacheConfig,
 		AllowedVaryHeaders: nil,
@@ -95,7 +101,7 @@ func NewHCMBuilder() (*HCMBuilder, error) {
 		GrpcService: &envoy_core_v3.GrpcService{
 			TargetSpecifier: &envoy_core_v3.GrpcService_GoogleGrpc_{
 				GoogleGrpc: &envoy_core_v3.GrpcService_GoogleGrpc{
-					TargetUri:  "kusk-gateway-validator-service.kusk-system.svc.cluster.local:17000",
+					TargetUri:  validatorURL,
 					StatPrefix: "external_proc",
 				},
 			},

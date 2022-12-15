@@ -5,9 +5,9 @@ concurrency:
   group: "release"
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: bash
+#defaults:
+#  run:
+#    shell: bash
 
 on:
   push:
@@ -16,13 +16,10 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
-  release:
-    name: Create and upload release-artifacts, triggers Helm charts release
-    if: github.event.base_ref == 'refs/heads/main'
+  image_build:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
-    outputs:
-      changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
-      release_version: ${{ steps.check_modified_resources.outputs.release_version }}
+    if: github.event.base_ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
@@ -68,16 +65,128 @@ jobs:
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
             VERSION=${{ env.VERSION }}
 
-      - name: Run GoReleaser to publish release notes
+      - name: Build and Push Kusk Gateway API
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./build/api-server/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
+            VERSION=${{ env.VERSION }}
+
+      - name: Build and Push Kusk Gateway API Websocket
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./build/websocket/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta-websocket.outputs.tags }}
+          labels: ${{ steps.meta-websocket.outputs.labels }}
+          build-args: |
+            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
+            VERSION=${{ env.VERSION }}
+
+  pre_build:
+    name: Pre-build binaries
+    if: github.event.base_ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "linux"
+            path: .builds-linux.goreleaser.yml
+          - name: "windows"
+            path: .builds-windows.goreleaser.yml
+          - name: "darwin"
+            path: .builds-darwin.goreleaser.yml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: setup-golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+
+      - name: setup-goreleaser-environment-variables
+        run: |
+          echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
+
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
-          distribution: goreleaser
+          distribution: goreleaser-pro
           version: latest
-          args: release --rm-dist --skip-sign
+          args: release -f ${{ matrix.path }} --skip-publish
         env:
           GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
           TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: kusk_${{ matrix.name }}
+          path: |
+            ${{ matrix.name }}/kusk_${{ matrix.name }}_*
+          retention-days: 1
+
+  release:
+    name: Build binaries, upload release-artifacts
+    needs: pre_build
+    runs-on: ubuntu-latest
+
+    outputs:
+      changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
+      release_version: ${{ steps.check_modified_resources.outputs.release_version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Download Artifacts for Linux
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_linux
+          path: linux
+      - name: Download Artifacts for Windows
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_windows
+          path: windows
+      - name: Download Artifacts for Darwin
+        uses: actions/download-artifact@master
+        with:
+          name: kusk_darwin
+          path: darwin
+      # Added as a workaround since files lose their permissions when being moved from one stage to another in GH. A bug was reported
+      # and will be fixed in the next release of GoReleaser, thus we will be able to remove this code.
+      - name: Add executable mode
+        run: chmod -R +x linux/ darwin/
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser-pro
+          version: latest
+          args: release -f .goreleaser.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+          # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
+          GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
+      - name: Store Intermediate Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: bin-artifacts
+          path: dist
       - name: Check if we have modified CRDs or RBAC between the 2 last tags
         id: check_modified_resources
         run: |
@@ -95,7 +204,89 @@ jobs:
             echo "::set-output name=changed_resources::false"
           fi
 
-  # This job runs when we have changed_resources from the upstream release job
+  build-and-publish-linux-installer:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Intermediate Artifacts
+        uses: actions/download-artifact@master
+        with:
+          name: bin-artifacts
+          path: dist
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+      - name: Publish package
+        env:
+          APTLY_USERNAME: "aptly"
+          PASSWORD: ${{ secrets.APTLY_PASSWORD }}
+          APTLY_URL: "https://repo.kubeshop.io"
+          VERSION: ${{steps.tag.outputs.tag}}
+        run: |
+          ### Upload files
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_386.deb ${APTLY_URL}/api/files/kusk
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_arm64.deb ${APTLY_URL}/api/files/kusk
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -F file=@dist/kusk_${VERSION}_linux_amd64.deb ${APTLY_URL}/api/files/kusk
+          ### Add file to repo
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST ${APTLY_URL}/api/repos/kusk/file/kusk?forceReplace=1
+          ### Create snapshot
+          curl -u ${APTLY_USERNAME}:${PASSWORD} -X POST -H 'Content-Type: application/json' --data '{"Name":"kusk-'${VERSION}'"}' ${APTLY_URL}/api/repos/kusk/snapshots
+          curl \
+            -u ${APTLY_USERNAME}:${PASSWORD} \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            --data '{"Snapshots": [{"Component": "main", "Name": "kusk-'${VERSION}'"}]}' \
+            "${APTLY_URL}/api/publish/:${REPO_NAME}/linux"
+
+  build-and-publish-windows-installer:
+    needs: release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Download newest version
+        id: cliDownload
+        run: |
+
+          Invoke-Webrequest -UseBasicParsing -URI "https://github.com/kubeshop/kusk-gateway/releases/download/v${{steps.tag.outputs.tag}}/kusk_${{steps.tag.outputs.tag}}_Windows_x86_64.tar.gz" -OutFile kusk.tar.gz
+          $hash = Get-FileHash kusk.tar.gz | Select -ExpandProperty Hash
+
+          #setting set-output function for now since new commands with were not working as expected
+          echo '::echo::on'
+          echo "::set-output name=hash::$hash"
+
+      - name: Update choco files
+        run: |
+
+          (Get-Content choco/tools/chocolateyinstall.ps1) -Replace '%checksum%', $env:PACKAGE_CHECKSUM | Set-Content choco/tools/chocolateyinstall.ps1
+          (Get-Content choco/kusk.nuspec) -Replace '%version%', $env:PACKAGE_VERSION | Set-Content choco/kusk.nuspec
+        env:
+          PACKAGE_CHECKSUM: ${{ steps.cliDownload.outputs.hash }}
+          PACKAGE_VERSION: ${{steps.tag.outputs.tag}}
+
+      - name: Pack and release
+        run: |
+          cd choco
+          choco pack
+
+          choco apikey --key  ${{ secrets.COMMOM_CHOCO_API_KEY }} --source ${{ env.COMMOM_CHOCO_REPO }}
+          choco push kusk.$env:PACKAGE_VERSION.nupkg --source ${{ env.COMMOM_CHOCO_REPO }}
+        env:
+          COMMOM_CHOCO_REPO: "https://chocolatey.kubeshop.io/chocolatey"
+          PACKAGE_VERSION: ${{steps.tag.outputs.tag}}
+
+  #   This job runs when we have changed_resources from the upstream release job
   notify_slack_if_resources_changed:
     name: "Notify when CRD or RBAC changed"
     needs: "release"
@@ -115,7 +306,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-  # This job runs when we there is no changed resources in the upstream job
+#   This job runs when we there is no changed resources in the upstream job
   helm_chart_version_bump:
     name: "Trigger Helm chart appVersion update"
     needs: "release"

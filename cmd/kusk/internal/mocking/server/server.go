@@ -41,7 +41,7 @@ type AccessLogEntry struct {
 func New(client *client.Client, configFile, apiToMock string, port uint32) *MockServer {
 	return &MockServer{
 		client:     client,
-		image:      "muonsoft/openapi-mock:v0.3.3",
+		image:      "docker.io/muonsoft/openapi-mock:0.3.8",
 		configFile: configFile,
 		apiToMock:  apiToMock,
 		port:       port,
@@ -58,7 +58,9 @@ func (m *MockServer) Start(ctx context.Context) (string, error) {
 
 	// wait for download to complete, discard output
 	defer reader.Close()
-	io.Copy(io.Discard, reader)
+	if _, err := io.Copy(io.Discard, reader); err != nil {
+		return "", fmt.Errorf("download of mock server image did not complete: %w", err)
+	}
 
 	u, err := url.Parse(m.apiToMock)
 	if err != nil {

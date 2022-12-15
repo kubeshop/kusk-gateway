@@ -63,6 +63,7 @@ import (
 	"github.com/kubeshop/kusk-gateway/internal/authz"
 	"github.com/kubeshop/kusk-gateway/internal/controllers"
 	"github.com/kubeshop/kusk-gateway/internal/envoy/manager"
+	"github.com/kubeshop/kusk-gateway/internal/services"
 	"github.com/kubeshop/kusk-gateway/internal/validation"
 	"github.com/kubeshop/kusk-gateway/internal/webhooks"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
@@ -249,9 +250,10 @@ func main() {
 	}()
 
 	// Validation proxy
-	proxy := validation.NewServer()
+	proxy := validation.NewServer(logger)
 	go func() {
-		if err := proxy.Start(":17000"); err != nil {
+		_, port := services.ValidatorHostPort()
+		if err := proxy.Start(fmt.Sprintf(":%d", port)); err != nil {
 			setupLog.Error(err, "Unable to start validation proxy")
 			os.Exit(1)
 		}
@@ -260,8 +262,9 @@ func main() {
 	// ext authz server
 	authServer := authz.NewServer(logger)
 	go func() {
-		if err := authServer.ListenAndServe(":19000"); err != nil {
-			setupLog.Error(err, "Unable to start validation proxy")
+		_, port := services.AuthServiceHostPort()
+		if err := authServer.ListenAndServe(fmt.Sprintf(":%d", port)); err != nil {
+			setupLog.Error(err, "Unable to start auth service proxy")
 			os.Exit(1)
 		}
 	}()
@@ -277,8 +280,8 @@ func main() {
 		OpenApiParser:      spec.NewParser(&openapi3.Loader{IsExternalRefsAllowed: true}),
 	}
 
-	analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
-	heartBeat(ctx, controllerConfigManager.Client)
+	_ = analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", "kusk-gateway manager bootstrapping")
+	heartBeat(ctx, controllerConfigManager.Client, logger)
 
 	// The watcher for k8s secrets to trigger the refresh of configuration in case certificates secrets change.
 	go func() {
@@ -356,15 +359,20 @@ func main() {
 
 	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", fmt.Sprintf("kusk-gateway manager bootstrapping failed with error %s", err.Error()))
+		_ = analytics.SendAnonymousInfo(ctx, controllerConfigManager.Client, "kusk", fmt.Sprintf("kusk-gateway manager bootstrapping failed with error %s", err.Error()))
 		setupLog.Error(err, "Problem running manager")
 		os.Exit(1)
 	}
 }
-func heartBeat(ctx context.Context, client client.Client) {
+
+func heartBeat(ctx context.Context, client client.Client, logger logr.Logger) {
 	c := cron.New()
-	c.AddFunc("@daily", func() {
-		analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", "kusk-gateway daily heartbeat")
+	err := c.AddFunc("@daily", func() {
+		_ = analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", "kusk-gateway daily heartbeat")
 	})
+	if err != nil {
+		_ = analytics.SendAnonymousInfo(ctx, client, "kusk-heartbeat", fmt.Sprintf("kusk-gateway failed to add daily heartbeat: %s", err.Error()))
+	}
+
 	c.Start()
 }

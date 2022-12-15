@@ -13,11 +13,6 @@ import (
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 )
 
-const (
-	KuskNamespace = "kusk-system"
-	KuskManager   = "kusk-gateway-manager"
-)
-
 type KuskTestSuite struct {
 	Cli client.Client
 	suite.Suite
@@ -33,9 +28,9 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 	s.NoError(err)
 
 	scheme := runtime.NewScheme()
-	kuskv1.AddToScheme(scheme)
-	corev1.AddToScheme(scheme)
-	apps.AddToScheme(scheme)
+	s.NoError(kuskv1.AddToScheme(scheme))
+	s.NoError(corev1.AddToScheme(scheme))
+	s.NoError(apps.AddToScheme(scheme))
 
 	s.Cli, err = client.New(config, client.Options{Scheme: scheme})
 	s.NoError(err)

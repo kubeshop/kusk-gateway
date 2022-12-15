@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: staticroutes.gateway.kusk.io
 spec:
@@ -36,6 +35,195 @@ spec:
           spec:
             description: StaticRouteSpec defines the desired state of StaticRoute
             properties:
+              auth:
+                properties:
+                  cloudentity:
+                    description: OPTIONAL
+                    properties:
+                      host:
+                        description: REQUIRED.
+                        properties:
+                          hostname:
+                            description: REQUIRED.
+                            type: string
+                          path:
+                            description: OPTIONAL.
+                            type: string
+                          port:
+                            description: REQUIRED.
+                            format: int32
+                            type: integer
+                        type: object
+                      path_prefix:
+                        description: OPTIONAL.
+                        type: string
+                    type: object
+                  custom:
+                    description: OPTIONAL
+                    properties:
+                      host:
+                        description: REQUIRED.
+                        properties:
+                          hostname:
+                            description: REQUIRED.
+                            type: string
+                          path:
+                            description: OPTIONAL.
+                            type: string
+                          port:
+                            description: REQUIRED.
+                            format: int32
+                            type: integer
+                        type: object
+                      path_prefix:
+                        description: OPTIONAL.
+                        type: string
+                    type: object
+                  jwt:
+                    description: OPTIONAL
+                    properties:
+                      providers:
+                        description: Providers to use for verifying JSON Web Tokens
+                          (JWTs) on the virtual host.
+                        items:
+                          description: JWTProvider defines how to verify JWTs on requests.
+                          properties:
+                            audiences:
+                              description: Audiences that JWTs are allowed to have
+                                in the "aud" field. If not provided, JWT audiences
+                                are not checked.
+                              items:
+                                type: string
+                              type: array
+                            default:
+                              description: Whether the provider should apply to all
+                                routes in the HTTPProxy/its includes by default. At
+                                most one provider can be marked as the default. If
+                                no provider is marked as the default, individual routes
+                                must explicitly identify the provider they require.
+                              type: boolean
+                            forwardJWT:
+                              description: Whether the JWT should be forwarded to
+                                the backend service after successful verification.
+                                By default, the JWT is not forwarded.
+                              type: boolean
+                            issuer:
+                              description: Issuer that JWTs are required to have in
+                                the "iss" field. If not provided, JWT issuers are
+                                not checked.
+                              type: string
+                            jwks:
+                              description: Remote JWKS to use for verifying JWT signatures.
+                                The URI for the JWKS.
+                              minLength: 1
+                              type: string
+                            name:
+                              description: Unique name for the provider.
+                              minLength: 1
+                              type: string
+                          required:
+                          - jwks
+                          - name
+                          type: object
+                        minItems: 1
+                        type: array
+                    required:
+                    - providers
+                    type: object
+                  oauth2:
+                    description: OPTIONAL
+                    properties:
+                      auth_scopes:
+                        description: Optional list of OAuth scopes to be claimed in
+                          the authorization request. If not specified, defaults to
+                          “user” scope. OAuth RFC https://tools.ietf.org/html/rfc6749#section-3.3.
+                          OPTIONAL.
+                        items:
+                          type: string
+                        type: array
+                      authorization_endpoint:
+                        description: The endpoint redirect to for authorization in
+                          response to unauthorized requests. REQUIRED.
+                        type: string
+                      credentials:
+                        description: Credentials used for OAuth. REQUIRED.
+                        properties:
+                          client_id:
+                            description: REQUIRED.
+                            type: string
+                          client_secret:
+                            description: REQUIRED, if `client_secret_ref` is not set,
+                              i.e., mutually exclusive with `client_secret_ref`.
+                            type: string
+                          client_secret_ref:
+                            description: REQUIRED, if `client_secret` is not set,
+                              i.e., mutually exclusive with `client_secret`.
+                            properties:
+                              name:
+                                description: REQUIRED.
+                                type: string
+                              namespace:
+                                description: REQUIRED.
+                                type: string
+                            type: object
+                          cookie_names:
+                            description: OPTIONAL.
+                            properties:
+                              bearer_token:
+                                description: Defaults to BearerToken.
+                                type: string
+                              oauth_expires:
+                                description: Defaults to OauthExpires.
+                                type: string
+                              oauth_hmac:
+                                description: Defaults to OauthHMAC.
+                                type: string
+                            type: object
+                          hmac_secret:
+                            description: OPTIONAL.
+                            type: string
+                        type: object
+                      forward_bearer_token:
+                        description: Forward the OAuth token as a Bearer to upstream
+                          web service. When the authn server validates the client
+                          and returns an authorization token back to the OAuth filter,
+                          no matter what format that token is, if forward_bearer_token
+                          is set to true the filter will send over a cookie named
+                          BearerToken to the upstream. Additionally, the Authorization
+                          header will be populated with the same value. REQUIRED.
+                        type: boolean
+                      pass_through_matcher:
+                        description: Any request that matches any of the provided
+                          matchers will be passed through without OAuth validation.
+                          OPTIONAL.
+                        items:
+                          type: string
+                        type: array
+                      redirect_path_matcher:
+                        description: Matching criteria used to determine whether a
+                          path appears to be the result of a redirect from the authorization
+                          server. REQUIRED.
+                        type: string
+                      redirect_uri:
+                        description: The redirect URI passed to the authorization
+                          endpoint. Supports header formatting tokens. REQUIRED.
+                        type: string
+                      resources:
+                        description: 'Optional resource parameter for authorization
+                          request RFC: https://tools.ietf.org/html/rfc8707. OPTIONAL.'
+                        items:
+                          type: string
+                        type: array
+                      signout_path:
+                        description: The path to sign a user out, clearing their credential
+                          cookies. REQUIRED.
+                        type: string
+                      token_endpoint:
+                        description: Endpoint on the authorization server to retrieve
+                          the access token from. REQUIRED.
+                        type: string
+                    type: object
+                type: object
               fleet:
                 description: Fleet represents EnvoyFleet ID, which is deployed EnvoyFleet
                   CustomResource name and namespace Optional, if missing will be automatically
@@ -65,161 +253,61 @@ spec:
                     *example*), or simple domain (www.example.com)
                   type: string
                 type: array
-              paths:
-                additionalProperties:
-                  additionalProperties:
-                    description: Action is either a route to the upstream or a redirect,
-                      they're mutually exclusive.
+              upstream:
+                description: Upstream is a set of options of a target service to receive
+                  traffic.
+                properties:
+                  host:
+                    description: UpstreamHost defines any DNS hostname with port that
+                      we can proxy to, even outside of the cluster
                     properties:
-                      redirect:
-                        description: RedirectOptions provide http redirects see https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-redirectaction
-                        properties:
-                          host_redirect:
-                            type: string
-                          path_redirect:
-                            description: mutually exclusive with rewrite regex redirect
-                            type: string
-                          port_redirect:
-                            format: int32
-                            type: integer
-                          response_code:
-                            format: int32
-                            type: integer
-                          rewrite_regex:
-                            description: mutually exclusive with path redirect
-                            properties:
-                              pattern:
-                                type: string
-                              substitution:
-                                type: string
-                            required:
-                            - pattern
-                            - substitution
-                            type: object
-                          scheme_redirect:
-                            description: http|https
-                            type: string
-                          strip_query:
-                            type: boolean
-                        type: object
-                      route:
-                        description: Route defines a routing rule that proxies to
-                          upstream
-                        properties:
-                          cors:
-                            properties:
-                              credentials:
-                                type: boolean
-                              expose_headers:
-                                items:
-                                  type: string
-                                type: array
-                              headers:
-                                items:
-                                  type: string
-                                type: array
-                              max_age:
-                                type: integer
-                              methods:
-                                items:
-                                  type: string
-                                type: array
-                              origins:
-                                items:
-                                  type: string
-                                type: array
-                            type: object
-                          qos:
-                            properties:
-                              idle_timeout:
-                                description: IdleTimeout is timeout for idle connection
-                                format: int32
-                                type: integer
-                              request_timeout:
-                                description: RequestTimeout is total request timeout
-                                format: int32
-                                type: integer
-                              retries:
-                                description: Retries define how many times to retry
-                                  calling the backend
-                                format: int32
-                                type: integer
-                            type: object
-                          upstream:
-                            description: UpstreamOptions defines upstream that we
-                              proxy to Host and Service are mutually exclusive
-                            properties:
-                              host:
-                                description: UpstreamHost defines any DNS hostname
-                                  with port that we can proxy to, even outside of
-                                  the cluster
-                                properties:
-                                  hostname:
-                                    description: Hostname is the upstream hostname,
-                                      without port.
-                                    type: string
-                                  port:
-                                    description: Port is the upstream port.
-                                    format: int32
-                                    type: integer
-                                required:
-                                - hostname
-                                - port
-                                type: object
-                              rewrite:
-                                description: Rewrite is the pattern (regex) and a
-                                  substitution string that will change URL when request
-                                  is being forwarded to the upstream service. e.g.
-                                  given that Prefix is set to "/petstore/api/v3",
-                                  and with Rewrite.Pattern is set to "^/petstore",
-                                  Rewrite.Substitution is set to "" path that would
-                                  be generated is "/petstore/api/v3/pets", URL that
-                                  the upstream service would receive is "/api/v3/pets".
-                                properties:
-                                  pattern:
-                                    type: string
-                                  substitution:
-                                    type: string
-                                required:
-                                - pattern
-                                - substitution
-                                type: object
-                              service:
-                                description: UpstreamService defines K8s Service in
-                                  the cluster
-                                properties:
-                                  name:
-                                    description: Name is the upstream K8s Service's
-                                      name.
-                                    type: string
-                                  namespace:
-                                    description: Namespace where service is located
-                                    type: string
-                                  port:
-                                    description: Port is the upstream K8s Service's
-                                      port.
-                                    format: int32
-                                    type: integer
-                                required:
-                                - namespace
-                                - port
-                                type: object
-                            type: object
-                          websocket:
-                            description: Enable establishing Websocket connections,
-                              by default disabled
-                            type: boolean
-                        required:
-                        - upstream
-                        type: object
+                      hostname:
+                        description: Hostname is the upstream hostname, without port.
+                        type: string
+                      port:
+                        description: Port is the upstream port.
+                        format: int32
+                        type: integer
+                    required:
+                    - hostname
+                    - port
                     type: object
-                  description: Methods maps Method (GET, POST) to Action
-                  type: object
-                description: Paths is a multidimensional map of path / method to the
-                  routing rules
+                  rewrite:
+                    description: Rewrite is the pattern (regex) and a substitution
+                      string that will change URL when request is being forwarded
+                      to the upstream service. e.g. given that Prefix is set to "/petstore/api/v3",
+                      and with Rewrite.Pattern is set to "^/petstore", Rewrite.Substitution
+                      is set to "" path that would be generated is "/petstore/api/v3/pets",
+                      URL that the upstream service would receive is "/api/v3/pets".
+                    properties:
+                      pattern:
+                        type: string
+                      substitution:
+                        type: string
+                    required:
+                    - pattern
+                    - substitution
+                    type: object
+                  service:
+                    description: UpstreamService defines K8s Service in the cluster
+                    properties:
+                      name:
+                        description: Name is the upstream K8s Service's name.
+                        type: string
+                      namespace:
+                        description: Namespace where service is located
+                        type: string
+                      port:
+                        description: Port is the upstream K8s Service's port.
+                        format: int32
+                        type: integer
+                    required:
+                    - namespace
+                    - port
+                    type: object
                 type: object
             required:
-            - paths
+            - upstream
             type: object
           status:
             description: StaticRouteStatus defines the observed state of StaticRoute
@@ -229,9 +317,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

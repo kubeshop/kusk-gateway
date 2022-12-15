@@ -1,24 +1,19 @@
-before:
-  hooks:
-    - go mod tidy
-    - go mod verify
-    - go generate 
 builds:
-  - id: kusk-gateway
-    skip: true
-  - id: kusk
-    main: ./cmd/kusk/
-    env:
-      - CGO_ENABLED=0
-    binary: kusk
+  - builder: prebuilt
+    id: kusk
     goos:
       - linux
       - windows
       - darwin
-    ldflags:
-      - -w -s
-      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
-      - -X github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}
+    goarch:
+      - amd64
+      - arm64
+      - 386
+    goamd64:
+      - v1
+    prebuilt:
+      path: '{{ .Os }}/kusk_{{ .Os }}_{{ .Arch }}{{ with .Amd64 }}_{{ . }}{{ end }}/kusk{{ .Ext }}'
+    binary: kusk
 archives:
   - replacements:
       darwin: macOS
@@ -62,3 +57,13 @@ brews:
     install: bin.install "kusk"
     ids:
     - kusk
+
+nfpms:
+  - maintainer: Kusk Team
+    package_name: kusk
+    builds:
+      - kusk
+    license: "MIT"
+    formats:
+      - deb
+    description: Kusk - Make your OpenAPI definition the source of truth for API resources in cluster

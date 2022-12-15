@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>kusk</id>
+    <version>%version%</version>
+    <title>kusk</title>
+    <authors>Kubeshop</authors>
+    <projectUrl>https://kusk.io</projectUrl>
+    <tags>kusk kubeshop k8s openapi apiops</tags>
+    <summary>Kusk - OpenAPI-driven, developer-centric gateway for modern REST APIs</summary>
+    <description>Kusk - OpenAPI-driven, developer-centric gateway for modern REST APIs</description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

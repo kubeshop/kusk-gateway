@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2022 Kubeshop
+# Copyright (c) 2022 Kubeshop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,6 +38,8 @@ import (
 )
 
 func TestSendAnonymousInfo(t *testing.T) {
+	assert := assert.New(t)
+
 	if val, ok := os.LookupEnv("TELEMETRY_TOKEN"); ok {
 		TelemetryToken = val
 	} else {
@@ -44,15 +47,15 @@ func TestSendAnonymousInfo(t *testing.T) {
 		return
 	}
 
-	if err := SendAnonymousInfo(context.TODO(), getFakeClient(), "test", "analytics_test"); err != nil {
+	if err := SendAnonymousInfo(context.TODO(), getFakeClient(assert), "test", "analytics_test"); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
 }
 
-func getFakeClient() client.Client {
+func getFakeClient(assert *assert.Assertions) client.Client {
 	scheme := runtime.NewScheme()
-	corev1.AddToScheme(scheme)
+	assert.NoError(corev1.AddToScheme(scheme))
 
 	initObjects := []client.Object{
 

@@ -1,0 +1,23 @@
+before:
+  hooks:
+    - go mod tidy
+    - go mod verify
+    - go generate
+dist: darwin
+builds:
+  - main: ./cmd/kusk
+    id: kusk
+    binary: kusk
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -w -s
+      - -X 'github.com/kubeshop/kusk-gateway/pkg/build.Version={{.Env.VERSION}}'
+      - -X 'github.com/kubeshop/kusk-gateway/pkg/analytics.TelemetryToken={{.Env.TELEMETRY_TOKEN}}'
+archives:
+  - format: binary
