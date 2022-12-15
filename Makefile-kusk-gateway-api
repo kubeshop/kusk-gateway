@@ -1,0 +1,20 @@
+FAKE ?= true
+
+.PHONY: all
+all: docker-build-gateway-api
+
+.PHONY: docker-build-gateway-api
+docker-build-gateway-api:
+	docker buildx build \
+    -t kubeshop/kusk-gateway-api \
+    -t ttl.sh/kubeshop/kusk-gateway-api:latest \
+    -t ttl.sh/kubeshop/kusk-gateway-api:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
+    -f build/api-server/Dockerfile \
+    .
+	@echo
+	docker buildx build \
+    -t kubeshop/kusk-gateway-api-websocket \
+    -t ttl.sh/kubeshop/kusk-gateway-api-websocket:latest \
+    -t ttl.sh/kubeshop/kusk-gateway-api-websocket:$(shell git describe --tags $(shell git rev-list --tags --max-count=1)) \
+    -f build/websocket/Dockerfile \
+    .
