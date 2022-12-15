@@ -48,6 +48,28 @@ jobs:
           flavor: |
             latest=true
 
+      - name: Docker metadata for Kusk Gateway API
+        id: meta-kusk-gateway-api
+        uses: docker/metadata-action@v4
+        with:
+          images: kubeshop/kusk-gateway-api
+          tags: |
+            type=match,pattern=v(.*)
+            type=sha
+          flavor: |
+            latest=true
+
+      - name: Docker metadata for Kusk Gateway API Websocket
+        id: meta-websocket
+        uses: docker/metadata-action@v4
+        with:
+          images: kubeshop/kusk-gateway-api-websocket
+          tags: |
+            type=match,pattern=v(.*)
+            type=sha
+          flavor: |
+            latest=true
+
       - name: setup-goreleaser-environment-variables
         run: |
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
@@ -72,7 +94,7 @@ jobs:
           file: ./build/api-server/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta-kusk-gateway-api.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
