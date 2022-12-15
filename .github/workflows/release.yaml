@@ -18,28 +18,28 @@ on:
 jobs:
   image_build:
     name: Build and push Docker image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event.base_ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Docker metadata for Kusk Gateway
         id: meta-kusk-gateway
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: kubeshop/kusk-gateway
           tags: |
@@ -53,7 +53,7 @@ jobs:
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
 
       - name: Build and push Kusk Gateway
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: build/manager/Dockerfile
@@ -66,7 +66,7 @@ jobs:
             VERSION=${{ env.VERSION }}
 
       - name: Build and Push Kusk Gateway API
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./build/api-server/Dockerfile
@@ -79,7 +79,7 @@ jobs:
             VERSION=${{ env.VERSION }}
 
       - name: Build and Push Kusk Gateway API Websocket
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./build/websocket/Dockerfile
@@ -94,7 +94,7 @@ jobs:
   pre_build:
     name: Pre-build binaries
     if: github.event.base_ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
@@ -107,21 +107,21 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: setup-golang
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.19
+          go-version: 1.18
 
       - name: setup-goreleaser-environment-variables
         run: |
           echo "VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser-pro
           version: latest
@@ -132,7 +132,7 @@ jobs:
           TELEMETRY_TOKEN: ${{ secrets.TELEMETRY_TOKEN }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v3
         with:
           name: kusk_${{ matrix.name }}
           path: |
@@ -142,7 +142,7 @@ jobs:
   release:
     name: Build binaries, upload release-artifacts
     needs: pre_build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     outputs:
       changed_resources: ${{ steps.check_modified_resources.outputs.changed_resources }}
@@ -154,17 +154,17 @@ jobs:
         with:
           fetch-depth: 0
       - name: Download Artifacts for Linux
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v3
         with:
           name: kusk_linux
           path: linux
       - name: Download Artifacts for Windows
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v3
         with:
           name: kusk_windows
           path: windows
       - name: Download Artifacts for Darwin
-        uses: actions/download-artifact@master
+        uses: actions/download-artifact@v3
         with:
           name: kusk_darwin
           path: darwin
@@ -173,7 +173,7 @@ jobs:
       - name: Add executable mode
         run: chmod -R +x linux/ darwin/
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser-pro
           version: latest
@@ -183,7 +183,7 @@ jobs:
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           GORELEASER_KEY: ${{ secrets.GORELEASER_LICENSE }}
       - name: Store Intermediate Artifacts
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v3
         with:
           name: bin-artifacts
           path: dist
@@ -197,6 +197,7 @@ jobs:
 
           # Pass version (git tag name) to other jobs
           echo "::set-output name=release_version::${{ github.ref_name }}"
+          echo "{name}={value}" >> $GITHUB_STATE
 
           # This will set job output to changed_resource=true or false
           if [[ -n "$CHANGED_FILES_STATS" ]]; then
@@ -207,7 +208,7 @@ jobs:
 
   build-and-publish-linux-installer:
     needs: release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Get Intermediate Artifacts
         uses: actions/download-artifact@master
@@ -249,6 +250,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Get tag
         id: tag
@@ -292,7 +295,7 @@ jobs:
     name: "Notify when CRD or RBAC changed"
     needs: "release"
     if: ${{ needs.release.outputs.changed_resources == 'true'}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Notify Slack channel
         uses: rtCamp/action-slack-notify@v2
@@ -307,15 +310,15 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
-#   This job runs when we there is no changed resources in the upstream job
+  #   This job runs when we there is no changed resources in the upstream job
   helm_chart_version_bump:
     name: "Trigger Helm chart appVersion update"
     needs: "release"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ needs.release.outputs.changed_resources == 'false'}}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "kubeshop/helm-charts"
           ref: "main"
@@ -323,7 +326,7 @@ jobs:
           token: ${{ secrets.CI_BOT_TOKEN }}
 
       - name: Install Helm
-        uses: azure/setup-helm@v1
+        uses: azure/setup-helm@v3
         with:
           version: v3.4.0
 
@@ -366,7 +369,7 @@ jobs:
           SLACK_FOOTER: "Kubeshop --> Kusk Gateway"
 
   notify_slack_if_helm_chart_bump_fails:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: helm_chart_version_bump
     if: always() && (needs.helm_chart_version_bump.result == 'failure')
     steps:
