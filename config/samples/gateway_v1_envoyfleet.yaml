@@ -72,23 +72,7 @@ spec:
   # If the entry is missing no access logging will be done
   accesslog:
     # json|text
-    format: text
-    # Depending on format we can specify our own log template or if template is not specified - default Kusk Gateway will be used
-    # Below are specified the examples of similar and minimalistic formats for both text and json format types.
-    # Text format fields order is preserved.
-    # The output example:
-    # "[2021-12-15T16:50:50.217Z]" "GET" "/" "200" "1"
-    text_template: |
-      "[%START_TIME%]" "%REQ(:METHOD)%" "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%" "%RESPONSE_CODE%" "%DURATION%"
-    # Json format fields order isn't preserved
-    # The output example:
-    # {"start_time":"2021-12-15T16:46:52.135Z","path":"/","response_code":200,"method":"GET","duration":1}
-    json_template:
-      start_time: "%START_TIME%"
-      method: "%REQ(:METHOD)%"
-      path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
-      response_code: "%RESPONSE_CODE%"
-      duration: "%DURATION%"
+    format: json
 
   # OPTIONAL - specify TLS options for HTTPS traffic
   # If TLS specified, only tlsSecrets is a mandatory field
