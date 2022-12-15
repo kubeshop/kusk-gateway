@@ -4,12 +4,10 @@ $(smoketests):
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 
 check-weighted_cluster:
-	-kubectl delete -f ./samples/weighted/deployments.yaml
-	-kubectl delete -f ./samples/weighted/weighted-api.yaml
-	kubectl apply -f ./samples/weighted/deployments.yaml
+	kubectl apply -f ./weighted_cluster/deployments.yaml
 	kubectl wait deployment --namespace default traffic-splitting-httpbin --for condition=Available=True --timeout=3m
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
-	kubectl delete -f ./samples/weighted/deployments.yaml
+	kubectl delete -f ./weighted_cluster/deployments.yaml
 
 check-auth_jwt:
 	kubectl apply -f ../examples/auth/jwt/oauth0/manifests.yaml
@@ -25,7 +23,7 @@ check-cache:
 	kubectl delete -f ./samples/cache/cache-upstream.yaml
 
 check-basic_auth:
-	-kubectl delete -f ./samples/hello-world/auth-api.yaml
+	-kubectl delete -f ./basic_auth/basic_auth_api.yaml
 	kubectl apply -f ../examples/ext-authz/http-basic-auth/
 	kubectl wait --namespace default deployment ext-authz-http-basic-auth --for condition=Available=True --timeout=3m
 	@echo "sleeping for 6s ..."
@@ -34,10 +32,10 @@ check-basic_auth:
 	kubectl delete -f ../examples/ext-authz/http-basic-auth/
 
 check-openapi-path:
-	kubectl apply -f ./samples/openapi-path/openapi-path-with-auth-upstream.yaml
+	kubectl apply -f ./openapi-path/openapi-path-with-auth-deployments.yaml
 	kubectl wait deployment ext-authz-http-basic-auth-openapi-path-with-auth --namespace=default --for condition=Available=True --timeout=3m
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
-	kubectl delete -f ./samples/openapi-path/openapi-path-with-auth-upstream.yaml
+	kubectl delete -f ./openapi-path/openapi-path-with-auth-deployments.yaml
 
 check-auth_oauth2:
 	kubectl apply -f ../examples/auth/oauth2/authorization-code-grant/manifests.yaml

@@ -20,9 +20,11 @@ import (
 )
 
 const (
-	defaultName      = "default"
-	defaultNamespace = "default"
-	testName         = "test-rate-limit"
+	testName          = "test-rate-limit"
+	testNamespace     = "default"
+	apiFleetName      = "kusk-gateway-envoy-fleet"
+	apiFleetNamespace = "kusk-system"
+	port              = 80
 )
 
 type RateLimitTestSuite struct {
@@ -31,14 +33,14 @@ type RateLimitTestSuite struct {
 }
 
 func (t *RateLimitTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/hello-world/rate_limit.yaml")
+	rawApi := common.ReadFile("./rate_limit.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = apiFleetName
+	api.Spec.Fleet.Namespace = apiFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), `apis.gateway.kusk.io "test-rate-limit" already exists`) {
@@ -115,7 +117,7 @@ func getEnvoyFleetSvc(t *RateLimitTestSuite) *corev1.Service {
 
 	envoyFleetSvc := &corev1.Service{}
 	t.NoError(
-		t.Cli.Get(context.Background(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
+		t.Cli.Get(context.Background(), client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace}, envoyFleetSvc),
 	)
 
 	return envoyFleetSvc

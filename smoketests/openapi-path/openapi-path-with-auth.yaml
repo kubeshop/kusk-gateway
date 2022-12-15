@@ -4,8 +4,8 @@ metadata:
   name: test-openapi-path-with-auth
 spec:
   fleet:
-    name: default
-    namespace: default
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   spec: |
     openapi: 3.0.0
     info:
@@ -20,11 +20,11 @@ spec:
       auth:
         custom:
           host:
-            hostname: ext-authz-http-basic-auth-openapi-path-with-auth
+            hostname: ext-authz-http-basic-auth-openapi-path-with-auth.default.svc.cluster.local
             port: 80
       upstream:
         service:
-          name: httpbin
+          name: test-openapi-path-with-auth-httpbin
           namespace: default
           port: 80
     paths:

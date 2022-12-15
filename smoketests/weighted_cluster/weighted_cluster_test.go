@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
@@ -43,16 +42,16 @@ import (
 )
 
 const (
-	testName         = "test-traffic-splitting-api-1"
-	defaultName      = "test-traffic-splitting"
-	defaultNamespace = "default"
-	port             = 89
+	testName          = "test-traffic-splitting-api-1"
+	testNamespace     = "default"
+	apiFleetName      = "kusk-gateway-envoy-fleet"
+	apiFleetNamespace = "kusk-system"
+	port              = 80
 )
 
 type WeightedClusterTestSuite struct {
 	common.KuskTestSuite
-	api   *kuskv1.API
-	fleet *kuskv1.EnvoyFleet
+	api *kuskv1.API
 }
 
 func TestWeightedClusterTestSuite(t *testing.T) {
@@ -62,45 +61,17 @@ func TestWeightedClusterTestSuite(t *testing.T) {
 
 func (t *WeightedClusterTestSuite) TearDownSuite() {
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
-	t.NoError(t.Cli.Delete(context.Background(), t.fleet, &client.DeleteOptions{}))
 }
 
 func (t *WeightedClusterTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/weighted/weighted-api.yaml")
-
-	rawFleet := common.ReadFile("../basic/envoyfleet.yaml")
-	fleet := &kuskv1.EnvoyFleet{}
-	t.NoError(yaml.Unmarshal([]byte(rawFleet), fleet))
-
-	fleet.ObjectMeta.Name = defaultName
-	fleet.ObjectMeta.Namespace = defaultNamespace
-	fleet.Spec.Service = &kuskv1.ServiceConfig{
-		Type: corev1.ServiceTypeLoadBalancer,
-		Ports: []corev1.ServicePort{
-			{
-				Port:       port,
-				TargetPort: intstr.FromString("http"),
-				Name:       "http",
-			},
-			{
-				Port:       444,
-				TargetPort: intstr.FromString("http"),
-				Name:       "https",
-			},
-		},
-	}
-
-	t.NoError(t.Cli.Create(context.TODO(), fleet, &client.CreateOptions{}))
-
-	t.fleet = fleet
-
+	rawApi := common.ReadFile("./weighted-api.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
-	api.ObjectMeta.Name = defaultName
-	api.ObjectMeta.Namespace = defaultNamespace
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Name = testName
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = apiFleetName
+	api.Spec.Fleet.Namespace = apiFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
@@ -112,9 +83,9 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 60 * time.Second
-	t.T().Logf("Waiting for %s", duration)
-	t.NoError(common.WaitForServiceReady(context.TODO(), t.Cli, defaultNamespace, defaultName, duration))
+	duration := 4 * time.Second
+	t.T().Logf("sleeping for %s", duration)
+	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
 
 func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
@@ -169,7 +140,7 @@ func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 	t.NoError(
 		t.Cli.Get(
 			context.Background(),
-			client.ObjectKey{Name: defaultName, Namespace: defaultNamespace},
+			client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace},
 			envoyFleetSvc,
 		),
 	)

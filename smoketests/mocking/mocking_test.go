@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -20,27 +19,36 @@ import (
 )
 
 const (
-	defaultName      = "default"
-	defaultNamespace = "default"
-	testName         = "mock-test"
+	testName          = "test-mock"
+	testNamespace     = "default"
+	apiFleetName      = "kusk-gateway-envoy-fleet"
+	apiFleetNamespace = "kusk-system"
+	port              = 80
 )
 
 type MockCheckSuite struct {
 	common.KuskTestSuite
+	api *kuskv1.API
 }
 
 func (m *MockCheckSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/hello-world/mock-api.yaml")
+	rawApi := common.ReadFile("./mock-api.yaml")
 	api := &kuskv1.API{}
 	m.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = apiFleetName
+	api.Spec.Fleet.Namespace = apiFleetNamespace
 
 	m.NoError(m.Cli.Create(context.TODO(), api, &client.CreateOptions{}))
+	m.api = api
+
 	time.Sleep(3 * time.Second) // weird way to wait it out probably needs to be done dynamically
+}
+
+func (t *MockCheckSuite) TearDownSuite() {
+	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (m *MockCheckSuite) TestEndpoint() {
@@ -51,7 +59,7 @@ func (m *MockCheckSuite) TestEndpoint() {
 
 	envoyFleetSvc := &corev1.Service{}
 	m.NoError(
-		m.Cli.Get(context.TODO(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
+		m.Cli.Get(context.TODO(), client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace}, envoyFleetSvc),
 	)
 	resp, err := http.Get(fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP))
 	m.NoError(err)
@@ -69,18 +77,6 @@ func (m *MockCheckSuite) TestEndpoint() {
 	m.NoError(json.Unmarshal(o, &res))
 
 	m.Equal("Hello from a mocked response!", res["message"])
-}
-
-func (m *MockCheckSuite) TearDownTest() {
-	api := &kuskv1.API{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      testName,
-			Namespace: defaultNamespace,
-		},
-	}
-
-	m.NoError(m.Cli.Delete(context.TODO(), api, &client.DeleteOptions{}))
-
 }
 
 func TestMockingSuite(t *testing.T) {

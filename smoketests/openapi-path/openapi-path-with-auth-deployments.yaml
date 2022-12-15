@@ -38,33 +38,33 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: test-openapi-path-with-auth-httpbin
+  name: test-openapi-path-with-auth-httpbin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpbin
+      app: test-openapi-path-with-auth-httpbin
   template:
     metadata:
       labels:
-        app: httpbin
+        app: test-openapi-path-with-auth-httpbin
     spec:
       containers:
-        - image: docker.io/kennethreitz/httpbin
-          name: httpbin
+        - image: docker.io/mccutchen/go-httpbin:v2.4.1
+          name: test-openapi-path-with-auth-httpbin
           ports:
-            - containerPort: 80
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpbin
-  name: httpbin
+    app: test-openapi-path-with-auth-httpbin
+  name: test-openapi-path-with-auth-httpbin
 spec:
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080
   selector:
-    app: httpbin
+    app: test-openapi-path-with-auth-httpbin

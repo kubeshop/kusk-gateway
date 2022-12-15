@@ -2,16 +2,16 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
-  name: test-basic-auth
+  name: test-mock
   namespace: default
 spec:
   fleet:
-    name: default
-    namespace: default
+    name: kusk-gateway-envoy-fleet
+    namespace: kusk-system
   spec: |
     components: {}
     info:
-      title: test-basic-auth
+      title: test-mock
       version: 0.1.0
     openapi: 3.0.0
     paths:
@@ -50,11 +50,6 @@ spec:
                     type: string
               description: ""
     x-kusk:
-      auth:
-        custom:
-          host:
-            hostname: ext-authz-http-basic-auth
-            port: 80
       cors:
         methods:
         - GET
@@ -63,3 +58,4 @@ spec:
         - '*'
       mocking:
         enabled: true
+      public_api_path: "simple/spec.json"

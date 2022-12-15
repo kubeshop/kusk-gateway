@@ -41,9 +41,10 @@ import (
 )
 
 const (
-	testName         = "test-auth-jwt-oauth0"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	testName          = "test-auth-jwt-oauth0"
+	testNamespace     = "default"
+	apiFleetName      = "kusk-gateway-envoy-fleet"
+	apiFleetNamespace = "kusk-system"
 )
 
 const (
@@ -70,9 +71,9 @@ func (t *AuthJWTTestSuite) SetupTest() {
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = apiFleetName
+	api.Spec.Fleet.Namespace = apiFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
@@ -84,7 +85,7 @@ func (t *AuthJWTTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 5 * time.Second
+	duration := 4 * time.Second
 	t.T().Logf("Sleeping for %s", duration)
 	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 }
@@ -125,7 +126,7 @@ func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 	t.NoError(
 		t.Cli.Get(
 			context.Background(),
-			client.ObjectKey{Name: defaultName, Namespace: defaultNamespace},
+			client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace},
 			envoyFleetSvc,
 		),
 	)
