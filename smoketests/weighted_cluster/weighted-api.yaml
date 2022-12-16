@@ -1,7 +1,7 @@
 apiVersion: gateway.kusk.io/v1alpha1
 kind: API
 metadata:
-  name: traffic-splitting-api-1
+  name: test-traffic-splitting-api
   namespace: default
 spec:
   fleet:
@@ -10,7 +10,8 @@ spec:
   spec: |
     components: {}
     info:
-      title: traffic-splitting-api-1
+      title: test-traffic-splitting-api
+      description: test-traffic-splitting-api
       version: 0.1.0
     openapi: 3.0.0
     paths:

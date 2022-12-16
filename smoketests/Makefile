@@ -16,11 +16,11 @@ check-auth_jwt:
 	kubectl delete -f ../examples/auth/jwt/oauth0/manifests.yaml
 
 check-cache:
-	kubectl apply -f ./samples/cache/cache-upstream.yaml
+	kubectl apply -f ./cache/cache-deployments.yaml
 	@echo "sleeping for 2s ..."
 	@sleep 2
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
-	kubectl delete -f ./samples/cache/cache-upstream.yaml
+	kubectl delete -f ./cache/cache-deployments.yaml
 
 check-basic_auth:
 	-kubectl delete -f ./basic_auth/basic_auth_api.yaml

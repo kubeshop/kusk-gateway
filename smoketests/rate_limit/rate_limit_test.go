@@ -12,19 +12,16 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName          = "test-rate-limit"
-	testNamespace     = "default"
-	apiFleetName      = "kusk-gateway-envoy-fleet"
-	apiFleetNamespace = "kusk-system"
-	port              = 80
+	testName      = "test-rate-limit"
+	testNamespace = "default"
 )
 
 type RateLimitTestSuite struct {
@@ -39,20 +36,29 @@ func (t *RateLimitTestSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName
 	api.ObjectMeta.Namespace = testNamespace
-	api.Spec.Fleet.Name = apiFleetName
-	api.Spec.Fleet.Namespace = apiFleetNamespace
+	api.Spec.Fleet.Name = helpers.APIFleetName
+	api.Spec.Fleet.Namespace = helpers.APIFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), `apis.gateway.kusk.io "test-rate-limit" already exists`) {
+			// store `api` for deletion later
+			t.api = api
 			return
 		}
 
 		t.Fail(err.Error(), nil)
 	}
 
-	t.api = api // store `api` for deletion later
+	// store `api` for deletion later
+	t.api = api
 
-	time.Sleep(1 * time.Second) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
+}
+
+func (t *RateLimitTestSuite) TearDownSuite() {
+	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (t *RateLimitTestSuite) TestRateLimitReached() {
@@ -61,10 +67,8 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 		RateLimit = 2
 	)
 
-	envoyFleetSvc := getEnvoyFleetSvc(t)
-	var (
-		url = fmt.Sprintf("http://%s/rate_limit", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
-	)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/rate_limit", loadBalancerIP)
 
 	// Do 2 requests then the next one will fail
 	for x := 0; x < RateLimit; x++ {
@@ -103,22 +107,7 @@ func (t *RateLimitTestSuite) TestRateLimitReached() {
 	t.Equal("local_rate_limited", string(responseBody))
 }
 
-func (t *RateLimitTestSuite) TearDownSuite() {
-	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
-}
-
 func TestRateLimitTestSuite(t *testing.T) {
 	testSuite := RateLimitTestSuite{}
 	suite.Run(t, &testSuite)
-}
-
-func getEnvoyFleetSvc(t *RateLimitTestSuite) *corev1.Service {
-	t.T().Helper()
-
-	envoyFleetSvc := &corev1.Service{}
-	t.NoError(
-		t.Cli.Get(context.Background(), client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace}, envoyFleetSvc),
-	)
-
-	return envoyFleetSvc
 }

@@ -1,4 +1,5 @@
 smoketests := \
+    check-cache \
     check-weighted_cluster \
     check-rate_limit \
     check-mocking \

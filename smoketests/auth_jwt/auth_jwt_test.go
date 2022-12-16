@@ -33,18 +33,16 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName          = "test-auth-jwt-oauth0"
-	testNamespace     = "default"
-	apiFleetName      = "kusk-gateway-envoy-fleet"
-	apiFleetNamespace = "kusk-system"
+	testName      = "test-auth-jwt-oauth0"
+	testNamespace = "default"
 )
 
 const (
@@ -61,10 +59,6 @@ func TestAuthJWTTestSuite(t *testing.T) {
 	suite.Run(t, &testSuite)
 }
 
-func (t *AuthJWTTestSuite) TearDownSuite() {
-	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
-}
-
 func (t *AuthJWTTestSuite) SetupTest() {
 	rawApi := common.ReadFile("../../examples/auth/jwt/oauth0/api.yaml")
 	api := &kuskv1.API{}
@@ -72,11 +66,12 @@ func (t *AuthJWTTestSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName
 	api.ObjectMeta.Namespace = testNamespace
-	api.Spec.Fleet.Name = apiFleetName
-	api.Spec.Fleet.Namespace = apiFleetNamespace
+	api.Spec.Fleet.Name = helpers.APIFleetName
+	api.Spec.Fleet.Namespace = helpers.APIFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
+			t.api = api
 			return
 		}
 
@@ -85,9 +80,13 @@ func (t *AuthJWTTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 4 * time.Second
-	t.T().Logf("Sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
+}
+
+func (t *AuthJWTTestSuite) TearDownSuite() {
+	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (t *AuthJWTTestSuite) Test_Auth_JWT_Invalid() {
@@ -96,8 +95,8 @@ func (t *AuthJWTTestSuite) Test_Auth_JWT_Invalid() {
 		expected = "Jwt is not in the form of Header.Payload.Signature with two dots and 3 sections"
 	)
 
-	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
-	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/uuid", loadBalancerIP)
 
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	request.Header.Add(HeaderAuthorization, "Bearer <invalid_token>")
@@ -117,21 +116,6 @@ func (t *AuthJWTTestSuite) Test_Auth_JWT_Invalid() {
 	}()
 
 	t.Equal(expected, actual)
-}
-
-func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
-	t.T().Helper()
-
-	envoyFleetSvc := &corev1.Service{}
-	t.NoError(
-		t.Cli.Get(
-			context.Background(),
-			client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace},
-			envoyFleetSvc,
-		),
-	)
-
-	return envoyFleetSvc
 }
 
 func makeHTTPClient() *http.Client {

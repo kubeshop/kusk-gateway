@@ -32,18 +32,16 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName          = "test-basic-auth"
-	testNamespace     = "default"
-	apiFleetName      = "kusk-gateway-envoy-fleet"
-	apiFleetNamespace = "kusk-system"
+	testName      = "test-basic-auth"
+	testNamespace = "default"
 )
 
 type BasicAuthCheckSuite struct {
@@ -58,14 +56,14 @@ func (t *BasicAuthCheckSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName
 	api.ObjectMeta.Namespace = testNamespace
-	api.Spec.Fleet.Name = apiFleetName
-	api.Spec.Fleet.Namespace = apiFleetNamespace
+	api.Spec.Fleet.Name = helpers.APIFleetName
+	api.Spec.Fleet.Namespace = helpers.APIFleetNamespace
 
 	if err := t.Cli.Create(context.TODO(), api, &client.CreateOptions{}); err != nil {
 		message := fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)
-		t.T().Logf("err=%v, message=%v", err, message)
-
 		if strings.Contains(err.Error(), message) {
+			t.T().Logf("WARNING: err=%v, message=%v", err, message)
+			t.api = api
 			return
 		}
 
@@ -74,22 +72,20 @@ func (t *BasicAuthCheckSuite) SetupTest() {
 
 	t.api = api
 
-	duration := 8 * time.Second
-	t.T().Logf("sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
 }
 
 func (t *BasicAuthCheckSuite) TearDownSuite() {
-	// duration := 8 * time.Second
-	// t.T().Logf("sleeping for %s", duration)
-	// time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
 	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (t *BasicAuthCheckSuite) TestAuthorized() {
-	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/hello", loadBalancerIP)
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP), nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	t.NoError(err)
 	req.SetBasicAuth("kusk", "kusk")
 
@@ -101,9 +97,10 @@ func (t *BasicAuthCheckSuite) TestAuthorized() {
 }
 
 func (t *BasicAuthCheckSuite) TestUnauthorized() {
-	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/hello", loadBalancerIP)
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP), nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	t.NoError(err)
 	req.SetBasicAuth("kusk", "kusk123")
 
@@ -115,9 +112,10 @@ func (t *BasicAuthCheckSuite) TestUnauthorized() {
 }
 
 func (t *BasicAuthCheckSuite) TestUnauthorizedNoCredentials() {
-	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/hello", loadBalancerIP)
 
-	resp, err := http.Get(fmt.Sprintf("http://%s/hello", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP))
+	resp, err := http.Get(url)
 	t.NoError(err)
 
 	defer resp.Body.Close()
@@ -128,19 +126,4 @@ func (t *BasicAuthCheckSuite) TestUnauthorizedNoCredentials() {
 func TestBasicAuthCheckSuite(t *testing.T) {
 	b := BasicAuthCheckSuite{}
 	suite.Run(t, &b)
-}
-
-func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
-	t.T().Helper()
-
-	envoyFleetSvc := &corev1.Service{}
-	t.NoError(
-		t.Cli.Get(
-			context.Background(),
-			client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace},
-			envoyFleetSvc,
-		),
-	)
-
-	return envoyFleetSvc
 }

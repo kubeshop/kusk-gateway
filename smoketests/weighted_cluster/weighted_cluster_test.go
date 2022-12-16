@@ -34,19 +34,15 @@ import (
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1 "k8s.io/api/core/v1"
-
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName          = "test-traffic-splitting-api-1"
-	testNamespace     = "default"
-	apiFleetName      = "kusk-gateway-envoy-fleet"
-	apiFleetNamespace = "kusk-system"
-	port              = 80
+	testName      = "test-traffic-splitting-api"
+	testNamespace = "default"
 )
 
 type WeightedClusterTestSuite struct {
@@ -70,27 +66,30 @@ func (t *WeightedClusterTestSuite) SetupTest() {
 
 	api.ObjectMeta.Name = testName
 	api.ObjectMeta.Namespace = testNamespace
-	api.Spec.Fleet.Name = apiFleetName
-	api.Spec.Fleet.Namespace = apiFleetNamespace
+	api.Spec.Fleet.Name = helpers.APIFleetName
+	api.Spec.Fleet.Namespace = helpers.APIFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
+			// store `api` for deletion later
+			t.api = api
 			return
 		}
 
 		t.Fail(err.Error())
 	}
 
-	t.api = api // store `api` for deletion later
+	// store `api` for deletion later
+	t.api = api
 
-	duration := 4 * time.Second
-	t.T().Logf("sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
 }
 
 func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
-	envoyFleetSvc := getEnvoyFleetSvc(&t.KuskTestSuite)
-	url := fmt.Sprintf("http://%s:%d/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP, port)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/uuid", loadBalancerIP)
 
 	// Once the servicesHitCounts becomes 1 for all the services below, we break from the for loop and terminate the test.
 	servicesHitCounts := map[string]int{
@@ -131,19 +130,4 @@ func (t *WeightedClusterTestSuite) Test_WeightedCluster() {
 
 		// time.Sleep(time.Second * 2)
 	}
-}
-
-func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
-	t.T().Helper()
-
-	envoyFleetSvc := &corev1.Service{}
-	t.NoError(
-		t.Cli.Get(
-			context.Background(),
-			client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace},
-			envoyFleetSvc,
-		),
-	)
-
-	return envoyFleetSvc
 }
