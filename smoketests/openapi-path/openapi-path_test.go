@@ -38,6 +38,7 @@ import (
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
@@ -65,6 +66,7 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
+			t.api = api // store `api` for deletion later
 			return
 		}
 
@@ -73,9 +75,9 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 4 * time.Second
-	t.T().Logf("Sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
 }
 
 func (t *OpenAPIPathTestSuite) TearDownSuite() {

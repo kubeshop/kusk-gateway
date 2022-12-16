@@ -1,0 +1,61 @@
+name: e2e-cluster-kind
+
+on: pull_request
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  e2e-cluster-kind-run:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: kind-cluster
+        uses: helm/kind-action@v1.5.0
+        with:
+          cluster_name: kgw
+          wait: 256s
+          verbosity: 10
+
+      - name: kubectl-get-services-all-namespaces-pre-loadbalancer-configuration
+        run: |
+          kubectl get svc --all-namespaces
+
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: configure-loadbalancer
+        run: |
+          ./smoketests/cluster-config/kind/cluster-configure.sh
+
+      - name: kubectl-get-services-all-namespaces-post-loadbalancer-configuration
+        run: |
+          kubectl get svc --all-namespaces
+
+      - name: install-dependencies
+        run: |
+          mkdir -pv /tmp/kusk
+          cd /tmp/kusk
+          wget -qO- https://github.com/kubeshop/kusk-gateway/releases/download/v1.5.4/kusk_1.5.4_Linux_x86_64.tar.gz | tar -vxz
+          ./kusk cluster install --no-api
+          echo 'Waiting for `service/kusk-gateway-envoy-fleet` to get ingress ...'
+          while [[ -z $(kubectl get service --namespace kusk-system kusk-gateway-envoy-fleet -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
+            echo "still waiting for service/kusk-gateway-envoy-fleet to get ingress"
+            sleep 1
+          done
+          echo "service/kusk-gateway-envoy-fleet now has ingress"
+
+      - name: kubectl-get-services-all-namespaces-post-kusk-install
+        run: |
+          kubectl get svc --all-namespaces
+
+      - name: setup-go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: run-e2e
+        run: |
+          make check-all

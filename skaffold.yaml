@@ -1,24 +1,25 @@
-apiVersion: skaffold/v2beta29
+apiVersion: skaffold/v4beta1
 kind: Config
 build:
-  local:
-    useBuildkit: true
-    push: false
-  tagPolicy:
-    sha256: {}
   artifacts:
     - image: kubeshop/kusk-gateway
-      platforms: ["linux/amd64"]
+      context: .
       docker:
         dockerfile: build/manager/Dockerfile
-      context: .
+      platforms:
+        - linux/amd64
+  tagPolicy:
+    sha256: {}
+  local:
+    push: false
+    useBuildkit: true
+manifests:
+  rawYaml:
+    - /tmp/skaffold/config-crd.yaml
+    - /tmp/skaffold/config-default.yaml
+    - /tmp/skaffold/config-map-metallb.yaml
 deploy:
-  kubeContext: kgw
   kubectl:
-    manifests:
-      - /tmp/skaffold/config-crd.yaml
-      - /tmp/skaffold/config-default.yaml
-      - /tmp/skaffold/config-map-metallb.yaml
     hooks:
       after:
         - host:
@@ -26,11 +27,13 @@ deploy:
               - /bin/sh
               - -c
               - echo 'sleeping for 2 seconds before applying `config/samples/gateway_v1_envoyfleet.yaml`' && sleep 2
----
-apiVersion: skaffold/v2beta29
-kind: Config
-deploy:
   kubeContext: kgw
-  kubectl:
-    manifests:
-      - config/samples/gateway_v1_envoyfleet.yaml
+---
+apiVersion: skaffold/v4beta1
+kind: Config
+manifests:
+  rawYaml:
+    - config/samples/gateway_v1_envoyfleet.yaml
+deploy:
+  kubectl: {}
+  kubeContext: kgw

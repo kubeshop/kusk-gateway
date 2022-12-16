@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	WaitBeforeStartingTest = 8 * time.Second
+	WaitBeforeStartingTest = 2 * time.Second
 )
 
 /*

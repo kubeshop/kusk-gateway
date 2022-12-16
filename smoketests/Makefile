@@ -17,8 +17,6 @@ check-auth_jwt:
 
 check-cache:
 	kubectl apply -f ./cache/cache-deployments.yaml
-	@echo "sleeping for 2s ..."
-	@sleep 2
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 	kubectl delete -f ./cache/cache-deployments.yaml
 
@@ -26,8 +24,6 @@ check-basic_auth:
 	-kubectl delete -f ./basic_auth/basic_auth_api.yaml
 	kubectl apply -f ../examples/ext-authz/http-basic-auth/
 	kubectl wait --namespace default deployment ext-authz-http-basic-auth --for condition=Available=True --timeout=3m
-	@echo "sleeping for 6s ..."
-	@sleep 6
 	go test -count=1 -v github.com/kubeshop/kusk-gateway/smoketests/$(subst check-,,$@)
 	kubectl delete -f ../examples/ext-authz/http-basic-auth/
 
