@@ -203,7 +203,7 @@ jobs:
             --set manager.image.pullPolicy=Always \
             --wait --timeout 3m
           helm upgrade kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
-            --install --namespace default --set fullnameOverride=default \
+            --install --namespace kusk-system --set fullnameOverride=kusk-gateway-envoy-fleet \
             --wait --timeout 3m
 
   e2e:
@@ -264,7 +264,7 @@ jobs:
       - name: Uninstall kusk-gateway and envoy-fleet
         run: |
           helm delete  kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} \
-            --namespace default
+            --namespace kusk-system
           helm delete kusk-gateway-pr-${{ github.event.pull_request.number }} \
             --namespace kusk-gateway-pr-${{ github.event.pull_request.number }}
           kubectl delete ns kusk-gateway-pr-${{ github.event.pull_request.number }}
