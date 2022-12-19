@@ -77,22 +77,6 @@ jobs:
           go version
           VERSION=${{ env.VERSION }} make manifests
 
-  compile-and-unit-test-manager:
-    name: compile-and-unit-test-manager
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: setup-go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.18
-
-      - name: compile-and-unit-test-manager
-        run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
-
   build-api-docker:
     name: Build API and websocket docker images
     runs-on: ubuntu-22.04
@@ -123,10 +107,23 @@ jobs:
           file: ./build/websocket/Dockerfile
           platforms: linux/amd64,linux/arm64
 
-  e2e:
-    name: e2e
+  tests:
+    name: tests
     runs-on: ubuntu-22.04
     steps:
+      - name: setup-go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: tests-manager
+        run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
+
       - name: cluster-create-kind
         uses: helm/kind-action@v1.5.0
         with:
@@ -138,11 +135,6 @@ jobs:
         run: |
           kubectl get svc --all-namespaces
 
-      - name: checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
       - name: configure-loadbalancer
         run: |
           ./smoketests/cluster-config/kind/cluster-configure.sh
@@ -150,11 +142,6 @@ jobs:
       - name: kubectl-get-services-all-namespaces-post-loadbalancer-configuration
         run: |
           kubectl get svc --all-namespaces
-
-      - name: setup-go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.18
 
       - name: make-docker-build
         run: |
@@ -196,6 +183,6 @@ jobs:
           echo "service/kusk-gateway-envoy-fleet now has ingress"
           kubectl get svc --all-namespaces
 
-      - name: run-e2e
+      - name: tests-e2e
         run: |
           make check-all
