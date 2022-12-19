@@ -28,7 +28,8 @@ jobs:
     name: golangci-lint
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/setup-go@v3
+      - name: setup-go
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18
       - uses: actions/checkout@v3
@@ -48,7 +49,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
+      - name: setup-go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
@@ -77,18 +78,19 @@ jobs:
           VERSION=${{ env.VERSION }} make manifests
 
   compile-and-unit-test-manager:
-    name: Compile and Test Manager
+    name: compile-and-unit-test-manager
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set up Go
+      - name: setup-go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
-      - name: Compile and Test manager
+
+      - name: compile-and-unit-test-manager
         run: make test TelemetryToken=${{ secrets.TELEMETRY_TOKEN }}
 
   build-api-docker:
@@ -121,150 +123,81 @@ jobs:
           file: ./build/websocket/Dockerfile
           platforms: linux/amd64,linux/arm64
 
-  build-manager-docker:
-    needs: [compile-and-unit-test-manager]
-    name: "Build manager docker image"
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: build/manager/Dockerfile
-          tags: kubeshop/kusk-gateway:pr-${{ github.event.pull_request.number }}
-          push: true
-          platforms: linux/amd64
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-          build-args: |
-            TELEMETRY_TOKEN=${{ secrets.TELEMETRY_TOKEN }}
-
-      - name: Update docker cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-  deploy:
-    needs: build-manager-docker
-    name: Deploy
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GKE_SA_KEY }}
-
-      - uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GKE_PROJECT }}
-
-      - uses: google-github-actions/get-gke-credentials@v1
-        with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
-          location: ${{ secrets.GKE_ZONE }}
-
-      - name: Deploy
-        run: |
-          helm repo add kubeshop https://kubeshop.github.io/helm-charts
-          helm repo update
-          helm upgrade kusk-gateway-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway \
-            --install --namespace kusk-gateway-pr-${{ github.event.pull_request.number }} --create-namespace \
-            --set analytics.enabled=false \
-            --set manager.image.tag=pr-${{ github.event.pull_request.number }} \
-            --set manager.image.pullPolicy=Always \
-            --wait --timeout 3m
-          helm upgrade kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} kubeshop/kusk-gateway-envoyfleet \
-            --install --namespace default --set fullnameOverride=default \
-            --wait --timeout 3m
-
   e2e:
-    needs: deploy
-    name: Run e2e tests
+    needs:
+      - compile-and-unit-test-manager
+    name: e2e
     runs-on: ubuntu-22.04
-
     steps:
-      - name: Checkout
+      - name: cluster-create-kind
+        uses: helm/kind-action@v1.5.0
+        with:
+          cluster_name: kgw
+          wait: 256s
+          verbosity: 1
+
+      - name: kubectl-get-services-all-namespaces-pre-loadbalancer-configuration
+        run: |
+          kubectl get svc --all-namespaces
+
+      - name: checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Set up Go
+      - name: configure-loadbalancer
+        run: |
+          ./smoketests/cluster-config/kind/cluster-configure.sh
+
+      - name: kubectl-get-services-all-namespaces-post-loadbalancer-configuration
+        run: |
+          kubectl get svc --all-namespaces
+
+      - name: setup-go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
 
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GKE_SA_KEY }}
+      - name: make-docker-build
+        run: |
+          echo 'building `kusk-gateway-manager` (control-plane) image'
+          make docker-build
 
-      - uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GKE_PROJECT }}
+      - name: kind-load-docker-image
+        run: |
+          set -x
+          kind load docker-image kubeshop/kusk-gateway:$(git describe --tags $(git rev-list --tags --max-count=1)) --name kgw
 
-      - uses: google-github-actions/get-gke-credentials@v1
-        with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
-          location: ${{ secrets.GKE_ZONE }}
+      - name: make-install
+        run: |
+          make install
+          kubectl get svc --all-namespaces
 
-      - name: Run e2e Tests
+      - name: make-deploy
+        run: |
+          echo 'installing `kusk-gateway-manager` (control-plane) image into cluster'
+          make deploy
+          kubectl get svc --all-namespaces
+          kubectl rollout status --namespace kusk-system deployment/kusk-gateway-manager --watch --timeout=256s
+
+      - name: make-deploy-envoyfleet
+        run: |
+          echo 'deploying `kusk-gateway-envoy-fleet` (default Envoy Fleet)'
+          until make deploy-envoyfleet; do
+            # A timing issue sometimes results in the below occuring:
+            # Error from server (InternalError): error when creating "config/samples/gateway_v1_envoyfleet.yaml": Internal error occurred: failed calling webhook "menvoyfleet.kb.io": failed to call webhook: Post "https://kusk-gateway-webhooks-service.kusk-system.svc:443/mutate-gateway-kusk-io-v1alpha1-envoyfleet?timeout=10s": dial tcp 10.109.220.117:443: connect: connection refused
+            echo "sleeping for 2 seconds before trying 'make deploy-envoyfleet' again ..."
+            sleep 2
+          done
+
+          echo 'Waiting for `service/kusk-gateway-envoy-fleet` to get ingress ...'
+          while [[ -z $(kubectl get service --namespace kusk-system kusk-gateway-envoy-fleet -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
+            echo "still waiting for service/kusk-gateway-envoy-fleet to get ingress, sleeping for 2 seconds ..."
+            sleep 2
+          done
+          echo "service/kusk-gateway-envoy-fleet now has ingress"
+          kubectl get svc --all-namespaces
+
+      - name: run-e2e
         run: |
           make check-all
-
-  cleanup:
-    runs-on: ubuntu-22.04
-    needs: e2e
-    if: always()
-    steps:
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GKE_SA_KEY }}
-
-      - uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GKE_PROJECT }}
-
-      - uses: google-github-actions/get-gke-credentials@v1
-        with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
-          location: ${{ secrets.GKE_ZONE }}
-
-      - name: Uninstall kusk-gateway and envoy-fleet
-        run: |
-          helm delete  kusk-gateway-envoyfleet-pr-${{ github.event.pull_request.number }} \
-            --namespace default
-          helm delete kusk-gateway-pr-${{ github.event.pull_request.number }} \
-            --namespace kusk-gateway-pr-${{ github.event.pull_request.number }}
-          kubectl delete ns kusk-gateway-pr-${{ github.event.pull_request.number }}

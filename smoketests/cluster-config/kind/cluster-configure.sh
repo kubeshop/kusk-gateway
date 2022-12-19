@@ -39,17 +39,3 @@ metadata:
   name: empty
   namespace: metallb-system
 EOF
-
-# until kubectl get --namespace kusk-system service/kusk-gateway-envoy-fleet --output=jsonpath='{.status.loadBalancer}' | grep "ingress"; do :; done
-
-# kubectl wait \
-#   --namespace kusk-system \
-#   --for=condition=Ready pod \
-#   --selector=app.kubernetes.io/instance=kusk-gateway-envoy-fleet \
-#   --timeout=256s
-
-# while [[ -z $(kubectl get --namespace kusk-system service/kusk-gateway-envoy-fleet -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
-#   echo "still waiting for service/kusk-gateway-envoy-fleet to get ingress"
-#   sleep 1
-# done
-# echo "service/kusk-gateway-envoy-fleet now has ingress"
