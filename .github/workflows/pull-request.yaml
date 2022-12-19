@@ -124,8 +124,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   e2e:
-    needs:
-      - compile-and-unit-test-manager
     name: e2e
     runs-on: ubuntu-22.04
     steps:
