@@ -2,23 +2,23 @@ package overlays
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOverlayPass(t *testing.T) {
-	overlay, err := NewOverlay("overlay.yaml")
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	assert := assert.New(t)
+	overlay, err := NewOverlay("./overlay.yaml")
+	assert.NoError(err)
 
-	if _, err := overlay.Apply(); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	appliedOverlay, err := overlay.Apply()
+	assert.NoError(err)
+	t.Logf("appliedOverlay=%v", appliedOverlay)
 }
 
 func TestOverlayNoPass(t *testing.T) {
-	if _, err := NewOverlay("overlayed.yaml"); err == nil {
-		t.Fail()
-	}
+	assert := assert.New(t)
+
+	_, err := NewOverlay("overlayed.yaml")
+	assert.Error(err)
 }

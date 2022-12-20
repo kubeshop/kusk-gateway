@@ -141,7 +141,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests fmt vet install-deps ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell setup-envtest use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell setup-envtest use $(ENVTEST_K8S_VERSION) -p path)" go test -v -count=1 $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
 
 .PHONY: testing
 testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
