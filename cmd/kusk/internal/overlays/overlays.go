@@ -65,12 +65,12 @@ func (o *Overlay) Apply() (string, error) {
 	if !IsUrl(o.Extends) {
 		overlayed, err = applyOverlay(o.path, o.Extends)
 		if err != nil {
-			return "", fmt.Errorf(`Overlay.Apply failed - !IsUrl(o.Extends), overlayed=%v: %w`, overlayed, err)
+			return "", fmt.Errorf(`Overlay.Apply failed - !IsUrl(o.Extends), o.path=%v, overlayed=%v: %w`, o.path, overlayed, err)
 		}
 	} else {
 		overlayed, err = applyOverlay(o.path, "")
 		if err != nil {
-			return "", fmt.Errorf(`Overlay.Apply failed - IsUrl(o.Extends), overlayed=%v: %w`, overlayed, err)
+			return "", fmt.Errorf(`Overlay.Apply failed - IsUrl(o.Extends), o.path=%v, overlayed=%v: %w`, o.path, overlayed, err)
 		}
 	}
 
@@ -159,10 +159,12 @@ func applyOverlay(path string, extends string) (string, error) {
 	} else {
 		cmd = exec.Command("docker", "run", "--rm", volumes, imageName)
 	}
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cmd.CombinedOutput failed: cmd=%+#v, out=%v, %w", cmd, string(out), err)
 	}
+
 	return string(out), nil
 }
 
