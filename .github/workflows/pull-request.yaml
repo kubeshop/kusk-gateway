@@ -128,8 +128,8 @@ jobs:
         uses: helm/kind-action@v1.5.0
         with:
           cluster_name: kgw
-          wait: 256s
-          verbosity: 1
+          wait: 1m
+          verbosity: 10
 
       - name: kubectl-get-services-all-namespaces-pre-loadbalancer-configuration
         run: |
@@ -163,7 +163,7 @@ jobs:
           echo 'installing `kusk-gateway-manager` (control-plane) image into cluster'
           make deploy
           kubectl get svc --all-namespaces
-          kubectl rollout status --namespace kusk-system deployment/kusk-gateway-manager --watch --timeout=256s
+          kubectl rollout status --namespace kusk-system deployment/kusk-gateway-manager --watch --timeout=1m
 
       - name: make-deploy-envoyfleet
         run: |
