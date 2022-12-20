@@ -24,21 +24,21 @@ permissions:
   pull-requests: read
 
 jobs:
-  # golangci-lint:
-  #   name: golangci-lint
-  #   runs-on: self-hosted
-  #   steps:
-  #     - name: setup-go
-  #       uses: actions/setup-go@v3
-  #       with:
-  #         go-version: 1.18
-  #     - uses: actions/checkout@v3
-  #     - name: golangci-lint
-  #       uses: golangci/golangci-lint-action@v3
-  #       with:
-  #         version: latest
-  #         args: --timeout=10m0s
-  #         only-new-issues: true
+  golangci-lint:
+    name: golangci-lint
+    runs-on: self-hosted
+    steps:
+      - name: setup-go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=10m0s
+          only-new-issues: true
 
   test-kusk-cli:
     name: Compile and Test Kusk CLI
@@ -77,35 +77,35 @@ jobs:
           go version
           VERSION=${{ env.VERSION }} make manifests
 
-  # build-api-docker:
-  #   name: Build API and websocket docker images
-  #   runs-on: self-hosted
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 0
+  build-api-docker:
+    name: Build API and websocket docker images
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v2
-  #       with:
-  #         platforms: linux/amd64,linux/arm64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: linux/amd64,linux/arm64
 
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-  #     - name: Build and push api-server
-  #       uses: docker/build-push-action@v3
-  #       with:
-  #         context: .
-  #         file: ./build/api-server/Dockerfile
-  #         platforms: linux/amd64,linux/arm64
+      - name: Build and push api-server
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./build/api-server/Dockerfile
+          platforms: linux/amd64,linux/arm64
 
-  #     - name: Build and push websocket
-  #       uses: docker/build-push-action@v3
-  #       with:
-  #         context: .
-  #         file: ./build/websocket/Dockerfile
-  #         platforms: linux/amd64,linux/arm64
+      - name: Build and push websocket
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./build/websocket/Dockerfile
+          platforms: linux/amd64,linux/arm64
 
   tests:
     needs:
