@@ -7,8 +7,6 @@ import (
 )
 
 func TestOverlayPass(t *testing.T) {
-	t.Skipf("skipping %v because it is failing", t.Name())
-
 	assert := assert.New(t)
 	overlay, err := NewOverlay("./overlay.yaml")
 	assert.NoError(err)
