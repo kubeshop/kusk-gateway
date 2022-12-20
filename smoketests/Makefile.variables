@@ -1,4 +1,5 @@
 smoketests := \
+    check-cache \
     check-weighted_cluster \
     check-rate_limit \
     check-mocking \
@@ -6,4 +7,3 @@ smoketests := \
     check-auth_jwt \
     check-auth_oauth2 \
     check-basic_auth
-

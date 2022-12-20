@@ -34,17 +34,16 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName         = "test-cache"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	testName      = "test-cache"
+	testNamespace = "default"
 )
 
 type CacheTestSuite struct {
@@ -53,17 +52,20 @@ type CacheTestSuite struct {
 }
 
 func (t *CacheTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/cache/cache.yaml")
+	rawApi := common.ReadFile("./cache-api.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = defaultNamespace
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = helpers.APIFleetName
+	api.Spec.Fleet.Namespace = helpers.APIFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
-		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
+		message := fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)
+		if strings.Contains(err.Error(), message) {
+			t.T().Logf("WARNING: message=%v, err=%v", message, err)
+			t.api = api // store `api` for deletion later
 			return
 		}
 
@@ -72,25 +74,31 @@ func (t *CacheTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 8 * time.Second
-	t.T().Logf("Sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
+}
+
+func (t *CacheTestSuite) TearDownSuite() {
+	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (t *CacheTestSuite) TestCacheCacheOn() {
 	// We are expecting `cache-control: max-age=2` header and the value of `age` to increase over time.
 	// the `uuid` will be cached up until `NoOfRequests`.
 	const (
-		NoOfRequests = 3
+		NoOfRequests = 2
 	)
 
-	envoyFleetSvc := getEnvoyFleetSvc(t)
-	url := fmt.Sprintf("http://%s/uuid", envoyFleetSvc.Status.LoadBalancer.Ingress[0].IP)
+	loadBalancerIP := helpers.GetEnvoyFleetServiceLoadBalancerIP(&t.KuskTestSuite)
+	url := fmt.Sprintf("http://%s/uuid", loadBalancerIP)
 
 	uuidCached := ""
 	// Do n requests that will get cached, i.e., they'll return the same uuid.
 	for x := 0; x < NoOfRequests; x++ {
 		func() {
+			t.T().Logf("iteration=%v, uuidCached=%v", x, uuidCached)
+
 			req, err := http.NewRequest(http.MethodGet, url, nil)
 
 			t.NoError(err)
@@ -99,7 +107,9 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 			t.NoError(err)
 			t.Equal(http.StatusOK, res.StatusCode)
 
-			defer res.Body.Close()
+			defer func() {
+				t.NoError(res.Body.Close())
+			}()
 
 			responseBody, err := io.ReadAll(res.Body)
 			t.NoError(err)
@@ -111,7 +121,8 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 				t.Fail("uuid is empty - expecting a uuid")
 			}
 
-			if uuidCached == "" && x == 0 {
+			// On first iteration store `uuid` as `uuidCached`.
+			if x == 0 {
 				uuidCached = body["uuid"]
 			}
 
@@ -119,7 +130,7 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 				t.Fail("uuid has changed - expecting the same uuid")
 			}
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 		}()
 	}
 
@@ -130,7 +141,9 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 	t.NoError(err)
 	t.Equal(http.StatusOK, res.StatusCode)
 
-	defer res.Body.Close()
+	defer func() {
+		t.NoError(res.Body.Close())
+	}()
 
 	responseBody, err := io.ReadAll(res.Body)
 	t.NoError(err)
@@ -141,22 +154,7 @@ func (t *CacheTestSuite) TestCacheCacheOn() {
 	t.NotEqual(body["uuid"], uuidCached)
 }
 
-func (t *CacheTestSuite) TearDownSuite() {
-	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
-}
-
 func TestCacheTestSuite(t *testing.T) {
 	testSuite := CacheTestSuite{}
 	suite.Run(t, &testSuite)
-}
-
-func getEnvoyFleetSvc(t *CacheTestSuite) *corev1.Service {
-	t.T().Helper()
-
-	envoyFleetSvc := &corev1.Service{}
-	t.NoError(
-		t.Cli.Get(context.Background(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
-	)
-
-	return envoyFleetSvc
 }

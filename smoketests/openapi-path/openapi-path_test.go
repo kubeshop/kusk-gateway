@@ -38,12 +38,15 @@ import (
 
 	kuskv1 "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/smoketests/common"
+	"github.com/kubeshop/kusk-gateway/smoketests/helpers"
 )
 
 const (
-	testName         = "test-openapi-path-with-auth"
-	defaultName      = "default"
-	defaultNamespace = "default"
+	testName          = "test-openapi-path-with-auth"
+	testNamespace     = "default"
+	apiFleetName      = "kusk-gateway-envoy-fleet"
+	apiFleetNamespace = "kusk-system"
+	port              = 80
 )
 
 type OpenAPIPathTestSuite struct {
@@ -52,17 +55,18 @@ type OpenAPIPathTestSuite struct {
 }
 
 func (t *OpenAPIPathTestSuite) SetupTest() {
-	rawApi := common.ReadFile("../samples/openapi-path/openapi-path-with-auth.yaml")
+	rawApi := common.ReadFile("./openapi-path-with-auth.yaml")
 	api := &kuskv1.API{}
 	t.NoError(yaml.Unmarshal([]byte(rawApi), api))
 
 	api.ObjectMeta.Name = testName
-	api.ObjectMeta.Namespace = "default"
-	api.Spec.Fleet.Name = defaultName
-	api.Spec.Fleet.Namespace = defaultNamespace
+	api.ObjectMeta.Namespace = testNamespace
+	api.Spec.Fleet.Name = apiFleetName
+	api.Spec.Fleet.Namespace = apiFleetNamespace
 
 	if err := t.Cli.Create(context.Background(), api, &client.CreateOptions{}); err != nil {
 		if strings.Contains(err.Error(), fmt.Sprintf("apis.gateway.kusk.io %q already exists", testName)) {
+			t.api = api // store `api` for deletion later
 			return
 		}
 
@@ -71,9 +75,13 @@ func (t *OpenAPIPathTestSuite) SetupTest() {
 
 	t.api = api // store `api` for deletion later
 
-	duration := 5 * time.Second
-	t.T().Logf("Sleeping for %s", duration)
-	time.Sleep(duration) // weird way to wait it out probably needs to be done dynamically
+	// weird way to wait it out probably needs to be done dynamically
+	t.T().Logf("Sleeping for %s", helpers.WaitBeforeStartingTest)
+	time.Sleep(helpers.WaitBeforeStartingTest)
+}
+
+func (t *OpenAPIPathTestSuite) TearDownSuite() {
+	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
 }
 
 func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthOK() {
@@ -147,10 +155,6 @@ func (t *OpenAPIPathTestSuite) TestOpenAPIPathWithAuthUnauthorized() {
 	t.Equal(http.StatusUnauthorized, res.StatusCode)
 }
 
-func (t *OpenAPIPathTestSuite) TearDownSuite() {
-	t.NoError(t.Cli.Delete(context.Background(), t.api, &client.DeleteOptions{}))
-}
-
 func TestOpenAPIPathTestSuite(t *testing.T) {
 	testSuite := OpenAPIPathTestSuite{}
 	suite.Run(t, &testSuite)
@@ -161,7 +165,7 @@ func getEnvoyFleetSvc(t *common.KuskTestSuite) *corev1.Service {
 
 	envoyFleetSvc := &corev1.Service{}
 	t.NoError(
-		t.Cli.Get(context.Background(), client.ObjectKey{Name: defaultName, Namespace: defaultNamespace}, envoyFleetSvc),
+		t.Cli.Get(context.Background(), client.ObjectKey{Name: apiFleetName, Namespace: apiFleetNamespace}, envoyFleetSvc),
 	)
 
 	return envoyFleetSvc

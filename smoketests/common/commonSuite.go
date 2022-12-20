@@ -19,11 +19,10 @@ type KuskTestSuite struct {
 }
 
 func (s *KuskTestSuite) SetupSuite() {
-	s.setupAndWaitForReady()
+	setupAndWaitForReady(s)
 }
 
-func (s *KuskTestSuite) setupAndWaitForReady() {
-
+func setupAndWaitForReady(s *KuskTestSuite) {
 	config, err := GetKubeconfig()
 	s.NoError(err)
 
@@ -35,5 +34,8 @@ func (s *KuskTestSuite) setupAndWaitForReady() {
 	s.Cli, err = client.New(config, client.Options{Scheme: scheme})
 	s.NoError(err)
 
-	time.Sleep(3 * time.Second)
+	// weird way to wait it out probably needs to be done dynamically
+	waitBeforeStartingTest := time.Second * 1
+	s.T().Logf("Sleeping for %s", waitBeforeStartingTest)
+	time.Sleep(waitBeforeStartingTest)
 }
