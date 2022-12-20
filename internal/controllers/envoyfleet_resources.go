@@ -113,7 +113,7 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 
 	configMapName := e.fleet.Name
 
-	xdsLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "xds-Service"}
+	xdsLabels := map[string]string{"app.kubernetes.io/name": "kusk-gateway", "app.kubernetes.io/component": "xds-service"}
 	xdsServices, err := k8sutils.GetServicesByLabels(ctx, e.client, xdsLabels)
 	if err != nil {
 		return fmt.Errorf("cannot create Envoy Fleet %s config map: %w", e.fleet.Name, err)
