@@ -1588,8 +1588,8 @@ spec:
           value: memberlist
         - name: METALLB_DEPLOYMENT
           value: controller
-        # image: quay.io/metallb/controller:v0.13.7
-        image: bitnami/metallb-controller
+        image: quay.io/metallb/controller:v0.13.7
+        #image: bitnami/metallb-controller
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -1685,8 +1685,8 @@ spec:
             secretKeyRef:
               key: secretkey
               name: memberlist
-        # image: quay.io/metallb/speaker:v0.13.7
-        image: bitnami/metallb-speaker
+        image: quay.io/metallb/speaker:v0.13.7
+        #image: bitnami/metallb-speaker
         livenessProbe:
           failureThreshold: 3
           httpGet:
