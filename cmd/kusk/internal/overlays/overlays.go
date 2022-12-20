@@ -61,22 +61,24 @@ func NewOverlay(path string) (o *Overlay, err error) {
 func (o *Overlay) Apply() (string, error) {
 	var err error
 	var overlayed string
+
 	if !IsUrl(o.Extends) {
 		overlayed, err = applyOverlay(o.path, o.Extends)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - !IsUrl(o.Extends), overlayed=%v: %w`, overlayed, err)
 		}
 	} else {
 		overlayed, err = applyOverlay(o.path, "")
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - IsUrl(o.Extends), overlayed=%v: %w`, overlayed, err)
 		}
 	}
+
 	if f, err := os.CreateTemp("", "overlay"); err != nil {
-		return "", err
+		return "", fmt.Errorf(`Overlay.Apply failed - os.CreateTemp("", "overlay"), overlayed=%v: %w`, overlayed, err)
 	} else {
 		if _, err := f.Write([]byte(overlayed)); err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - f.Write([]byte(overlayed)), overlayed=%v: %w`, overlayed, err)
 		}
 		return f.Name(), err
 	}
