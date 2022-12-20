@@ -53,9 +53,9 @@ type EnvoyFleetResources struct {
 	client       client.Client
 	fleet        *gateway.EnvoyFleet
 	fleetID      string
-	configMap    *corev1.ConfigMap
-	deployment   *appsv1.Deployment
-	service      *corev1.Service
+	ConfigMap    *corev1.ConfigMap
+	Deployment   *appsv1.Deployment
+	Service      *corev1.Service
 	sharedLabels map[string]string
 }
 
@@ -89,14 +89,14 @@ func NewEnvoyFleetResources(ctx context.Context, client client.Client, ef *gatew
 }
 
 func (e *EnvoyFleetResources) CreateOrUpdate(ctx context.Context) error {
-	if err := k8sutils.CreateOrReplace(ctx, e.client, e.configMap); err != nil {
+	if err := k8sutils.CreateOrReplace(ctx, e.client, e.ConfigMap); err != nil {
 		return fmt.Errorf("failed to deploy Envoy Fleet config map: %w", err)
 	}
-	if err := k8sutils.CreateOrReplace(ctx, e.client, e.deployment); err != nil {
-		return fmt.Errorf("failed to  deploy Envoy Fleet deployment: %w", err)
+	if err := k8sutils.CreateOrReplace(ctx, e.client, e.Deployment); err != nil {
+		return fmt.Errorf("failed to  deploy Envoy Fleet Deployment: %w", err)
 	}
-	if err := k8sutils.CreateOrReplace(ctx, e.client, e.service); err != nil {
-		return fmt.Errorf("failed to deploy Envoy Fleet service: %w", err)
+	if err := k8sutils.CreateOrReplace(ctx, e.client, e.Service); err != nil {
+		return fmt.Errorf("failed to deploy Envoy Fleet Service: %w", err)
 	}
 	return nil
 }
@@ -124,11 +124,11 @@ func (e *EnvoyFleetResources) generateConfigMap(ctx context.Context) error {
 	case svcs > 1:
 		return fmt.Errorf("cannot create Envoy Fleet %s config map: multiple xds services detected in the cluster when searching with the labels %s", e.fleet.Name, xdsLabels)
 	}
-	// At this point - we have exactly one service with (we ASSUME!) one port
+	// At this point - we have exactly one Service with (we ASSUME!) one port
 	xdsServiceHostname := fmt.Sprintf("%s.%s.svc.cluster.local.", xdsServices[0].Name, xdsServices[0].Namespace)
 	xdsServicePort := xdsServices[0].Spec.Ports[0].Port
 
-	e.configMap = &corev1.ConfigMap{
+	e.ConfigMap = &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
@@ -159,7 +159,7 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 
 	deploymentName := e.fleet.Name
 
-	configMapName := e.configMap.Name
+	configMapName := e.ConfigMap.Name
 
 	// Create container template first
 	envoyContainer := corev1.Container{
@@ -208,8 +208,8 @@ func (e *EnvoyFleetResources) generateDeployment(ctx context.Context) error {
 		}
 	}
 
-	// Create the deployment
-	e.deployment = &appsv1.Deployment{
+	// Create the Deployment
+	e.Deployment = &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
@@ -267,7 +267,7 @@ func (e *EnvoyFleetResources) generateService() {
 	}
 	serviceName := e.fleet.Name
 
-	e.service = &corev1.Service{
+	e.Service = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
@@ -281,16 +281,16 @@ func (e *EnvoyFleetResources) generateService() {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    e.fleet.Spec.Service.Ports,
-			Selector: e.deployment.Spec.Selector.MatchLabels,
+			Selector: e.Deployment.Spec.Selector.MatchLabels,
 			Type:     e.fleet.Spec.Service.Type,
 		},
 	}
 	// Static IP address for the LoadBalancer
 	if e.fleet.Spec.Service.Type == corev1.ServiceTypeLoadBalancer && e.fleet.Spec.Service.LoadBalancerIP != "" {
-		e.service.Spec.LoadBalancerIP = e.fleet.Spec.Service.LoadBalancerIP
+		e.Service.Spec.LoadBalancerIP = e.fleet.Spec.Service.LoadBalancerIP
 	}
 	if e.fleet.Spec.Service.ExternalTrafficPolicy != "" {
-		e.service.Spec.ExternalTrafficPolicy = e.fleet.Spec.Service.ExternalTrafficPolicy
+		e.Service.Spec.ExternalTrafficPolicy = e.fleet.Spec.Service.ExternalTrafficPolicy
 	}
 }
 
