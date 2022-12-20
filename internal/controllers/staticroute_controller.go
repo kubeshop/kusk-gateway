@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
@@ -79,31 +78,12 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 		// Other errors, fail with retry
 		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+		return ctrl.Result{RequeueAfter: time.Second * time.Duration(reconcilerFastRetrySeconds)}, err
 	}
-	// Handle finalisers
-	if srObj.ObjectMeta.DeletionTimestamp.IsZero() {
-		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
-		// registering our finalizer.
-		if !containsString(srObj.GetFinalizers(), StaticRouteFinalizer) {
-			controllerutil.AddFinalizer(&srObj, StaticRouteFinalizer)
-			if err := r.Update(ctx, &srObj); err != nil {
-				l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
-			}
-		}
-	} else {
-		// The object is being deleted
-		if containsString(srObj.GetFinalizers(), StaticRouteFinalizer) {
-			// our finalizer is present
-			// remove our finalizer from the list and update it.
-			controllerutil.RemoveFinalizer(&srObj, StaticRouteFinalizer)
-			if err := r.Update(ctx, &srObj); err != nil {
-				l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s during finalizer remove, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
-			}
-		}
+
+	if err := handleFinalizers(ctx, r, &srObj, StaticRouteFinalizer); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Second * time.Duration(reconcilerFastRetrySeconds)}, err
 	}
 
 	if srObj.Spec.Fleet == nil {
@@ -114,7 +94,7 @@ func (r *StaticRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// Finally call ConfigManager to update the configuration with this fleet ID
 	if err := r.ConfigManager.UpdateConfiguration(ctx, *srObj.Spec.Fleet); err != nil {
 		l.Error(err, fmt.Sprintf("Failed to reconcile StaticRoute %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
+		return ctrl.Result{RequeueAfter: time.Second * time.Duration(reconcilerFastRetrySeconds)}, err
 	}
 	return ctrl.Result{}, nil
 }

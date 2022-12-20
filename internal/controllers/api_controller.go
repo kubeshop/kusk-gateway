@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	gateway "github.com/kubeshop/kusk-gateway/api/v1alpha1"
 	"github.com/kubeshop/kusk-gateway/pkg/analytics"
@@ -81,30 +80,11 @@ func (r *APIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
 	}
 
-	// Handle finalisers
-	if apiObj.ObjectMeta.DeletionTimestamp.IsZero() {
-		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
-		// registering our finalizer.
-		if !containsString(apiObj.GetFinalizers(), APIFinalizer) {
-			controllerutil.AddFinalizer(&apiObj, APIFinalizer)
-			if err := r.Update(ctx, &apiObj); err != nil {
-				l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
-			}
-		}
-	} else {
-		// The object is being deleted
-		if containsString(apiObj.GetFinalizers(), APIFinalizer) {
-			// our finalizer is present
-			// remove our finalizer from the list and update it.
-			controllerutil.RemoveFinalizer(&apiObj, APIFinalizer)
-			if err := r.Update(ctx, &apiObj); err != nil {
-				l.Error(err, fmt.Sprintf("Failed to reconcile API %s during finalizer remove, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
-				return ctrl.Result{RequeueAfter: time.Duration(time.Second * time.Duration(reconcilerFastRetrySeconds))}, err
-			}
-		}
+	if err := handleFinalizers(ctx, r, &apiObj, APIFinalizer); err != nil {
+		l.Error(err, fmt.Sprintf("Failed to reconcile API %s, will retry in %d seconds", req.NamespacedName, reconcilerFastRetrySeconds))
+		return ctrl.Result{RequeueAfter: time.Second * time.Duration(reconcilerFastRetrySeconds)}, err
 	}
+
 	if apiObj.Spec.Fleet == nil {
 		err := fmt.Errorf("API object %s.%s - fleet field is empty", apiObj.Name, apiObj.Namespace)
 		l.Error(err, "Failed to reconcile API", "changed", req.NamespacedName)
