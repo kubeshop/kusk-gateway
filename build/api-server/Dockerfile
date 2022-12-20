@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM --platform=$BUILDPLATFORM docker.io/golang:1.18 as builder
 
 WORKDIR /go/src

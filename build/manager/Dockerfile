@@ -1,4 +1,4 @@
-# Build the manager binary
+# syntax = docker/dockerfile:experimental
 FROM --platform=$BUILDPLATFORM docker.io/golang:1.19 as builder
 
 WORKDIR /workspace
