@@ -126,12 +126,12 @@ func applyOverlay(path string, extends string) (string, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to create new docker client from environment: %w", err)
 	}
 	defer cli.Close()
 	reader, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to pull image %v: %w", imageName, err)
 	}
 
 	defer reader.Close()
