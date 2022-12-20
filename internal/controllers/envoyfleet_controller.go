@@ -74,7 +74,7 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	if err := r.Client.Get(ctx, req.NamespacedName, &ef); err != nil {
 		if errors.IsNotFound(err) {
-			// EnvoyFleet was deleted - deployment and config deletion is handled by the API server itself
+			// EnvoyFleet was deleted - Deployment and config deletion is handled by the API server itself
 			// thanks to OwnerReference
 			l.Info("No objects found, looks like EnvoyFleet was deleted")
 			return ctrl.Result{}, nil
@@ -88,10 +88,6 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{RequeueAfter: time.Second * time.Duration(reconcilerFastRetrySeconds)}, err
 	}
 
-	if err := controllerutil.SetControllerReference(&ef, &ef, r.Scheme); err != nil {
-		l.Error(err, "Failed setting controller owner reference")
-		return ctrl.Result{}, err
-	}
 	// Generate Envoy Fleet resources...
 	efResources, err := NewEnvoyFleetResources(ctx, r.Client, &ef)
 	if err != nil {
@@ -102,6 +98,22 @@ func (r *EnvoyFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		return ctrl.Result{}, fmt.Errorf("failed to create EnvoyFleet configuration: %w", err)
 	}
+
+	if err := controllerutil.SetControllerReference(&ef, efResources.Deployment, r.Scheme); err != nil {
+		l.Error(err, "Failed setting controller owner reference for envoyfleet deployent")
+		return ctrl.Result{}, err
+	}
+
+	if err := controllerutil.SetControllerReference(&ef, efResources.Service, r.Scheme); err != nil {
+		l.Error(err, "Failed setting controller owner reference for envoyfleet service")
+		return ctrl.Result{}, err
+	}
+
+	if err := controllerutil.SetControllerReference(&ef, efResources.ConfigMap, r.Scheme); err != nil {
+		l.Error(err, "Failed setting controller owner reference for envoyfleet configmap")
+		return ctrl.Result{}, err
+	}
+
 	// and deploy them
 	if err = efResources.CreateOrUpdate(ctx); err != nil {
 		l.Error(err, fmt.Sprintf("Failed to reconcile EnvoyFleet, will retry in %d seconds", reconcilerDefaultRetrySeconds))
