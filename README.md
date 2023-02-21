@@ -1,13 +1,13 @@
 > Dear users and contributors of Kusk and Kusk Gateway!
- 
+>
 > We continue to believe in the idea of OpenAPI driven Gateway. However, we have decided to pause ongoing active development and support for the time being.
- 
+> 
 > We want to express our sincere gratitude to everyone who has contributed to Kusk, whether by submitting code, reporting issues, or simply using it. We are proud of the work we accomplished together, and hope that our efforts have had a positive impact on your work and your community.
- 
+> 
 > If you're willing to improve the project, please feel free to contribute. We will do our best to review and approve incoming PRs as our time and resources allow.
- 
+> 
 > Thank you for your understanding and support!
- 
+> 
 > The Kusk Team at Kubeshop
 
 <p align="center">
