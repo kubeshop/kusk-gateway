@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const imageName = "kubeshop/overlay-cli"
+const imageName = "docker.io/kubeshop/overlay-cli"
 
 type Overlay struct {
 	Overlays string   `json:"overlays,omitempty" yaml:"overlays,omitempty"`
@@ -61,22 +61,24 @@ func NewOverlay(path string) (o *Overlay, err error) {
 func (o *Overlay) Apply() (string, error) {
 	var err error
 	var overlayed string
+
 	if !IsUrl(o.Extends) {
 		overlayed, err = applyOverlay(o.path, o.Extends)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - !IsUrl(o.Extends), o.path=%v, overlayed=%v: %w`, o.path, overlayed, err)
 		}
 	} else {
 		overlayed, err = applyOverlay(o.path, "")
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - IsUrl(o.Extends), o.path=%v, overlayed=%v: %w`, o.path, overlayed, err)
 		}
 	}
+
 	if f, err := os.CreateTemp("", "overlay"); err != nil {
-		return "", err
+		return "", fmt.Errorf(`Overlay.Apply failed - os.CreateTemp("", "overlay"), overlayed=%v: %w`, overlayed, err)
 	} else {
 		if _, err := f.Write([]byte(overlayed)); err != nil {
-			return "", err
+			return "", fmt.Errorf(`Overlay.Apply failed - f.Write([]byte(overlayed)), overlayed=%v: %w`, overlayed, err)
 		}
 		return f.Name(), err
 	}
@@ -126,12 +128,12 @@ func applyOverlay(path string, extends string) (string, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to create new docker client from environment: %w", err)
 	}
 	defer cli.Close()
 	reader, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to pull image %v: %w", imageName, err)
 	}
 
 	defer reader.Close()
@@ -157,10 +159,12 @@ func applyOverlay(path string, extends string) (string, error) {
 	} else {
 		cmd = exec.Command("docker", "run", "--rm", volumes, imageName)
 	}
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cmd.CombinedOutput failed: cmd=%+#v, out=%v, %w", cmd, string(out), err)
 	}
+
 	return string(out), nil
 }
 
