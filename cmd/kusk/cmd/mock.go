@@ -253,7 +253,7 @@ $ kusk mock -i https://url.to.api.com
 				if !ok {
 					return
 				}
-				err = fmt.Errorf("an unexpected error occured: %w", err)
+				err = fmt.Errorf("an unexpected error occurred: %w", err)
 				reportError(err)
 				kuskui.PrintError(err.Error())
 			case logEntry, ok := <-mockServer.LogCh:
