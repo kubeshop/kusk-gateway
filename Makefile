@@ -144,7 +144,7 @@ test: manifests fmt vet install-deps ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell setup-envtest use $(ENVTEST_K8S_VERSION) -p path)" go test $(shell go list ./... | grep -v smoketests | grep -v internal/controllers | grep -v api/v1alpha1) -coverprofile cover.out
 
 .PHONY: testing
-testing: ## Run the integration tests from development/testing and then delete testing artifacts if succesfull.
+testing: ## Run the integration tests from development/testing and then delete testing artifacts if successful.
 	development/testing/runtest.sh all delete
 
 ##@ Build
